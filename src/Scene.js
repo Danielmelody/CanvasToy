@@ -1,5 +1,10 @@
-var WebGLWindow = function(canvas) {
+/*
+ * @author Danielhu229 http://hustdanielhu.com
+ */
+
+var Scene = function(canvas) {
     this.gl = initWebGL(canvas);
+    this.shaderPrograms = [];
 
     this.initMatrix();
 
@@ -10,21 +15,29 @@ var WebGLWindow = function(canvas) {
     this.gl.clearDepth(1.0);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.depthFunc(this.gl.LEQUAL);
-    setInterval(this.update(), 6);
+
 }
 
-WebGLWindow.prototype.update = function (){
+Scene.prototype = Object.create(RenderNode);
+Scene.prototype.constructor = RenderNode;
+
+Scene.prototype.draw = function (){
     var self = this;
     return function (){
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
     }
 }
 
-WebGLWindow.prototype.initMatrix = function () {
+Scene.prototype.initMatrix = function () {
     glMatrix.setMatrixArrayType(Float32Array);
+}
+
+Scene.prototype.bindMatrix = function () {
+    
 }
 
 function start(){
     var canvas = document.getElementById('canvas');
-    var webgl = new WebGLWindow(canvas);
+    var webgl = new Scene(canvas);
+
 }

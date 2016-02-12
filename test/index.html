@@ -4,8 +4,8 @@
     <title>WebGL Demo</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <script src="../lib/gl-matrix-min.js" type="text/javascript"></script>
-    <script src="../lib/load-shader.js" type="text/javascript"></script>
-    <script src="main.js" type="text/javascript"></script>
+    <script src="../src/LoadShader.js" type="text/javascript"></script>
+    <script src="../src/Scene.js" type="text/javascript"></script>
 
     <!-- Fragment shader program -->
 
@@ -18,9 +18,13 @@
     <!-- Vertex shader program -->
 
     <script id="shader-vs" type="x-shader/x-vertex">
+      uniform mat4 mvMatrix;
+      uniform mat4 pMatrix;
+
+      attribute vec3 aVertPosition;
 
       void main(void) {
-
+        gl_Position = vec4(aVertPosition, 1.0) * mvMatrix * pMatrix;
       }
     </script>
   </head>

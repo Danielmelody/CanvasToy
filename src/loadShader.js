@@ -1,3 +1,7 @@
+/*
+ * @author Danielhu229 http://hustdanielhu.com
+ */
+
 function initWebGL(canvas){
     var gl = null;
     try {
@@ -61,9 +65,10 @@ function compileShader(gl, id){
   return shader;
 }
 
-function linkShaders(gl, vertexShader, fragmentShader){
+function getShaderProgram(gl, vertexShader, fragmentShader){
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
     gl.attachShader(shaderProgram, fragmentShader);
     gl.linkProgram(shaderProgram);
+    return shaderProgram;
 }

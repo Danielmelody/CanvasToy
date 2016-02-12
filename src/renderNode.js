@@ -1,14 +1,28 @@
 /*
  * @author Danielhu229 http://hustdanielhu.com
  */
-var node = function () {
-    Camera.apply(this);
+var RenderNode = function () {
+    Object3d.call(this);
+    this.relativeMatrix = mat4.create();
     this.children = [];
+}
+
+RenderNode.prototype = Object.create(Object3d.prototype);
+RenderNode.prototype.constructor = Object3d;
+
+RenderNode.prototype.addChild = function (child) {
+    this.children.push(child);
 
 }
 
-node.prototype = Object.create(Object3d.prototype);
-
-node.prototype.draw = function(){
-
+RenderNode.prototype.draw = function(options){
+    this.matrix = mat4.mul(mat4.create(), this.matrix, options.parentMatrix);
+    options = {
+        parentMatrix:this.matrix.clone()
+    }
+    forEach(child in this.children)
+    {
+        this.children[child].draw(options);
+    }
 }
+
