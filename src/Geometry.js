@@ -14,15 +14,6 @@ var Geometry = function (options) {
         new Float32Array(this.vertices),
         this.webglContext.STATIC_DRAW
     );
-
-    this.colors = options.colors || [];
-    this.colorBuffer = this.webglContext.createBuffer();
-    this.webglContext.bindBuffer(this.webglContext.ARRAY_BUFFER, this.colorBuffer);
-    this.webglContext.bufferData(
-        this.webglContext.ARRAY_BUFFER,
-        new Float32Array(this.colors),
-        this.webglContext.STATIC_DRAW
-    );
 }
 
 

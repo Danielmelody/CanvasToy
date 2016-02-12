@@ -12,7 +12,6 @@ Object3d.prototype.update = function(){
 
 }
 
-
 Object3d.prototype.tranlate = function (by) {
     this.matrix.tranlate(by);
 }

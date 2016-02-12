@@ -72,3 +72,7 @@ function getShaderProgram(gl, vertexShader, fragmentShader){
     gl.linkProgram(shaderProgram);
     return shaderProgram;
 }
+
+function setProgram(camera, fog, material, object){
+    //TODO: implement function
+}

@@ -16,7 +16,7 @@ RenderNode.prototype.addChild = function (child) {
 }
 
 RenderNode.prototype.draw = function(options){
-    this.matrix = mat4.mul(mat4.create(), this.matrix, options.parentMatrix);
+    this.matrix = mat4.mul(mat4.create(), this.relativeMatrix, options.parentMatrix);
     options = {
         parentMatrix:this.matrix.clone()
     }
