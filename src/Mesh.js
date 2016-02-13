@@ -10,3 +10,13 @@ var Mesh = function (geometry, material) {
 Mesh.prototype = Object.create(RenderNode.prototype);
 Mesh.prototype.constructor = RenderNode;
 
+Mesh.prototype.draw = function(webglContext, camera){
+    RenderNode.draw.call(this);
+    webglContext.bufferData(
+        webglContext.ARRAY_BUFFER,
+        new Float32Array(this.geometry.vertices),
+        this.webglContext.STATIC_DRAW
+    );
+    webglContext.drawArrays(webglContext.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
+
+}

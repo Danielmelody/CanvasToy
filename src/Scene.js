@@ -2,27 +2,18 @@
  * @author Danielhu229 http://hustdanielhu.com
  */
 
-var Scene = function(canvas) {
-
-
+var Scene = function() {
+    this.renderObjects = [];
 }
 
 Scene.prototype = Object.create(RenderNode);
 Scene.prototype.constructor = RenderNode;
 
-Scene.prototype.draw = function (){
-    var self = this;
-    return function (){
-        self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
-    }
+Scene.prototype.draw = function (camera){
+    RenderNode.draw.call(this, camera);
 }
 
-Scene.prototype.bindMatrix = function () {
-    
-}
-
-function start(){
-    var canvas = document.getElementById('canvas');
-    var webgl = new Scene(canvas);
-
+Scene.prototype.addChild = function (child) {
+    RenderNode.addChild.call(this, child);
+    this.renderObjects.push(child);
 }

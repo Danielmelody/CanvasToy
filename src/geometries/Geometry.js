@@ -5,13 +5,14 @@
 var Geometry = function (vertices) {
 
     RenderNode.call(this);
+    this.vertices = [];
 
-    this.vertices = vertices || [];
+}
+
+Geometry.prototype.initBuffers = function() {
+    //this.vertices = vertices || [];
     this.vertBuffer = this.webglContext.createBuffer();
     this.webglContext.bindBuffer(this.webglContext.ARRAY_BUFFER, this.vertBuffer);
-    this.webglContext.bufferData(
-        this.webglContext.ARRAY_BUFFER,
-        new Float32Array(this.vertices),
-        this.webglContext.STATIC_DRAW
-    );
 }
+
+

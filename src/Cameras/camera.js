@@ -7,7 +7,6 @@ var Camera = function () {
 }
 
 Camera.prototype = Object3d.create(Object3d.prototype);
-
 Camera.prototype.constructor = Camera;
 
 Camera.prototype.lookAt = function(eye, center, up){
