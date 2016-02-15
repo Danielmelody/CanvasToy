@@ -2,6 +2,6 @@
  * @author Danielhu229 http://hustdanielhu.com
  */
 
-var Material = function(name){
+CanvasToy.Material = function(name){
 //TODO: implement constructor
-}
+};

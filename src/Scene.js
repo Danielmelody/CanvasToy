@@ -2,18 +2,20 @@
  * @author Danielhu229 http://hustdanielhu.com
  */
 
-var Scene = function() {
+require('CanvasToy');
+
+CanvasToy.Scene = function() {
     this.renderObjects = [];
-}
+};
 
-Scene.prototype = Object.create(RenderNode);
-Scene.prototype.constructor = RenderNode;
+CanvasToy.Scene.prototype = Object.create(RenderNode);
+CanvasToy.Scene.prototype.constructor = RenderNode;
 
-Scene.prototype.draw = function (camera){
-    RenderNode.draw.call(this, camera);
-}
+CanvasToy.Scene.prototype.draw = function (camera){
+    CanvasToy.RenderNode.draw.call(this, camera);
+};
 
-Scene.prototype.addChild = function (child) {
-    RenderNode.addChild.call(this, child);
+CanvasToy.Scene.prototype.addChild = function (child) {
+    CanvasToy.RenderNode.addChild.call(this, child);
     this.renderObjects.push(child);
-}
+};

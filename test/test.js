@@ -1,6 +1,4 @@
 function start(){
-    var canvas = document.getElementById('canvas');
-    var scene = new Scene();
-    var cubeGeo = new CubeGeometry();
-    var renderer = new Renderer(canvas);
+    var test = mat4.create();
+    console.log(CanvasToy.test);
 }

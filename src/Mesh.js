@@ -2,15 +2,15 @@
  * @author Danielhu229 http://hustdanielhu.com
  */
 
-var Mesh = function (geometry, material) {
+CanvasToy.Mesh = function (geometry, material) {
     this.geometry = geometry || new Geometry();
     this.material = material || new Material();
-}
+};
 
-Mesh.prototype = Object.create(RenderNode.prototype);
-Mesh.prototype.constructor = RenderNode;
+CanvasToy.Mesh.prototype = Object.create(CanvasToy.RenderNode.prototype);
+CanvasToy.Mesh.prototype.constructor = CanvasToy.RenderNode;
 
-Mesh.prototype.draw = function(webglContext, camera){
+CanvasToy.Mesh.prototype.draw = function(webglContext, camera){
     RenderNode.draw.call(this);
     webglContext.bufferData(
         webglContext.ARRAY_BUFFER,
@@ -19,4 +19,4 @@ Mesh.prototype.draw = function(webglContext, camera){
     );
     webglContext.drawArrays(webglContext.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
 
-}
+};

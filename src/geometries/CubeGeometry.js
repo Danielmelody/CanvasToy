@@ -2,7 +2,7 @@
  * @author Danielhu229 http://hustdanielhu.com
  */
 
-var CubeGeometry = function () {
+CanvasToy.CubeGeometry = function () {
     Geometry.call(this);
     this.vertices = [
         1.0,  1.0,  0.0,
@@ -11,7 +11,7 @@ var CubeGeometry = function () {
         -1.0, -1.0, 0.0
     ];
     this.initBuffers();
-}
+};
 
-CubeGeometry.prototype = Object.create(Geometry.prototype);
-CubeGeometry.prototype.constructor = CubeGeometry
+CanvasToy.CubeGeometry.prototype = Object.create(CanvasToy.Geometry.prototype);
+CanvasToy.CubeGeometry.prototype.constructor = CanvasToy.CubeGeometry;

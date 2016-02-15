@@ -2,13 +2,13 @@
  * @author Danielhu229 http://hustdanielhu.com
  */
 
-var Camera = function () {
+CanvasToy.Camera = function () {
     this.projectionMatrix = mat4.create();
-}
+};
 
-Camera.prototype = Object3d.create(Object3d.prototype);
-Camera.prototype.constructor = Camera;
+CanvasToy.Camera.prototype = Object3d.create(Object3d.prototype);
+CanvasToy.Camera.prototype.constructor = Camera;
 
-Camera.prototype.lookAt = function(eye, center, up){
+CanvasToy.Camera.prototype.lookAt = function(eye, center, up){
     this.projectionMatrix.lookAt(eye, center, up);
-}
+};
