@@ -1,0 +1,15 @@
+{
+    "compilerOptions":{
+        "module": "amd",
+        "removeComments": true,
+        "outFile":"build/canvas-toy-nolibrary.js",
+        "noLib":false,
+        "target": "es5"
+    },
+    "exclude": [
+       "node_modules",
+       "utils",
+       "test",
+       ".idea"
+   ]
+}
