@@ -5,6 +5,19 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var CanvasToy;
 (function (CanvasToy) {
+    var version = 2;
+})(CanvasToy || (CanvasToy = {}));
+CanvasToy.vec2 = vec2.create();
+CanvasToy.glMatrix = glMatrix;
+CanvasToy.vec3 = vec3;
+CanvasToy.vec4 = vec4;
+CanvasToy.mat2 = mat2;
+CanvasToy.mat2d = mat2d;
+CanvasToy.mat3 = mat3;
+CanvasToy.mat4 = mat4;
+CanvasToy.quat = quat;
+var CanvasToy;
+(function (CanvasToy) {
     var Geometry = (function () {
         function Geometry() {
             this.vertices = [];

@@ -1,4 +1,5 @@
 function start(){
-    var test = mat4.create();
-    console.log(CanvasToy.Scene());
+    var canvas = document.getElementById('canvas');
+    var render = new CanvasToy.Renderer(canvas);
+    var Scene = new CanvasToy.Scene();
 }

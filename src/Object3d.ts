@@ -1,3 +1,6 @@
+
+/// <reference path="./CanvasToy.ts"/>
+
 module CanvasToy{
 
     export class Object3d{

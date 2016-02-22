@@ -1,3 +1,5 @@
+/// <reference path="../Object3d.ts"/>
+
 module CanvasToy{
     /*
      * @author Danielhu229 http://hustdanielhu.com
