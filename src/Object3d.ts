@@ -5,8 +5,6 @@ module CanvasToy{
 
     export class Object3d{
 
-        protected gl:WebGLRenderingContext;
-
         protected modelViewMatrix:Mat4Array;
 
         protected matrix:Mat4Array;
@@ -17,8 +15,7 @@ module CanvasToy{
 
         protected rotate:Vec3Array;
 
-        constructor(gl:WebGLRenderingContext){
-            this.gl = gl;
+        constructor(){
             this.modelViewMatrix = mat4.create();
             this.matrix = mat4.create();
             this.position = vec3.create();

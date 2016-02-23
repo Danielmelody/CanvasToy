@@ -10,18 +10,18 @@ module CanvasToy{
 
         protected material:Material;
 
-        constructor(gl:WebGLRenderingContext){
-            super(gl);
+        constructor(){
+            super();
         }
 
-        draw(camera:Camera){
+        draw(gl, camera:Camera){
             super.draw(camera);
-            this.gl.bufferData(
-                this.gl.ARRAY_BUFFER,
+            gl.bufferData(
+                gl.ARRAY_BUFFER,
                 new Float32Array(this.geometry.vertices),
-                this.gl.STATIC_DRAW
+                gl.STATIC_DRAW
             );
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
         }
 
 

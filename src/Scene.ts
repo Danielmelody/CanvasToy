@@ -6,13 +6,12 @@ module CanvasToy{
 
         public renderObjects:Array<Object3d>;
 
-        constructor(gl:WebGLRenderingContext){
-            super(gl);
-
+        constructor(){
+            super();
         }
 
-        draw(Camera){
-            super.draw(Camera);
+        draw(gl, Camera){
+            super.draw(gl, Camera);
         }
 
         addChild(child){

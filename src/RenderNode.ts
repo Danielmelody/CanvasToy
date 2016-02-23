@@ -13,8 +13,8 @@ module CanvasToy{
 
         protected relativeMatrix:Mat4Array;
 
-        constructor(gl:WebGLRenderingContext){
-            super(gl);
+        constructor(){
+            super();
             this.parent = null;
             this.children = [];
             this.relativeMatrix = mat4.create();
@@ -33,7 +33,7 @@ module CanvasToy{
             }
         }
 
-        public draw(camera:Camera){
+        public draw(gl, camera:Camera){
             this.matrix = mat4.mul(mat4.create(), camera.projectionMatrix, this.modelViewMatrix);
         }
     }

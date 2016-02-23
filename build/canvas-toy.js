@@ -35,8 +35,8 @@ var CanvasToy;
 (function (CanvasToy) {
     var version = 2;
 })(CanvasToy || (CanvasToy = {}));
-CanvasToy.vec2 = vec2.create();
 CanvasToy.glMatrix = glMatrix;
+CanvasToy.vec2 = vec2;
 CanvasToy.vec3 = vec3;
 CanvasToy.vec4 = vec4;
 CanvasToy.mat2 = mat2;
@@ -96,8 +96,8 @@ var CanvasToy;
 (function (CanvasToy) {
     var RenderNode = (function (_super) {
         __extends(RenderNode, _super);
-        function RenderNode(gl) {
-            _super.call(this, gl);
+        function RenderNode() {
+            _super.call(this);
             this.parent = null;
             this.children = [];
             this.relativeMatrix = CanvasToy.mat4.create();
@@ -125,13 +125,13 @@ var CanvasToy;
 (function (CanvasToy) {
     var Mesh = (function (_super) {
         __extends(Mesh, _super);
-        function Mesh(gl) {
-            _super.call(this, gl);
+        function Mesh() {
+            _super.call(this);
         }
-        Mesh.prototype.draw = function (camera) {
+        Mesh.prototype.draw = function (gl, camera) {
             _super.prototype.draw.call(this, camera);
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), this.gl.STATIC_DRAW);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), gl.STATIC_DRAW);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
         };
         return Mesh;
     }(CanvasToy.RenderNode));
@@ -163,11 +163,11 @@ var CanvasToy;
 (function (CanvasToy) {
     var Scene = (function (_super) {
         __extends(Scene, _super);
-        function Scene(gl) {
-            _super.call(this, gl);
+        function Scene() {
+            _super.call(this);
         }
-        Scene.prototype.draw = function (Camera) {
-            _super.prototype.draw.call(this, Camera);
+        Scene.prototype.draw = function (gl, Camera) {
+            _super.prototype.draw.call(this, gl, Camera);
         };
         Scene.prototype.addChild = function (child) {
             _super.prototype.addChild.call(this, child);
