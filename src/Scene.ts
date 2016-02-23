@@ -1,17 +1,15 @@
-/// <reference path="./RenderNode.ts"/>
+/// <reference path="./LogicNode.ts"/>
 
 module CanvasToy{
 
-    export class Scene extends RenderNode{
+    export class Scene extends LogicNode{
 
-        public renderObjects:Array<Object3d>;
+        public renderObjects:Array<Drawable>;
+
+        public clearColor:Array<number>;
 
         constructor(){
             super();
-        }
-
-        draw(gl, Camera){
-            super.draw(gl, Camera);
         }
 
         addChild(child){

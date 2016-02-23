@@ -1,4 +1,10 @@
 module CanvasToy{
+
+    export enum ShaderType{
+        VertexShader,
+        FragmentShader
+    }
+
     export function initWebwebglContext(canvas):WebGLRenderingContext{
         var gl:WebGLRenderingContext = null;
         try {
@@ -12,15 +18,14 @@ module CanvasToy{
         return gl;
     }
 
-    export function compileShader (gl:WebGLRenderingContext, id:string) {
-        var shaderScript = <HTMLScriptElement>document.getElementById(id);
+    export function getDomScriptText(script:HTMLScriptElement):string{
 
-        if (!shaderScript) {
+        if (!script) {
             return null;
         }
 
         var theSource = "";
-        var currentChild = shaderScript.firstChild;
+        var currentChild = script.firstChild;
 
         while (currentChild) {
             if (currentChild.nodeType == 3) {
@@ -32,18 +37,20 @@ module CanvasToy{
 
         var shader:WebGLShader;
 
-        if (shaderScript.type == "x-shader/x-fragment") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
-        } else if (shaderScript.type == "x-shader/x-vertex") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
-        } else {
-            alert(id + ": unknown shader type");
-            return null;  // Unknown shader type
-        }
-
         // Send the source to the shader object
 
-        gl.shaderSource(shader, theSource);
+    }
+
+    export function createShader(gl:WebGLRenderingContext, source:string, type:ShaderType):WebGLShader  {
+
+        var shader:WebGLShader;
+
+        if (type == ShaderType.FragmentShader) {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (type == ShaderType.VertexShader ) {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        }
+        gl.shaderSource(shader, source);
 
         // Compile the shader program
 
@@ -59,7 +66,7 @@ module CanvasToy{
         return shader;
     }
 
-    export function getShaderProgram (gl:WebGLRenderingContext, vertexShader:WebGLShader, fragmentShader:WebGLShader) {
+    export function getShaderProgram (gl:WebGLRenderingContext, vertexShader:WebGLShader, fragmentShader:WebGLShader):WebGLProgram {
         var shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
@@ -69,6 +76,26 @@ module CanvasToy{
 
     function setProgram (camera:Camera, fog, material:Material, object:Object3d){
         //TODO: implement function
+    }
+
+    export function createVertexBuffer(vertices: number[] | Float32Array): WebGLBuffer {
+        var vbo = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
+
+        if (vertices instanceof Float32Array) {
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, <Float32Array>vertices, this.gl.STATIC_DRAW);
+        } else {
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(<number[]>vertices), this.gl.STATIC_DRAW);
+        }
+
+        return vbo;
+    }
+
+    export function createDynamicVertexBuffer(size:number){
+        var vbo = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, size, this.gl.DYNAMIC_DRAW);
+        return vbo;
     }
 
 }

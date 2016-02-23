@@ -8,8 +8,8 @@ module CanvasToy{
 
         public projectionMatrix:Mat4Array;
 
-        constructor(gl:WebGLRenderingContext){
-            super(gl);
+        constructor(){
+            super();
             this.projectionMatrix = mat4.create();
         }
     }

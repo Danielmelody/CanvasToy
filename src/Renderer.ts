@@ -16,16 +16,34 @@ module CanvasToy{
 
             this.initMatrix();
 
-            var vertexShader:WebGLShader = compileShader(this.gl, 'shader-vs');
-            var fragmentShader:WebGLShader = compileShader(this.gl, 'shader-fs');
-
-            this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthFunc(this.gl.LEQUAL);
         }
 
-        initMatrix(){
+        renderImmediately(scene:Scene, camera:Camera){
+
+            this.gl.clearColor(
+                scene.clearColor[0],
+                scene.clearColor[1],
+                scene.clearColor[2],
+                scene.clearColor[3]
+            );
+
+            this.gl.clearDepth(1.0);
+
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+            for(let renderObject of scene.renderObjects) {
+                renderObject.draw(this.gl, camera);
+            }
+
+        }
+
+        public useProgram(program:WebGLProgram){
+            this.gl.useProgram(program);
+        }
+
+        private initMatrix(){
             glMatrix.setMatrixArrayType(Float32Array);
         }
     }

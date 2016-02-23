@@ -1,10 +1,11 @@
 /// <reference path="./geometries/Geometry.ts"/>
 /// <reference path="./materials/material.ts"/>
-/// <reference path="./RenderNode.ts"/>
+/// <reference path="./LogicNode.ts"/>
+/// <reference path="./Drawable.ts"/>
 
 module CanvasToy{
 
-    export class Mesh extends RenderNode{
+    export class Mesh extends LogicNode implements Drawable{
 
         protected geometry:Geometry;
 
@@ -15,7 +16,7 @@ module CanvasToy{
         }
 
         draw(gl, camera:Camera){
-            super.draw(camera);
+            super.draw(gl, camera);
             gl.bufferData(
                 gl.ARRAY_BUFFER,
                 new Float32Array(this.geometry.vertices),

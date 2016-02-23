@@ -1,18 +1,18 @@
+/// <reference path="../CanvasToy.ts"/>
+
 module CanvasToy{
+
     export class Geometry{
 
-        public vertices:Array<any>;
+        public vertices:Array<number>;
+        public normals:Array<number>;
 
-        public verticesBuffer:WebGLBuffer;
+        public vbo:WebGLBuffer;
 
-        constructor() {
+        constructor(size?:number) {
             this.vertices = [];
+            this.normals = [];
+            this.vbo = createDynamicVertexBuffer(size | 1000);
         }
-
-        initBuffers(gl:WebGLRenderingContext) {
-            this.verticesBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
-        }
-
     }
 }

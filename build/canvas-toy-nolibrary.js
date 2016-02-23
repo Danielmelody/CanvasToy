@@ -18,32 +18,8 @@ CanvasToy.mat4 = mat4;
 CanvasToy.quat = quat;
 var CanvasToy;
 (function (CanvasToy) {
-    var Geometry = (function () {
-        function Geometry() {
-            this.vertices = [];
-        }
-        Geometry.prototype.initBuffers = function (gl) {
-            this.verticesBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
-        };
-        return Geometry;
-    }());
-    CanvasToy.Geometry = Geometry;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Material = (function () {
-        function Material() {
-        }
-        return Material;
-    }());
-    CanvasToy.Material = Material;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
     var Object3d = (function () {
-        function Object3d(gl) {
-            this.gl = gl;
+        function Object3d() {
             this.modelViewMatrix = CanvasToy.mat4.create();
             this.matrix = CanvasToy.mat4.create();
             this.position = CanvasToy.vec3.create();
@@ -66,19 +42,19 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var RenderNode = (function (_super) {
-        __extends(RenderNode, _super);
-        function RenderNode() {
+    var LogicNode = (function (_super) {
+        __extends(LogicNode, _super);
+        function LogicNode() {
             _super.call(this);
             this.parent = null;
             this.children = [];
             this.relativeMatrix = CanvasToy.mat4.create();
         }
-        RenderNode.prototype.addChild = function (child) {
+        LogicNode.prototype.addChild = function (child) {
             this.children.push(child);
             child.parent = this;
         };
-        RenderNode.prototype.compuseMatrixs = function () {
+        LogicNode.prototype.compuseMatrixs = function () {
             var parentMatrix = this.parent.matrix;
             this.modelViewMatrix = CanvasToy.mat4.mul(CanvasToy.mat4.create(), this.relativeMatrix, parentMatrix);
             for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
@@ -86,12 +62,33 @@ var CanvasToy;
                 child.compuseMatrixs();
             }
         };
-        RenderNode.prototype.draw = function (camera) {
+        LogicNode.prototype.draw = function (gl, camera) {
             this.matrix = CanvasToy.mat4.mul(CanvasToy.mat4.create(), camera.projectionMatrix, this.modelViewMatrix);
         };
-        return RenderNode;
+        return LogicNode;
     }(CanvasToy.Object3d));
-    CanvasToy.RenderNode = RenderNode;
+    CanvasToy.LogicNode = LogicNode;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Geometry = (function () {
+        function Geometry(size) {
+            this.vertices = [];
+            this.normals = [];
+            this.vbo = CanvasToy.createDynamicVertexBuffer(size | 1000);
+        }
+        return Geometry;
+    }());
+    CanvasToy.Geometry = Geometry;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Material = (function () {
+        function Material() {
+        }
+        return Material;
+    }());
+    CanvasToy.Material = Material;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -101,12 +98,12 @@ var CanvasToy;
             _super.call(this);
         }
         Mesh.prototype.draw = function (gl, camera) {
-            _super.prototype.draw.call(this, camera);
+            _super.prototype.draw.call(this, gl, camera);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), gl.STATIC_DRAW);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
         };
         return Mesh;
-    }(CanvasToy.RenderNode));
+    }(CanvasToy.LogicNode));
     CanvasToy.Mesh = Mesh;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -117,13 +114,21 @@ var CanvasToy;
             this.programs = [];
             this.gl = CanvasToy.initWebwebglContext(canvas);
             this.initMatrix();
-            var vertexShader = CanvasToy.compileShader(this.gl, 'shader-vs');
-            var fragmentShader = CanvasToy.compileShader(this.gl, 'shader-fs');
-            this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthFunc(this.gl.LEQUAL);
         }
+        Renderer.prototype.renderImmediately = function (scene, camera) {
+            this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
+            this.gl.clearDepth(1.0);
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            for (var _i = 0, _a = scene.renderObjects; _i < _a.length; _i++) {
+                var renderObject = _a[_i];
+                renderObject.draw(this.gl, camera);
+            }
+        };
+        Renderer.prototype.useProgram = function (program) {
+            this.gl.useProgram(program);
+        };
         Renderer.prototype.initMatrix = function () {
             CanvasToy.glMatrix.setMatrixArrayType(Float32Array);
         };
@@ -138,19 +143,21 @@ var CanvasToy;
         function Scene() {
             _super.call(this);
         }
-        Scene.prototype.draw = function (gl, Camera) {
-            _super.prototype.draw.call(this, gl, Camera);
-        };
         Scene.prototype.addChild = function (child) {
             _super.prototype.addChild.call(this, child);
             this.renderObjects.push(child);
         };
         return Scene;
-    }(CanvasToy.RenderNode));
+    }(CanvasToy.LogicNode));
     CanvasToy.Scene = Scene;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    (function (ShaderType) {
+        ShaderType[ShaderType["VertexShader"] = 0] = "VertexShader";
+        ShaderType[ShaderType["FragmentShader"] = 1] = "FragmentShader";
+    })(CanvasToy.ShaderType || (CanvasToy.ShaderType = {}));
+    var ShaderType = CanvasToy.ShaderType;
     function initWebwebglContext(canvas) {
         var gl = null;
         try {
@@ -165,13 +172,12 @@ var CanvasToy;
         return gl;
     }
     CanvasToy.initWebwebglContext = initWebwebglContext;
-    function compileShader(gl, id) {
-        var shaderScript = document.getElementById(id);
-        if (!shaderScript) {
+    function getDomScriptText(script) {
+        if (!script) {
             return null;
         }
         var theSource = "";
-        var currentChild = shaderScript.firstChild;
+        var currentChild = script.firstChild;
         while (currentChild) {
             if (currentChild.nodeType == 3) {
                 theSource += currentChild.textContent;
@@ -179,17 +185,17 @@ var CanvasToy;
             currentChild = currentChild.nextSibling;
         }
         var shader;
-        if (shaderScript.type == "x-shader/x-fragment") {
+    }
+    CanvasToy.getDomScriptText = getDomScriptText;
+    function createShader(gl, source, type) {
+        var shader;
+        if (type == ShaderType.FragmentShader) {
             shader = gl.createShader(gl.FRAGMENT_SHADER);
         }
-        else if (shaderScript.type == "x-shader/x-vertex") {
+        else if (type == ShaderType.VertexShader) {
             shader = gl.createShader(gl.VERTEX_SHADER);
         }
-        else {
-            alert(id + ": unknown shader type");
-            return null;
-        }
-        gl.shaderSource(shader, theSource);
+        gl.shaderSource(shader, source);
         gl.compileShader(shader);
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
             alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
@@ -197,7 +203,7 @@ var CanvasToy;
         }
         return shader;
     }
-    CanvasToy.compileShader = compileShader;
+    CanvasToy.createShader = createShader;
     function getShaderProgram(gl, vertexShader, fragmentShader) {
         var shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
@@ -209,13 +215,32 @@ var CanvasToy;
     ;
     function setProgram(camera, fog, material, object) {
     }
+    function createVertexBuffer(vertices) {
+        var vbo = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
+        if (vertices instanceof Float32Array) {
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
+        }
+        else {
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
+        }
+        return vbo;
+    }
+    CanvasToy.createVertexBuffer = createVertexBuffer;
+    function createDynamicVertexBuffer(size) {
+        var vbo = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, size, this.gl.DYNAMIC_DRAW);
+        return vbo;
+    }
+    CanvasToy.createDynamicVertexBuffer = createDynamicVertexBuffer;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
     var Camera = (function (_super) {
         __extends(Camera, _super);
-        function Camera(gl) {
-            _super.call(this, gl);
+        function Camera() {
+            _super.call(this);
             this.projectionMatrix = CanvasToy.mat4.create();
         }
         return Camera;

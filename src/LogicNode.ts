@@ -5,11 +5,11 @@ module CanvasToy{
     /*
      * @author Danielhu229 http://hustdanielhu.com
      */
-    export class RenderNode extends Object3d{
+    export class LogicNode extends Object3d{
 
-        protected parent:RenderNode;
+        protected parent:LogicNode;
 
-        protected children:Array<RenderNode>;
+        protected children:Array<LogicNode>;
 
         protected relativeMatrix:Mat4Array;
 
@@ -20,7 +20,7 @@ module CanvasToy{
             this.relativeMatrix = mat4.create();
         }
 
-        public addChild(child:RenderNode){
+        public addChild(child:LogicNode){
             this.children.push(child);
             child.parent = this;
         }
