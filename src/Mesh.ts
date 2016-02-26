@@ -11,8 +11,9 @@ module CanvasToy{
 
         protected material:Material;
 
-        constructor(){
+        constructor(geometry:Geometry, material:Material){
             super();
+
         }
 
         draw(gl, camera:Camera){

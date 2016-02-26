@@ -11,6 +11,7 @@ module CanvasToy{
         constructor(){
             super();
             this.projectionMatrix = mat4.create();
+            this.translateTo(0, 0, -10);
         }
     }
 }

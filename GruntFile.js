@@ -30,11 +30,22 @@ module.exports = function(grunt) {
                     interrupt: true
                 }
             }
+        },
+        glsl: {
+            dev: {
+                options: {
+                    oneString: false
+                },
+                files: {
+                    'src/shader/ShaderBlockResult.ts': ['src/shader/ShaderBlocks/*.vert', 'src/shader/ShaderBlocks/*.frag' ]
+                }
+            }
         }
 
     });
 
     // 加载包含 "uglify" 任务的插件。
+    grunt.loadNpmTasks('grunt-glsl');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');

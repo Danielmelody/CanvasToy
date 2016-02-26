@@ -5,7 +5,7 @@ module CanvasToy{
     /*
      * @author Danielhu229 http://hustdanielhu.com
      */
-    export class LogicNode extends Object3d{
+    export class LogicNode extends Object3d implements Drawable{
 
         protected parent:LogicNode;
 
@@ -34,6 +34,7 @@ module CanvasToy{
         }
 
         public draw(gl, camera:Camera){
+            this.matrix = mat4.mul(mat4.create(), camera.modelViewMatrix, this.modelViewMatrix);
             this.matrix = mat4.mul(mat4.create(), camera.projectionMatrix, this.modelViewMatrix);
         }
     }

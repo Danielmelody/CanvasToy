@@ -5,9 +5,9 @@ module CanvasToy{
 
     export class Object3d{
 
-        protected modelViewMatrix:Mat4Array;
+        public modelViewMatrix:Mat4Array;
 
-        protected matrix:Mat4Array;
+        public matrix:Mat4Array;
 
         protected position:Vec3Array;
 
@@ -37,8 +37,20 @@ module CanvasToy{
             this.modelViewMatrix = mat4.translate(mat4.create(), this.modelViewMatrix, vec3.fromValues(deltaX, deltaY, deltaZ));
         }
 
-        public scale () {
+        public rotateX(angle:number){
+            this.modelViewMatrix = mat4.rotateX(mat4.create(), this.matrix, angle);
+        }
 
+        public rotateY(angle:number){
+            this.modelViewMatrix = mat4.rotateY(mat4.create(), this.matrix, angle);
+        }
+
+        public rotateZ(angle:number){
+            this.modelViewMatrix = mat4.rotateY(mat4.create(), this.matrix, angle);
+        }
+
+        public scale (rateX:number, rateY:number, rateZ:number) {
+            this.modelViewMatrix = mat4.scale(mat4.create(), this.modelViewMatrix, vec3.fromValues(rateX, rateY, rateZ));
         }
 
     }

@@ -6,7 +6,7 @@ module CanvasToy{
 
         public vertices:Array<number>;
         public normals:Array<number>;
-
+        public indices:Array<number>;
         public vbo:WebGLBuffer;
 
         constructor(size?:number) {
