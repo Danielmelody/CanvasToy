@@ -13,18 +13,22 @@ module CanvasToy{
             this.programs = [];
             this.gl = initWebwebglContext(canvas);
             this.initMatrix();
+            this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthFunc(this.gl.LEQUAL);
         }
 
-        renderImmediately(scene:Scene, camera:Camera){
+        public startRender(scene:Scene, camera:Camera, duration:number) {
             this.gl.clearColor(
                 scene.clearColor[0],
                 scene.clearColor[1],
                 scene.clearColor[2],
                 scene.clearColor[3]
             );
-            this.gl.clearDepth(1.0);
+            setInterval(() => this.renderImmediately(scene, camera), duration);
+        }
+
+        private renderImmediately(scene:Scene, camera:Camera){
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
             for(let renderObject of scene.renderObjects) {
                 renderObject.draw(this.gl, camera);
