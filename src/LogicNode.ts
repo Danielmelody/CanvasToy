@@ -9,6 +9,8 @@ module CanvasToy{
 
         protected parent:LogicNode;
 
+        protected scene:Scene;
+
         protected children:Array<LogicNode>;
 
         protected relativeMatrix:Mat4Array;

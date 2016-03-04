@@ -3,10 +3,14 @@
 
 module CanvasToy{
 
+    export enum ShadingMode{
+        flatShading,
+        smoothShading
+    }
+
     export class Material {
 
         public map:Texture = null;
-
 
         public ambient:Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
         public ambientMap:Texture = null;
@@ -19,6 +23,8 @@ module CanvasToy{
 
         public opacity:Vec3Array = vec3.fromValues(0, 0, 0);
         public opacityMap:Texture = null;
+
+        shadingMode:ShadingMode = ShadingMode.smoothShading;
 
         public bumpMap:Texture = null;
 
