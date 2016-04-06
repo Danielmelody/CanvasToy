@@ -21,16 +21,6 @@ module.exports = function(grunt) {
                 dest: 'build/canvas-toy.js'
             }
         },
-        watch: {
-            scripts: {
-                files: ['build/canvas-toy-nolibrary.js'],
-                tasks: ['concat', 'uglify'],
-                options: {
-                    spawn: false,
-                    interrupt: true
-                }
-            }
-        },
         glsl: {
             dev: {
                 options: {
@@ -46,10 +36,10 @@ module.exports = function(grunt) {
 
     // 加载包含 "uglify" 任务的插件。
     grunt.loadNpmTasks('grunt-glsl');
-    grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     // 默认被执行的任务列表。
+
     grunt.registerTask('default', ['uglify']);
 
 };

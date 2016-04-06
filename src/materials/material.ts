@@ -3,6 +3,13 @@
 
 module CanvasToy{
 
+    export var colors = {
+        white : vec4.fromValues(1, 1, 1, 1),
+        black : vec4.fromValues(0, 0, 0, 1),
+        gray : vec4.fromValues(0.5, 0.5, 0.5, 1),
+        red : vec4.fromValues(1, 0, 0, 1)
+    }
+
     export enum ShadingMode{
         flatShading,
         smoothShading
@@ -11,6 +18,7 @@ module CanvasToy{
     export class Material {
 
         public map:Texture = null;
+        public color:Vec4Array = null;
 
         public ambient:Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
         public ambientMap:Texture = null;
@@ -32,8 +40,10 @@ module CanvasToy{
 
         public reflactivity:number = 1;
 
-        constructor(){
 
+
+        constructor(){
+            this.color = colors.white;
         }
 
     }

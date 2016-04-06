@@ -1,4 +1,4 @@
-/// <reference path="./LogicNode.ts"/>
+/// <reference path="./Node.ts"/>
 
 module CanvasToy{
 
@@ -6,14 +6,14 @@ module CanvasToy{
 
         public renderObjects:Array<Drawable>;
 
-        public world:LogicNode;
+        public world:Node;
 
         public clearColor:Array<number>;
 
         constructor(){
             this.renderObjects = [];
             this.clearColor = [0, 0, 0, 0];
-            this.world = new LogicNode();
+            this.world = new Node();
             this.addObject(this.world);
         }
 

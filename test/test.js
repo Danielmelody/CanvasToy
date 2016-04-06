@@ -1,13 +1,17 @@
 function start(){
     var canvas = document.getElementById('canvas');
-    var renderer = new CanvasToy.Renderer(canvas);
+    CanvasToy.setCanvas(canvas);
+
+
     var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.Camera();
+    var camera = new CanvasToy.PerspectiveCamera();
 
     var cube = new CanvasToy.CubeGeometry();
+    console.dir(cube);
     var material = new CanvasToy.Material();
 
-    var Mesh = new CanvasToy.Mesh(cube, material);
+    var mesh = new CanvasToy.Mesh(cube, material);
 
-    renderer.startRender(scene, camera, 1000 / 60);
+    scene.addObject(mesh);
+    CanvasToy.engine.startRender(scene, camera, 1000/60);
 }

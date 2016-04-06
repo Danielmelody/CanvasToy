@@ -5,13 +5,13 @@ module CanvasToy{
     /*
      * @author Danielhu229 http://hustdanielhu.com
      */
-    export class LogicNode extends Object3d implements Drawable{
+    export class Node extends Object3d implements Drawable{
 
-        protected parent:LogicNode;
+        protected parent:Node;
 
         protected scene:Scene;
 
-        protected children:Array<LogicNode>;
+        protected children:Array<Node>;
 
         protected relativeMatrix:Mat4Array;
 
@@ -22,7 +22,7 @@ module CanvasToy{
             this.relativeMatrix = mat4.create();
         }
 
-        public addChild(child:LogicNode){
+        public addChild(child:Node){
             this.children.push(child);
             child.parent = this;
         }
@@ -35,9 +35,13 @@ module CanvasToy{
             }
         }
 
-        public draw(gl, camera:Camera){
-            this.matrix = mat4.mul(mat4.create(), camera.modelViewMatrix, this.modelViewMatrix);
-            this.matrix = mat4.mul(mat4.create(), camera.projectionMatrix, this.modelViewMatrix);
+        public draw(camera:Camera){
+            //this.matrix = mat4.mul(mat4.create(), camera.modelViewMatrix, this.modelViewMatrix);
+            //this.matrix = mat4.mul(mat4.create(), camera.projectionMatrix, this.modelViewMatrix);
+            var mvUniform = engine.getUniformLocation("modelViewMatrix");
+            engine.gl.uniformMatrix4fv(mvUniform, false, new Float32Array(this.modelViewMatrix));
+            var pMUniform = engine.getUniformLocation("projectionMatrix");
+            engine.gl.uniformMatrix4fv(pMUniform, false, new Float32Array(camera.projectionMatrix));
         }
     }
 }

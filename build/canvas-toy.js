@@ -46,6 +46,61 @@ CanvasToy.mat4 = mat4;
 CanvasToy.quat = quat;
 var CanvasToy;
 (function (CanvasToy) {
+    var Geometry = (function () {
+        function Geometry(size) {
+            this.vertices = [];
+            this.indices = [];
+        }
+        return Geometry;
+    }());
+    CanvasToy.Geometry = Geometry;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Texture = (function () {
+        function Texture() {
+        }
+        return Texture;
+    }());
+    CanvasToy.Texture = Texture;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    CanvasToy.colors = {
+        white: CanvasToy.vec4.fromValues(1, 1, 1, 1),
+        black: CanvasToy.vec4.fromValues(0, 0, 0, 1),
+        gray: CanvasToy.vec4.fromValues(0.5, 0.5, 0.5, 1),
+        red: CanvasToy.vec4.fromValues(1, 0, 0, 1)
+    };
+    (function (ShadingMode) {
+        ShadingMode[ShadingMode["flatShading"] = 0] = "flatShading";
+        ShadingMode[ShadingMode["smoothShading"] = 1] = "smoothShading";
+    })(CanvasToy.ShadingMode || (CanvasToy.ShadingMode = {}));
+    var ShadingMode = CanvasToy.ShadingMode;
+    var Material = (function () {
+        function Material() {
+            this.map = null;
+            this.color = null;
+            this.ambient = CanvasToy.vec3.fromValues(0.1, 0.1, 0.1);
+            this.ambientMap = null;
+            this.diffuse = CanvasToy.vec3.fromValues(0.8, 0.8, 0.8);
+            this.diffuseMap = null;
+            this.specular = CanvasToy.vec3.fromValues(1, 1, 1);
+            this.specularMap = null;
+            this.opacity = CanvasToy.vec3.fromValues(0, 0, 0);
+            this.opacityMap = null;
+            this.shadingMode = ShadingMode.smoothShading;
+            this.bumpMap = null;
+            this.normalMap = null;
+            this.reflactivity = 1;
+            this.color = CanvasToy.colors.white;
+        }
+        return Material;
+    }());
+    CanvasToy.Material = Material;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var Object3d = (function () {
         function Object3d() {
             this.modelViewMatrix = CanvasToy.mat4.create();
@@ -80,19 +135,19 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var LogicNode = (function (_super) {
-        __extends(LogicNode, _super);
-        function LogicNode() {
+    var Node = (function (_super) {
+        __extends(Node, _super);
+        function Node() {
             _super.call(this);
             this.parent = null;
             this.children = [];
             this.relativeMatrix = CanvasToy.mat4.create();
         }
-        LogicNode.prototype.addChild = function (child) {
+        Node.prototype.addChild = function (child) {
             this.children.push(child);
             child.parent = this;
         };
-        LogicNode.prototype.compuseMatrixs = function () {
+        Node.prototype.compuseMatrixs = function () {
             var parentMatrix = this.parent.matrix;
             this.modelViewMatrix = CanvasToy.mat4.mul(CanvasToy.mat4.create(), this.relativeMatrix, parentMatrix);
             for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
@@ -100,34 +155,15 @@ var CanvasToy;
                 child.compuseMatrixs();
             }
         };
-        LogicNode.prototype.draw = function (gl, camera) {
-            this.matrix = CanvasToy.mat4.mul(CanvasToy.mat4.create(), camera.modelViewMatrix, this.modelViewMatrix);
-            this.matrix = CanvasToy.mat4.mul(CanvasToy.mat4.create(), camera.projectionMatrix, this.modelViewMatrix);
+        Node.prototype.draw = function (camera) {
+            var mvUniform = CanvasToy.engine.getUniformLocation("modelViewMatrix");
+            CanvasToy.engine.gl.uniformMatrix4fv(mvUniform, false, new Float32Array(this.modelViewMatrix));
+            var pMUniform = CanvasToy.engine.getUniformLocation("projectionMatrix");
+            CanvasToy.engine.gl.uniformMatrix4fv(pMUniform, false, new Float32Array(camera.projectionMatrix));
         };
-        return LogicNode;
+        return Node;
     }(CanvasToy.Object3d));
-    CanvasToy.LogicNode = LogicNode;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Geometry = (function () {
-        function Geometry(size) {
-            this.vertices = [];
-            this.normals = [];
-            this.vbo = CanvasToy.createDynamicVertexBuffer(size | 1000);
-        }
-        return Geometry;
-    }());
-    CanvasToy.Geometry = Geometry;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Material = (function () {
-        function Material() {
-        }
-        return Material;
-    }());
-    CanvasToy.Material = Material;
+    CanvasToy.Node = Node;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -135,14 +171,50 @@ var CanvasToy;
         __extends(Mesh, _super);
         function Mesh(geometry, material) {
             _super.call(this);
+            this.geometry = geometry;
+            this.material = material;
+            this.colors = [];
+            this.verticesBuffer = new CanvasToy.Buffer({
+                index: CanvasToy.engine.getAttribLocation("position"),
+                data: CanvasToy.engine.gl.createBuffer()
+            });
+            CanvasToy.engine.gl.enableVertexAttribArray(this.verticesBuffer.shaderIndex);
+            CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ARRAY_BUFFER, this.verticesBuffer.data);
+            CanvasToy.engine.gl.bufferData(CanvasToy.engine.gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), CanvasToy.engine.gl.STATIC_DRAW);
+            var size = geometry.vertices.length;
+            for (var i = 0; i < size; ++i) {
+                this.colors.push(this.material[0]);
+                this.colors.push(this.material[1]);
+                this.colors.push(this.material[2]);
+                this.colors.push(this.material[3]);
+            }
+            console.log(this.geometry.vertices.length);
+            console.log(this.colors.length);
+            this.colorBuffer = new CanvasToy.Buffer({
+                index: CanvasToy.engine.getAttribLocation("aColor"),
+                data: CanvasToy.engine.gl.createBuffer()
+            });
+            CanvasToy.engine.gl.enableVertexAttribArray(this.colorBuffer.shaderIndex);
+            CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ARRAY_BUFFER, this.colorBuffer.data);
+            CanvasToy.engine.gl.bufferData(CanvasToy.engine.gl.ARRAY_BUFFER, new Float32Array(this.colors), CanvasToy.engine.gl.STATIC_DRAW);
+            this.indicesBuffer = new CanvasToy.Buffer({
+                index: -1,
+                data: CanvasToy.engine.gl.createBuffer()
+            });
+            CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer.data);
+            CanvasToy.engine.gl.bufferData(CanvasToy.engine.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.geometry.indices), CanvasToy.engine.gl.STATIC_DRAW);
         }
-        Mesh.prototype.draw = function (gl, camera) {
-            _super.prototype.draw.call(this, gl, camera);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), gl.STATIC_DRAW);
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.geometry.vertices.length);
+        Mesh.prototype.draw = function (camera) {
+            _super.prototype.draw.call(this, camera);
+            CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ARRAY_BUFFER, this.verticesBuffer.data);
+            CanvasToy.engine.gl.vertexAttribPointer(this.verticesBuffer.shaderIndex, 3, CanvasToy.engine.gl.FLOAT, false, 0, 0);
+            CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ARRAY_BUFFER, this.colorBuffer.data);
+            CanvasToy.engine.gl.vertexAttribPointer(this.colorBuffer.shaderIndex, 4, CanvasToy.engine.gl.FLOAT, false, 0, 0);
+            CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer.data);
+            CanvasToy.engine.gl.drawElements(CanvasToy.engine.gl.TRIANGLE_STRIP, this.geometry.indices.length / 4, CanvasToy.engine.gl.UNSIGNED_SHORT, 0);
         };
         return Mesh;
-    }(CanvasToy.LogicNode));
+    }(CanvasToy.Node));
     CanvasToy.Mesh = Mesh;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -151,7 +223,7 @@ var CanvasToy;
         function Scene() {
             this.renderObjects = [];
             this.clearColor = [0, 0, 0, 0];
-            this.world = new CanvasToy.LogicNode();
+            this.world = new CanvasToy.Node();
             this.addObject(this.world);
         }
         Scene.prototype.addObject = function (object) {
@@ -252,7 +324,8 @@ var CanvasToy;
         function Camera() {
             _super.call(this);
             this.projectionMatrix = CanvasToy.mat4.create();
-            this.translateTo(0, 0, -10);
+            console.log(this.projectionMatrix);
+            console.log("init camera");
         }
         return Camera;
     }(CanvasToy.Object3d));
@@ -264,7 +337,7 @@ var CanvasToy;
         __extends(PerspectiveCamera, _super);
         function PerspectiveCamera(options) {
             _super.call(this);
-            CanvasToy.mat4.perspective(this.projectionMatrix, 45, 640 / 480, 0.1, 100);
+            this.projectionMatrix = CanvasToy.mat4.perspective(this.projectionMatrix, 45, 640 / 480, 0.1, 200);
         }
         return PerspectiveCamera;
     }(CanvasToy.Camera));
@@ -274,8 +347,45 @@ var CanvasToy;
 (function (CanvasToy) {
     var CubeGeometry = (function (_super) {
         __extends(CubeGeometry, _super);
-        function CubeGeometry() {
+        function CubeGeometry(vertices) {
             _super.call(this);
+            if (vertices && vertices.length < 8) {
+                return null;
+            }
+            this.vertices = vertices || [
+                -1.0, -1.0, 1.0,
+                1.0, -1.0, 1.0,
+                1.0, 1.0, 1.0,
+                -1.0, 1.0, 1.0,
+                -1.0, -1.0, -1.0,
+                -1.0, 1.0, -1.0,
+                1.0, 1.0, -1.0,
+                1.0, -1.0, -1.0,
+                -1.0, 1.0, -1.0,
+                -1.0, 1.0, 1.0,
+                1.0, 1.0, 1.0,
+                1.0, 1.0, -1.0,
+                -1.0, -1.0, -1.0,
+                1.0, -1.0, -1.0,
+                1.0, -1.0, 1.0,
+                -1.0, -1.0, 1.0,
+                1.0, -1.0, -1.0,
+                1.0, 1.0, -1.0,
+                1.0, 1.0, 1.0,
+                1.0, -1.0, 1.0,
+                -1.0, -1.0, -1.0,
+                -1.0, -1.0, 1.0,
+                -1.0, 1.0, 1.0,
+                -1.0, 1.0, -1.0
+            ];
+            this.indices = [
+                0, 1, 2, 0, 2, 3,
+                4, 5, 6, 4, 6, 7,
+                8, 9, 10, 8, 10, 11,
+                12, 13, 14, 12, 14, 15,
+                16, 17, 18, 16, 18, 19,
+                20, 21, 22, 20, 22, 23
+            ];
         }
         return CubeGeometry;
     }(CanvasToy.Geometry));
@@ -283,6 +393,45 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var Light = (function (_super) {
+        __extends(Light, _super);
+        function Light() {
+            _super.call(this);
+        }
+        return Light;
+    }(CanvasToy.Object3d));
+    CanvasToy.Light = Light;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var PointLight = (function (_super) {
+        __extends(PointLight, _super);
+        function PointLight() {
+            _super.call(this);
+        }
+        return PointLight;
+    }(CanvasToy.Light));
+    CanvasToy.PointLight = PointLight;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Buffer = (function () {
+        function Buffer(options) {
+            this.shaderIndex = 0;
+            this.data = null;
+            this.shaderIndex = options.index;
+            this.data = options.data;
+        }
+        return Buffer;
+    }());
+    CanvasToy.Buffer = Buffer;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    function setCanvas(canvas) {
+        CanvasToy.engine = new Renderer(canvas);
+    }
+    CanvasToy.setCanvas = setCanvas;
     var Renderer = (function () {
         function Renderer(canvas) {
             this.canvasDom = canvas || document.createElement('canvas');
@@ -292,21 +441,47 @@ var CanvasToy;
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthFunc(this.gl.LEQUAL);
+            var commonVertShader = CanvasToy.createShader(this.gl, CanvasToy.common_vert, CanvasToy.ShaderType.VertexShader);
+            var commonFragShader = CanvasToy.createShader(this.gl, CanvasToy.common_frag, CanvasToy.ShaderType.FragmentShader);
+            this.currentProgram = CanvasToy.getShaderProgram(this.gl, commonVertShader, commonFragShader);
+            this.programs.push(this.currentProgram);
+            this.gl.useProgram(this.currentProgram);
         }
         Renderer.prototype.startRender = function (scene, camera, duration) {
             var _this = this;
             this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
             setInterval(function () { return _this.renderImmediately(scene, camera); }, duration);
         };
+        Renderer.prototype.getUniformLocation = function (name) {
+            if (this.gl == undefined || this.gl == null) {
+                console.error("WebGLRenderingContext has not been initialize!");
+                return null;
+            }
+            var result = this.gl.getUniformLocation(this.currentProgram, name);
+            if (result == null) {
+                console.error("uniform " + name + " not found!");
+                return null;
+            }
+            return result;
+        };
+        Renderer.prototype.getAttribLocation = function (name) {
+            if (this.gl == undefined || this.gl == null) {
+                console.error("WebGLRenderingContext has not been initialize!");
+                return null;
+            }
+            var result = this.gl.getAttribLocation(this.currentProgram, name);
+            if (result == null) {
+                console.error("attribute " + name + " not found!");
+                return null;
+            }
+            return result;
+        };
         Renderer.prototype.renderImmediately = function (scene, camera) {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
             for (var _i = 0, _a = scene.renderObjects; _i < _a.length; _i++) {
                 var renderObject = _a[_i];
-                renderObject.draw(this.gl, camera);
+                renderObject.draw(camera);
             }
-        };
-        Renderer.prototype.useProgram = function (program) {
-            this.gl.useProgram(program);
         };
         Renderer.prototype.initMatrix = function () {
             CanvasToy.glMatrix.setMatrixArrayType(Float32Array);
@@ -317,23 +492,6 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    CanvasToy.common_vert = [
-        'attribute vec3 position;',
-        'uniform mat4 modelViewMatrix;',
-        'uniform mat4 projectionMatrix;',
-        'varying vec4 color;',
-        'void main (){',
-        '    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);',
-        '}',
-    ].join("\n");
-    ;
-    CanvasToy.common_frag = [
-        'varying vec4 color;',
-        'void main (void){',
-        '    gl_FragColor = color;',
-        '}',
-    ].join("\n");
-    ;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -353,4 +511,9 @@ var CanvasToy;
     function makeFragShader(src) {
     }
     CanvasToy.makeFragShader = makeFragShader;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    CanvasToy.common_frag = "//#gljs varname:'common_frag'\nprecision mediump float;\nvarying vec4 vColor;\nvoid main (void){\n    gl_FragColor = vColor;\n}\n";
+    CanvasToy.common_vert = "//#gljs varname:'common_vert'\nprecision mediump float;\n\nattribute vec3 test;\nattribute vec3 position;\nattribute vec4 aColor;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nvarying vec4 vColor;\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n    gl_Position = vec4(position, 1.0);\n    vColor = aColor;\n}\n";
 })(CanvasToy || (CanvasToy = {}));

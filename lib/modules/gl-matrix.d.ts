@@ -1,20 +1,20 @@
 declare module CanvasToy {
 
-    interface Vec2Array extends Float32Array {
+    interface Vec2Array extends Array<number> {
     }
-    interface Vec3Array extends Float32Array {
+    interface Vec3Array extends Array<number> {
     }
-    interface Vec4Array extends Float32Array {
+    interface Vec4Array extends Array<number> {
     }
-    interface Mat2Array extends Float32Array {
+    interface Mat2Array extends Array<number> {
     }
-    interface Mat2dArray extends Float32Array {
+    interface Mat2dArray extends Array<number> {
     }
-    interface Mat3Array extends Float32Array {
+    interface Mat3Array extends Array<number> {
     }
-    interface Mat4Array extends Float32Array {
+    interface Mat4Array extends Array<number> {
     }
-    interface QuatArray extends Float32Array {
+    interface QuatArray extends Array<number> {
     }
 
     interface glMatrix {
@@ -103,38 +103,38 @@ declare module CanvasToy {
     export var vec3:vec3;
 
     interface vec4 {
-        add: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
-        clone: (a:Vec4Array) => vec4;
-        copy: (out:Vec4Array, a:Vec4Array) => vec4;
-        create: () => vec4;
+        add: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
+        clone: (a:Vec4Array) => Vec4Array;
+        copy: (out:Vec4Array, a:Vec4Array) => Vec4Array;
+        create: () => Vec4Array;
         dist: (a:Vec4Array, b:Vec4Array) => Number;
         distance:  (a:Vec4Array, b:Vec4Array) => Number;
-        div: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
-        divide: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
+        div: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
+        divide: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
         dot: (a:Vec4Array, b:Vec4Array) => Number;
         forEach: (a:Array<Number>, stride:Number, offset:Number, count:Number, fn:Function, arg?:Object) => Array<Number>;
-        fromValues: (x:Number, y:Number, z:Number) => vec4;
+        fromValues: (x:Number, y:Number, z:Number, w:Number) => Vec4Array;
         len: (a:Vec4Array) => Number;
         length:(a:Vec4Array) => Number;
-        lerp: (out:Vec4Array, a:Vec4Array, b:vec4, t:Number) => Number;
-        max: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
-        min: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
-        mul: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
-        multiply: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
-        negate: (out:Vec4Array, a:Vec4Array) => vec4;
-        normalize: (out:Vec4Array, a:Vec4Array) => vec4;
-        random: (out:Vec4Array, scale?:Number) => vec4;
-        scale: (out:Vec4Array, a:Vec4Array, b:Number) => vec4;
-        scaleAndAdd: (out:Vec4Array, a:Vec4Array, b:Number, scale:Number) => vec4;
-        set: (out:Number, x:Number, y:Number) => vec4;
+        lerp: (out:Vec4Array, a:Vec4Array, b:Vec4Array, t:Number) => Number;
+        max: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
+        min: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
+        mul: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
+        multiply: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
+        negate: (out:Vec4Array, a:Vec4Array) => Vec4Array;
+        normalize: (out:Vec4Array, a:Vec4Array) => Vec4Array;
+        random: (out:Vec4Array, scale?:Number) => Vec4Array;
+        scale: (out:Vec4Array, a:Vec4Array, b:Number) => Vec4Array;
+        scaleAndAdd: (out:Vec4Array, a:Vec4Array, b:Number, scale:Number) => Vec4Array;
+        set: (out:Number, x:Number, y:Number) => Vec4Array;
         sqrDist: (a:Vec4Array, b:Vec4Array) => Number;
         sqrLen: (a:Vec4Array) => Number;
         squaredDistance: (a:Vec4Array, b:Vec4Array) => Number;
         squaredLength: (a:Vec4Array) => Number;
         str: (vec:Vec4Array) => String;
-        sub: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => vec4;
-        transformMat4: (out:Vec4Array, a:Vec4Array, m:Mat4Array) => vec4;
-        transformQuat: (out:Vec4Array, a:Vec4Array, q:QuatArray) => vec4;
+        sub: (out:Vec4Array, a:Vec4Array, b:Vec4Array) => Vec4Array;
+        transformMat4: (out:Vec4Array, a:Vec4Array, m:Mat4Array) => Vec4Array;
+        transformQuat: (out:Vec4Array, a:Vec4Array, q:QuatArray) => Vec4Array;
     }
 
     export var vec4:vec4
