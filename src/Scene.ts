@@ -4,21 +4,24 @@ module CanvasToy{
 
     export class Scene{
 
-        public renderObjects:Array<Drawable>;
-
-        public world:Node;
+        public objects:Array<Object3d>;
 
         public clearColor:Array<number>;
 
         constructor(){
-            this.renderObjects = [];
+            this.objects = [];
             this.clearColor = [0, 0, 0, 0];
-            this.world = new Node();
-            this.addObject(this.world);
+            window.setInterval(() => this.update(1000/60), 1000 / 60);
         }
 
-        addObject(object:Drawable){
-            this.renderObjects.push(object);
+        update(dt:Number) {
+            for(let object of this.objects) {
+                object.update(dt);
+            }
+        }
+
+        addObject(object:Object3d) {
+            this.objects.push(object);
         }
     }
 }

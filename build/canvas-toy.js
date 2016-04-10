@@ -103,30 +103,53 @@ var CanvasToy;
 (function (CanvasToy) {
     var Object3d = (function () {
         function Object3d() {
+            this.updateEvents = [];
+            this.startEvents = [];
             this.modelViewMatrix = CanvasToy.mat4.create();
+            this.translate(0, 0, 0);
             this.matrix = CanvasToy.mat4.create();
             this.position = CanvasToy.vec3.create();
             this.size = CanvasToy.vec3.create();
         }
+        Object3d.prototype.registerUpdate = function (updateFunction) {
+            this.updateEvents.push(updateFunction);
+        };
+        Object3d.prototype.registerStart = function (updateFunction) {
+            this.startEvents.push(updateFunction);
+        };
         Object3d.prototype.start = function () {
+            for (var _i = 0, _a = this.startEvents; _i < _a.length; _i++) {
+                var event_1 = _a[_i];
+                event_1();
+            }
         };
-        Object3d.prototype.update = function () {
+        Object3d.prototype.update = function (dt) {
+            for (var _i = 0, _a = this.updateEvents; _i < _a.length; _i++) {
+                var event_2 = _a[_i];
+                event_2(dt);
+            }
         };
-        Object3d.prototype.translate = function () {
-        };
-        Object3d.prototype.translateTo = function (deltaX, deltaY, deltaZ) {
+        Object3d.prototype.draw = function (camera) { };
+        Object3d.prototype.translate = function (deltaX, deltaY, deltaZ) {
             this.modelViewMatrix = CanvasToy.mat4.translate(CanvasToy.mat4.create(), this.modelViewMatrix, CanvasToy.vec3.fromValues(deltaX, deltaY, deltaZ));
         };
+        Object3d.prototype.translateTo = function (deltaX, deltaY, deltaZ) { };
         Object3d.prototype.rotateX = function (angle) {
-            this.modelViewMatrix = CanvasToy.mat4.rotateX(CanvasToy.mat4.create(), this.matrix, angle);
+            this.modelViewMatrix = CanvasToy.mat4.rotateX(CanvasToy.mat4.create(), this.modelViewMatrix, angle);
         };
         Object3d.prototype.rotateY = function (angle) {
-            this.modelViewMatrix = CanvasToy.mat4.rotateY(CanvasToy.mat4.create(), this.matrix, angle);
+            this.modelViewMatrix = CanvasToy.mat4.rotateY(CanvasToy.mat4.create(), this.modelViewMatrix, angle);
         };
         Object3d.prototype.rotateZ = function (angle) {
-            this.modelViewMatrix = CanvasToy.mat4.rotateY(CanvasToy.mat4.create(), this.matrix, angle);
+            this.modelViewMatrix = CanvasToy.mat4.rotateZ(CanvasToy.mat4.create(), this.modelViewMatrix, angle);
         };
         Object3d.prototype.scale = function (rateX, rateY, rateZ) {
+            if (rateY == undefined) {
+                var rateY = rateX;
+            }
+            if (rateZ == undefined) {
+                var rateZ = rateX;
+            }
             this.modelViewMatrix = CanvasToy.mat4.scale(CanvasToy.mat4.create(), this.modelViewMatrix, CanvasToy.vec3.fromValues(rateX, rateY, rateZ));
         };
         return Object3d;
@@ -181,12 +204,13 @@ var CanvasToy;
             CanvasToy.engine.gl.enableVertexAttribArray(this.verticesBuffer.shaderIndex);
             CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ARRAY_BUFFER, this.verticesBuffer.data);
             CanvasToy.engine.gl.bufferData(CanvasToy.engine.gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), CanvasToy.engine.gl.STATIC_DRAW);
-            var size = geometry.vertices.length;
-            for (var i = 0; i < size; ++i) {
-                this.colors.push(this.material[0]);
-                this.colors.push(this.material[1]);
-                this.colors.push(this.material[2]);
-                this.colors.push(this.material[3]);
+            var size = geometry.vertices.length / 3;
+            console.log('size:' + size);
+            for (var i = 0; i < size / 2; ++i) {
+                this.colors = this.colors.concat([1, 1, 1, 1]);
+            }
+            for (var i = size / 2; i < size; ++i) {
+                this.colors = this.colors.concat([1, 1, 0, 1]);
             }
             console.log(this.geometry.vertices.length);
             console.log(this.colors.length);
@@ -211,7 +235,8 @@ var CanvasToy;
             CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ARRAY_BUFFER, this.colorBuffer.data);
             CanvasToy.engine.gl.vertexAttribPointer(this.colorBuffer.shaderIndex, 4, CanvasToy.engine.gl.FLOAT, false, 0, 0);
             CanvasToy.engine.gl.bindBuffer(CanvasToy.engine.gl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer.data);
-            CanvasToy.engine.gl.drawElements(CanvasToy.engine.gl.TRIANGLE_STRIP, this.geometry.indices.length / 4, CanvasToy.engine.gl.UNSIGNED_SHORT, 0);
+            console.log("index num:" + this.geometry.indices.length);
+            CanvasToy.engine.gl.drawElements(CanvasToy.engine.gl.TRIANGLE_STRIP, this.geometry.indices.length, CanvasToy.engine.gl.UNSIGNED_SHORT, 0);
         };
         return Mesh;
     }(CanvasToy.Node));
@@ -221,13 +246,19 @@ var CanvasToy;
 (function (CanvasToy) {
     var Scene = (function () {
         function Scene() {
-            this.renderObjects = [];
+            var _this = this;
+            this.objects = [];
             this.clearColor = [0, 0, 0, 0];
-            this.world = new CanvasToy.Node();
-            this.addObject(this.world);
+            window.setInterval(function () { return _this.update(1000 / 60); }, 1000 / 60);
         }
+        Scene.prototype.update = function (dt) {
+            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                object.update(dt);
+            }
+        };
         Scene.prototype.addObject = function (object) {
-            this.renderObjects.push(object);
+            this.objects.push(object);
         };
         return Scene;
     }());
@@ -337,7 +368,7 @@ var CanvasToy;
         __extends(PerspectiveCamera, _super);
         function PerspectiveCamera(options) {
             _super.call(this);
-            this.projectionMatrix = CanvasToy.mat4.perspective(this.projectionMatrix, 45, 640 / 480, 0.1, 200);
+            this.projectionMatrix = CanvasToy.mat4.perspective(this.projectionMatrix, 45, 640 / 480, 0.1, 100);
         }
         return PerspectiveCamera;
     }(CanvasToy.Camera));
@@ -478,7 +509,7 @@ var CanvasToy;
         };
         Renderer.prototype.renderImmediately = function (scene, camera) {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            for (var _i = 0, _a = scene.renderObjects; _i < _a.length; _i++) {
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var renderObject = _a[_i];
                 renderObject.draw(camera);
             }
@@ -489,9 +520,6 @@ var CanvasToy;
         return Renderer;
     }());
     CanvasToy.Renderer = Renderer;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -515,5 +543,5 @@ var CanvasToy;
 var CanvasToy;
 (function (CanvasToy) {
     CanvasToy.common_frag = "//#gljs varname:'common_frag'\nprecision mediump float;\nvarying vec4 vColor;\nvoid main (void){\n    gl_FragColor = vColor;\n}\n";
-    CanvasToy.common_vert = "//#gljs varname:'common_vert'\nprecision mediump float;\n\nattribute vec3 test;\nattribute vec3 position;\nattribute vec4 aColor;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nvarying vec4 vColor;\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n    gl_Position = vec4(position, 1.0);\n    vColor = aColor;\n}\n";
+    CanvasToy.common_vert = "//#gljs varname:'common_vert'\nprecision mediump float;\n\nattribute vec3 position;\nattribute vec4 aColor;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nvarying vec4 vColor;\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n    vColor = aColor;\n}\n";
 })(CanvasToy || (CanvasToy = {}));

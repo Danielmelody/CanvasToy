@@ -1,11 +1,10 @@
 /// <reference path="./geometries/Geometry.ts"/>
 /// <reference path="./materials/material.ts"/>
 /// <reference path="./Node.ts"/>
-/// <reference path="./Drawable.ts"/>
 
 module CanvasToy{
 
-    export class Mesh extends Node implements Drawable{
+    export class Mesh extends Node{
 
         protected colors:Array<number> = [];
         protected verticesBuffer:Buffer;
@@ -23,12 +22,13 @@ module CanvasToy{
             engine.gl.bindBuffer(engine.gl.ARRAY_BUFFER, this.verticesBuffer.data);
             engine.gl.bufferData(engine.gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), engine.gl.STATIC_DRAW);
 
-            let size = geometry.vertices.length;
-            for (let i = 0; i < size; ++i) {
-                this.colors.push(this.material[0]);
-                this.colors.push(this.material[1]);
-                this.colors.push(this.material[2]);
-                this.colors.push(this.material[3]);
+            let size = geometry.vertices.length / 3;
+            console.log('size:'+size);
+            for (let i = 0; i < size / 2; ++i) {
+                this.colors = this.colors.concat([1, 1, 1, 1]);
+            }
+            for (let i = size / 2; i < size; ++i) {
+                this.colors = this.colors.concat([1, 1, 0, 1]);
             }
             console.log(this.geometry.vertices.length);
             console.log(this.colors.length);
@@ -54,10 +54,11 @@ module CanvasToy{
             engine.gl.vertexAttribPointer(this.verticesBuffer.shaderIndex, 3, engine.gl.FLOAT, false, 0, 0);
 
             engine.gl.bindBuffer(engine.gl.ARRAY_BUFFER, this.colorBuffer.data);
-            engine.gl.vertexAttribPointer(this.colorBuffer.shaderIndex, 4, engine.gl.FLOAT, false, 0,0);
+            engine.gl.vertexAttribPointer(this.colorBuffer.shaderIndex, 4, engine.gl.FLOAT, false, 0, 0);
 
             engine.gl.bindBuffer(engine.gl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer.data);
-            engine.gl.drawElements(engine.gl.TRIANGLE_STRIP, this.geometry.indices.length / 4, engine.gl.UNSIGNED_SHORT, 0);
+            console.log("index num:" + this.geometry.indices.length);
+            engine.gl.drawElements(engine.gl.TRIANGLE_STRIP, this.geometry.indices.length, engine.gl.UNSIGNED_SHORT, 0);
         }
     }
 }

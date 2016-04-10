@@ -40,8 +40,6 @@ module CanvasToy{
 
         public reflactivity:number = 1;
 
-
-
         constructor(){
             this.color = colors.white;
         }

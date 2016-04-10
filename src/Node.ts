@@ -5,7 +5,7 @@ module CanvasToy{
     /*
      * @author Danielhu229 http://hustdanielhu.com
      */
-    export class Node extends Object3d implements Drawable{
+    export class Node extends Object3d{
 
         protected parent:Node;
 
@@ -36,8 +36,6 @@ module CanvasToy{
         }
 
         public draw(camera:Camera){
-            //this.matrix = mat4.mul(mat4.create(), camera.modelViewMatrix, this.modelViewMatrix);
-            //this.matrix = mat4.mul(mat4.create(), camera.projectionMatrix, this.modelViewMatrix);
             var mvUniform = engine.getUniformLocation("modelViewMatrix");
             engine.gl.uniformMatrix4fv(mvUniform, false, new Float32Array(this.modelViewMatrix));
             var pMUniform = engine.getUniformLocation("projectionMatrix");

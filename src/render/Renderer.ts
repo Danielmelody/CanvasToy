@@ -69,7 +69,7 @@ module CanvasToy{
 
         private renderImmediately(scene:Scene, camera:Camera){
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            for(let renderObject of scene.renderObjects) {
+            for(let renderObject of scene.objects) {
                 renderObject.draw(camera);
             }
         }
