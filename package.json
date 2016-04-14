@@ -1,8 +1,21 @@
 {
   "name": "canvas-toy",
-  "description": "a collection of webgl library, not a framework",
+  "author": "danielhu",
+  "keywords": [
+    "webgl",
+    "glsl",
+    "canvas"
+  ],
+  "description": "lightweight webgl rendering tool",
   "version": "0.1.1",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url":  "https://github.com/Danielhu229/CanvasToy"
+  },
+  "bugs":{
+      "url":  "https://github.com/Danielhu229/CanvasToy/issues"
+  },
   "devDependencies": {
     "cz-conventional-changelog": "^1.1.5",
     "grunt": "~0.4.5",

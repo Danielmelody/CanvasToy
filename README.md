@@ -1,6 +1,6 @@
 # CanvasToy.js
 
-lightweight webgl rendering  engine
+lightweight webgl rendering tool
 
 ## License
 

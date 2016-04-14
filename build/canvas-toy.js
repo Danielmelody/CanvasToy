@@ -364,6 +364,18 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var OrthoCamera = (function (_super) {
+        __extends(OrthoCamera, _super);
+        function OrthoCamera(options) {
+            _super.call(this);
+            CanvasToy.mat4.ortho(this.projectionMatrix, -1.0, 1.0, -1.0, 1.0, 0.1, 100);
+        }
+        return OrthoCamera;
+    }(CanvasToy.Camera));
+    CanvasToy.OrthoCamera = OrthoCamera;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var PerspectiveCamera = (function (_super) {
         __extends(PerspectiveCamera, _super);
         function PerspectiveCamera(options) {

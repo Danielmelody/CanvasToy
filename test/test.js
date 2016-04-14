@@ -4,10 +4,9 @@ function start(){
 
 
     var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.PerspectiveCamera();
+    var camera = new CanvasToy.OrthoCamera();
 
     var cube = new CanvasToy.CubeGeometry();
-    console.dir(cube);
     var material = new CanvasToy.Material();
 
     var mesh = new CanvasToy.Mesh(cube, material);
@@ -18,7 +17,7 @@ function start(){
     mesh.rotateY(20);
 
     mesh.registerUpdate(()=>{
-        mesh.translate(0.03, 0, 0);
+       //mesh.translate(0, 0, 0);
         mesh.rotateX(angle);
         mesh.rotateY(angle);
         //console.log(mesh.modelViewMatrix);
