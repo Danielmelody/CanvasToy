@@ -1,3 +1,3 @@
 #! /bin/sh
-./building.sh
-open test/index.html
+open http://localhost:8080/test
+http-server .

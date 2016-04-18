@@ -22,6 +22,7 @@ module CanvasToy{
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthFunc(this.gl.LEQUAL);
+            this.precision = "medium";
 
             var commonVertShader = createShader(this.gl, common_vert, ShaderType.VertexShader);
             var commonFragShader = createShader(this.gl, common_frag, ShaderType.FragmentShader);
@@ -29,6 +30,25 @@ module CanvasToy{
             this.currentProgram = getShaderProgram(this.gl, commonVertShader, commonFragShader);
             this.programs.push(this.currentProgram);
             this.gl.useProgram(this.currentProgram);
+        }
+
+        public makeProgram(geometry:Geometry, material:Material, parameters:ProgramParamter){
+            var prefixVertex = [
+
+				'precision ' + parameters.precision + ' float;',
+				'precision ' + parameters.precision + ' int;',
+                material.map ? '#define USE_TEXTURE' : '',
+                material.color ? 'define USE_COLOR' : ''
+            ].join("\n");
+
+            var prefixFragment = [
+
+				'precision ' + parameters.precision + ' float;',
+				'precision ' + parameters.precision + ' int;',
+                material.map ? '#define USE_TEXTURE' : '',
+                material.color ? 'define USE_COLOR' : ''
+            ].join("\n");
+
         }
 
         public startRender(scene:Scene, camera:Camera, duration:number) {

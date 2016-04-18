@@ -30,8 +30,22 @@ var CanvasToy;
 var CanvasToy;
 (function (CanvasToy) {
     var Texture = (function () {
-        function Texture() {
+        function Texture(image) {
+            var _this = this;
+            this.image = image;
+            var gl = CanvasToy.engine.gl;
+            this.glTexture = gl.createTexture();
+            this.uTextureSampler = gl.getUniformLocation(CanvasToy.engine.currentProgram, 'uTextureSampler');
+            this.image.onload = function () { _this.onLoad(); };
         }
+        Texture.prototype.onLoad = function () {
+            var gl = CanvasToy.engine.gl;
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_INT, this.image);
+            gl.uniform1i(this.uTextureSampler, 0);
+        };
         return Texture;
     }());
     CanvasToy.Texture = Texture;
@@ -65,7 +79,6 @@ var CanvasToy;
             this.bumpMap = null;
             this.normalMap = null;
             this.reflactivity = 1;
-            this.color = CanvasToy.colors.white;
         }
         return Material;
     }());
@@ -178,12 +191,6 @@ var CanvasToy;
             CanvasToy.engine.gl.bufferData(CanvasToy.engine.gl.ARRAY_BUFFER, new Float32Array(this.geometry.vertices), CanvasToy.engine.gl.STATIC_DRAW);
             var size = geometry.vertices.length / 3;
             console.log('size:' + size);
-            for (var i = 0; i < size / 2; ++i) {
-                this.colors = this.colors.concat([1, 1, 1, 1]);
-            }
-            for (var i = size / 2; i < size; ++i) {
-                this.colors = this.colors.concat([1, 1, 0, 1]);
-            }
             console.log(this.geometry.vertices.length);
             console.log(this.colors.length);
             this.colorBuffer = new CanvasToy.Buffer({
@@ -408,6 +415,27 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var RectGeomotry = (function (_super) {
+        __extends(RectGeomotry, _super);
+        function RectGeomotry() {
+            _super.call(this);
+            this.vertices = [
+                -1.0, -1.0, 0.0,
+                1.0, -1.0, 0.0,
+                1.0, 1.0, 0.0,
+                -1.0, 1.0, 0.0,
+            ];
+            this.indices = [
+                0, 1, 2,
+                1, 2, 3
+            ];
+        }
+        return RectGeomotry;
+    }(CanvasToy.Geometry));
+    CanvasToy.RectGeomotry = RectGeomotry;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var Light = (function (_super) {
         __extends(Light, _super);
         function Light() {
@@ -427,6 +455,23 @@ var CanvasToy;
         return PointLight;
     }(CanvasToy.Light));
     CanvasToy.PointLight = PointLight;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var PhongMaterial = (function (_super) {
+        __extends(PhongMaterial, _super);
+        function PhongMaterial(paramter) {
+            _super.call(this);
+            if (paramter.texture != undefined && paramter.color != undefined) {
+                console.warn("passed both color and texture to Material, color would be ignored");
+            }
+            if (paramter.texture != undefined) {
+                this.map = paramter.texture;
+            }
+        }
+        return PhongMaterial;
+    }(CanvasToy.Material));
+    CanvasToy.PhongMaterial = PhongMaterial;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
