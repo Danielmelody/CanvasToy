@@ -1,5 +1,5 @@
 #! /bin/sh
-node glslLoader.js
+node utils/glslLoader.js
 tsc
 grunt concat
 grunt uglify

@@ -6,41 +6,65 @@ module CanvasToy{
 
     export class Mesh extends Node{
 
-        protected colors:Array<number> = [];
+        protected indexBuffer:WebGLBuffer;
+        protected vertexBuffers = {};
 
-        protected indexBuffer:VertexBuffer;
-        protected vertexBuffers:VertexBuffer[] = [];
+        protected geometry:Geometry;
+        protected material:Material
 
 
-        constructor(protected geometry:Geometry,protected material:Material) {
+        constructor(geometry:Geometry, material:Material) {
             super();
+            this.material = material;
+            this.geometry = geometry;
+            engine.makeProgram(geometry, material, {precision:'mediump'});
+            this.initVerticesData();
+            this.updateVerticesData();
         }
 
-        addAttribute(name:string) {
-            this.vertexBuffers.push(new VertexBuffer(name));
+        initVerticesData() {
+            let gl = engine.gl;
+            this.indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.geometry.indices), gl.STATIC_DRAW);
+            this.addAttribute(new VertexBuffer("position", 3, gl.FLOAT))
+            .data = this.geometry.positions;
+            this.addAttribute(new VertexBuffer("aTexCoord", 3, gl.FLOAT))
+            .data = this.geometry.uvs;
+            this.addAttribute(new VertexBuffer("normalVec", 3, gl.FLOAT))
+            .data = this.geometry.normals;
+
         }
 
-        updateAttributesBuffer(){
-            for (let vertexBuffer of this.vertexBuffers) {
-                let gl = engine.gl;
-                gl.enableVertexAttribArray(gl.getAttribLocation(engine.currentProgram, vertexBuffer.name));
-                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer.data);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexBuffer.data), engine.gl.STATIC_DRAW);
+        addAttribute(newVertexBuffer:VertexBuffer):VertexBuffer {
+            newVertexBuffer.index = engine.gl.getAttribLocation(engine.currentProgram, name);
+            this.vertexBuffers[name] = newVertexBuffer;
+            return newVertexBuffer;
+        }
+
+        updateVerticesData() {
+            let gl = engine.gl;
+            for (let name in this.vertexBuffers) {
+                gl.enableVertexAttribArray(gl.getAttribLocation(engine.currentProgram, name));
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffers[name].buffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexBuffers[name].data), engine.gl.STATIC_DRAW);
             }
         };
 
         draw(camera:Camera){
             super.draw(camera);
-
-            for (let vertexBuffer of this.vertexBuffers) {
-                let gl = engine.gl;
-                gl.bindBuffer(engine.gl.ARRAY_BUFFER, vertexBuffer);
-                engine.gl.vertexAttribPointer(vertexBuffer.index, vertexBuffer.stride, engine.gl.FLOAT, false, 0, 0);
+            let gl = engine.gl;
+            for (let name in this.vertexBuffers) {
+                gl.bindBuffer(engine.gl.ARRAY_BUFFER, this.vertexBuffers[name].buffer);
+                engine.gl.vertexAttribPointer(
+                    this.vertexBuffers[name].index,
+                    this.vertexBuffers[name].size,
+                     engine.gl.FLOAT, false, 0, 0);
             }
 
-            engine.gl.bindBuffer(engine.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer.data);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
             console.log("index num:" + this.geometry.indices.length);
-            engine.gl.drawElements(engine.gl.TRIANGLE_STRIP, this.geometry.indices.length, engine.gl.UNSIGNED_SHORT, 0);
+            gl.drawElements(gl.TRIANGLE_STRIP, this.geometry.indices.length, gl.UNSIGNED_SHORT, 0);
         }
     }
 }

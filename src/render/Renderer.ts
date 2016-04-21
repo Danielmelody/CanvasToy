@@ -14,6 +14,8 @@ module CanvasToy{
 
         public gl:WebGLRenderingContext;
 
+        public preloadRes:any[] = [];
+
         constructor(canvas:HTMLCanvasElement){
             this.canvasDom = canvas || document.createElement('canvas');
             this.programs = [];
@@ -22,32 +24,26 @@ module CanvasToy{
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthFunc(this.gl.LEQUAL);
-            this.precision = "medium";
-
-            var commonVertShader = createShader(this.gl, common_vert, ShaderType.VertexShader);
-            var commonFragShader = createShader(this.gl, common_frag, ShaderType.FragmentShader);
-
-            this.currentProgram = getShaderProgram(this.gl, commonVertShader, commonFragShader);
-            this.programs.push(this.currentProgram);
-            this.gl.useProgram(this.currentProgram);
         }
 
         public makeProgram(geometry:Geometry, material:Material, parameters:ProgramParamter){
             var prefixVertex = [
-
 				'precision ' + parameters.precision + ' float;',
 				'precision ' + parameters.precision + ' int;',
                 material.map ? '#define USE_TEXTURE' : '',
-                material.color ? 'define USE_COLOR' : ''
+                material.color ? '#define USE_COLOR' : ''
             ].join("\n");
 
             var prefixFragment = [
-
 				'precision ' + parameters.precision + ' float;',
 				'precision ' + parameters.precision + ' int;',
                 material.map ? '#define USE_TEXTURE' : '',
-                material.color ? 'define USE_COLOR' : ''
+                material.color ? '#define USE_COLOR' : ''
             ].join("\n");
+
+            this.currentProgram = createEntileShader(this.gl, prefixVertex + basic_vert, prefixFragment + basic_frag);
+            this.programs.push(this.currentProgram);
+            this.gl.useProgram(this.currentProgram);
 
         }
 
@@ -88,6 +84,9 @@ module CanvasToy{
         }
 
         private renderImmediately(scene:Scene, camera:Camera){
+            if (this.preloadRes.length > 0) {
+                return;
+            }
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
             for(let renderObject of scene.objects) {
                 renderObject.draw(camera);

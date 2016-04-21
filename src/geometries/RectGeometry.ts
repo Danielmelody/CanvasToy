@@ -4,7 +4,7 @@ module CanvasToy {
     export class RectGeomotry extends Geometry{
         constructor() {
             super();
-            this.vertices = [
+            this.positions = [
                 -1.0, -1.0,  0.0,
                 1.0, -1.0,  0.0,
                 1.0,  1.0,  0.0,

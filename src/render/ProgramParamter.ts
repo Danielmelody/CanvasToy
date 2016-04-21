@@ -2,6 +2,6 @@
 
 module CanvasToy {
     export interface ProgramParamter{
-        
+        precision:string;
     }
 }

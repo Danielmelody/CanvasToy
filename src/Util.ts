@@ -41,7 +41,7 @@ module CanvasToy{
 
     }
 
-    export function createShader(gl:WebGLRenderingContext, source:string, type:ShaderType):WebGLShader  {
+    function createSeparatedShader(gl:WebGLRenderingContext, source:string, type:ShaderType):WebGLShader  {
 
         var shader:WebGLShader;
 
@@ -66,7 +66,7 @@ module CanvasToy{
         return shader;
     }
 
-    export function getShaderProgram (gl:WebGLRenderingContext, vertexShader:WebGLShader, fragmentShader:WebGLShader):WebGLProgram {
+    function linkShader (gl:WebGLRenderingContext, vertexShader:WebGLShader, fragmentShader:WebGLShader):WebGLProgram {
         var shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
@@ -74,28 +74,14 @@ module CanvasToy{
         return shaderProgram;
     };
 
+    export function createEntileShader(gl:WebGLRenderingContext, vertexShaderSource:string, fragmentShaderSource:string):WebGLProgram{
+        let vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
+        let fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
+        return linkShader(gl, vertShader, fragShader);
+    }
+
     function setProgram (camera:Camera, fog, material:Material, object:Object3d){
         //TODO: implement function
+
     }
-
-    export function createVertexBuffer(vertices: number[] | Float32Array): WebGLBuffer {
-        var vbo = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
-
-        if (vertices instanceof Float32Array) {
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, <Float32Array>vertices, this.gl.STATIC_DRAW);
-        } else {
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(<number[]>vertices), this.gl.STATIC_DRAW);
-        }
-
-        return vbo;
-    }
-
-    export function createDynamicVertexBuffer(size:number){
-        var vbo = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, size, this.gl.DYNAMIC_DRAW);
-        return vbo;
-    }
-
 }

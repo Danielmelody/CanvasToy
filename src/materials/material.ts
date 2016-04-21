@@ -17,9 +17,12 @@ module CanvasToy{
 
     export class Material {
 
+        public attributes = {};
+        public uniforms = {};
+        public samplers = {};
+
         public map:Texture = null;
         public color:Vec4Array = null;
-        public colorBuffer:VertexBuffer = null;
 
         public ambient:Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
         public ambientMap:Texture = null;
@@ -41,7 +44,16 @@ module CanvasToy{
 
         public reflactivity:number = 1;
 
-        constructor() {}
+        constructor() {
+        }
+
+        addAttribute(name:string, data:any) {
+            this.attributes[name] = data;
+        }
+
+        addUniform(name:string, data:any) {
+            this.uniforms[name] = data;
+        }
 
     }
 }

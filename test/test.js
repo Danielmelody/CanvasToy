@@ -6,10 +6,12 @@ function start(){
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.OrthoCamera();
 
-    var cube = new CanvasToy.CubeGeometry();
-    var material = new CanvasToy.Material();
+    var logo = new CanvasToy.Texture('images/chrome.png');
 
-    var mesh = new CanvasToy.Mesh(cube, material);
+    var rect = new CanvasToy.RectGeomotry();
+    var material = new CanvasToy.PhongMaterial({texture:logo});
+
+    var mesh = new CanvasToy.Mesh(rect, material);
 
     var angle = 0.01;
 
