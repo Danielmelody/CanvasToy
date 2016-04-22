@@ -15,6 +15,10 @@ module CanvasToy{
 
         protected relativeMatrix:Mat4Array;
 
+        protected mvUniform:WebGLUniformLocation;
+        protected pMUniform:WebGLUniformLocation;
+
+
         constructor(){
             super();
             this.parent = null;
@@ -36,10 +40,8 @@ module CanvasToy{
         }
 
         public draw(camera:Camera){
-            var mvUniform = engine.getUniformLocation("modelViewMatrix");
-            engine.gl.uniformMatrix4fv(mvUniform, false, new Float32Array(this.modelViewMatrix));
-            var pMUniform = engine.getUniformLocation("projectionMatrix");
-            engine.gl.uniformMatrix4fv(pMUniform, false, new Float32Array(camera.projectionMatrix));
+            engine.gl.uniformMatrix4fv(this.mvUniform, false, new Float32Array(this.modelViewMatrix));
+            engine.gl.uniformMatrix4fv(this.pMUniform, false, new Float32Array(camera.projectionMatrix));
         }
     }
 }

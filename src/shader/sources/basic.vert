@@ -13,6 +13,11 @@ attribute vec2 aTextureCoord;
 varying vec2 vTextureCoord;
 #endif
 
+#ifdef OPEN_LIGHT
+attribute vec3 aNormal;
+varying vec3 vNormal;
+#endif
+
 void main (){
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 

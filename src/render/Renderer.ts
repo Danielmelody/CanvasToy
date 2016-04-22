@@ -87,7 +87,7 @@ module CanvasToy{
             if (this.preloadRes.length > 0) {
                 return;
             }
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
             for(let renderObject of scene.objects) {
                 renderObject.draw(camera);
             }

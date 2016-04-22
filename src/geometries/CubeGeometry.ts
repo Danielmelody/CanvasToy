@@ -3,12 +3,10 @@
 module CanvasToy{
     export class CubeGeometry extends Geometry{
 
-        constructor(vertices?:Array<number>) {
+        constructor() {
             super();
-            if (vertices && vertices.length < 8) {
-                return null;
-            }
-            this.vertices = vertices || [
+
+            this.positions = [
                 -1.0, -1.0,  1.0,
                 1.0, -1.0,  1.0,
                 1.0,  1.0,  1.0,

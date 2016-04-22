@@ -4,7 +4,7 @@ function start(){
 
 
     var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.OrthoCamera();
+    var camera = new CanvasToy.PerspectiveCamera();
 
     var logo = new CanvasToy.Texture('images/chrome.png');
 
@@ -15,13 +15,12 @@ function start(){
 
     var angle = 0.01;
 
-    mesh.translate(0, 0, -10.0);
-    mesh.rotateY(20);
+    mesh.translate(0, 0, -6.0);
+    //mesh.rotateY(20);
 
     mesh.registerUpdate(()=>{
        //mesh.translate(0, 0, 0);
         mesh.rotateX(angle);
-        mesh.rotateY(angle);
         //console.log(mesh.modelViewMatrix);
     });
 

@@ -21,28 +21,28 @@ module CanvasToy{
         public uniforms = {};
         public samplers = {};
 
-        public map:Texture = null;
-        public color:Vec4Array = null;
+        public map:Texture;
+        public color:Vec4Array;
 
         public ambient:Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
-        public ambientMap:Texture = null;
+        public ambientMap:Texture;
 
         public diffuse:Vec3Array = vec3.fromValues(0.8, 0.8, 0.8);
-        public diffuseMap:Texture = null;
+        public diffuseMap:Texture;
 
         public specular:Vec3Array = vec3.fromValues(1, 1, 1);
-        public specularMap:Texture = null;
+        public specularMap:Texture;
 
         public opacity:Vec3Array = vec3.fromValues(0, 0, 0);
-        public opacityMap:Texture = null;
+        public opacityMap:Texture;
 
         shadingMode:ShadingMode = ShadingMode.smoothShading;
 
-        public bumpMap:Texture = null;
+        public bumpMap:Texture;
 
-        public normalMap:Texture = null;
+        public normalMap:Texture;
 
-        public reflactivity:number = 1;
+        public reflactivity:number;
 
         constructor() {
         }
