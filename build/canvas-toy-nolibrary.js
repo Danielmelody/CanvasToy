@@ -464,6 +464,28 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var ModelLoader = (function () {
+        function ModelLoader() {
+        }
+        ModelLoader.loadObj = function (url, onload) {
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function () {
+                if (request.readyState == 4 && request.status == 200) {
+                    console.log("load succeeded!");
+                    if (onload) {
+                        onload();
+                    }
+                }
+            };
+            request.open('GET', url);
+            request.send();
+        };
+        return ModelLoader;
+    }());
+    CanvasToy.ModelLoader = ModelLoader;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var PhongMaterial = (function (_super) {
         __extends(PhongMaterial, _super);
         function PhongMaterial(paramter) {
