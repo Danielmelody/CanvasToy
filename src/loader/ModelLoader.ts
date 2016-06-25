@@ -16,7 +16,7 @@
              request.open('GET', url);
              request.send();
          }
-         public static loadObj(url:string, onload:() => void) : Geometry{
+         public static loadObj(url:string, onload:() => void){
              //var lineRegular:RegExp = new RegExp('.+\n');
              var numberRegular:RegExp = new RegExp('^(-?\d+)(\.\d+)?$')
              var positionRegular:RegExp = new RegExp('v.+');

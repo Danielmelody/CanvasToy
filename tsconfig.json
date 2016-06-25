@@ -12,5 +12,5 @@
        "test",
        ".idea"
    ],
-   "compileOnSave":true
+   "compileOnSave":false
 }

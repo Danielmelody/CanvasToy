@@ -21,6 +21,9 @@ module CanvasToy{
         public uniforms = {};
         public samplers = {};
 
+        public vertexShaderSource:string;
+        public fragShaderSource:string;
+
         public map:Texture;
         public color:Vec4Array;
 

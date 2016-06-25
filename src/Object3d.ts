@@ -5,6 +5,8 @@ module CanvasToy{
 
     export class Object3d{
 
+        public scene:Scene;
+
         public modelViewMatrix:Mat4Array;
 
         public matrix:Mat4Array;
@@ -19,7 +21,7 @@ module CanvasToy{
 
         protected startEvents:Array<Function> = [];
 
-        constructor(){
+        constructor() {
             this.modelViewMatrix = mat4.create();
             this.translate(0, 0, 0);
             this.matrix = mat4.create();
@@ -27,7 +29,7 @@ module CanvasToy{
             this.size = vec3.create();
         }
 
-        public registerUpdate(updateFunction:Function){
+        public registerUpdate(updateFunction:Function) {
             this.updateEvents.push(updateFunction);
         }
 
@@ -46,8 +48,6 @@ module CanvasToy{
                 event(dt);
             }
         }
-
-        public draw(camera:Camera){}
 
         public translate (deltaX:Number, deltaY:Number, deltaZ:Number){
             this.modelViewMatrix = mat4.translate(mat4.create(), this.modelViewMatrix, vec3.fromValues(deltaX, deltaY, deltaZ));

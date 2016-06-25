@@ -1,12 +1,16 @@
 /// <reference path="./Material.ts"/>
 
 module CanvasToy {
-    export class PhongMaterial extends Material{
-        constructor(paramter:{
+    export class LambertMaterial extends Material{
+        constructor(paramter?:{
             texture:Texture,
             color:Vec4Array})
         {
             super();
+
+            /*this.vertexShaderSource = lambert_vert;
+            this.fragShaderSource = lambert_frag;*/
+
             if(paramter.texture != undefined && paramter.color != undefined) {
                 console.warn("passed both color and texture to Material, color would be ignored");
             }
@@ -22,6 +26,5 @@ module CanvasToy {
             //this.ambient = vec4.fromValues(0.3, 0.3, 0.3, 1)
 
         }
-
     }
 }

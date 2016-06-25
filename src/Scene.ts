@@ -4,13 +4,17 @@ module CanvasToy{
 
     export class Scene{
 
-        public objects:Array<Object3d>;
+        public objects:Array<Object3d> = [];
 
-        public clearColor:Array<number>;
+        public lights:Array<Light> = [];
 
-        constructor(){
-            this.objects = [];
-            this.clearColor = [0, 0, 0, 0];
+        public openLight: boolean = true;
+
+        public enableShadowMap: boolean = true;
+
+        public clearColor:Array<number> = [0, 0, 0, 0];
+
+        constructor() {
             window.setInterval(() => this.update(1000/60), 1000 / 60);
         }
 
@@ -22,6 +26,12 @@ module CanvasToy{
 
         addObject(object:Object3d) {
             this.objects.push(object);
+            object.scene = this;
+        }
+
+        addLight(light:Light) {
+            this.lights.push(light);
+            light.scene = this;
         }
     }
 }
