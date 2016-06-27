@@ -13,10 +13,6 @@ module CanvasToy{
 
         protected relativeMatrix:Mat4Array;
 
-        protected mvUniform:WebGLUniformLocation;
-        protected pMUniform:WebGLUniformLocation;
-
-
         constructor(){
             super();
             this.parent = null;

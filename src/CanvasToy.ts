@@ -3,6 +3,7 @@
 module CanvasToy{
     var version = 2;
     export var engine:Renderer;
+    export var debug:boolean = true;
 }
 
 // FIXME: the declaration && assignment below is to add Library glMatrix to

@@ -1,7 +1,7 @@
 /// <reference path="./Material.ts"/>
 
 module CanvasToy {
-    export class PhongPerFragMaterial extends Material{
+    export class BRDFPerFragMaterial extends Material{
         constructor(paramter?:{
             texture:Texture,
             color:Vec4Array})

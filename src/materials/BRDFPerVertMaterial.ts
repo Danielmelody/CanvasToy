@@ -1,15 +1,15 @@
 /// <reference path="./Material.ts"/>
 
 module CanvasToy {
-    export class LambertMaterial extends Material{
+    export class BRDFPerVertMaterial extends Material{
         constructor(paramter?:{
             texture:Texture,
             color:Vec4Array})
         {
             super();
 
-            /*this.vertexShaderSource = lambert_vert;
-            this.fragShaderSource = lambert_frag;*/
+            this.vertexShaderSource = brdf_perfrag_vert;
+            this.fragShaderSource = brdf_perfrag_frag
 
             if(paramter.texture != undefined && paramter.color != undefined) {
                 console.warn("passed both color and texture to Material, color would be ignored");

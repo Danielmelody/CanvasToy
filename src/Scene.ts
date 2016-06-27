@@ -8,6 +8,8 @@ module CanvasToy{
 
         public lights:Array<Light> = [];
 
+        public ambientLight:Vec3Array = vec3.fromValues(0, 0, 0);
+
         public openLight: boolean = true;
 
         public enableShadowMap: boolean = true;

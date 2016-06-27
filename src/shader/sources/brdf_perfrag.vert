@@ -1,5 +1,3 @@
-#version 100
-
 attribute vec3 position;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
@@ -18,18 +16,14 @@ varying vec2 vTextureCoord;
 #ifdef OPEN_LIGHT
 attribute vec3 aNormal;
 varying vec3 vPosition;
-    #ifdef SMOOTH_SHADING
-    varying vec3 vNormal;
-    #endif
+varying vec3 vNormal;
 #endif
 
 void main (){
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 #ifdef OPEN_LIGHT
-    #ifdef SMOOTH_SHADING
     vNormal = aNormal;
-    vPosition = gl_Position;
-    #endif
+    vPosition = gl_Position.xyz;
 #endif
 
 #ifdef USE_COLOR

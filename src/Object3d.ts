@@ -11,11 +11,11 @@ module CanvasToy{
 
         public matrix:Mat4Array;
 
-        protected position:Vec3Array;
+        public position:Vec3Array;
 
-        protected size:Vec3Array;
+        public size:Vec3Array;
 
-        protected rotate:Vec3Array;
+        public rotate:Vec3Array;
 
         protected updateEvents:Array<Function> = [];
 

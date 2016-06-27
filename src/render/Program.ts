@@ -9,6 +9,7 @@ module CanvasToy {
 
     export class Program{
         uniforms:{} = {};
+        uniformUpdaters:{} = {};
         attributes:{} = {};
         webGlProgram:WebGLProgram;
         drawMode:number = engine.gl.STATIC_DRAW;
@@ -32,9 +33,9 @@ module CanvasToy {
             return newVertexBuffer;
         }
 
-        addUniform(name:string) {
+        addUniform(name:string, onUpdateUniform:()=>void) {
             this.uniforms[name] = engine.getUniformLocation(this, name);
+            this.uniformUpdaters[name] = onUpdateUniform;
         }
-
     }
 }

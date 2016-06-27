@@ -1,3 +1,3 @@
 #! /bin/sh
-open http://localhost:8080/test
-http-server . &
+python -m SimpleHTTPServer 8000 &
+open http://0.0.0.0:8000/test

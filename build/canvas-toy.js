@@ -34,6 +34,7 @@ return t[0]=-n*e,t[1]=-r*e,t[2]=-o*e,t[3]=l*e,t},e.conjugate=function(t,a){retur
 var CanvasToy;
 (function (CanvasToy) {
     var version = 2;
+    CanvasToy.debug = true;
 })(CanvasToy || (CanvasToy = {}));
 CanvasToy.glMatrix = glMatrix;
 CanvasToy.vec2 = vec2;
@@ -541,10 +542,12 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var LambertMaterial = (function (_super) {
-        __extends(LambertMaterial, _super);
-        function LambertMaterial(paramter) {
+    var BRDFPerVertMaterial = (function (_super) {
+        __extends(BRDFPerVertMaterial, _super);
+        function BRDFPerVertMaterial(paramter) {
             _super.call(this);
+            this.vertexShaderSource = CanvasToy.brdf_perfrag_vert;
+            this.fragShaderSource = CanvasToy.brdf_perfrag_frag;
             if (paramter.texture != undefined && paramter.color != undefined) {
                 console.warn("passed both color and texture to Material, color would be ignored");
             }
@@ -557,15 +560,15 @@ var CanvasToy;
                 this.addUniform('uColor', this.color);
             }
         }
-        return LambertMaterial;
+        return BRDFPerVertMaterial;
     }(CanvasToy.Material));
-    CanvasToy.LambertMaterial = LambertMaterial;
+    CanvasToy.BRDFPerVertMaterial = BRDFPerVertMaterial;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var PhongPerFragMaterial = (function (_super) {
-        __extends(PhongPerFragMaterial, _super);
-        function PhongPerFragMaterial(paramter) {
+    var BRDFPerFragMaterial = (function (_super) {
+        __extends(BRDFPerFragMaterial, _super);
+        function BRDFPerFragMaterial(paramter) {
             _super.call(this);
             this.vertexShaderSource = CanvasToy.brdf_perfrag_vert;
             this.fragShaderSource = CanvasToy.brdf_perfrag_frag;
@@ -578,9 +581,9 @@ var CanvasToy;
                 this.addUniform('uColor', this.color);
             }
         }
-        return PhongPerFragMaterial;
+        return BRDFPerFragMaterial;
     }(CanvasToy.Material));
-    CanvasToy.PhongPerFragMaterial = PhongPerFragMaterial;
+    CanvasToy.BRDFPerFragMaterial = BRDFPerFragMaterial;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -605,14 +608,20 @@ var CanvasToy;
                 'precision ' + this.vertPrecision + ' float;',
                 mesh.material.map ? '#define USE_TEXTURE' : '',
                 mesh.material.color ? '#define USE_COLOR' : '',
-                scene.openLight ? '#define OPEN_LIGHT' : ''
-            ].join("\n");
+                scene.openLight ? '#define OPEN_LIGHT\n#define LIGHT_NUM'
+                    + scene.lights.length : ''
+            ].join("\n") + '\n';
             var prefixFragment = [
                 'precision ' + this.fragPrecision + ' float;',
                 mesh.material.map ? '#define USE_TEXTURE' : '',
                 mesh.material.color ? '#define USE_COLOR' : '',
-                scene.openLight ? '#define OPEN_LIGHT' : ''
-            ].join("\n");
+                scene.openLight ? '#define OPEN_LIGHT\n#define LIGHT_NUM'
+                    + scene.lights.length : ''
+            ].join("\n") + '\n';
+            if (CanvasToy.debug) {
+                console.log(prefixVertex + mesh.material.vertexShaderSource);
+                console.log(prefixFragment + mesh.material.fragShaderSource);
+            }
             mesh.program = new CanvasToy.Program();
             mesh.program.webGlProgram = CanvasToy.createEntileShader(this.gl, prefixVertex + mesh.material.vertexShaderSource, prefixFragment + mesh.material.fragShaderSource);
             mesh.program.addUniform("modelViewMatrix");
@@ -753,6 +762,6 @@ var CanvasToy;
 (function (CanvasToy) {
     CanvasToy.basic_frag = "#version 100\n\n#ifdef USE_COLOR\nvarying vec4 vColor;\n#endif\n\n#ifdef USE_TEXTURE\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec4 textureColor;\n#endif\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\n#endif\n\nvoid main() {\n#ifdef USE_COLOR\n    gl_FragColor = vColor;\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n\n}\n";
     CanvasToy.basic_vert = "#version 100\n\nattribute vec3 position;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform vec4 cameraPosition;\n\n#ifdef USE_COLOR\nattribute vec4 aColor;\nvarying vec4 vColor;\n#endif\n\n#ifdef USE_TEXTURE\nattribute vec2 aTextureCoord;\nvarying vec2 vTextureCoord;\n#endif\n\n#ifdef OPEN_LIGHT\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n\n#ifdef USE_COLOR\n    vColor = aColor;\n#endif\n\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n\n}\n";
-    CanvasToy.brdf_perfrag_frag = "#version 100\n\n#ifdef USE_COLOR // color declaration\nvec3 colorFactor;\n#endif // color declaration \n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec3 textureColor;\n#endif // texture declaration\n\n#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec4 position;\n    bool directional;\n};\nuniform vec3 ambient;\nuniform vec4 eyePosition;\nvarying vec3 vPosition;\nuniform int lightsNum;\nLight light[8];\nvarying vec3 vNormal;\n#endif // light declaration\n\nvoid main() {\n#ifdef USE_COLOR\n\n#endif\n\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < lightsNum; index++) {\n            vec3 lightDir = normalize(vPosition - light[index].position).xyz;\n            vec3 lambortian = max(dot(normalize(vNormal), lightDir), 0.0);\n            vec3 reflectDir = reflect(lightDir, vNormal);\n            vec3 viewDir = normalize(eyePosition-vPosition);\n            vec3 specularAngle = max(dot(reflectDir, viewDir), 0.0);\n            vec3 specularColor = light[index].specular * pow(specular, light.idensity);\n            vec3 diffuseColor = diffuseColorFactor * light[index].diffuse;\n            totalLighting = totalLighting + vec4(diffuseColor + specularColor, 1.0) * textureColor;\n        }\n        gl_FragColor = vec4(totalLighting, 1.0);\n#endif\n}\n";
-    CanvasToy.brdf_perfrag_vert = "#version 100\n\nattribute vec3 position;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform vec4 eyePosition;\n\n#ifdef USE_COLOR\nattribute vec3 aColor;\nvarying vec3 vColor;\n#endif\n\n#ifdef USE_TEXTURE\nattribute vec2 aTextureCoord;\nvarying vec2 vTextureCoord;\n#endif\n\n#ifdef OPEN_LIGHT\nattribute vec3 aNormal;\nvarying vec3 vPosition;\n    #ifdef SMOOTH_SHADING\n    varying vec3 vNormal;\n    #endif\n#endif\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    #ifdef SMOOTH_SHADING\n    vNormal = aNormal;\n    vPosition = gl_Position;\n    #endif\n#endif\n\n#ifdef USE_COLOR\n    vColor = aColor;\n#endif\n\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
+    CanvasToy.brdf_perfrag_frag = "#ifdef USE_COLOR // color declaration\nvec3 colorFactor;\n#endif // color declaration\n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec4 textureColor;\n#endif // texture declaration\n\n#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec4 position;\n    bool directional;\n};\nuniform vec3 ambient;\nuniform vec3 eyePosition;\nvarying vec3 vPosition;\nuniform int lightsNum;\nvec3 totalLighting;\nLight light[8];\nvarying vec3 vNormal;\n#endif // light declaration\n\nvoid main() {\n#ifdef USE_COLOR\n\n#endif\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    for (int index = 0; index < 2; index++) {\n            vec3 lightDir = normalize(vPosition - light[index].position.xyz);\n            float lambortian = max(dot(normalize(vNormal), lightDir), 0.0);\n            vec3 reflectDir = reflect(lightDir, vNormal);\n            vec3 viewDir = normalize(eyePosition-vPosition);\n            float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n            float specular = pow(specularAngle, light[index].idensity);\n            vec3 specularColor = light[index].specular * specular;\n            vec3 diffuseColor = lambortian * light[index].diffuse;\n            totalLighting = totalLighting + (diffuseColor + specularColor) * textureColor.xyz;\n        }\n        gl_FragColor = vec4(totalLighting, 1.0);\n#endif\n}\n";
+    CanvasToy.brdf_perfrag_vert = "attribute vec3 position;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform vec4 eyePosition;\n\n#ifdef USE_COLOR\nattribute vec3 aColor;\nvarying vec3 vColor;\n#endif\n\n#ifdef USE_TEXTURE\nattribute vec2 aTextureCoord;\nvarying vec2 vTextureCoord;\n#endif\n\n#ifdef OPEN_LIGHT\nattribute vec3 aNormal;\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = aNormal;\n    vPosition = gl_Position.xyz;\n#endif\n\n#ifdef USE_COLOR\n    vColor = aColor;\n#endif\n\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
 })(CanvasToy || (CanvasToy = {}));
