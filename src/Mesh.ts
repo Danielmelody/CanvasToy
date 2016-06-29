@@ -13,10 +13,15 @@ module CanvasToy{
         public geometry:Geometry;
         public material:Material;
 
+        public normalMatrix:Mat4Array = mat4.create();
+
         constructor(geometry:Geometry, material:Material) {
             super();
             this.material = material;
             this.geometry = geometry;
+            this.registerUpdate((event) => {
+                this.normalMatrix = mat4.invert(mat4.create(), this.modelViewMatrix);
+            })
         }
     }
 }

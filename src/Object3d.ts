@@ -25,7 +25,7 @@ module CanvasToy{
             this.modelViewMatrix = mat4.create();
             this.translate(0, 0, 0);
             this.matrix = mat4.create();
-            this.position = vec3.create();
+            this.position = vec4.create();
             this.size = vec3.create();
         }
 

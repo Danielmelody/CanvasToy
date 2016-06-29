@@ -28,23 +28,23 @@ module CanvasToy {
         public makeProgram(scene: Scene, mesh: Mesh, camera: Camera) {
             var prefixVertex = [
                 'precision ' + this.vertPrecision + ' float;',
-                mesh.material.map ? '#define USE_TEXTURE' : '',
-                mesh.material.color ? '#define USE_COLOR' : '',
-                scene.openLight ? '#define OPEN_LIGHT\n#define LIGHT_NUM'
+                mesh.material.map ? '#define USE_TEXTURE ' : '',
+                mesh.material.color ? '#define USE_COLOR ' : '',
+                scene.openLight ? '#define OPEN_LIGHT\n#define LIGHT_NUM '
                     + scene.lights.length : ''
             ].join("\n") + '\n';
 
             var prefixFragment = [
                 'precision ' + this.fragPrecision + ' float;',
-                mesh.material.map ? '#define USE_TEXTURE' : '',
-                mesh.material.color ? '#define USE_COLOR' : '',
-                scene.openLight ? '#define OPEN_LIGHT\n#define LIGHT_NUM'
+                mesh.material.map ? '#define USE_TEXTURE ' : '',
+                mesh.material.color ? '#define USE_COLOR ' : '',
+                scene.openLight ? '#define OPEN_LIGHT \n#define LIGHT_NUM '
                     + scene.lights.length : ''
             ].join("\n") + '\n';
 
             if (debug) {
-                console.log(prefixVertex + mesh.material.vertexShaderSource);
-                console.log(prefixFragment + mesh.material.fragShaderSource)
+                // console.log(prefixVertex + mesh.material.vertexShaderSource);
+                // console.log(prefixFragment + mesh.material.fragShaderSource)
             }
 
             mesh.program = new Program();
@@ -65,8 +65,24 @@ module CanvasToy {
                     false, new Float32Array(camera.projectionMatrix));
             });
 
-            mesh.program.addAttribute(new VertexBuffer("position", 3,
-                this.gl.FLOAT)).data = mesh.geometry.positions;;
+            mesh.program.indexBuffer = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.program.indexBuffer);
+            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
+                new Uint16Array(mesh.geometry.indices), mesh.program.drawMode);
+
+            mesh.program.setAttribute0(new VertexBuffer("position", 3,
+                this.gl.FLOAT)).data = mesh.geometry.positions;
+
+            if (mesh.material.color != undefined) {
+                mesh.program.addUniform("color", () => {
+                    engine.gl.uniform4f(
+                        mesh.program.uniforms["color"],
+                        mesh.material.color[0],
+                        mesh.material.color[1],
+                        mesh.material.color[2],
+                        mesh.material.color[3]);
+                })
+            }
 
             if (mesh.material.map != undefined) {
                 mesh.program.addAttribute(
@@ -75,17 +91,20 @@ module CanvasToy {
             }
 
             if (scene.openLight) {
+                console.log("open light");
                 this.setUplights(scene, mesh, camera);
             }
-
-            mesh.program.indexBuffer = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.program.indexBuffer);
-            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
-                new Uint16Array(mesh.geometry.indices), mesh.program.drawMode);
+            this.copyToVertexBuffer(mesh.program);
         }
 
         public setUplights(scene:Scene, mesh:Mesh, camera:Camera) {
+            mesh.program.addUniform("normalMatrix", () => {
+                engine.gl.uniformMatrix4fv(
+                    mesh.program.uniforms["normalMatrix"],
+                    false, new Float32Array(mesh.normalMatrix));
+            });
             mesh.program.addUniform("ambient", () => {
+                // alert(scene.ambientLight);
                 engine.gl.uniform3f(mesh.program.uniforms["ambient"],
                     scene.ambientLight[0],
                     scene.ambientLight[1],
@@ -111,22 +130,22 @@ module CanvasToy {
                 mesh.program.addUniform(diffuse, ()=>{
                     this.gl.uniform3f(mesh.program.uniforms[diffuse],
                         light.diffuse[0],
-                        light.diffuse[0],
-                        light.diffuse[0]
+                        light.diffuse[1],
+                        light.diffuse[2]
                     );
                 });
                 mesh.program.addUniform(specular, ()=>{
                     this.gl.uniform3f(mesh.program.uniforms[specular],
                         light.specular[0],
-                        light.specular[0],
-                        light.specular[0]
+                        light.specular[1],
+                        light.specular[2]
                     );
                 });
                 mesh.program.addUniform(position, ()=>{
                     this.gl.uniform3f(mesh.program.uniforms[position],
                         light.position[0],
-                        light.position[0],
-                        light.position[0]
+                        light.position[1],
+                        light.position[2]
                     );
                 });
                 mesh.program.addUniform(idensity, ()=>{
@@ -179,10 +198,9 @@ module CanvasToy {
             return result;
         }
 
-        updateVerticesData(program: Program) {
+        private copyToVertexBuffer(program: Program) {
             let gl = engine.gl;
             for (let name in program.vertexBuffers) {
-                console.log(name);
                 gl.enableVertexAttribArray(program.vertexBuffers[name].index);
                 gl.bindBuffer(gl.ARRAY_BUFFER, program.vertexBuffers[name].buffer);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(program.vertexBuffers[name].data), engine.gl.STATIC_DRAW);
@@ -193,8 +211,11 @@ module CanvasToy {
             let gl = engine.gl;
             if (object instanceof Mesh) {
                 let mesh = <Mesh>object;
-
-                for (let name in mesh.program) {
+                this.gl.useProgram(mesh.program.webGlProgram);
+                for (let updaters in mesh.program.uniformUpdaters) {
+                    mesh.program.uniformUpdaters[updaters]();
+                }
+                for (let name in mesh.program.vertexBuffers) {
                     gl.bindBuffer(engine.gl.ARRAY_BUFFER, mesh.program.vertexBuffers[name].buffer);
                     engine.gl.vertexAttribPointer(
                         mesh.program.vertexBuffers[name].index,

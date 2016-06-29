@@ -14,6 +14,7 @@ module CanvasToy {
         webGlProgram:WebGLProgram;
         drawMode:number = engine.gl.STATIC_DRAW;
         public indexBuffer:WebGLBuffer;
+        public attribute0:VertexBuffer;
         public vertexBuffers = {};
         Program(parameter:ProgramParamter) {
             this.uniforms = parameter.uniforms;
@@ -27,6 +28,14 @@ module CanvasToy {
             }
         }
 
+        setAttribute0(newVertexBuffer:VertexBuffer):VertexBuffer {
+            this.attribute0 = newVertexBuffer;
+            this.attribute0.index = 0;
+            this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
+            engine.gl.bindAttribLocation(this.webGlProgram, 0, this.attribute0.name);
+            return newVertexBuffer;
+        }
+
         addAttribute(newVertexBuffer:VertexBuffer):VertexBuffer {
             newVertexBuffer.index = engine.gl.getAttribLocation(this.webGlProgram, newVertexBuffer.name);
             this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
@@ -34,6 +43,7 @@ module CanvasToy {
         }
 
         addUniform(name:string, onUpdateUniform:()=>void) {
+            engine.gl.useProgram(this.webGlProgram);
             this.uniforms[name] = engine.getUniformLocation(this, name);
             this.uniformUpdaters[name] = onUpdateUniform;
         }

@@ -12,7 +12,7 @@ module CanvasToy{
 
         public openLight: boolean = true;
 
-        public enableShadowMap: boolean = true;
+        public enableShadowMap: boolean = false;
 
         public clearColor:Array<number> = [0, 0, 0, 0];
 
