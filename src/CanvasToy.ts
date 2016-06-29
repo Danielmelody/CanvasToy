@@ -1,9 +1,9 @@
 /// <reference path="../lib/modules/gl-matrix.d.ts"/>
 
-module CanvasToy{
+module CanvasToy {
     var version = 2;
-    export var engine:Renderer;
-    export var debug:boolean = true;
+    export var engine: Renderer;
+    export var debug: boolean = true;
 }
 
 // FIXME: the declaration && assignment below is to add Library glMatrix to

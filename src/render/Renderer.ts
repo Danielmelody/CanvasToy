@@ -97,7 +97,7 @@ module CanvasToy {
             this.copyToVertexBuffer(mesh.program);
         }
 
-        public setUplights(scene:Scene, mesh:Mesh, camera:Camera) {
+        public setUplights(scene: Scene, mesh: Mesh, camera: Camera) {
             mesh.program.addUniform("normalMatrix", () => {
                 engine.gl.uniformMatrix4fv(
                     mesh.program.uniforms["normalMatrix"],
@@ -121,34 +121,34 @@ module CanvasToy {
             mesh.program.addAttribute(
                 new VertexBuffer("aNormal", 3, this.gl.FLOAT))
                 .data = mesh.geometry.normals;
-            var index:number = 0;
+            var index: number = 0;
             for (let light of scene.lights) {
-                var diffuse = "lights["+index+"].diffuse";
-                var specular = "lights[" +index+ "].specular";
-                var idensity = "lights[" +index+ "].idensity";
-                var position = "lights[" +index+ "].position";
-                mesh.program.addUniform(diffuse, ()=>{
+                var diffuse = "lights[" + index + "].diffuse";
+                var specular = "lights[" + index + "].specular";
+                var idensity = "lights[" + index + "].idensity";
+                var position = "lights[" + index + "].position";
+                mesh.program.addUniform(diffuse, () => {
                     this.gl.uniform3f(mesh.program.uniforms[diffuse],
                         light.diffuse[0],
                         light.diffuse[1],
                         light.diffuse[2]
                     );
                 });
-                mesh.program.addUniform(specular, ()=>{
+                mesh.program.addUniform(specular, () => {
                     this.gl.uniform3f(mesh.program.uniforms[specular],
                         light.specular[0],
                         light.specular[1],
                         light.specular[2]
                     );
                 });
-                mesh.program.addUniform(position, ()=>{
+                mesh.program.addUniform(position, () => {
                     this.gl.uniform3f(mesh.program.uniforms[position],
                         light.position[0],
                         light.position[1],
                         light.position[2]
                     );
                 });
-                mesh.program.addUniform(idensity, ()=>{
+                mesh.program.addUniform(idensity, () => {
                     this.gl.uniform1f(mesh.program.uniforms[idensity],
                         light.idensity
                     );

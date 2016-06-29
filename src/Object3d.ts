@@ -1,25 +1,25 @@
 
 /// <reference path="./CanvasToy.ts"/>
 
-module CanvasToy{
+module CanvasToy {
 
-    export class Object3d{
+    export class Object3d {
 
-        public scene:Scene;
+        public scene: Scene;
 
-        public modelViewMatrix:Mat4Array;
+        public modelViewMatrix: Mat4Array;
 
-        public matrix:Mat4Array;
+        public matrix: Mat4Array;
 
-        public position:Vec3Array;
+        public position: Vec3Array;
 
-        public size:Vec3Array;
+        public size: Vec3Array;
 
-        public rotate:Vec3Array;
+        public rotate: Vec3Array;
 
-        protected updateEvents:Array<Function> = [];
+        protected updateEvents: Array<Function> = [];
 
-        protected startEvents:Array<Function> = [];
+        protected startEvents: Array<Function> = [];
 
         constructor() {
             this.modelViewMatrix = mat4.create();
@@ -29,45 +29,45 @@ module CanvasToy{
             this.size = vec3.create();
         }
 
-        public registerUpdate(updateFunction:Function) {
+        public registerUpdate(updateFunction: Function) {
             this.updateEvents.push(updateFunction);
         }
 
-        public registerStart(updateFunction:Function){
+        public registerStart(updateFunction: Function) {
             this.startEvents.push(updateFunction);
         }
 
-        public start () {
+        public start() {
             for (let event of this.startEvents) {
                 event();
             }
         }
 
-        public update (dt:Number) {
+        public update(dt: Number) {
             for (let event of this.updateEvents) {
                 event(dt);
             }
         }
 
-        public translate (deltaX:Number, deltaY:Number, deltaZ:Number){
+        public translate(deltaX: Number, deltaY: Number, deltaZ: Number) {
             this.modelViewMatrix = mat4.translate(mat4.create(), this.modelViewMatrix, vec3.fromValues(deltaX, deltaY, deltaZ));
         }
 
-        public translateTo (deltaX:Number, deltaY:Number, deltaZ:Number) {}
+        public translateTo(deltaX: Number, deltaY: Number, deltaZ: Number) { }
 
-        public rotateX(angle:number){
+        public rotateX(angle: number) {
             this.modelViewMatrix = mat4.rotateX(mat4.create(), this.modelViewMatrix, angle);
         }
 
-        public rotateY(angle:number){
+        public rotateY(angle: number) {
             this.modelViewMatrix = mat4.rotateY(mat4.create(), this.modelViewMatrix, angle);
         }
 
-        public rotateZ(angle:number){
+        public rotateZ(angle: number) {
             this.modelViewMatrix = mat4.rotateZ(mat4.create(), this.modelViewMatrix, angle);
         }
 
-        public scale (rateX:number, rateY?:number, rateZ?:number) {
+        public scale(rateX: number, rateY?: number, rateZ?: number) {
             if (rateY == undefined) {
                 var rateY = rateX;
             }
