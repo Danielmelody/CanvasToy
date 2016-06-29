@@ -1,3 +1,5 @@
+#version 100
+
 #ifdef USE_COLOR
 varying vec4 vColor;
 #endif

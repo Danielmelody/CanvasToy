@@ -15,6 +15,5 @@ function read() {
     results.push('}');
     var resultStr = results.join('\n');
     fs.writeFileSync('src/shader/shaders.ts', resultStr);
-    console.log(resultStr);
 }
 read();

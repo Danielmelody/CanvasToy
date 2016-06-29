@@ -45,10 +45,14 @@ module CanvasToy{
 
         var shader:WebGLShader;
 
+        var typeInfo;
+
         if (type == ShaderType.FragmentShader) {
             shader = gl.createShader(gl.FRAGMENT_SHADER);
+            typeInfo = "fragment shader";
         } else if (type == ShaderType.VertexShader ) {
             shader = gl.createShader(gl.VERTEX_SHADER);
+            typeInfo = "vertex shader";
         }
         gl.shaderSource(shader, source);
 
@@ -59,7 +63,7 @@ module CanvasToy{
         // See if it compiled successfully
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
+            alert("error: " + typeInfo + "\n" + gl.getShaderInfoLog(shader));
             return null;
         }
 
@@ -71,6 +75,9 @@ module CanvasToy{
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
         gl.linkProgram(shaderProgram);
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            alert("Unable to initialize the shader program.\n" + gl.getProgramInfoLog(shaderProgram));
+        }
         return shaderProgram;
     };
 

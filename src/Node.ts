@@ -9,15 +9,9 @@ module CanvasToy{
 
         protected parent:Node;
 
-        protected scene:Scene;
-
         protected children:Array<Node>;
 
         protected relativeMatrix:Mat4Array;
-
-        protected mvUniform:WebGLUniformLocation;
-        protected pMUniform:WebGLUniformLocation;
-
 
         constructor(){
             super();
@@ -37,11 +31,6 @@ module CanvasToy{
             for(let child of this.children){
                 child.compuseMatrixs();
             }
-        }
-
-        public draw(camera:Camera){
-            engine.gl.uniformMatrix4fv(this.mvUniform, false, new Float32Array(this.modelViewMatrix));
-            engine.gl.uniformMatrix4fv(this.pMUniform, false, new Float32Array(camera.projectionMatrix));
         }
     }
 }
