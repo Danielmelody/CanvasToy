@@ -268,6 +268,7 @@ var CanvasToy;
             this.geometry = geometry;
             this.registerUpdate(function (event) {
                 _this.normalMatrix = CanvasToy.mat4.invert(CanvasToy.mat4.create(), _this.modelViewMatrix);
+                _this.normalMatrix = CanvasToy.mat4.transpose(CanvasToy.mat4.create(), _this.normalMatrix);
             });
         }
         return Mesh;
@@ -450,6 +451,58 @@ var CanvasToy;
                 -1.0, 1.0, 1.0,
                 -1.0, 1.0, -1.0
             ];
+            this.uvs = [
+                -1.0, -1.0, 1.0,
+                1.0, -1.0, 1.0,
+                1.0, 1.0, 1.0,
+                -1.0, 1.0, 1.0,
+                -1.0, -1.0, -1.0,
+                -1.0, 1.0, -1.0,
+                1.0, 1.0, -1.0,
+                1.0, -1.0, -1.0,
+                -1.0, 1.0, -1.0,
+                -1.0, 1.0, 1.0,
+                1.0, 1.0, 1.0,
+                1.0, 1.0, -1.0,
+                -1.0, -1.0, -1.0,
+                1.0, -1.0, -1.0,
+                1.0, -1.0, 1.0,
+                -1.0, -1.0, 1.0,
+                1.0, -1.0, -1.0,
+                1.0, 1.0, -1.0,
+                1.0, 1.0, 1.0,
+                1.0, -1.0, 1.0,
+                -1.0, -1.0, -1.0,
+                -1.0, -1.0, 1.0,
+                -1.0, 1.0, 1.0,
+                -1.0, 1.0, -1.0
+            ];
+            this.normals = [
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+                0.0, 0.0, -1.0,
+                0.0, 0.0, -1.0,
+                0.0, 0.0, -1.0,
+                0.0, 0.0, -1.0,
+                0.0, 1.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, -1.0, 0.0,
+                0.0, -1.0, 0.0,
+                0.0, -1.0, 0.0,
+                0.0, -1.0, 0.0,
+                1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
+                -1.0, 0.0, 0.0,
+                -1.0, 0.0, 0.0,
+                -1.0, 0.0, 0.0,
+                -1.0, 0.0, 0.0,
+            ];
             this.indices = [
                 0, 1, 2, 0, 2, 3,
                 4, 5, 6, 4, 6, 7,
@@ -495,6 +548,32 @@ var CanvasToy;
         return RectGeomotry;
     }(CanvasToy.Geometry));
     CanvasToy.RectGeomotry = RectGeomotry;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var SphereGeometry = (function (_super) {
+        __extends(SphereGeometry, _super);
+        function SphereGeometry(radius, perVertDistance) {
+            _super.call(this);
+            this.radius = radius;
+            this.perVertDistance = perVertDistance;
+            for (var y = -radius; y <= radius; y += perVertDistance) {
+                var circlrRadius = Math.sqrt(radius * radius - y * y);
+                for (var x = -circlrRadius; x <= circlrRadius; x += perVertDistance) {
+                    var z1 = Math.sqrt(circlrRadius * circlrRadius - x * x);
+                    var z2 = -z1;
+                    this.positions.push(x, y, z1);
+                    this.positions.push(x, y, z2);
+                }
+            }
+            for (var _i = 0, _a = this.positions; _i < _a.length; _i++) {
+                var verts = _a[_i];
+                console.log(verts);
+            }
+        }
+        return SphereGeometry;
+    }(CanvasToy.Geometry));
+    CanvasToy.SphereGeometry = SphereGeometry;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -837,6 +916,6 @@ var CanvasToy;
 (function (CanvasToy) {
     CanvasToy.basic_frag = "#version 100\n\n#ifdef USE_COLOR\nvarying vec4 vColor;\n#endif\n\n#ifdef USE_TEXTURE\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec4 textureColor;\n#endif\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\n#endif\n\nvoid main() {\n#ifdef USE_COLOR\n    gl_FragColor = vColor;\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n\n}\n";
     CanvasToy.basic_vert = "#version 100\n\nattribute vec3 position;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform vec4 cameraPosition;\n\n#ifdef USE_COLOR\nattribute vec4 aColor;\nvarying vec4 vColor;\n#endif\n\n#ifdef USE_TEXTURE\nattribute vec2 aTextureCoord;\nvarying vec2 vTextureCoord;\n#endif\n\n#ifdef OPEN_LIGHT\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n\n#ifdef USE_COLOR\n    vColor = aColor;\n#endif\n\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n\n}\n";
-    CanvasToy.brdf_perfrag_frag = "#ifdef USE_COLOR // color declaration\nuniform vec4 color;\n#endif // color declaration\n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec4 textureColor;\n#endif // texture declaration\n\n#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec3 position;\n    bool directional;\n};\nuniform vec3 ambient;\nuniform vec3 eyePosition;\nvarying vec3 vPosition;\nvec3 totalLighting;\nuniform Light lights[LIGHT_NUM];\nvarying vec3 vNormal;\n#endif // light declaration\n\nvoid main() {\n\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\ntotalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        vec3 lightDir = normalize(vPosition - lights[index].position);\n        float lambortian = max(dot(normalize(vNormal), lightDir), 0.0);\n        vec3 reflectDir = reflect(lightDir, vNormal);\n        vec3 viewDir = normalize(eyePosition-vPosition);\n        float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n        float specular = pow(specularAngle, lights[index].idensity);\n        vec3 specularColor = lights[index].specular * specular;\n        vec3 diffuseColor = lambortian * lights[index].diffuse;\n        totalLighting = totalLighting + (diffuseColor + specularColor);\n    }\n#ifdef USE_TEXTURE\n    totalLighting = totalLighting * textureColor.xyz;\n#endif\n#ifdef USE_COLOR\n    totalLighting = totalLighting * color.xyz;\n#endif\n    gl_FragColor = vec4(totalLighting, 1.0);\n#endif\n}\n";
+    CanvasToy.brdf_perfrag_frag = "#ifdef USE_COLOR // color declaration\nuniform vec4 color;\n#endif // color declaration\n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec4 textureColor;\n#endif // texture declaration\n\n#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec3 position;\n    bool directional;\n};\nuniform vec3 ambient;\nuniform vec3 eyePosition;\nvarying vec3 vPosition;\nvec3 totalLighting;\nuniform Light lights[LIGHT_NUM];\nvarying vec3 vNormal;\n#endif // light declaration\n\nvoid main() {\n\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\ntotalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        vec3 lightDir = normalize(vPosition - lights[index].position);\n        float lambortian = max(dot(normalize(vNormal), lightDir), 0.0);\n        lambortian = pow(lambortian, lights[index].idensity);\n        vec3 reflectDir = reflect(lightDir, vNormal);\n        vec3 viewDir = normalize(eyePosition-vPosition);\n        float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n        float specular = pow(specularAngle, lights[index].idensity);\n        vec3 specularColor = lights[index].specular * specular;\n        vec3 diffuseColor = lambortian * lights[index].diffuse;\n        totalLighting = totalLighting + (diffuseColor + specularColor);\n    }\n#ifdef USE_TEXTURE\n    totalLighting = totalLighting * textureColor.xyz;\n#endif\n#ifdef USE_COLOR\n    totalLighting = totalLighting * color.xyz;\n#endif\n    gl_FragColor = vec4(totalLighting, 1.0);\n#endif\n}\n";
     CanvasToy.brdf_perfrag_vert = "attribute vec3 position;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aTextureCoord;\nvarying vec2 vTextureCoord;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position.xyz;\n#endif\n\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
 })(CanvasToy || (CanvasToy = {}));

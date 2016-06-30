@@ -6,32 +6,26 @@ function start() {
   var camera = new CanvasToy.PerspectiveCamera();
 
   var logo = new CanvasToy.Texture('../../images/chrome.png');
-  var cube = new CanvasToy.CubeGeometry();
-  var material = new CanvasToy.BRDFPerFragMaterial(
-      {color : vec3.fromValues(1, 1, 1), texture : logo});
-  var mesh = new CanvasToy.Mesh(cube, material);
+  var sphere = new CanvasToy.SphereGeometry(1, 0.1);
+  var material = new CanvasToy.BRDFPerFragMaterial({texture : logo});
+  var mesh = new CanvasToy.Mesh(sphere, material);
+
+  // scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
 
   var light = new CanvasToy.PointLight();
-  light.diffuse = vec3.fromValues(0.5, 0.5, 0.5);
+  light.diffuse = vec3.fromValues(0.1, 0.1, 0.1);
   light.specular = vec3.fromValues(0.1, 0.1, 0.1);
-  light.idensity = 4;
-
+  light.idensity = 0.5;
   scene.addLight(light);
-
   var angle = 0.01;
   mesh.translate(0, 0, -6.0);
-
   var time = 0;
-
+  mesh.rotateX(1);
   mesh.registerUpdate(() => {
-    mesh.rotateX(1 / 60);
-    mesh.rotateY(1 / 60);
+    time += 1 / 60;
+    mesh.rotateX(Math.sin(1 / 60));
+    mesh.rotateY(Math.sin(1 / 60));
   });
-
-  // mesh.translate(100, 0, 0);
-
-  // mesh.translate(100, 0, 0);
-
   scene.addObject(mesh);
   CanvasToy.engine.startRender(scene, camera, 1000 / 60);
 }

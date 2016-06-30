@@ -21,6 +21,7 @@ module CanvasToy {
             this.geometry = geometry;
             this.registerUpdate((event) => {
                 this.normalMatrix = mat4.invert(mat4.create(), this.modelViewMatrix);
+                this.normalMatrix = mat4.transpose(mat4.create(), this.normalMatrix);
             })
         }
     }
