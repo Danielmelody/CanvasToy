@@ -16,11 +16,9 @@ module CanvasToy {
             }
             else if (paramter.texture != undefined) {
                 this.map = paramter.texture;
-                this.addAttribute('aTextureCoord', this.map);
             }
             else if (paramter.color != undefined) {
                 this.color = paramter.color;
-                this.addUniform('uColor', this.color);
             }
 
             //this.ambient = vec4.fromValues(0.3, 0.3, 0.3, 1)

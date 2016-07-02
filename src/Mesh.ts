@@ -12,6 +12,7 @@ module CanvasToy {
 
         public geometry: Geometry;
         public material: Material;
+        public maps: Texture[] = [];
 
         public normalMatrix: Mat4Array = mat4.create();
 
@@ -20,8 +21,7 @@ module CanvasToy {
             this.material = material;
             this.geometry = geometry;
             this.registerUpdate((event) => {
-                this.normalMatrix = mat4.invert(mat4.create(), this.modelViewMatrix);
-                this.normalMatrix = mat4.transpose(mat4.create(), this.normalMatrix);
+                mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.modelViewMatrix));
             })
         }
     }

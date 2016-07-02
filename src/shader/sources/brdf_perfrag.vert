@@ -17,7 +17,7 @@ varying vec3 vNormal;
 void main (){
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 #ifdef OPEN_LIGHT
-    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;
+    vNormal = (normalMatrix * vec4(aNormal, 0.0)).xyz;
     vPosition = gl_Position.xyz;
 #endif
 

@@ -1,3 +1,5 @@
+/// <reference path="../textures/Texture.ts"/>
+
 module CanvasToy {
 
     export function setCanvas(canvas: HTMLCanvasElement) {
@@ -11,6 +13,10 @@ module CanvasToy {
         public gl: WebGLRenderingContext;
 
         public preloadRes: any[] = [];
+
+        textureIndices: {} = {};
+
+        usedTextureNum: number = 0;
 
         vertPrecision: string = "highp";
 
@@ -85,6 +91,7 @@ module CanvasToy {
             }
 
             if (mesh.material.map != undefined) {
+                mesh.maps.push(mesh.material.map);
                 mesh.program.addAttribute(
                     new VertexBuffer("aTextureCoord", 2, this.gl.FLOAT))
                     .data = mesh.geometry.uvs;
@@ -156,6 +163,11 @@ module CanvasToy {
             }
         }
 
+        addTexture(texture: Texture) {
+            this.textureIndices[texture.image.src] = this.usedTextureNum;
+            this.usedTextureNum++;
+        }
+
         public startRender(scene: Scene, camera: Camera, duration: number) {
             this.gl.clearColor(
                 scene.clearColor[0],
@@ -198,6 +210,37 @@ module CanvasToy {
             return result;
         }
 
+        private enableTexture(mesh, texture: Texture) {
+            let gl = engine.gl;
+            gl.useProgram(mesh.program.webGlProgram);
+
+            // add texture to texture-unit
+            this.addTexture(texture);
+            let textureIndex: number = this.textureIndices[texture.image.src];
+
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.activeTexture(gl.TEXTURE0 + textureIndex);
+            gl.bindTexture(gl.TEXTURE_2D, texture.glTexture);
+
+
+            // TODO: config texture paramters
+            gl.texImage2D(gl.TEXTURE_2D, 0,
+                gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+            // the sampler
+            mesh.program.addUniform("uTextureSampler", () => {
+                engine.gl.uniform1i(
+                    mesh.program.uniforms["uTextureSampler"],
+                    textureIndex);
+            })
+        }
+
         private copyToVertexBuffer(program: Program) {
             let gl = engine.gl;
             for (let name in program.vertexBuffers) {
@@ -208,13 +251,22 @@ module CanvasToy {
         };
 
         private renderObject(camera: Camera, object: Object) {
-            let gl = engine.gl;
+            let gl = this.gl;
             if (object instanceof Mesh) {
                 let mesh = <Mesh>object;
                 this.gl.useProgram(mesh.program.webGlProgram);
                 for (let updaters in mesh.program.uniformUpdaters) {
                     mesh.program.uniformUpdaters[updaters]();
                 }
+
+                // maping texture
+                for (let texture of mesh.maps) {
+                    if (texture.isReadyToUpdate) {
+                        this.enableTexture(mesh, texture);
+                        texture.isReadyToUpdate = false;
+                    }
+                }
+
                 for (let name in mesh.program.vertexBuffers) {
                     gl.bindBuffer(engine.gl.ARRAY_BUFFER, mesh.program.vertexBuffers[name].buffer);
                     engine.gl.vertexAttribPointer(

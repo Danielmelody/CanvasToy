@@ -30,17 +30,17 @@ void main() {
     textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));
 #endif
 #ifdef OPEN_LIGHT
-totalLighting = ambient;
+    totalLighting = ambient;
+    vec3 normal = normalize(vNormal);
     for (int index = 0; index < LIGHT_NUM; index++) {
-        vec3 lightDir = normalize(vPosition - lights[index].position);
-        float lambortian = max(dot(normalize(vNormal), lightDir), 0.0);
-        lambortian = pow(lambortian, lights[index].idensity);
-        vec3 reflectDir = reflect(lightDir, vNormal);
-        vec3 viewDir = normalize(eyePosition-vPosition);
+        vec3 lightDir = normalize(lights[index].position - vPosition);
+        float lambortian = max(dot(-lightDir, normal), 0.0);
+        vec3 reflectDir = reflect(-lightDir, normal);
+        vec3 viewDir = normalize(eyePosition - vPosition);
         float specularAngle = max(dot(reflectDir, viewDir), 0.0);
         float specular = pow(specularAngle, lights[index].idensity);
         vec3 specularColor = lights[index].specular * specular;
-        vec3 diffuseColor = lambortian * lights[index].diffuse;
+        vec3 diffuseColor = lights[index].diffuse * lambortian;
         totalLighting = totalLighting + (diffuseColor + specularColor);
     }
 #ifdef USE_TEXTURE
