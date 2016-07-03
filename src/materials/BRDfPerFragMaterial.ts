@@ -7,7 +7,6 @@ module CanvasToy {
             color: Vec4Array
         }) {
             super();
-
             this.vertexShaderSource = brdf_perfrag_vert;
             this.fragShaderSource = brdf_perfrag_frag;
             if (paramter.texture != undefined) {

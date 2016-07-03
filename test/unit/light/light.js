@@ -22,25 +22,20 @@ function start() {
   });
   var mesh1 = new CanvasToy.Mesh(cube1, material1);
 
-  var material2 = new CanvasToy.BRDFPerFragMaterial({
-    color : vec3.fromValues(1, 1, 1),
-    texture : new CanvasToy.Texture('../../images/me.png')
+  var material2 = new CanvasToy.BRDFPerVertMaterial({
+    // color : vec3.fromValues(1, 1, 1),
+    texture : new CanvasToy.Texture('../../images/chrome.png')
   });
   var mesh2 = new CanvasToy.Mesh(cube2, material2);
 
   scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
 
   var light1 = new CanvasToy.PointLight();
-  light1.diffuse = vec3.fromValues(0.5, 0.5, 0.5);
+  light1.diffuse = vec3.fromValues(0, 0, 0);
   light1.specular = vec3.fromValues(1, 1, 1);
-  light1.idensity = 1;
+  light1.idensity = 2;
+  light1.position[2] = 10;
   scene.addLight(light1);
-
-  var light2 = new CanvasToy.PointLight();
-  light2.diffuse = vec3.fromValues(1, 1, 1);
-  light2.specular = vec3.fromValues(1, 1, 1);
-  light2.idensity = 0.1;
-  light2.position[1] = 2;
   // scene.addLight(light2);
 
   mesh1.translate(2, 0, -6.0);
@@ -49,10 +44,9 @@ function start() {
   var time = 0;
 
   mesh1.registerUpdate(() => {
-    mesh1.rotateY(1 / 60);
-    mesh1.rotateX(1 / 100);
-    mesh2.rotateY(-1 / 60);
-    mesh2.rotateX(-1 / 100);
+    light1.position[2] += 0.1;
+    // mesh1.rotateY(-1 / 300);
+    // mesh2.rotateY(1 / 300);
   });
 
   // mesh.translate(100, 0, 0);

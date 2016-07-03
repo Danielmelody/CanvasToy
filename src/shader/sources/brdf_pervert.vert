@@ -1,53 +1,50 @@
-#ifdef USE_COLOR // color declaration
-uniform vec4 color;
-#endif // color declaration
+attribute vec3 position;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
 
-#ifdef USE_TEXTURE // texture declaration
+#ifdef USE_TEXTURE // texture
+attribute vec2 aTextureCoord;
 varying vec2 vTextureCoord;
-uniform sampler2D uTextureSampler;
-vec4 textureColor;
-#endif // texture declaration
+#endif // texture
 
-#ifdef OPEN_LIGHT // light declaration
+#ifdef OPEN_LIGHT // light
 struct Light {
     vec3 specular;
     vec3 diffuse;
     float idensity;
     vec3 position;
     bool directional;
-};
+}; // light
+
 uniform vec3 ambient;
 uniform vec3 eyePosition;
-varying vec3 vPosition;
+uniform mat4 normalMatrix;
+attribute vec3 aNormal;
+varying vec3 vLightColor;
 vec3 totalLighting;
 uniform Light lights[LIGHT_NUM];
-varying vec3 vNormal;
-#endif // light declaration
-
-void main() {
-#ifdef USE_TEXTURE
-    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));
 #endif
+
+void main (){
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 #ifdef OPEN_LIGHT
+    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;
     totalLighting = ambient;
-    vec3 normal = normalize(vNormal);
+    normal = normalize(normal);
     for (int index = 0; index < LIGHT_NUM; index++) {
-        vec3 lightDir = normalize(lights[index].position - vPosition);
+        vec3 lightDir = normalize(lights[index].position - gl_Position.xyz);
         float lambortian = max(dot(lightDir, normal), 0.0);
         vec3 reflectDir = reflect(-lightDir, normal);
-        vec3 viewDir = normalize(eyePosition - vPosition);
+        vec3 viewDir = normalize(eyePosition - gl_Position.xyz);
         float specularAngle = max(dot(reflectDir, viewDir), 0.0);
         float specular = pow(specularAngle, lights[index].idensity);
         vec3 specularColor = lights[index].specular * specular;
         vec3 diffuseColor = lights[index].diffuse * lambortian * lights[index].idensity;
         totalLighting = totalLighting + (diffuseColor + specularColor);
     }
-    gl_FragColor = vec4(totalLighting, 1.0);
+    vLightColor = totalLighting;
 #endif
 #ifdef USE_TEXTURE
-    gl_FragColor = gl_FragColor * textureColor;
-#endif
-#ifdef USE_COLOR
-    gl_FragColor = gl_FragColor * color;
+    vTextureCoord = aTextureCoord;
 #endif
 }
