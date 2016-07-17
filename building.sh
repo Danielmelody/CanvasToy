@@ -2,5 +2,6 @@
 node utils/glslLoader.js
 tsfmt **/*.ts -r
 tsc
-grunt concat
-grunt uglify
+cat lib/modules/gl-matrix-min.js > build/canvas-toy.js
+cat build/canvas-toy-nolibrary.js >> build/canvas-toy.js;
+uglifyjs build/canvas-toy.js -o build/canvas-toy-min.js

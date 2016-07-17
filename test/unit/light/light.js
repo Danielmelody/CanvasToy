@@ -18,7 +18,7 @@ function start() {
 
   var material1 = new CanvasToy.BRDFPerFragMaterial({
     color : vec3.fromValues(1, 1, 1),
-    texture : new CanvasToy.Texture('../../images/chrome.png')
+    texture : new CanvasToy.Texture('../../images/me.png')
   });
   var mesh1 = new CanvasToy.Mesh(cube1, material1);
 
@@ -28,15 +28,16 @@ function start() {
   });
   var mesh2 = new CanvasToy.Mesh(cube2, material2);
 
-  scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
+  scene.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
 
   var light1 = new CanvasToy.PointLight();
-  light1.diffuse = vec3.fromValues(0, 0, 0);
-  light1.specular = vec3.fromValues(1, 1, 1);
-  light1.idensity = 2;
-  light1.position[2] = 10;
+
+  var light2 = new CanvasToy.PointLight();
+
+  light2.position[0] = 10;
+  // light1.position[2] = 10;
   scene.addLight(light1);
-  // scene.addLight(light2);
+  scene.addLight(light2);
 
   mesh1.translate(2, 0, -6.0);
   mesh2.translate(-2, 0, -6.0);
@@ -44,9 +45,9 @@ function start() {
   var time = 0;
 
   mesh1.registerUpdate(() => {
-    light1.position[2] += 0.1;
-    // mesh1.rotateY(-1 / 300);
-    // mesh2.rotateY(1 / 300);
+    // light1.position[2] += 0.1;
+    mesh1.rotateY(-1 / 300);
+    mesh2.rotateY(1 / 300);
   });
 
   // mesh.translate(100, 0, 0);
