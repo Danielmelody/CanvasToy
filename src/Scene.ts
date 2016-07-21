@@ -4,6 +4,7 @@ module CanvasToy {
 
     export class Scene {
 
+        // TODO: optimize objects storage management;
         public objects: Array<Object3d> = [];
 
         public lights: Array<Light> = [];
@@ -20,7 +21,7 @@ module CanvasToy {
             window.setInterval(() => this.update(1000 / 60), 1000 / 60);
         }
 
-        update(dt: Number) {
+        update(dt: number) {
             for (let object of this.objects) {
                 object.update(dt);
             }
@@ -29,6 +30,24 @@ module CanvasToy {
         addObject(object: Object3d) {
             this.objects.push(object);
             object.scene = this;
+            if (object instanceof Node) {
+                let node = <Node>object;
+                console.log(node);
+                node.children.forEach((child) => {
+                    this.addObject(child);
+                    console.log(child);
+                })
+            }
+        }
+
+        removeObject(object: Object3d) {
+            if (object instanceof Node) {
+                let node = <Node>object;
+                node.children.forEach((child) => {
+                    this.removeObject(child);
+                })
+            }
+            this.objects.splice(this.objects.indexOf(object));
         }
 
         addLight(light: Light) {

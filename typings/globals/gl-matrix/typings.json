@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/84cfb492077a1aef505162e4b0400a0887fe170d/gl-matrix/gl-matrix.d.ts",
+    "raw": "registry:dt/gl-matrix#2.2.2+20160701060731",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/84cfb492077a1aef505162e4b0400a0887fe170d/gl-matrix/gl-matrix.d.ts"
+  }
+}

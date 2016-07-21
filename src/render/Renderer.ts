@@ -63,7 +63,7 @@ module CanvasToy {
             mesh.program.addUniform("modelViewMatrix", () => {
                 engine.gl.uniformMatrix4fv(
                     mesh.program.uniforms["modelViewMatrix"],
-                    false, new Float32Array(mesh.modelViewMatrix));
+                    false, new Float32Array(mesh.matrix));
             });
             mesh.program.addUniform("projectionMatrix", () => {
                 engine.gl.uniformMatrix4fv(
@@ -298,7 +298,7 @@ module CanvasToy {
         }
 
         private initMatrix() {
-            glMatrix.setMatrixArrayType(Float32Array);
+            // glMatrix.setMatrixArrayType(Float32Array);
         }
     }
 }

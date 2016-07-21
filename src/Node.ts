@@ -7,17 +7,23 @@ module CanvasToy {
      */
     export class Node extends Object3d {
 
-        protected parent: Node;
+        public children: Array<Node>;
 
-        protected children: Array<Node>;
-
-        protected relativeMatrix: Mat4Array;
+        protected parent: Node = null;
 
         constructor() {
             super();
             this.parent = null;
             this.children = [];
-            this.relativeMatrix = mat4.create();
+            this.registerUpdate(() => {
+                var current: Node = this;
+                this.matrix = mat4.copy(mat4.create(), this.localMatrix)
+                while (current != null) {
+                    // FIXME: bones matrix calculate, should use totalRotationMatrix * totalTranslationMatrix
+                    this.matrix = mat4.mul(mat4.create(), current.localMatrix, this.matrix);
+                    current = current.parent;
+                }
+            })
         }
 
         public addChild(child: Node) {
@@ -26,11 +32,7 @@ module CanvasToy {
         }
 
         public compuseMatrixs() {
-            var parentMatrix = this.parent.matrix;
-            this.modelViewMatrix = mat4.mul(mat4.create(), this.relativeMatrix, parentMatrix);
-            for (let child of this.children) {
-                child.compuseMatrixs();
-            }
+
         }
     }
 }

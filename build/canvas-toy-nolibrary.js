@@ -8,15 +8,6 @@ var CanvasToy;
     var version = 2;
     CanvasToy.debug = true;
 })(CanvasToy || (CanvasToy = {}));
-CanvasToy.glMatrix = glMatrix;
-CanvasToy.vec2 = vec2;
-CanvasToy.vec3 = vec3;
-CanvasToy.vec4 = vec4;
-CanvasToy.mat2 = mat2;
-CanvasToy.mat2d = mat2d;
-CanvasToy.mat3 = mat3;
-CanvasToy.mat4 = mat4;
-CanvasToy.quat = quat;
 var CanvasToy;
 (function (CanvasToy) {
     var Geometry = (function () {
@@ -59,10 +50,10 @@ var CanvasToy;
 var CanvasToy;
 (function (CanvasToy) {
     CanvasToy.colors = {
-        white: CanvasToy.vec4.fromValues(1, 1, 1, 1),
-        black: CanvasToy.vec4.fromValues(0, 0, 0, 1),
-        gray: CanvasToy.vec4.fromValues(0.5, 0.5, 0.5, 1),
-        red: CanvasToy.vec4.fromValues(1, 0, 0, 1)
+        white: vec4.fromValues(1, 1, 1, 1),
+        black: vec4.fromValues(0, 0, 0, 1),
+        gray: vec4.fromValues(0.5, 0.5, 0.5, 1),
+        red: vec4.fromValues(1, 0, 0, 1)
     };
     (function (ShadingMode) {
         ShadingMode[ShadingMode["flatShading"] = 0] = "flatShading";
@@ -74,10 +65,10 @@ var CanvasToy;
             this.attributes = {};
             this.uniforms = {};
             this.samplers = {};
-            this.ambient = CanvasToy.vec3.fromValues(0.1, 0.1, 0.1);
-            this.diffuse = CanvasToy.vec3.fromValues(0.8, 0.8, 0.8);
-            this.specular = CanvasToy.vec3.fromValues(1, 1, 1);
-            this.opacity = CanvasToy.vec3.fromValues(0, 0, 0);
+            this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
+            this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
+            this.specular = vec3.fromValues(1, 1, 1);
+            this.opacity = vec3.fromValues(0, 0, 0);
             this.shadingMode = ShadingMode.smoothShading;
         }
         Material.prototype.addAttribute = function (name, data) {
@@ -94,13 +85,13 @@ var CanvasToy;
 (function (CanvasToy) {
     var Object3d = (function () {
         function Object3d() {
+            this.localMatrix = mat4.create();
+            this.matrix = mat4.create();
+            this.position = vec4.create();
+            this.size = vec3.create();
+            this.rotate = vec3.create();
             this.updateEvents = [];
             this.startEvents = [];
-            this.modelViewMatrix = CanvasToy.mat4.create();
-            this.translate(0, 0, 0);
-            this.matrix = CanvasToy.mat4.create();
-            this.position = CanvasToy.vec4.create();
-            this.size = CanvasToy.vec3.create();
         }
         Object3d.prototype.registerUpdate = function (updateFunction) {
             this.updateEvents.push(updateFunction);
@@ -121,17 +112,17 @@ var CanvasToy;
             }
         };
         Object3d.prototype.translate = function (deltaX, deltaY, deltaZ) {
-            this.modelViewMatrix = CanvasToy.mat4.translate(CanvasToy.mat4.create(), this.modelViewMatrix, CanvasToy.vec3.fromValues(deltaX, deltaY, deltaZ));
+            this.localMatrix = mat4.translate(mat4.create(), this.localMatrix, vec3.fromValues(deltaX, deltaY, deltaZ));
         };
         Object3d.prototype.translateTo = function (deltaX, deltaY, deltaZ) { };
         Object3d.prototype.rotateX = function (angle) {
-            this.modelViewMatrix = CanvasToy.mat4.rotateX(CanvasToy.mat4.create(), this.modelViewMatrix, angle);
+            this.localMatrix = mat4.rotateX(mat4.create(), this.localMatrix, angle);
         };
         Object3d.prototype.rotateY = function (angle) {
-            this.modelViewMatrix = CanvasToy.mat4.rotateY(CanvasToy.mat4.create(), this.modelViewMatrix, angle);
+            this.localMatrix = mat4.rotateY(mat4.create(), this.localMatrix, angle);
         };
         Object3d.prototype.rotateZ = function (angle) {
-            this.modelViewMatrix = CanvasToy.mat4.rotateZ(CanvasToy.mat4.create(), this.modelViewMatrix, angle);
+            this.localMatrix = mat4.rotateZ(mat4.create(), this.localMatrix, angle);
         };
         Object3d.prototype.scale = function (rateX, rateY, rateZ) {
             if (rateY == undefined) {
@@ -140,7 +131,7 @@ var CanvasToy;
             if (rateZ == undefined) {
                 var rateZ = rateX;
             }
-            this.modelViewMatrix = CanvasToy.mat4.scale(CanvasToy.mat4.create(), this.modelViewMatrix, CanvasToy.vec3.fromValues(rateX, rateY, rateZ));
+            this.localMatrix = mat4.scale(mat4.create(), this.localMatrix, vec3.fromValues(rateX, rateY, rateZ));
         };
         return Object3d;
     }());
@@ -151,22 +142,25 @@ var CanvasToy;
     var Node = (function (_super) {
         __extends(Node, _super);
         function Node() {
+            var _this = this;
             _super.call(this);
             this.parent = null;
+            this.parent = null;
             this.children = [];
-            this.relativeMatrix = CanvasToy.mat4.create();
+            this.registerUpdate(function () {
+                var current = _this;
+                _this.matrix = mat4.copy(mat4.create(), _this.localMatrix);
+                while (current != null) {
+                    _this.matrix = mat4.mul(mat4.create(), current.localMatrix, _this.matrix);
+                    current = current.parent;
+                }
+            });
         }
         Node.prototype.addChild = function (child) {
             this.children.push(child);
             child.parent = this;
         };
         Node.prototype.compuseMatrixs = function () {
-            var parentMatrix = this.parent.matrix;
-            this.modelViewMatrix = CanvasToy.mat4.mul(CanvasToy.mat4.create(), this.relativeMatrix, parentMatrix);
-            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
-                var child = _a[_i];
-                child.compuseMatrixs();
-            }
         };
         return Node;
     }(CanvasToy.Object3d));
@@ -224,11 +218,11 @@ var CanvasToy;
             _super.call(this);
             this.drawMode = CanvasToy.engine.gl.STATIC_DRAW;
             this.maps = [];
-            this.normalMatrix = CanvasToy.mat4.create();
+            this.normalMatrix = mat4.create();
             this.material = material;
             this.geometry = geometry;
             this.registerUpdate(function (event) {
-                CanvasToy.mat4.transpose(_this.normalMatrix, CanvasToy.mat4.invert(CanvasToy.mat4.create(), _this.modelViewMatrix));
+                mat4.transpose(_this.normalMatrix, mat4.invert(mat4.create(), _this.matrix));
             });
         }
         return Mesh;
@@ -242,7 +236,7 @@ var CanvasToy;
             var _this = this;
             this.objects = [];
             this.lights = [];
-            this.ambientLight = CanvasToy.vec3.fromValues(0, 0, 0);
+            this.ambientLight = vec3.fromValues(0, 0, 0);
             this.openLight = true;
             this.enableShadowMap = false;
             this.clearColor = [0, 0, 0, 0];
@@ -255,8 +249,27 @@ var CanvasToy;
             }
         };
         Scene.prototype.addObject = function (object) {
+            var _this = this;
             this.objects.push(object);
             object.scene = this;
+            if (object instanceof CanvasToy.Node) {
+                var node = object;
+                console.log(node);
+                node.children.forEach(function (child) {
+                    _this.addObject(child);
+                    console.log(child);
+                });
+            }
+        };
+        Scene.prototype.removeObject = function (object) {
+            var _this = this;
+            if (object instanceof CanvasToy.Node) {
+                var node = object;
+                node.children.forEach(function (child) {
+                    _this.removeObject(child);
+                });
+            }
+            this.objects.splice(this.objects.indexOf(object));
         };
         Scene.prototype.addLight = function (light) {
             this.lights.push(light);
@@ -347,9 +360,7 @@ var CanvasToy;
         __extends(Camera, _super);
         function Camera() {
             _super.call(this);
-            this.projectionMatrix = CanvasToy.mat4.create();
-            console.log(this.projectionMatrix);
-            console.log("init camera");
+            this.projectionMatrix = mat4.create();
         }
         return Camera;
     }(CanvasToy.Object3d));
@@ -361,7 +372,7 @@ var CanvasToy;
         __extends(OrthoCamera, _super);
         function OrthoCamera(options) {
             _super.call(this);
-            CanvasToy.mat4.ortho(this.projectionMatrix, -1.0, 1.0, -1.0, 1.0, 0.1, 100);
+            mat4.ortho(this.projectionMatrix, -1.0, 1.0, -1.0, 1.0, 0.1, 100);
         }
         return OrthoCamera;
     }(CanvasToy.Camera));
@@ -373,7 +384,7 @@ var CanvasToy;
         __extends(PerspectiveCamera, _super);
         function PerspectiveCamera(options) {
             _super.call(this);
-            this.projectionMatrix = CanvasToy.mat4.perspective(this.projectionMatrix, 45, 640 / 480, 0.1, 100);
+            this.projectionMatrix = mat4.perspective(this.projectionMatrix, 45, 640 / 480, 0.1, 100);
         }
         return PerspectiveCamera;
     }(CanvasToy.Camera));
@@ -541,8 +552,8 @@ var CanvasToy;
         __extends(Light, _super);
         function Light() {
             _super.call(this);
-            this.diffuse = CanvasToy.vec3.fromValues(1.0, 1.0, 1.0);
-            this.specular = CanvasToy.vec3.fromValues(1.0, 1.0, 1.0);
+            this.diffuse = vec3.fromValues(1.0, 1.0, 1.0);
+            this.specular = vec3.fromValues(1.0, 1.0, 1.0);
             this.idensity = 1.0;
         }
         return Light;
@@ -690,7 +701,7 @@ var CanvasToy;
             mesh.program.webGlProgram = CanvasToy.createEntileShader(this.gl, prefixVertex + mesh.material.vertexShaderSource, prefixFragment + mesh.material.fragShaderSource);
             this.gl.useProgram(mesh.program.webGlProgram);
             mesh.program.addUniform("modelViewMatrix", function () {
-                CanvasToy.engine.gl.uniformMatrix4fv(mesh.program.uniforms["modelViewMatrix"], false, new Float32Array(mesh.modelViewMatrix));
+                CanvasToy.engine.gl.uniformMatrix4fv(mesh.program.uniforms["modelViewMatrix"], false, new Float32Array(mesh.matrix));
             });
             mesh.program.addUniform("projectionMatrix", function () {
                 CanvasToy.engine.gl.uniformMatrix4fv(mesh.program.uniforms["projectionMatrix"], false, new Float32Array(camera.projectionMatrix));
@@ -859,7 +870,6 @@ var CanvasToy;
             }
         };
         Renderer.prototype.initMatrix = function () {
-            CanvasToy.glMatrix.setMatrixArrayType(Float32Array);
         };
         return Renderer;
     }());
