@@ -3,7 +3,6 @@
 module CanvasToy {
     export class ModelLoader {
 
-
         private static fetch(url: string, onload: (content: string) => void) {
             var request = new XMLHttpRequest();
             request.onreadystatechange = () => {
@@ -16,41 +15,47 @@ module CanvasToy {
             request.open('GET', url);
             request.send();
         }
-        public static loadObj(url: string, onload: () => void) {
-            //var lineRegular:RegExp = new RegExp('.+\n');
-            var numberRegular: RegExp = new RegExp('^(-?\d+)(\.\d+)?$')
-            var positionRegular: RegExp = new RegExp('v.+');
-            var uvRegular: RegExp = new RegExp('vt.+');
+
+        private static praiseObject() {
+
+        }
+
+        public static loadObj(url: string, onload: (meshes:Node) => void) {
+            var numberRegular = /([0-9]|\s|\.|\-|)+/g;
+            var objectSplitRegular = /o\s.+/g, m;
+            var materialRegular = /usemtl\s.+/;
+            var vertexRegular = /v\s([0-9]|\s|\.|\-|)+/g, m;
+            var uvRegular = /vt\s([0-9]|\s|\.|\-|)+/g, m;
+            var normalRegular = /vn\s([0-9]|\s|\.|\-|)+/g, m;
+            var indexRegular = /f.+/, m;
+            var praise = (expressions, geometry, targetArray: string) => {
+                expressions.forEach((positionExpression: string) => {
+                    var data = positionExpression.match(numberRegular).map(
+                        (expression) => parseFloat(expression)
+                    );
+                    geometry[targetArray] = geometry[targetArray].concat(data);
+                });
+            }
             ModelLoader.fetch(url, (content: string) => {
-                var geometry: Geometry = new Geometry();
-                var lines: Array<string>;
-                var positions: Array<string>;
-                var uvs: Array<string>;
-                var normals: Array<string>;
-                lines = content.split('\n');
-                for (let line of lines) {
-                    if (line.match(positionRegular)) {
-                        positions.push(line);
-                    }
-                    if (line.match(uvRegular)) {
-                        uvs.push(line);
-                    }
+                var meshes = new Node();
+                var sparation = content.match(objectSplitRegular);
+                var geometryContents = content.split(objectSplitRegular);
+                for (let i = 0; i < geometryContents.length; ++i) {
+                    var geometry = new Geometry();
+                    let positionExpressions: Array<string> = content.match(vertexRegular)
+                    let uvExpressions: Array<string> = content.match(uvRegular);
+                    let normalExpressions: Array<string> = content.match(normalRegular);
+                    let indicesExpressions: Array<string> = content.match(indexRegular);
+                    praise(positionExpressions, geometry, 'positions');
+                    praise(uvExpressions, geometry, 'uvs');
+                    praise(normalExpressions, geometry, "normals");
+                    praise(indicesExpressions, geometry, 'indices');
+                    // TODO: praise mtl file
+                    var mesh = new Mesh(geometry, new BRDFPerFragMaterial());
+                    meshes.addChild(mesh);
                 }
-                // the amount of uvs and normals must match the amount of vertices
-                if (uvs.length > 0 && positions.length != uvs.length) {
-                    console.error('obj file format error!');
-                    return null;
-                }
-
-
-
-
+                onload(meshes);
             });
-
-
-
-
-
         }
 
     }

@@ -34,7 +34,7 @@ void main() {
     for (int index = 0; index < LIGHT_NUM; index++) {
         vec3 lightDir = normalize(lights[index].position - vPosition);
         float lambortian = max(dot(lightDir, normal), 0.0);
-        vec3 reflectDir = reflect(-lightDir, normal);
+        vec3 reflectDir = reflect(lightDir, normal);
         vec3 viewDir = normalize(eyePosition - vPosition);
         float specularAngle = max(dot(reflectDir, viewDir), 0.0);
         float specular = pow(specularAngle, lights[index].idensity);
