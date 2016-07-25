@@ -1,6 +1,5 @@
 attribute vec3 position;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
+uniform mat4 modelViewProjectionMatrix;
 
 #ifdef USE_TEXTURE // texture
 attribute vec2 aTextureCoord;
@@ -26,7 +25,7 @@ uniform Light lights[LIGHT_NUM];
 #endif
 
 void main (){
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
 #ifdef OPEN_LIGHT
     vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;
     totalLighting = ambient;

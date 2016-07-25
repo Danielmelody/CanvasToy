@@ -60,16 +60,20 @@ module CanvasToy {
 
             this.gl.useProgram(mesh.program.webGlProgram);
 
-            mesh.program.addUniform("modelViewMatrix", () => {
+            mesh.program.addUniform("modelViewProjectionMatrix", () => {
+                let mvpMatrix = mat4.multiply(
+                    mat4.create(),
+                    camera.projectionMatrix,
+                    mat4.multiply(mat4.create(),
+                        mat4.invert(mat4.create(), camera.matrix),
+                        mesh.matrix)
+                );
                 engine.gl.uniformMatrix4fv(
-                    mesh.program.uniforms["modelViewMatrix"],
-                    false, new Float32Array(mesh.matrix));
+                    mesh.program.uniforms["modelViewProjectionMatrix"],
+                    false, new Float32Array(mvpMatrix));
             });
-            mesh.program.addUniform("projectionMatrix", () => {
-                engine.gl.uniformMatrix4fv(
-                    mesh.program.uniforms["projectionMatrix"],
-                    false, new Float32Array(camera.projectionMatrix));
-            });
+
+            console.log("test");
 
             mesh.program.indexBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.program.indexBuffer);

@@ -12,8 +12,15 @@ function start() {
   scene.addLight(light);
   CanvasToy.OBJLoader.load('../../models/teapot.obj', (object) => {
     scene.addObject(object);
+    scene.addObject(camera);
     CanvasToy.engine.startRender(scene, camera, 1000 / 60);
     object.translate(0, 0, -30);
-    object.registerUpdate(() => {object.rotateY(0.01)});
+    var time = 0;
+
+    object.registerUpdate(() => {
+      time += 1 / 60;
+      object.rotateY(0.01);
+      camera.rotateY(0.001 * Math.cos(time / 2));
+    });
   });
 }

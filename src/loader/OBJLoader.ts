@@ -26,31 +26,30 @@ module CanvasToy {
         }
 
         function praiseAttibuteLines(lines) {
-                let result: Array<Array<number>> = [];
-                console.log(lines);
-                if (lines == null) {
-                    return;
+            let result: Array<Array<number>> = [];
+            if (lines == null) {
+                return;
+            }
+            lines.forEach((expression: string) => {
+                let data: Array<number> = [];
+                if (expression.match(numberRegular) == null) {
+                    console.log(expression);
                 }
-                lines.forEach((expression: string) => {
-                    let data:Array<number> = [];
-                    if (expression.match(numberRegular) == null) {
-                        console.log(expression);
-                    }
-                    expression.match(numberRegular).forEach(
-                        (expression) => {
-                            if (expression != "") {
-                                data.push(parseFloat(expression));
-                            }
+                expression.match(numberRegular).forEach(
+                    (expression) => {
+                        if (expression != "") {
+                            data.push(parseFloat(expression));
                         }
-                    );
-                    result.push(data);
-                });
-                return result;
+                    }
+                );
+                result.push(data);
+            });
+            return result;
         }
 
-        function fillAVertex(target:Array<number>, vertIndex:number, data:Array<number>) {
-            for(let i = 0; i < data.length; ++i) {
-                target[vertIndex * data.length +i] = data[i];
+        function fillAVertex(target: Array<number>, vertIndex: number, data: Array<number>) {
+            for (let i = 0; i < data.length; ++i) {
+                target[vertIndex * data.length + i] = data[i];
             }
         }
 
@@ -58,12 +57,10 @@ module CanvasToy {
             fetch(url, (content: string) => {
                 // remove comment
                 content = content.replace(commentRegular, '');
-                console.log(content);
                 var meshes = new Node();
                 var sparation = content.match(objectSplitRegular);
                 var geometryContents = content.split(objectSplitRegular);
                 for (let i = 1; i < geometryContents.length; ++i) {
-                    // console.log(geometryContents[i]);
                     var geometry = new Geometry();
                     let positionlines: Array<string> = geometryContents[i].match(vertexRegular)
                     let uvlines: Array<string> = geometryContents[i].match(uvRegular);
@@ -77,7 +74,7 @@ module CanvasToy {
                         geometry.normals = new Array(unIndexedPositions.length);
                         geometry.normals = new Array(unIndexedPositions.length);
 
-                        unIndexedPositions.forEach((poss:Array<number>) => {
+                        unIndexedPositions.forEach((poss: Array<number>) => {
                             geometry.positions = geometry.positions.concat(poss);
                         })
 

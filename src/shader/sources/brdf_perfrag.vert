@@ -1,6 +1,5 @@
 attribute vec3 position;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
+uniform mat4 modelViewProjectionMatrix;
 
 #ifdef USE_TEXTURE
 attribute vec2 aTextureCoord;
@@ -15,7 +14,7 @@ varying vec3 vNormal;
 #endif
 
 void main (){
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
 #ifdef OPEN_LIGHT
     vNormal = (normalMatrix * vec4(aNormal, 0.0)).xyz;
     vPosition = gl_Position.xyz;
