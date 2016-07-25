@@ -9,18 +9,26 @@ lightweight webgl rendering tool
 -   Texture-mapping
 -   Lambert material
 -   Custom shader material
--   Bones
 
-###Recently roadmap:
+### Build && Test
 
--   PhongMaterial
+```bash
+npm install
+./building.sh && ./testing.sh
+```
+
+
+
+###Next roadmap:
+
+-   ~~PhongMaterial~~ *finished*
 -   Physically base shading
--   Normal mapping
--   Diffuse and specular mapping
+-   ~~Normal mapping~~  *finished*
 -   Encapsulation of commonly used noise
+-   build && test using pure node.js and typescript compiler, without gulp or grunt, webpack and bash , etc.
 
 
 
-## License
+##  License
 
 the MIT license
