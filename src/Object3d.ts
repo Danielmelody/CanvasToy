@@ -4,6 +4,8 @@ module CanvasToy {
 
     export class Object3d {
 
+        public name: string;
+
         public scene: Scene;
 
         public localMatrix: Mat4Array = mat4.create();

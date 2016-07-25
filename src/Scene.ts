@@ -32,10 +32,8 @@ module CanvasToy {
             object.scene = this;
             if (object instanceof Node) {
                 let node = <Node>object;
-                console.log(node);
                 node.children.forEach((child) => {
                     this.addObject(child);
-                    console.log(child);
                 })
             }
         }

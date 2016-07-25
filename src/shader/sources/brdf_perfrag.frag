@@ -37,10 +37,11 @@ void main() {
         vec3 reflectDir = reflect(-lightDir, normal);
         vec3 viewDir = normalize(eyePosition - vPosition);
         float specularAngle = max(dot(reflectDir, viewDir), 0.0);
-        float specular = pow(specularAngle, lights[index].idensity);
+        // TODO: replace 2.0 to material shineness
+        float specular = pow(specularAngle, 8.0);
         vec3 specularColor = lights[index].specular * specular;
         vec3 diffuseColor = lights[index].diffuse * lambortian * lights[index].idensity;
-        totalLighting = totalLighting + (diffuseColor + specularColor);
+        totalLighting = totalLighting + diffuseColor + specularColor;
     }
     gl_FragColor = vec4(totalLighting, 1.0);
 #endif

@@ -8,10 +8,13 @@ module CanvasToy {
     export class Mesh extends Node {
 
         public drawMode: number = engine.gl.STATIC_DRAW;
+
         public program: Program;
 
         public geometry: Geometry;
+
         public material: Material;
+
         public maps: Texture[] = [];
 
         public normalMatrix: Mat4Array = mat4.create();

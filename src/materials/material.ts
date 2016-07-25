@@ -47,7 +47,15 @@ module CanvasToy {
 
         public reflactivity: number;
 
-        constructor() {
+        constructor(paramter: { texture: Texture, color: Vec4Array } = { texture: undefined, color: CanvasToy.colors.white }) {
+            if (paramter.texture != undefined) {
+                this.map = paramter.texture;
+                this.addAttribute('aTextureCoord', this.map);
+            }
+            if (paramter.color != undefined) {
+                this.color = paramter.color;
+                this.addUniform('uColor', this.color);
+            }
         }
 
         addAttribute(name: string, data: any) {

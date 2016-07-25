@@ -3,10 +3,14 @@
 module CanvasToy {
 
     export class Geometry {
-        public positions: any[] = [];
-        public uvs: any[] = [];
-        public normals: any[] = [];
-        public indices: Array<number> = [];
+
+        public positions: number[] = [];
+
+        public uvs: number[] = [];
+
+        public normals: number[] = [];
+
+        public indices: number[] = [];
 
         constructor(size?: number) {
         }

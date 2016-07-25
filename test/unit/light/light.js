@@ -28,32 +28,19 @@ function start() {
   });
   var mesh2 = new CanvasToy.Mesh(cube2, material2);
 
-  scene.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
+  scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
 
-  var light1 = new CanvasToy.PointLight();
+  var light = new CanvasToy.PointLight();
+  // light.diffuse = CanvasToy.vec4.fromValues(0, 0, 0, 0);
+  light.indensity = 10;
+  light.position = mesh1.position;
+  scene.addLight(light);
 
-  var light2 = new CanvasToy.PointLight();
-
-  light2.position[0] = 10;
-  // light1.position[2] = 10;
-  scene.addLight(light1);
-  scene.addLight(light2);
-
-  mesh1.translate(2, 0, -6.0);
-  mesh2.translate(-2, 0, -6.0);
-
+  mesh1.translate(0, -1, -6.0);
+  mesh2.translate(0, 5, -6.0);
   var time = 0;
 
-  mesh1.registerUpdate(() => {
-    // light1.position[2] += 0.1;
-    mesh1.rotateY(-1 / 300);
-    mesh2.rotateY(1 / 300);
-  });
-
-  // mesh.translate(100, 0, 0);
-
-  // mesh.translate(100, 0, 0);
-
+  mesh1.registerUpdate(() => {mesh1.scale(1.001, 1.001, 1.001)});
   scene.addObject(mesh1);
   scene.addObject(mesh2);
   CanvasToy.engine.startRender(scene, camera, 1000 / 60);
