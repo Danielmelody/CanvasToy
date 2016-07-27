@@ -24,10 +24,13 @@ function start() {
   scene.addObject(node);
   scene.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
   var light = new CanvasToy.PointLight();
+  light.idensity = 4;
   scene.addLight(light);
 
-  mesh1.translate(2, 0, -6.0);
-  mesh2.translate(-2, 0, -6.0);
+  mesh1.translate(2, 0, 0);
+  mesh2.translate(-2, 0, 0);
+
+  node.translate(0, 0, -10.0);
 
   mesh1.registerUpdate(() => { node.rotateY(0.01); });
   CanvasToy.engine.startRender(scene, camera, 1000 / 60);

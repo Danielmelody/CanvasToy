@@ -33,10 +33,10 @@ void main (){
     for (int index = 0; index < LIGHT_NUM; index++) {
         vec3 lightDir = normalize(lights[index].position - gl_Position.xyz);
         float lambortian = max(dot(lightDir, normal), 0.0);
-        vec3 reflectDir = reflect(-lightDir, normal);
+        vec3 reflectDir = reflect(lightDir, normal);
         vec3 viewDir = normalize(eyePosition - gl_Position.xyz);
         float specularAngle = max(dot(reflectDir, viewDir), 0.0);
-        float specular = pow(specularAngle, lights[index].idensity);
+        float specular = pow(specularAngle, 16.0);
         vec3 specularColor = lights[index].specular * specular;
         vec3 diffuseColor = lights[index].diffuse * lambortian * lights[index].idensity;
         totalLighting = totalLighting + (diffuseColor + specularColor);

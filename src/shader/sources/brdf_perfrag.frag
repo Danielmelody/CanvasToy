@@ -34,14 +34,14 @@ void main() {
     for (int index = 0; index < LIGHT_NUM; index++) {
         vec3 lightDir = normalize(lights[index].position - vPosition);
         float lambortian = max(dot(lightDir, normal), 0.0);
-        vec3 reflectDir = reflect(-lightDir, normal);
+        vec3 reflectDir = reflect(lightDir, normal);
         vec3 viewDir = normalize(eyePosition - vPosition);
         float specularAngle = max(dot(reflectDir, viewDir), 0.0);
-        // TODO: replace 2.0 to material shineness
-        float specular = pow(specularAngle, 8.0);
+        // TODO: replace the 2rd paramter to material shineness
+        float specular = pow(specularAngle, 16.0);
         vec3 specularColor = lights[index].specular * specular;
-        vec3 diffuseColor = lights[index].diffuse * lambortian * lights[index].idensity;
-        totalLighting = totalLighting + diffuseColor + specularColor;
+        vec3 diffuseColor = lights[index].diffuse * lambortian;
+        totalLighting += (diffuseColor + specularColor) * lights[index].idensity;
     }
     gl_FragColor = vec4(totalLighting, 1.0);
 #endif

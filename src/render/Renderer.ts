@@ -32,6 +32,18 @@ module CanvasToy {
         }
 
         public makeProgram(scene: Scene, mesh: Mesh, camera: Camera) {
+            let cameraInScene = false;
+            for (let object of scene.objects) {
+                if (object == camera) {
+                    cameraInScene = true;
+                    break;
+                }
+            };
+
+            if (!cameraInScene) {
+                console.error("Camera has not been added in Scene!");
+            }
+
             var prefixVertex = [
                 'precision ' + this.vertPrecision + ' float;',
                 mesh.material.map ? '#define USE_TEXTURE ' : '',
@@ -73,8 +85,6 @@ module CanvasToy {
                     false, new Float32Array(mvpMatrix));
             });
 
-            console.log("test");
-
             mesh.program.indexBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.program.indexBuffer);
             this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
@@ -102,7 +112,6 @@ module CanvasToy {
             }
 
             if (scene.openLight) {
-                console.log("open light");
                 this.setUplights(scene, mesh, camera);
             }
             this.copyToVertexBuffer(mesh.program);

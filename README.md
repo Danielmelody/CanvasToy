@@ -10,15 +10,6 @@ lightweight webgl rendering tool
 -   Lambert material
 -   Custom shader material
 
-### Build && Test
-
-```bash
-npm install
-./building.sh && ./testing.sh
-```
-
-
-
 ###Next roadmap:
 
 -   ~~PhongMaterial~~ *finished*

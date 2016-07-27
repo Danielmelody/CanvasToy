@@ -1,16 +1,23 @@
 /// <reference path="../geometries/Geometry.ts"/>
 /// <reference path="../materials/Material.ts"/>
 module CanvasToy {
+
+    /*
+     for details of Wavefront .obj file ,see http://www.martinreddy.net/gfx/3d/OBJ.spec
+    */
+
     export module OBJLoader {
 
-        var commentRegular = /\#.*/mg;
-        var numberRegular = /([0-9]|\.|\-|e)+/g;
-        var objectSplitRegular = /[o|g]\s+.+/mg;
-        var materialRegular = /usemtl\s.+/;
-        var vertexRegular = /v\s+([0-9]|\s|\.|\-|e)+/mg;
-        var uvRegular = /vt\s+([0-9]|\s|\.|\-|e)+/mg;
-        var normalRegular = /vn\s+([0-9]|\s|\.|\-|e)+/mg;
-        var indexRegular = /f\s+([0-9]|\s|\/|\-|)+/mg;
+        var commentPattern = /\#.*/mg;
+        var numberPattern = /([0-9]|\.|\-|e)+/g;
+        var faceSplitVertPattern = /([0-9]|\/|\-)+/g;
+        var facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/
+        var objectSplitPattern = /[o|g]\s+.+/mg;
+        var materialPattern = /usemtl\s.+/;
+        var vertexPattern = /v\s+([0-9]|\s|\.|\-|e)+/mg;
+        var uvPattern = /vt\s+([0-9]|\s|\.|\-|e)+/mg;
+        var normalPattern = /vn\s+([0-9]|\s|\.|\-|e)+/mg;
+        var indexPattern = /f\s+([0-9]|\s|\/|\-)+/mg;
 
         function fetch(url: string, onload: (content: string) => void) {
             var request = new XMLHttpRequest();
@@ -32,10 +39,10 @@ module CanvasToy {
             }
             lines.forEach((expression: string) => {
                 let data: Array<number> = [];
-                if (expression.match(numberRegular) == null) {
+                if (expression.match(numberPattern) == null) {
                     console.log(expression);
                 }
-                expression.match(numberRegular).forEach(
+                expression.match(numberPattern).forEach(
                     (expression) => {
                         if (expression != "") {
                             data.push(parseFloat(expression));
@@ -47,58 +54,56 @@ module CanvasToy {
             return result;
         }
 
-        function fillAVertex(target: Array<number>, vertIndex: number, data: Array<number>) {
+        function fillAVertex(target: Array<number>, data: Array<number>){
             for (let i = 0; i < data.length; ++i) {
-                target[vertIndex * data.length + i] = data[i];
+                target.push(data[i]);
             }
+        }
+
+        function buildUpMeshes(content: string, unIndexedPositions: Array<Array<number>>,
+            unIndexedUVs: Array<Array<number>>, unIndexedNormals: Array<Array<number>>)
+            : Node {
+            let container: Node = new Node();
+            let objects = content.split(objectSplitPattern);
+            objects.splice(0, 1);
+            console.log(objects);
+            objects.forEach((objectContent) => {
+                let geometry: Geometry = new Geometry();
+                geometry.positions = [];
+                geometry.normals = [];
+                geometry.uvs = [];
+                var faces = objectContent.match(indexPattern);
+                faces == null ? null : faces.forEach((faceStr) => {
+                    faceStr.match(faceSplitVertPattern).forEach((perVertData)=>{
+                        var match = perVertData.match(facePerVertPattern);
+                        if (match != null && match[1] != null) {
+                            let positionIndex = parseInt(match[1]) - 1;
+                            geometry.indices.push(geometry.positions.length / 3);
+                            fillAVertex(geometry.positions, unIndexedPositions[positionIndex])
+                            match[2] === '' ? null : fillAVertex(geometry.uvs, unIndexedUVs[parseInt(match[2]) - 1]);
+                            match[3] === '' ? null : fillAVertex(geometry.normals, unIndexedNormals[parseInt(match[3]) - 1]);
+                        }
+                    })
+                });
+                let mesh = new Mesh(geometry, new BRDFPerFragMaterial());
+                container.addChild(mesh);
+                console.log(mesh);
+            });
+            return container;
         }
 
         export function load(url: string, onload: (meshes: Node) => void) {
             fetch(url, (content: string) => {
                 // remove comment
-                content = content.replace(commentRegular, '');
-                var meshes = new Node();
-                var sparation = content.match(objectSplitRegular);
-                var geometryContents = content.split(objectSplitRegular);
-                for (let i = 1; i < geometryContents.length; ++i) {
-                    var geometry = new Geometry();
-                    let positionlines: Array<string> = geometryContents[i].match(vertexRegular)
-                    let uvlines: Array<string> = geometryContents[i].match(uvRegular);
-                    let normallines: Array<string> = geometryContents[i].match(normalRegular);
-                    let indicesExpression: Array<string> = geometryContents[i].match(indexRegular);
-                    let unIndexedPositions = praiseAttibuteLines(positionlines);
-                    let unIndexedUVs = praiseAttibuteLines(uvlines);
-                    let unIndexedNormals = praiseAttibuteLines(normallines);
-                    if (indicesExpression != null) {
-                        geometry.positions = [];
-                        geometry.normals = new Array(unIndexedPositions.length);
-                        geometry.normals = new Array(unIndexedPositions.length);
-
-                        unIndexedPositions.forEach((poss: Array<number>) => {
-                            geometry.positions = geometry.positions.concat(poss);
-                        })
-
-                        indicesExpression.forEach((expression) => {
-                            let indicesStr: Array<string> = expression.match(/([0-9]|\/|\-|)+/g);
-                            indicesStr.forEach((vertexData) => {
-                                if (vertexData != '') {
-                                    var match = vertexData.match(/([0-9]+)\/([0-9]+)\/([0-9]+)/);
-                                    if (match != null && match[1] != null) {
-                                        let positionIndex = parseInt(match[1]) - 1;
-                                        geometry.indices.push(positionIndex);
-                                        match[2] === '' ? null : fillAVertex(geometry.uvs, positionIndex, unIndexedUVs[parseInt(match[2]) - 1]);
-                                        match[3] === '' ? null : fillAVertex(geometry.normals, positionIndex, unIndexedNormals[parseInt(match[3]) - 1]);
-                                    }
-                                }
-                            })
-                        });
-                    }
-                    // TODO: parse mtl file
-                    var mesh = new Mesh(geometry, new BRDFPerFragMaterial());
-                    console.log(mesh);
-                    meshes.addChild(mesh);
-                }
-                onload(meshes);
+                content = content.replace(commentPattern, '');
+                let positionlines: Array<string> = content.match(vertexPattern)
+                let uvlines: Array<string> = content.match(uvPattern);
+                let normallines: Array<string> = content.match(normalPattern);
+                let unIndexedPositions = praiseAttibuteLines(positionlines);
+                let unIndexedUVs = praiseAttibuteLines(uvlines);
+                let unIndexedNormals = praiseAttibuteLines(normallines);
+                let container = buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                onload(container);
             });
         }
 
