@@ -2,17 +2,17 @@
 
 lightweight webgl rendering tool
 
-###Current features:
+### current features:
 
 -   Basic openrations of 3d object: translate, scale and rotate
 -   Perspective and orthogonal projection types of Camera
 -   Texture-mapping
--   Lambert material
+-   BRDF per-fragment or per-vertex light
 -   Custom shader material
+-   Wavefront .obj file support
 
-###Next roadmap:
+### roadmap for version 1.0:
 
--   ~~PhongMaterial~~ *finished*
 -   Physically base shading
 -   ~~Normal mapping~~  *finished*
 -   Encapsulation of commonly used noise

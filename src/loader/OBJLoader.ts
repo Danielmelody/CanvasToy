@@ -54,9 +54,16 @@ module CanvasToy {
             return result;
         }
 
-        function fillAVertex(target: Array<number>, data: Array<number>){
+        function fillAVertex(target: Array<number>, data: Array<number>) {
             for (let i = 0; i < data.length; ++i) {
                 target.push(data[i]);
+            }
+        }
+
+        function parseAsTriangle(faces: Array<string>, forEachFace: (face: Array<string>) => void) {
+            for (let i = 0; i < faces.length - 2; ++i) {
+                let triangleFace = [faces[0], faces[i + 1], faces[i + 2]];
+                forEachFace(triangleFace);
             }
         }
 
@@ -66,23 +73,24 @@ module CanvasToy {
             let container: Node = new Node();
             let objects = content.split(objectSplitPattern);
             objects.splice(0, 1);
-            console.log(objects);
             objects.forEach((objectContent) => {
                 let geometry: Geometry = new Geometry();
                 geometry.positions = [];
                 geometry.normals = [];
                 geometry.uvs = [];
-                var faces = objectContent.match(indexPattern);
+                let faces = objectContent.match(indexPattern);
                 faces == null ? null : faces.forEach((faceStr) => {
-                    faceStr.match(faceSplitVertPattern).forEach((perVertData)=>{
-                        var match = perVertData.match(facePerVertPattern);
-                        if (match != null && match[1] != null) {
-                            let positionIndex = parseInt(match[1]) - 1;
-                            geometry.indices.push(geometry.positions.length / 3);
-                            fillAVertex(geometry.positions, unIndexedPositions[positionIndex])
-                            match[2] === '' ? null : fillAVertex(geometry.uvs, unIndexedUVs[parseInt(match[2]) - 1]);
-                            match[3] === '' ? null : fillAVertex(geometry.normals, unIndexedNormals[parseInt(match[3]) - 1]);
-                        }
+                    parseAsTriangle(faceStr.match(faceSplitVertPattern), (triangleFaces) => {
+                        triangleFaces.forEach((perVertData) => {
+                            let match = perVertData.match(facePerVertPattern);
+                            if (match != null && match[1] != null) {
+                                let positionIndex = parseInt(match[1]) - 1;
+                                geometry.indices.push(geometry.positions.length / 3);
+                                fillAVertex(geometry.positions, unIndexedPositions[positionIndex])
+                                match[2] === '' ? null : fillAVertex(geometry.uvs, unIndexedUVs[parseInt(match[2]) - 1]);
+                                match[3] === '' ? null : fillAVertex(geometry.normals, unIndexedNormals[parseInt(match[3]) - 1]);
+                            }
+                        })
                     })
                 });
                 let mesh = new Mesh(geometry, new BRDFPerFragMaterial());
@@ -103,9 +111,9 @@ module CanvasToy {
                 let unIndexedUVs = praiseAttibuteLines(uvlines);
                 let unIndexedNormals = praiseAttibuteLines(normallines);
                 let container = buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                console.log(positionlines);
                 onload(container);
             });
         }
-
     }
 }

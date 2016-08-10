@@ -7247,11 +7247,16 @@ var CanvasToy;
                 target.push(data[i]);
             }
         }
+        function parseAsTriangle(faces, forEachFace) {
+            for (var i = 0; i < faces.length - 2; ++i) {
+                var triangleFace = [faces[0], faces[i + 1], faces[i + 2]];
+                forEachFace(triangleFace);
+            }
+        }
         function buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals) {
             var container = new CanvasToy.Node();
             var objects = content.split(objectSplitPattern);
             objects.splice(0, 1);
-            console.log(objects);
             objects.forEach(function (objectContent) {
                 var geometry = new CanvasToy.Geometry();
                 geometry.positions = [];
@@ -7259,15 +7264,17 @@ var CanvasToy;
                 geometry.uvs = [];
                 var faces = objectContent.match(indexPattern);
                 faces == null ? null : faces.forEach(function (faceStr) {
-                    faceStr.match(faceSplitVertPattern).forEach(function (perVertData) {
-                        var match = perVertData.match(facePerVertPattern);
-                        if (match != null && match[1] != null) {
-                            var positionIndex = parseInt(match[1]) - 1;
-                            geometry.indices.push(geometry.positions.length / 3);
-                            fillAVertex(geometry.positions, unIndexedPositions[positionIndex]);
-                            match[2] === '' ? null : fillAVertex(geometry.uvs, unIndexedUVs[parseInt(match[2]) - 1]);
-                            match[3] === '' ? null : fillAVertex(geometry.normals, unIndexedNormals[parseInt(match[3]) - 1]);
-                        }
+                    parseAsTriangle(faceStr.match(faceSplitVertPattern), function (triangleFaces) {
+                        triangleFaces.forEach(function (perVertData) {
+                            var match = perVertData.match(facePerVertPattern);
+                            if (match != null && match[1] != null) {
+                                var positionIndex = parseInt(match[1]) - 1;
+                                geometry.indices.push(geometry.positions.length / 3);
+                                fillAVertex(geometry.positions, unIndexedPositions[positionIndex]);
+                                match[2] === '' ? null : fillAVertex(geometry.uvs, unIndexedUVs[parseInt(match[2]) - 1]);
+                                match[3] === '' ? null : fillAVertex(geometry.normals, unIndexedNormals[parseInt(match[3]) - 1]);
+                            }
+                        });
                     });
                 });
                 var mesh = new CanvasToy.Mesh(geometry, new CanvasToy.BRDFPerFragMaterial());
@@ -7286,6 +7293,7 @@ var CanvasToy;
                 var unIndexedUVs = praiseAttibuteLines(uvlines);
                 var unIndexedNormals = praiseAttibuteLines(normallines);
                 var container = buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                console.log(positionlines);
                 onload(container);
             });
         }
