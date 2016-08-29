@@ -22,7 +22,7 @@ module CanvasToy {
                 0, 0, 1,
                 0, 1, 1,
             ];
-            this.indices = [
+            this.faces = [
                 0, 1, 2,
                 2, 1, 3
             ];

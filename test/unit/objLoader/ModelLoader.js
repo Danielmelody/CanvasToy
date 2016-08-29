@@ -3,6 +3,7 @@ function start() {
   CanvasToy.setCanvas(canvas);
   var scene = new CanvasToy.Scene();
   var camera = new CanvasToy.PerspectiveCamera();
+  scene.addObject(camera);
   scene.ambientLight = vec3.fromValues(0.2, 0.1, 0.1);
   var light = new CanvasToy.PointLight();
   // light.diffuse = CanvasToy.vec4.fromValues(0, 0, 0, 0);
@@ -22,6 +23,10 @@ function start() {
   CanvasToy.OBJLoader.load('../../models/UniqueStudio.obj', (object) => {
     scene.addObject(object);
     scene.addObject(camera);
+    for (var i = 0; i < object.children.length; ++i) {
+      object.children[i].material.shadingMode =
+          CanvasToy.ShadingMode.flatShading;
+    }
     CanvasToy.engine.startRender(scene, camera, 1000 / 60);
     object.translate(0, 0, -40);
     var time = 0;
@@ -29,7 +34,7 @@ function start() {
     object.scale(0.1, 0.1, 0.1);
     object.registerUpdate(() => {
       time += 1 / 60;
-      // light.position[1] += 3 * Math.cos(time * 2);
+      light.position[1] += 3 * Math.cos(time * 2);
       object.rotateY(0.01);
       // object.translate(0, 0.03 * Math.cos(time / 2), 0);
     });

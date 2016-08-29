@@ -10,18 +10,19 @@ function start() {
   var mesh1 = new CanvasToy.Mesh(
       new CanvasToy.CubeGeometry(), new CanvasToy.BRDFPerFragMaterial({
         color : vec3.fromValues(1, 1, 1),
-        texture : new CanvasToy.Texture('../../images/me.png')
+        texture : new CanvasToy.CubeTexture('../../images/me.png')
       }));
 
   var mesh2 = new CanvasToy.Mesh(
       new CanvasToy.CubeGeometry(), new CanvasToy.BRDFPerVertMaterial({
         color : vec3.fromValues(1, 1, 1),
-        texture : new CanvasToy.Texture('../../images/chrome.png')
+        texture : new CanvasToy.CubeTexture('../../images/chrome.png')
       }));
 
   node.addChild(mesh1);
   node.addChild(mesh2)
   scene.addObject(node);
+  scene.addObject(camera);
   scene.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
   var light = new CanvasToy.PointLight();
   light.idensity = 4;

@@ -88,7 +88,7 @@ module CanvasToy {
             mesh.program.indexBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.program.indexBuffer);
             this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
-                new Uint16Array(mesh.geometry.indices), mesh.program.drawMode);
+                new Uint16Array(mesh.geometry.faces), mesh.program.drawMode);
 
             mesh.program.setAttribute0(new VertexBuffer("position", 3,
                 this.gl.FLOAT)).data = mesh.geometry.positions;
@@ -138,9 +138,20 @@ module CanvasToy {
                     camera.position[2]
                 )
             });
-            mesh.program.addAttribute(
-                new VertexBuffer("aNormal", 3, this.gl.FLOAT))
-                .data = mesh.geometry.normals;
+            switch (mesh.material.shadingMode) {
+                case ShadingMode.flatShading:
+                    mesh.geometry.generateFlatNormal();
+                    mesh.program.addAttribute(
+                        new VertexBuffer("aNormal", 3, this.gl.FLOAT))
+                        .data = mesh.geometry.flatNormals;
+                    break;
+                case ShadingMode.smoothShading:
+                    mesh.program.addAttribute(
+                        new VertexBuffer("aNormal", 3, this.gl.FLOAT))
+                        .data = mesh.geometry.normals;
+                    break;
+
+            }
             var index: number = 0;
             for (let light of scene.lights) {
                 var diffuse = "lights[" + index + "].diffuse";
@@ -223,6 +234,8 @@ module CanvasToy {
             return result;
         }
 
+        private
+
         private enableTexture(mesh, texture: Texture) {
             let gl = engine.gl;
             gl.useProgram(mesh.program.webGlProgram);
@@ -233,18 +246,15 @@ module CanvasToy {
 
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
             gl.activeTexture(gl.TEXTURE0 + textureIndex);
-            gl.bindTexture(gl.TEXTURE_2D, texture.glTexture);
+            gl.bindTexture(texture.type, texture.glTexture);
 
+            texture.setUpTextureData();
 
-            // TODO: config texture paramters
-            gl.texImage2D(gl.TEXTURE_2D, 0,
-                gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+            gl.texParameteri(texture.type, gl.TEXTURE_WRAP_S, texture.wrapS);
+            gl.texParameteri(texture.type, gl.TEXTURE_WRAP_T, texture.wrapT);
 
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
-
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(texture.type, gl.TEXTURE_MAG_FILTER, texture.magFilter);
+            gl.texParameteri(texture.type, gl.TEXTURE_MIN_FILTER, texture.minFilter);
 
             // the sampler
             mesh.program.addUniform("uTextureSampler", () => {
@@ -291,7 +301,7 @@ module CanvasToy {
                         0);
                 }
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.program.indexBuffer);
-                gl.drawElements(gl.TRIANGLES, mesh.geometry.indices.length, gl.UNSIGNED_SHORT, 0);
+                gl.drawElements(gl.TRIANGLES, mesh.geometry.faces.length, gl.UNSIGNED_SHORT, 0);
             }
         }
 

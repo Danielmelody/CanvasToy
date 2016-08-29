@@ -10,9 +10,9 @@ attribute vec4 aColor;
 varying vec4 vColor;
 #endif
 
-#ifdef USE_TEXTURE
-attribute vec2 aTextureCoord;
-varying vec2 vTextureCoord;
+#ifdef USE_MAIN_TEXTURE
+attribute vec2 aMainTextureST;
+varying vec2 vMainTextureST;
 #endif
 
 #ifdef OPEN_LIGHT
@@ -27,8 +27,8 @@ void main (){
     vColor = aColor;
 #endif
 
-#ifdef USE_TEXTURE
-    vTextureCoord = aTextureCoord;
+#ifdef USE_MAIN_TEXTURE
+    vMainTextureST = aMainTextureST;
 #endif
 
 }

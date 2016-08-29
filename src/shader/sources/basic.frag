@@ -4,9 +4,9 @@
 varying vec4 vColor;
 #endif
 
-#ifdef USE_TEXTURE
-varying vec2 vTextureCoord;
-uniform sampler2D uTextureSampler;
+#ifdef USE_MAIN_TEXTURE
+varying vec2 vMainTextureST;
+uniform sampler2D mainTexture;
 vec4 textureColor;
 #endif
 
@@ -19,8 +19,8 @@ void main() {
     gl_FragColor = vColor;
 #endif
 
-#ifdef USE_TEXTURE
-    gl_FragColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+#ifdef USE_MAIN_TEXTURE
+    gl_FragColor = texture2D(mainTexture, vec2(vMainTextureST.s, vMainTextureST.t));
 #endif
 
 }

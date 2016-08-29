@@ -39,9 +39,6 @@ module CanvasToy {
             }
             lines.forEach((expression: string) => {
                 let data: Array<number> = [];
-                if (expression.match(numberPattern) == null) {
-                    console.log(expression);
-                }
                 expression.match(numberPattern).forEach(
                     (expression) => {
                         if (expression != "") {
@@ -85,7 +82,7 @@ module CanvasToy {
                             let match = perVertData.match(facePerVertPattern);
                             if (match != null && match[1] != null) {
                                 let positionIndex = parseInt(match[1]) - 1;
-                                geometry.indices.push(geometry.positions.length / 3);
+                                geometry.faces.push(geometry.positions.length / 3);
                                 fillAVertex(geometry.positions, unIndexedPositions[positionIndex])
                                 match[2] === '' ? null : fillAVertex(geometry.uvs, unIndexedUVs[parseInt(match[2]) - 1]);
                                 match[3] === '' ? null : fillAVertex(geometry.normals, unIndexedNormals[parseInt(match[3]) - 1]);
@@ -93,9 +90,8 @@ module CanvasToy {
                         })
                     })
                 });
-                let mesh = new Mesh(geometry, new BRDFPerFragMaterial());
+                let mesh = new Mesh(geometry, new BRDFPerVertMaterial());
                 container.addChild(mesh);
-                console.log(mesh);
             });
             return container;
         }
@@ -111,7 +107,6 @@ module CanvasToy {
                 let unIndexedUVs = praiseAttibuteLines(uvlines);
                 let unIndexedNormals = praiseAttibuteLines(normallines);
                 let container = buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
-                console.log(positionlines);
                 onload(container);
             });
         }

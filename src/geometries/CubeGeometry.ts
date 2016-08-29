@@ -112,7 +112,7 @@ module CanvasToy {
 
             ];
 
-            this.indices = [
+            this.faces = [
                 0, 1, 2, 0, 2, 3,    // front
                 4, 5, 6, 4, 6, 7,    // back
                 8, 9, 10, 8, 10, 11,   // top
