@@ -6,11 +6,9 @@
         "noLib":false,
         "target": "es5"
     },
-    "exclude": [
-       "node_modules",
-       "utils",
-       "test",
-       ".idea"
-   ],
+    "include":[
+         "typings/index.d.ts",
+         "src/**/*.ts"
+    ],
    "compileOnSave":false
 }

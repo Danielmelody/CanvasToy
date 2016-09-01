@@ -20,18 +20,18 @@ function start() {
   light2.specular = vec3.fromValues(1, 1, 1);
   scene.addLight(light2);
   scene.addLight(light);
-  CanvasToy.OBJLoader.load('../../models/UniqueStudio.obj', (object) => {
+  CanvasToy.OBJLoader.load('../../models/teapot.obj', (object) => {
     scene.addObject(object);
     scene.addObject(camera);
     for (var i = 0; i < object.children.length; ++i) {
-      object.children[i].material.shadingMode =
-          CanvasToy.ShadingMode.flatShading;
+      object.children[i].material = new CanvasToy.BRDFPerFragMaterial();
+      // CanvasToy.ShadingMode.flatShading;
     }
     CanvasToy.engine.startRender(scene, camera, 1000 / 60);
     object.translate(0, 0, -40);
     var time = 0;
     object.rotateY(Math.PI / 2);
-    object.scale(0.1, 0.1, 0.1);
+    // object.scale(0.1, 0.1, 0.1);
     object.registerUpdate(() => {
       time += 1 / 60;
       light.position[1] += 3 * Math.cos(time * 2);

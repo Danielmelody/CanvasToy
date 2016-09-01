@@ -1,0 +1,16 @@
+{
+     "compilerOptions":{
+          "rootDir":"..",
+          "module": "amd",
+          "removeComments": true,
+          "outDir":"../tests/src",
+          "noLib":false,
+          "target": "es5"
+    },
+    "include": [
+         "../typings/index.d.ts",
+         "../src/**/*.ts",
+         "unit/**/*.ts"
+    ],
+    "compileOnSave":false
+}
