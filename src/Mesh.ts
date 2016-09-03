@@ -9,19 +9,19 @@ module CanvasToy {
 
         public drawMode: number = engine.gl.STATIC_DRAW;
 
-        public program: Program;
+        public programs: Array<Program> = [];
 
         public geometry: Geometry;
 
-        public material: Material;
+        public materials: Array<Material> = [];
 
         public maps: Texture[] = [];
 
         public normalMatrix: Mat4Array = mat4.create();
 
-        constructor(geometry: Geometry, material: Material) {
+        constructor(geometry: Geometry, materials: Array<Material>) {
             super();
-            this.material = material;
+            this.materials = materials;
             this.geometry = geometry;
             this.registerUpdate((event) => {
                 mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));

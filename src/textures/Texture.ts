@@ -5,7 +5,7 @@ module CanvasToy {
         glTexture: WebGLTexture;
         image: HTMLImageElement;
         textureCoord: number[] = [];
-        sampler: number;
+        unit: number;
         isReadyToUpdate: boolean = false;
         constructor(
             path: string,

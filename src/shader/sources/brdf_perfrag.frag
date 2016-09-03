@@ -43,7 +43,7 @@ void main() {
         vec3 diffuseColor = lights[index].diffuse * lambortian;
         totalLighting += (diffuseColor + specularColor) * lights[index].idensity;
     }
-    gl_FragColor = vec4(totalLighting, 1.0);
+    gl_FragColor = vec4(totalLighting, 1);
 #endif
 #ifdef USE_TEXTURE
     gl_FragColor = gl_FragColor * textureColor;

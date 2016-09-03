@@ -13,9 +13,11 @@ module CanvasToy {
         attributes: {} = {};
         webGlProgram: WebGLProgram;
         drawMode: number = engine.gl.STATIC_DRAW;
+        textures: Array<Texture> = [];
         public indexBuffer: WebGLBuffer;
         public attribute0: VertexBuffer;
         public vertexBuffers = {};
+        public material: Material;
         Program(parameter: ProgramParamter) {
             this.uniforms = parameter.uniforms;
             this.attributes = parameter.attributes;
@@ -23,8 +25,8 @@ module CanvasToy {
                 this.uniforms[name] = engine.getUniformLocation(this, name);
             }
             for (let buffer of parameter.attributes) {
-                buffer.index = engine.gl.getAttribLocation(this, name);
-                this.vertexBuffers[name] = buffer;
+                buffer.index = engine.gl.getAttribLocation(this, buffer.name);
+                this.vertexBuffers[buffer.name] = buffer;
             }
         }
 
@@ -47,5 +49,32 @@ module CanvasToy {
             this.uniforms[name] = engine.getUniformLocation(this, name);
             this.uniformUpdaters[name] = onUpdateUniform;
         }
+
+        addTexture(sampler: string, texture: Texture) {
+            this.textures.push(texture);
+            let lastOnload = texture.image.onload;
+            console.log('addTexture');
+            texture.image.onload = (et: Event) => {
+                lastOnload.apply(texture.image, et);
+                let gl = engine.gl;
+                gl.useProgram(this.webGlProgram);
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+                gl.activeTexture(gl.TEXTURE0 + texture.unit);
+                gl.bindTexture(texture.type, texture.glTexture);
+                texture.setUpTextureData();
+                gl.texParameteri(texture.type, gl.TEXTURE_WRAP_S, texture.wrapS);
+                gl.texParameteri(texture.type, gl.TEXTURE_WRAP_T, texture.wrapT);
+                gl.texParameteri(texture.type, gl.TEXTURE_MAG_FILTER, texture.magFilter);
+                gl.texParameteri(texture.type, gl.TEXTURE_MIN_FILTER, texture.minFilter);
+                console.log('test');
+                // the sampler
+                this.addUniform(sampler, () => {
+                    engine.gl.uniform1i(
+                        this.uniforms[sampler],
+                        texture.unit);
+                })
+            }
+        }
+
     }
 }

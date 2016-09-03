@@ -1,4 +1,4 @@
-/// <reference path="../Object3d.ts"/>
+/// <reference path="../Node.ts"/>
 
 module CanvasToy {
     /*

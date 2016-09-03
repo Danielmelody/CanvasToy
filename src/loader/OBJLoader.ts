@@ -90,7 +90,7 @@ module CanvasToy {
                         })
                     })
                 });
-                let mesh = new Mesh(geometry, new BRDFPerVertMaterial());
+                let mesh = new Mesh(geometry, [new BRDFPerVertMaterial()]);
                 container.addChild(mesh);
             });
             return container;
