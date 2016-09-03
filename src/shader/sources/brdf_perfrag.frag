@@ -1,5 +1,6 @@
 #ifdef USE_COLOR // color declaration
 uniform vec4 color;
+uniform vec3 ambient;
 #endif // color declaration
 
 #ifdef USE_TEXTURE // texture declaration
@@ -7,6 +8,7 @@ varying vec2 vTextureCoord;
 uniform sampler2D uTextureSampler;
 vec4 textureColor;
 #endif // texture declaration
+
 
 #ifdef OPEN_LIGHT // light declaration
 struct Light {
@@ -16,7 +18,6 @@ struct Light {
     vec3 position;
     bool directional;
 };
-uniform vec3 ambient;
 uniform vec3 eyePosition;
 varying vec3 vPosition;
 vec3 totalLighting;
@@ -43,7 +44,11 @@ void main() {
         vec3 diffuseColor = lights[index].diffuse * lambortian;
         totalLighting += (diffuseColor + specularColor) * lights[index].idensity;
     }
-    gl_FragColor = vec4(totalLighting, 1);
+    gl_FragColor = vec4(totalLighting, 1.0);
+#else
+#ifdef USE_COLOR
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+#endif
 #endif
 #ifdef USE_TEXTURE
     gl_FragColor = gl_FragColor * textureColor;

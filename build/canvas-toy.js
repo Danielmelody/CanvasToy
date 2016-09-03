@@ -6717,10 +6717,27 @@ var CanvasToy;
 (function (CanvasToy) {
     var OrthoCamera = (function (_super) {
         __extends(OrthoCamera, _super);
-        function OrthoCamera(options) {
+        function OrthoCamera(left, right, bottom, top, near, far) {
+            if (left === void 0) { left = -1; }
+            if (right === void 0) { right = 1; }
+            if (bottom === void 0) { bottom = -1; }
+            if (top === void 0) { top = 1; }
+            if (near === void 0) { near = 0.001; }
+            if (far === void 0) { far = 10000; }
             _super.call(this);
-            mat4.ortho(this.projectionMatrix, -1.0, 1.0, -1.0, 1.0, 0.1, 100);
+            this.left = left;
+            this.right = right;
+            this.bottom = bottom;
+            this.top = top;
+            this.near = near;
+            this.far = far;
+            mat4.ortho(this.projectionMatrix, left, right, bottom, top, near, far);
         }
+        OrthoCamera.prototype.apply = function () {
+            mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
+        };
+        OrthoCamera.prototype.adaptCanvas = function (canvas) {
+        };
         return OrthoCamera;
     }(CanvasToy.Camera));
     CanvasToy.OrthoCamera = OrthoCamera;
@@ -6729,10 +6746,23 @@ var CanvasToy;
 (function (CanvasToy) {
     var PerspectiveCamera = (function (_super) {
         __extends(PerspectiveCamera, _super);
-        function PerspectiveCamera(options) {
+        function PerspectiveCamera(aspect, fovy, near, far) {
+            if (aspect === void 0) { aspect = 1; }
+            if (fovy === void 0) { fovy = 45; }
+            if (near === void 0) { near = 0.01; }
+            if (far === void 0) { far = 10000; }
             _super.call(this);
-            this.projectionMatrix = mat4.perspective(this.projectionMatrix, 45, 640 / 480, 0.1, 10000);
+            this.aspect = aspect;
+            this.fovy = fovy;
+            this.near = near;
+            this.far = far;
+            this.apply();
         }
+        PerspectiveCamera.prototype.apply = function () {
+            this.projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
+        };
+        PerspectiveCamera.prototype.adaptCanvas = function (canvas) {
+        };
         return PerspectiveCamera;
     }(CanvasToy.Camera));
     CanvasToy.PerspectiveCamera = PerspectiveCamera;
@@ -6776,11 +6806,11 @@ var CanvasToy;
     var Texture = (function () {
         function Texture(path, type, format, wrapS, wrapT, magFilter, minFilter) {
             if (type === void 0) { type = CanvasToy.engine.gl.TEXTURE_2D; }
-            if (format === void 0) { format = CanvasToy.engine.gl.RGBA; }
-            if (wrapS === void 0) { wrapS = CanvasToy.engine.gl.REPEAT; }
-            if (wrapT === void 0) { wrapT = CanvasToy.engine.gl.REPEAT; }
-            if (magFilter === void 0) { magFilter = CanvasToy.engine.gl.LINEAR; }
-            if (minFilter === void 0) { minFilter = CanvasToy.engine.gl.LINEAR; }
+            if (format === void 0) { format = CanvasToy.engine.gl.RGB; }
+            if (wrapS === void 0) { wrapS = CanvasToy.engine.gl.CLAMP_TO_EDGE; }
+            if (wrapT === void 0) { wrapT = CanvasToy.engine.gl.CLAMP_TO_EDGE; }
+            if (magFilter === void 0) { magFilter = CanvasToy.engine.gl.NEAREST; }
+            if (minFilter === void 0) { minFilter = CanvasToy.engine.gl.NEAREST; }
             this.type = type;
             this.format = format;
             this.wrapS = wrapS;
@@ -7498,7 +7528,7 @@ var CanvasToy;
             this.objects = [];
             this.lights = [];
             this.ambientLight = vec3.fromValues(0, 0, 0);
-            this.openLight = true;
+            this.openLight = false;
             this.enableShadowMap = false;
             this.clearColor = [0, 0, 0, 0];
             window.setInterval(function () { return _this.update(1000 / 60); }, 1000 / 60);
@@ -7519,6 +7549,10 @@ var CanvasToy;
                     _this.addObject(child);
                 });
             }
+            if (object instanceof CanvasToy.PerspectiveCamera) {
+                var camera = object;
+                camera.adaptCanvas(CanvasToy.engine.canvas);
+            }
         };
         Scene.prototype.removeObject = function (object) {
             var _this = this;
@@ -7531,6 +7565,7 @@ var CanvasToy;
             this.objects.splice(this.objects.indexOf(object));
         };
         Scene.prototype.addLight = function (light) {
+            this.openLight = true;
             this.lights.push(light);
             light.scene = this;
         };
@@ -7561,7 +7596,7 @@ var CanvasToy;
 (function (CanvasToy) {
     CanvasToy.basic_frag = "#version 100\n\n#ifdef USE_COLOR\nvarying vec4 vColor;\n#endif\n\n#ifdef USE_MAIN_TEXTURE\nvarying vec2 vMainTextureST;\nuniform sampler2D mainTexture;\nvec4 textureColor;\n#endif\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\n#endif\n\nvoid main() {\n#ifdef USE_COLOR\n    gl_FragColor = vColor;\n#endif\n\n#ifdef USE_MAIN_TEXTURE\n    gl_FragColor = texture2D(mainTexture, vec2(vMainTextureST.s, vMainTextureST.t));\n#endif\n\n}\n";
     CanvasToy.basic_vert = "#version 100\n\nattribute vec3 position;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform vec4 cameraPosition;\n\n#ifdef USE_COLOR\nattribute vec4 aColor;\nvarying vec4 vColor;\n#endif\n\n#ifdef USE_MAIN_TEXTURE\nattribute vec2 aMainTextureST;\nvarying vec2 vMainTextureST;\n#endif\n\n#ifdef OPEN_LIGHT\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n\n#ifdef USE_COLOR\n    vColor = aColor;\n#endif\n\n#ifdef USE_MAIN_TEXTURE\n    vMainTextureST = aMainTextureST;\n#endif\n\n}\n";
-    CanvasToy.brdf_perfrag_frag = "#ifdef USE_COLOR // color declaration\nuniform vec4 color;\n#endif // color declaration\n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec4 textureColor;\n#endif // texture declaration\n\n#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec3 position;\n    bool directional;\n};\nuniform vec3 ambient;\nuniform vec3 eyePosition;\nvarying vec3 vPosition;\nvec3 totalLighting;\nuniform Light lights[LIGHT_NUM];\nvarying vec3 vNormal;\n#endif // light declaration\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        vec3 lightDir = normalize(lights[index].position - vPosition);\n        float lambortian = max(dot(lightDir, normal), 0.0);\n        vec3 reflectDir = reflect(lightDir, normal);\n        vec3 viewDir = normalize(eyePosition - vPosition);\n        float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n        // TODO: replace the 2rd paramter to material shineness\n        float specular = pow(specularAngle, 16.0);\n        vec3 specularColor = lights[index].specular * specular;\n        vec3 diffuseColor = lights[index].diffuse * lambortian;\n        totalLighting += (diffuseColor + specularColor) * lights[index].idensity;\n    }\n    gl_FragColor = vec4(totalLighting, 1);\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
+    CanvasToy.brdf_perfrag_frag = "#ifdef USE_COLOR // color declaration\nuniform vec4 color;\nuniform vec3 ambient;\n#endif // color declaration\n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\nvec4 textureColor;\n#endif // texture declaration\n\n\n#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec3 position;\n    bool directional;\n};\nuniform vec3 eyePosition;\nvarying vec3 vPosition;\nvec3 totalLighting;\nuniform Light lights[LIGHT_NUM];\nvarying vec3 vNormal;\n#endif // light declaration\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        vec3 lightDir = normalize(lights[index].position - vPosition);\n        float lambortian = max(dot(lightDir, normal), 0.0);\n        vec3 reflectDir = reflect(lightDir, normal);\n        vec3 viewDir = normalize(eyePosition - vPosition);\n        float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n        // TODO: replace the 2rd paramter to material shineness\n        float specular = pow(specularAngle, 16.0);\n        vec3 specularColor = lights[index].specular * specular;\n        vec3 diffuseColor = lights[index].diffuse * lambortian;\n        totalLighting += (diffuseColor + specularColor) * lights[index].idensity;\n    }\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.brdf_perfrag_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aTextureCoord;\nvarying vec2 vTextureCoord;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    vPosition = gl_Position.xyz;\n#endif\n\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
     CanvasToy.brdf_pervert_frag = "#ifdef USE_COLOR // color declaration\nuniform vec4 color;\n#endif // color declaration\n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vTextureCoord;\nuniform sampler2D uTextureSampler;\n#endif // texture declaration\n\n#ifdef OPEN_LIGHT // light declaration\nvarying vec3 vLightColor;\n#endif // light declaration\n\nvoid main() {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#ifdef USE_COLOR\n    gl_FragColor = color;\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n\n#ifdef OPEN_LIGHT\n    gl_FragColor = gl_FragColor * vec4(vLightColor, 1.0);\n#endif\n}\n";
     CanvasToy.brdf_pervert_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE // texture\nattribute vec2 aTextureCoord;\nvarying vec2 vTextureCoord;\n#endif // texture\n\n#ifdef OPEN_LIGHT // light\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec3 position;\n    bool directional;\n}; // light\n\nuniform vec3 ambient;\nuniform vec3 eyePosition;\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vLightColor;\nvec3 totalLighting;\nuniform Light lights[LIGHT_NUM];\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        vec3 lightDir = normalize(lights[index].position - gl_Position.xyz);\n        float lambortian = max(dot(lightDir, normal), 0.0);\n        vec3 reflectDir = reflect(lightDir, normal);\n        vec3 viewDir = normalize(eyePosition - gl_Position.xyz);\n        float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n        float specular = pow(specularAngle, 16.0);\n        vec3 specularColor = lights[index].specular * specular;\n        vec3 diffuseColor = lights[index].diffuse * lambortian * lights[index].idensity;\n        totalLighting = totalLighting + (diffuseColor + specularColor);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
@@ -7619,13 +7654,18 @@ var CanvasToy;
         __extends(Texture2D, _super);
         function Texture2D(path, format, wrapS, wrapT, magFilter, minFilter) {
             var _this = this;
-            _super.call(this, null, CanvasToy.engine.gl.TEXTURE_2D, wrapS, wrapT, magFilter, minFilter);
+            if (format === void 0) { format = CanvasToy.engine.gl.RGB; }
+            _super.call(this, path, CanvasToy.engine.gl.TEXTURE_2D, format, wrapS, wrapT, magFilter, minFilter);
             this.format = format;
             this.image = new Image();
             var gl = CanvasToy.engine.gl;
             this.glTexture = gl.createTexture();
             this.image.src = path;
-            this.image.onload = function () {
+            var lastOnload = this.image.onload;
+            this.image.onload = function (ev) {
+                if (!!lastOnload) {
+                    lastOnload.apply(_this.image, ev);
+                }
                 _this.isReadyToUpdate = true;
                 console.log("texture loaded");
             };

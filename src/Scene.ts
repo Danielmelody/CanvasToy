@@ -11,7 +11,7 @@ module CanvasToy {
 
         public ambientLight: Vec3Array = vec3.fromValues(0, 0, 0);
 
-        public openLight: boolean = true;
+        public openLight: boolean = false;
 
         public enableShadowMap: boolean = false;
 
@@ -36,6 +36,10 @@ module CanvasToy {
                     this.addObject(child);
                 })
             }
+            if (object instanceof PerspectiveCamera) {
+                let camera = <PerspectiveCamera>object;
+                camera.adaptCanvas(engine.canvas);
+            }
         }
 
         removeObject(object: Object3d) {
@@ -49,6 +53,7 @@ module CanvasToy {
         }
 
         addLight(light: Light) {
+            this.openLight = true;
             this.lights.push(light);
             light.scene = this;
         }
