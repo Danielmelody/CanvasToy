@@ -11,10 +11,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Danielhu229/CanvasToy"
+    "url": "https://github.com/UniqueStudio/CanvasToy"
   },
   "bugs": {
-    "url": "https://github.com/Danielhu229/CanvasToy/issues"
+    "url": "https://github.com/UniqueStudio/CanvasToy/issues"
   },
   "devDependencies": {
     "cz-conventional-changelog": "*",
