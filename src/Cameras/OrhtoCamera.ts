@@ -15,12 +15,11 @@ module CanvasToy {
         }
 
         public apply() {
+            super.apply();
             mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
         }
 
-        public adaptCanvas(canvas: HTMLCanvasElement) {
-            
+        public adaptTargetRadio(target: {width: number, height: number}) {
         }
-
     }
 }

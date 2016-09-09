@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+  <head>
+    <title>loaders test-CanvasToy</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../dark.css" type="text/css">
+    <script src="../../../build/canvas-toy.js" type="text/javascript"></script>
+  </head>
+
+  <body onload="start()">
+      <canvas id="canvas" width="640" height="480" class="black"></canvas>
+      <script>
+      function start() {
+        var canvas = document.getElementById('canvas');
+        CanvasToy.setCanvas(canvas);
+        var scene1 = new CanvasToy.Scene();
+        var camera1 = new CanvasToy.PerspectiveCamera();
+        var light = new CanvasToy.PointLight();
+        var cube1 = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial()]);
+        camera1.translate(0, 0, 2);
+        scene1.ambientLight = vec3.fromValues(0.2, 0.1, 0.1);
+        light.idensity = 1;
+        light.position[2] = 100;
+        light.position[0] = 100;
+        light.diffuse = vec3.fromValues(1, 1, 1);
+        light.specular = vec3.fromValues(1, 1, 0.3);
+        scene1.addLight(light);
+        scene1.addObject(camera1);
+        scene1.addObject(cube1);
+        var camera2 = new CanvasToy.PerspectiveCamera();
+        var scene2  = new CanvasToy.Scene();
+        var rttTexture = CanvasToy.engine.renderToTexture(scene1, camera1);
+        var cube2 = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial({
+            texture: rttTexture
+        })]);
+        scene2.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
+        scene1.clearColor = [0, 1, 1, 0];
+        cube2.rotateY(1);
+        cube2.registerUpdate(() => {
+            cube1.rotateY(0.01);
+            cube2.rotateY(0.002);
+        });
+        camera2.translate(0, 0, 2);
+        scene2.addLight(light);
+        scene2.addObject(camera2);
+        scene2.addObject(cube2);
+        CanvasToy.engine.render(scene2, camera2);
+      }
+      </script>
+  </body>
+</html>

@@ -13,12 +13,13 @@ module CanvasToy {
         }
 
         public apply() {
+            super.apply();
             this.projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
         }
 
-        public adaptCanvas(canvas: HTMLCanvasElement) {
-            
+        public adaptTargetRadio(target: {width: number, height: number}) {
+            this.aspect = target.width / target.height;
+            this.apply();
         }
-
     }
 }

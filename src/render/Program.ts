@@ -22,7 +22,7 @@ module CanvasToy {
             this.uniforms = parameter.uniforms;
             this.attributes = parameter.attributes;
             for (let name in parameter.uniforms) {
-                this.uniforms[name] = engine.getUniformLocation(this, name);
+                this.uniforms[name] = this.getUniformLocation(this, name);
             }
             for (let buffer of parameter.attributes) {
                 buffer.index = engine.gl.getAttribLocation(this, buffer.name);
@@ -44,36 +44,36 @@ module CanvasToy {
             return newVertexBuffer;
         }
 
-        addUniform(name: string, onUpdateUniform: () => void) {
+        addUniform(name: string, onUpdateUniform: (mesh: Mesh, camera: Camera) => void) {
             engine.gl.useProgram(this.webGlProgram);
-            this.uniforms[name] = engine.getUniformLocation(this, name);
+            this.uniforms[name] = this.getUniformLocation(this, name);
             this.uniformUpdaters[name] = onUpdateUniform;
         }
 
-        addTexture(sampler: string, texture: Texture) {
-            this.textures.push(texture);
-            let lastOnload = texture.image.onload;
-            console.log('addTexture');
-            texture.image.onload = (et: Event) => {
-                lastOnload.apply(texture.image, et);
-                let gl = engine.gl;
-                gl.useProgram(this.webGlProgram);
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-                gl.activeTexture(gl.TEXTURE0 + texture.unit);
-                gl.bindTexture(texture.type, texture.glTexture);
-                texture.setUpTextureData();
-                gl.texParameteri(texture.type, gl.TEXTURE_WRAP_S, texture.wrapS);
-                gl.texParameteri(texture.type, gl.TEXTURE_WRAP_T, texture.wrapT);
-                gl.texParameteri(texture.type, gl.TEXTURE_MAG_FILTER, texture.magFilter);
-                gl.texParameteri(texture.type, gl.TEXTURE_MIN_FILTER, texture.minFilter);
-                console.log('test');
-                // the sampler
-                this.addUniform(sampler, () => {
-                    engine.gl.uniform1i(
-                        this.uniforms[sampler],
-                        texture.unit);
-                })
+        private getUniformLocation(program: Program, name: string): WebGLUniformLocation {
+            if (engine.gl == undefined || engine.gl == null) {
+                console.error("WebGLRenderingContext has not been initialize!");
+                return null;
             }
+            var result = engine.gl.getUniformLocation(program.webGlProgram, name);
+            if (result == null) {
+                console.error("uniform " + name + " not found!");
+                return null;
+            }
+            return result;
+        }
+
+        private getAttribLocation(program: Program, name: string): number {
+            if (engine.gl == undefined || engine.gl == null) {
+                console.error("WebGLRenderingContext has not been initialize!");
+                return null;
+            }
+            var result = engine.gl.getAttribLocation(program.webGlProgram, name);
+            if (result == null) {
+                console.error("attribute " + name + " not found!");
+                return null;
+            }
+            return result;
         }
 
     }

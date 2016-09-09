@@ -2,7 +2,7 @@
 
 module CanvasToy {
 
-    export class Object3d {
+    export abstract class Object3d {
 
         public name: string;
 
@@ -23,7 +23,12 @@ module CanvasToy {
         protected startEvents: Array<Function> = [];
 
         constructor() {
+            this.registerUpdate(() => {
+                this.apply();
+            });
         }
+
+        public abstract apply();
 
         public registerUpdate(updateFunction: Function) {
             this.updateEvents.push(updateFunction);

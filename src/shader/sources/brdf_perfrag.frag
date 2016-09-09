@@ -1,6 +1,5 @@
 #ifdef USE_COLOR // color declaration
 uniform vec4 color;
-uniform vec3 ambient;
 #endif // color declaration
 
 #ifdef USE_TEXTURE // texture declaration
@@ -18,6 +17,7 @@ struct Light {
     vec3 position;
     bool directional;
 };
+uniform vec3 ambient;
 uniform vec3 eyePosition;
 varying vec3 vPosition;
 vec3 totalLighting;

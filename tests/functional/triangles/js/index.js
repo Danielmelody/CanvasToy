@@ -34,7 +34,6 @@ function render() {
   canvas.height = source.height;
   CanvasToy.setCanvas(canvas);
   var scene = new CanvasToy.Scene();
-  scene.clearColor = [ 1, 1, 1, 1 ];
   var camera = new CanvasToy.PerspectiveCamera();
   camera.fovy = 45;
   var gl = CanvasToy.engine.gl;
@@ -45,8 +44,8 @@ function render() {
   triangleFaceMaterial.vertexShaderSource = triangleVertShader;
   triangleFaceMaterial.fragShaderSource = triangleFragShader;
 
-  var rect =
-      new CanvasToy.Mesh(new CanvasToy.RectGeomotry(), triangleFaceMaterial);
+  var rect = new CanvasToy.Mesh(new CanvasToy.RectGeomotry(),
+                                [ triangleFaceMaterial ]);
   rect.translate(0, 0, -1.0);
   scene.addObject(rect);
   scene.addObject(camera);

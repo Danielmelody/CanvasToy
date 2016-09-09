@@ -10,7 +10,6 @@ module CanvasToy {
             super();
             this.projectionMatrix = mat4.create();
         }
-        public abstract adaptCanvas(canvas:HTMLCanvasElement);
-        public abstract apply();
+        public abstract adaptTargetRadio(target: {width: number, height: number});
     }
 }

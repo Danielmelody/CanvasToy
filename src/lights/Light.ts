@@ -9,6 +9,5 @@ module CanvasToy {
         constructor() {
             super();
         }
-
     }
 }

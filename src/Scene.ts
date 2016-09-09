@@ -17,6 +17,8 @@ module CanvasToy {
 
         public clearColor: Array<number> = [0, 0, 0, 0];
 
+        public programSetUp: boolean = false;
+
         constructor() {
             window.setInterval(() => this.update(1000 / 60), 1000 / 60);
         }
@@ -35,10 +37,6 @@ module CanvasToy {
                 node.children.forEach((child) => {
                     this.addObject(child);
                 })
-            }
-            if (object instanceof PerspectiveCamera) {
-                let camera = <PerspectiveCamera>object;
-                camera.adaptCanvas(engine.canvas);
             }
         }
 

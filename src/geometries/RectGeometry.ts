@@ -1,7 +1,7 @@
 /// <reference path="./Geometry.ts"/>
 
 module CanvasToy {
-    export class RectGeomotry extends Geometry {
+    export class RectGeometry extends Geometry {
         constructor() {
             super();
             this.positions = [

@@ -4,5 +4,8 @@ module CanvasToy {
         constructor() {
             super();
         }
+        apply() {
+
+        }
     }
 }

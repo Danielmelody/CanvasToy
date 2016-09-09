@@ -6,19 +6,24 @@ module CanvasToy {
         engine = new Renderer(canvas);
     }
 
+
     export class Renderer {
 
-        public gl: WebGLRenderingContext;
+        gl: WebGLRenderingContext;
 
-        public preloadRes: any[] = [];
-
-        textureIndices: {} = {};
+        preloadRes: any[] = [];
 
         usedTextureNum: number = 0;
+
+        renderTargets: Array<RenderTargetTexture> = [];
 
         vertPrecision: string = "highp";
 
         fragPrecision: string = "mediump";
+
+        isAnimating: boolean = false;
+
+        renderQueue: Array<Function> = [];
 
         constructor(public canvas: HTMLCanvasElement) {
             this.gl = initWebwebglContext(canvas);
@@ -26,9 +31,100 @@ module CanvasToy {
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthFunc(this.gl.LEQUAL);
+            this.renderQueue.push(() => {
+                this.gl.viewport(0, 0, canvas.width, canvas.height);
+                this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            })
+            setInterval(() => {
+                for (let renderCommand of this.renderQueue) {
+                    renderCommand();
+                }
+            }, 1000 / 60);
         }
 
-        public makePrograms(scene: Scene, mesh: Mesh, camera: Camera) {
+        public renderToTexture(scene: Scene, camera: Camera): RenderTargetTexture {
+            let gl = this.gl;
+            let rttTexture = new RenderTargetTexture(scene, camera);
+            // bind texture
+            gl.bindTexture(gl.TEXTURE_2D, rttTexture.glTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, rttTexture.format, this.canvas.width, this.canvas.height, 0, rttTexture.format, gl.UNSIGNED_BYTE, null);
+            gl.texParameteri(rttTexture.type, gl.TEXTURE_WRAP_S, rttTexture.wrapS);
+            gl.texParameteri(rttTexture.type, gl.TEXTURE_WRAP_T, rttTexture.wrapT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, rttTexture.magFilter);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, rttTexture.minFilter);
+
+            // create frame buffer, as rendering target
+            rttTexture.frameBuffer = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, rttTexture.frameBuffer);
+
+            // create render buffer for depth test
+            rttTexture.depthBuffer = gl.createRenderbuffer();
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rttTexture.depthBuffer);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.canvas.width, this.canvas.height);
+
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture.glTexture, 0);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rttTexture.depthBuffer);
+
+            if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+                console.log('frame buffer not completed');
+            }
+
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+            this.buildScene(scene, camera);
+
+            this.renderQueue.push(() => {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, rttTexture.frameBuffer);
+                gl.bindRenderbuffer(gl.RENDERBUFFER, rttTexture.depthBuffer);
+                this.gl.clearColor(
+                    scene.clearColor[0],
+                    scene.clearColor[1],
+                    scene.clearColor[2],
+                    scene.clearColor[3],
+                );
+                this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+                for (let object of scene.objects) {
+                    this.renderObject(camera, object);
+                }
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            })
+            return rttTexture;
+        }
+
+        public render(scene: Scene, camera: Camera) {
+            this.buildScene(scene, camera);
+            this.renderQueue.push(() => {
+                this.gl.clearColor(
+                    scene.clearColor[0],
+                    scene.clearColor[1],
+                    scene.clearColor[2],
+                    scene.clearColor[3],
+                );
+                for (let object of scene.objects) {
+                    this.renderObject(camera, object);
+                }
+            })
+        }
+
+        public buildScene(scene: Scene, camera: Camera) {
+            if (this.preloadRes.length > 0) {
+                return;
+            }
+            for (let object of scene.objects) {
+                if (object instanceof Mesh) {
+                    let mesh = <Mesh>object;
+                    this.makeMeshPrograms(scene, mesh, camera);
+                }
+            }
+            camera.adaptTargetRadio(this.canvas);
+            scene.programSetUp = true;
+            console.log('make shaders');
+        }
+
+        public makeMeshPrograms(scene: Scene, mesh: Mesh, camera: Camera) {
 
             if (mesh.materials.length > 1) {
                 engine.gl.enable(engine.gl.BLEND);
@@ -77,7 +173,7 @@ module CanvasToy {
                     prefixFragment + material.fragShaderSource);
 
                 this.gl.useProgram(program.webGlProgram);
-                program.addUniform("modelViewProjectionMatrix", () => {
+                program.addUniform("modelViewProjectionMatrix", (mesh, camera) => {
                     let mvpMatrix = mat4.multiply(
                         mat4.create(),
                         camera.projectionMatrix,
@@ -94,8 +190,6 @@ module CanvasToy {
                 this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, program.indexBuffer);
                 this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
                     new Uint16Array(mesh.geometry.faces), program.drawMode);
-                console.log(mesh.geometry.faces.length);
-                console.log('index: ' + this.gl.getBufferParameter(this.gl.ARRAY_BUFFER, this.gl.BUFFER_SIZE));
                 program.setAttribute0(new VertexBuffer("position", 3,
                     this.gl.FLOAT)).data = mesh.geometry.positions;
 
@@ -111,10 +205,11 @@ module CanvasToy {
                 }
 
                 if (material.map != undefined) {
-                    program.addTexture('uTextureSampler', material.map);
+                    this.loadTexture(program, 'uTextureSampler', material.map);
                     program.addAttribute(
                         new VertexBuffer("aTextureCoord", 2, this.gl.FLOAT))
                         .data = mesh.geometry.uvs;
+                    console.log(mesh.geometry.uvs);
                 }
 
                 if (scene.openLight) {
@@ -124,13 +219,68 @@ module CanvasToy {
             }
         }
 
+        loadTexture(program: Program, sampler: string, texture: Texture) {
+            if (texture instanceof RenderTargetTexture) {
+                let gl = engine.gl;
+                texture.unit = this.usedTextureNum;
+                this.usedTextureNum++;
+                program.textures.push(texture);
+                gl.useProgram(program.webGlProgram);
+                gl.activeTexture(gl.TEXTURE0 + texture.unit);
+                gl.bindTexture(texture.type, texture.glTexture);
+                program.addUniform(sampler, (mesh, camera) => {
+                    engine.gl.uniform1i(
+                        program.uniforms[sampler],
+                        texture.unit);
+                });
+                return;
+            }
+            let lastOnload = texture.image.onload;
+            if (texture.image.complete) {
+                this.addTexture(program, sampler, texture);
+                return;
+            }
+            texture.image.onload = (et: Event) => {
+                if (lastOnload) {
+                    lastOnload.apply(texture.image, et);
+                }
+                this.addTexture(program, sampler, texture);
+            }
+
+        }
+
+        addTexture(program: Program, sampler: string, texture: Texture) {
+            texture.unit = this.usedTextureNum;
+            this.usedTextureNum++;
+            program.textures.push(texture);
+
+            let gl = engine.gl;
+            gl.useProgram(program.webGlProgram);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.activeTexture(gl.TEXTURE0 + texture.unit);
+            gl.bindTexture(texture.type, texture.glTexture);
+            gl.texParameteri(texture.type, gl.TEXTURE_WRAP_S, texture.wrapS);
+            gl.texParameteri(texture.type, gl.TEXTURE_WRAP_T, texture.wrapT);
+            gl.texParameteri(texture.type, gl.TEXTURE_MAG_FILTER, texture.magFilter);
+            gl.texParameteri(texture.type, gl.TEXTURE_MIN_FILTER, texture.minFilter);
+
+            texture.setUpTextureData();
+
+            // the sampler
+            program.addUniform(sampler, (mesh, camera) => {
+                engine.gl.uniform1i(
+                    program.uniforms[sampler],
+                    texture.unit);
+            })
+        }
+
         public setUplights(scene: Scene, program: Program, mesh: Mesh, camera: Camera) {
-            program.addUniform("normalMatrix", () => {
+            program.addUniform("normalMatrix", (mesh, camera) => {
                 engine.gl.uniformMatrix4fv(
                     program.uniforms["normalMatrix"],
                     false, new Float32Array(mesh.normalMatrix));
             });
-            program.addUniform("ambient", () => {
+            program.addUniform("ambient", (mesh, camera) => {
                 // alert(scene.ambientLight);
                 engine.gl.uniform3f(program.uniforms["ambient"],
                     scene.ambientLight[0],
@@ -138,7 +288,7 @@ module CanvasToy {
                     scene.ambientLight[2]
                 )
             });
-            program.addUniform("eyePosition", () => {
+            program.addUniform("eyePosition", (mesh, camera) => {
                 engine.gl.uniform3f(program.uniforms["eyePosition"],
                     camera.position[0],
                     camera.position[1],
@@ -166,84 +316,34 @@ module CanvasToy {
                 var specular = "lights[" + index + "].specular";
                 var idensity = "lights[" + index + "].idensity";
                 var position = "lights[" + index + "].position";
-                program.addUniform(diffuse, () => {
+                program.addUniform(diffuse, (mesh, camera) => {
                     this.gl.uniform3f(program.uniforms[diffuse],
                         light.diffuse[0],
                         light.diffuse[1],
                         light.diffuse[2]
                     );
                 });
-                program.addUniform(specular, () => {
+                program.addUniform(specular, (mesh, camera) => {
                     this.gl.uniform3f(program.uniforms[specular],
                         light.specular[0],
                         light.specular[1],
                         light.specular[2]
                     );
                 });
-                program.addUniform(position, () => {
+                program.addUniform(position, (mesh, camera) => {
                     this.gl.uniform3f(program.uniforms[position],
                         light.position[0],
                         light.position[1],
                         light.position[2]
                     );
                 });
-                program.addUniform(idensity, () => {
+                program.addUniform(idensity, (mesh, camera) => {
                     this.gl.uniform1f(program.uniforms[idensity],
                         light.idensity
                     );
                 });
             }
         }
-
-        addTexture(texture: Texture) {
-            this.textureIndices[texture.image.src] = this.usedTextureNum;
-            texture.unit = this.usedTextureNum;
-            this.usedTextureNum++;
-        }
-
-        public startRender(scene: Scene, camera: Camera, duration: number) {
-            this.gl.clearColor(
-                scene.clearColor[0],
-                scene.clearColor[1],
-                scene.clearColor[2],
-                scene.clearColor[3]
-            );
-            for (let object of scene.objects) {
-                if (object instanceof Mesh) {
-                    let mesh = <Mesh>object;
-                    this.makePrograms(scene, mesh, camera);
-                }
-            }
-            setInterval(() => this.renderImmediately(scene, camera), duration);
-        }
-
-        public getUniformLocation(program: Program, name: string): WebGLUniformLocation {
-            if (this.gl == undefined || this.gl == null) {
-                console.error("WebGLRenderingContext has not been initialize!");
-                return null;
-            }
-            var result = this.gl.getUniformLocation(program.webGlProgram, name);
-            if (result == null) {
-                console.error("uniform " + name + " not found!");
-                return null;
-            }
-            return result;
-        }
-
-        public getAttribLocation(program: Program, name: string): number {
-            if (this.gl == undefined || this.gl == null) {
-                console.error("WebGLRenderingContext has not been initialize!");
-                return null;
-            }
-            var result = this.gl.getAttribLocation(program.webGlProgram, name);
-            if (result == null) {
-                console.error("attribute " + name + " not found!");
-                return null;
-            }
-            return result;
-        }
-
-
 
         private copyToVertexBuffer(program: Program) {
             let gl = engine.gl;
@@ -263,12 +363,10 @@ module CanvasToy {
                 for (let program of mesh.programs) {
                     this.gl.useProgram(program.webGlProgram);
                     for (let updaters in program.uniformUpdaters) {
-                        program.uniformUpdaters[updaters]();
+                        program.uniformUpdaters[updaters](object, camera);
                     }
                     for (let bufferName in program.vertexBuffers) {
                         gl.bindBuffer(engine.gl.ARRAY_BUFFER, program.vertexBuffers[bufferName].buffer);
-                        // console.log(program.vertexBuffers[bufferName].buffer);
-                        // console.log('buffer size:' + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
                         engine.gl.vertexAttribPointer(
                             program.vertexBuffers[bufferName].index,
                             program.vertexBuffers[bufferName].size,
@@ -280,16 +378,6 @@ module CanvasToy {
                     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, program.indexBuffer);
                     gl.drawElements(gl.TRIANGLES, mesh.geometry.faces.length, gl.UNSIGNED_SHORT, 0);
                 }
-            }
-        }
-
-        private renderImmediately(scene: Scene, camera: Camera) {
-            if (this.preloadRes.length > 0) {
-                return;
-            }
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-            for (let renderObject of scene.objects) {
-                this.renderObject(camera, renderObject);
             }
         }
 

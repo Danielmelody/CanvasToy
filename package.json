@@ -6,8 +6,9 @@
     "glsl",
     "canvas"
   ],
+  "main":"build/canvas-toy.js",
   "description": "lightweight webgl rendering tool",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "repository": {
     "type": "git",

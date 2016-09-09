@@ -23,9 +23,11 @@ module CanvasToy {
             super();
             this.materials = materials;
             this.geometry = geometry;
-            this.registerUpdate((event) => {
-                mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));
-            })
+        }
+
+        public apply() {
+            super.apply();
+            mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));
         }
     }
 }

@@ -2,13 +2,13 @@
 module CanvasToy {
 
     export abstract class Texture {
-        glTexture: WebGLTexture;
-        image: HTMLImageElement;
-        textureCoord: number[] = [];
-        unit: number;
-        isReadyToUpdate: boolean = false;
+        public glTexture: WebGLTexture;
+        public textureCoord: number[] = [];
+        public unit: number;
+        public dataCompleted: boolean = false;
+        public isReadyToUpdate: boolean = false;
         constructor(
-            path: string,
+            public image?: HTMLImageElement,
             public type: number = engine.gl.TEXTURE_2D,
             public format: number = engine.gl.RGB,
             public wrapS: number = engine.gl.CLAMP_TO_EDGE,
@@ -19,8 +19,11 @@ module CanvasToy {
             this.glTexture = gl.createTexture();
         }
         public setUpTextureData() {
-
-
+            if (this.dataCompleted) {
+                return false;
+            }
+            this.dataCompleted = true;
+            return true;
         };
     }
 }
