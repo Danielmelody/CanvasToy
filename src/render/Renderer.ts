@@ -82,7 +82,7 @@ module CanvasToy {
                     scene.clearColor[0],
                     scene.clearColor[1],
                     scene.clearColor[2],
-                    scene.clearColor[3],
+                    scene.clearColor[3]
                 );
                 this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
                 for (let object of scene.objects) {
@@ -101,7 +101,7 @@ module CanvasToy {
                     scene.clearColor[0],
                     scene.clearColor[1],
                     scene.clearColor[2],
-                    scene.clearColor[3],
+                    scene.clearColor[3]
                 );
                 for (let object of scene.objects) {
                     this.renderObject(camera, object);

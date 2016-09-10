@@ -1,21 +1,22 @@
-/// <reference path="./Object3d" />
+/// <reference path="./Object3d.ts" />
 
 module CanvasToy {
 
     /*
      * @author Danielhu229 http://hustdanielhu.com
      */
+
     export class Node extends Object3d {
 
         public children: Array<Node>;
 
-        protected parent: Node = null;
+        public parent: Node = null;
 
         constructor() {
             super();
             this.parent = null;
             this.children = [];
-            this.registerUpdate(() => {
+            this.registUpdate(() => {
                 this.apply();
             })
         }

@@ -10,5 +10,10 @@
          "typings/index.d.ts",
          "src/**/*.ts"
     ],
+    "exclude":[
+        "examples/**/*.ts",
+        "tests/**/*.ts",
+        "build/**/*.ts"
+    ],
    "compileOnSave":false
 }

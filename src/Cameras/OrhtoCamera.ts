@@ -20,6 +20,10 @@ module CanvasToy {
         }
 
         public adaptTargetRadio(target: {width: number, height: number}) {
+            this.left = -target.width / 2;
+            this.right = target.width / 2;
+            this.top = target.height / 2;
+            this.bottom = -target.height / 2;
         }
     }
 }

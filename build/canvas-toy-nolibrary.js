@@ -20,14 +20,14 @@ var CanvasToy;
             this.rotate = vec3.create();
             this.updateEvents = [];
             this.startEvents = [];
-            this.registerUpdate(function () {
+            this.registUpdate(function () {
                 _this.apply();
             });
         }
-        Object3d.prototype.registerUpdate = function (updateFunction) {
+        Object3d.prototype.registUpdate = function (updateFunction) {
             this.updateEvents.push(updateFunction);
         };
-        Object3d.prototype.registerStart = function (updateFunction) {
+        Object3d.prototype.registStart = function (updateFunction) {
             this.startEvents.push(updateFunction);
         };
         Object3d.prototype.start = function () {
@@ -78,7 +78,7 @@ var CanvasToy;
             this.parent = null;
             this.parent = null;
             this.children = [];
-            this.registerUpdate(function () {
+            this.registUpdate(function () {
                 _this.apply();
             });
         }
@@ -137,6 +137,10 @@ var CanvasToy;
             mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
         };
         OrthoCamera.prototype.adaptTargetRadio = function (target) {
+            this.left = -target.width / 2;
+            this.right = target.width / 2;
+            this.top = target.height / 2;
+            this.bottom = -target.height / 2;
         };
         return OrthoCamera;
     }(CanvasToy.Camera));
@@ -695,7 +699,6 @@ var CanvasToy;
     function setCanvas(canvas) {
         CanvasToy.engine = new Renderer(canvas);
     }
-    CanvasToy.setCanvas = setCanvas;
     var Renderer = (function () {
         function Renderer(canvas) {
             var _this = this;

@@ -24,6 +24,9 @@
     "karma-chrome-launcher": "^2.0.0",
     "karma-jasmine": "^1.0.2"
   },
+  "scripts": {
+   "test": "cd tests && ./testing.sh"
+ },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"

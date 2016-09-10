@@ -1,16 +1,16 @@
 {
-     "compilerOptions":{
-          "rootDir":"..",
+     "compilerOptions": {
+          "rootDir":".",
           "module": "amd",
           "removeComments": true,
-          "outDir":"../tests/src",
-          "noLib":false,
+          "outFile":"canvas-toy-test-tmp.js",
           "target": "es5"
     },
     "include": [
-         "../typings/index.d.ts",
-         "../src/**/*.ts",
-         "unit/**/*.ts"
+        "../typings/index.d.ts",
+        "../src/**/*.ts",
+        "Util.ts",
+        "unit/**/*.ts"
     ],
-    "compileOnSave":false
+    "compileOnSave": true
 }

@@ -23,18 +23,18 @@ module CanvasToy {
         protected startEvents: Array<Function> = [];
 
         constructor() {
-            this.registerUpdate(() => {
+            this.registUpdate(() => {
                 this.apply();
             });
         }
 
         public abstract apply();
 
-        public registerUpdate(updateFunction: Function) {
+        public registUpdate(updateFunction: Function) {
             this.updateEvents.push(updateFunction);
         }
 
-        public registerStart(updateFunction: Function) {
+        public registStart(updateFunction: Function) {
             this.startEvents.push(updateFunction);
         }
 

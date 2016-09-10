@@ -1,12 +1,10 @@
 # CanvasToy.js
-
 lightweight webgl rendering tool
 
 ### current features:
 
--   Basic openrations of 3d object: translate, scale and rotate
--   Perspective and orthogonal projection types of Camera
--   Texture-mapping
+-   Multi-material surface
+-   Build-in render-to-texture tool
 -   BRDF per-fragment or per-vertex light
 -   Custom shader material
 -   Wavefront .obj file support

@@ -12,7 +12,7 @@ module.exports = function(config) {
     frameworks : [ 'jasmine' ],
 
     // list of files / patterns to load in the browser
-    files : [ 'tests/functional/objLoader/ModelLoader.js' ],
+    files : [ 'canvas-toy-test.js' ],
 
     // list of files to exclude
     exclude : [],
