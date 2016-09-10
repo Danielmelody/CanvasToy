@@ -13,7 +13,8 @@
     "exclude":[
         "examples/**/*.ts",
         "tests/**/*.ts",
-        "build/**/*.ts"
+        "build/**/*.ts",
+        "node_modules/**/*.ts"
     ],
    "compileOnSave":false
 }

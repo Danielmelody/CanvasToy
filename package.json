@@ -6,9 +6,9 @@
     "glsl",
     "canvas"
   ],
-  "main":"build/canvas-toy.js",
+  "main": "build/canvas-toy.js",
   "description": "lightweight webgl rendering tool",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -18,15 +18,19 @@
     "url": "https://github.com/UniqueStudio/CanvasToy/issues"
   },
   "devDependencies": {
-    "cz-conventional-changelog": "*",
-    "jasmine-core": "2.4.1",
-    "karma": "^1.2.0",
-    "karma-chrome-launcher": "^2.0.0",
-    "karma-jasmine": "^1.0.2"
+    "cz-conventional-changelog": "latest",
+    "gl": "latest",
+    "jasmine-core": "latest",
+    "karma": "latest",
+    "karma-chrome-launcher": "latest",
+    "karma-firefox-launcher": "latest",
+    "karma-jasmine": "latest"
   },
   "scripts": {
-   "test": "cd tests && ./testing.sh"
- },
+    "test": "cd tests && sh testing.sh",
+    "testci": "cd tests && sh testingci.sh",
+    "build": "./building.sh"
+  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"

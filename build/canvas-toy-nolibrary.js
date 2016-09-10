@@ -699,6 +699,7 @@ var CanvasToy;
     function setCanvas(canvas) {
         CanvasToy.engine = new Renderer(canvas);
     }
+    CanvasToy.setCanvas = setCanvas;
     var Renderer = (function () {
         function Renderer(canvas) {
             var _this = this;
