@@ -18,7 +18,9 @@ lightweight webgl rendering tool
 -   Encapsulation of commonly used noise
 -   build && test using pure node.js and typescript compiler, without gulp or grunt, webpack and bash , etc.
 
+### Contribute: 
 
+see [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ##  License
 
