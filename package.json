@@ -29,8 +29,7 @@
   "scripts": {
     "test": "cd tests && sh testing.sh",
     "testci": "cd tests && sh testingci.sh",
-    "build": "./building.sh",
-    "example": "open http://localhost:8080/examples"
+    "build": "./building.sh"
   },
   "config": {
     "commitizen": {

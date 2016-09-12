@@ -1,9 +1,9 @@
-## How to Contribute:
+## How to contribute:
 
 ### Install dependency:
 
 ```bash
-npm install -g typescript@2 typescript-formatter
+npm install -g typescript@2 typescript-formatter http-server
 npm install
 ```
 
@@ -23,11 +23,15 @@ CanvasToy now use Karma and Jasmine for unit test
 ```bash
 npm test
 ```
-You can also run visible test by example
+You can also run visible test from example
+
+first, start a local http-server, for example,
 
 ```bash
-npm run example
+http-server
 ```
+
+Than open the local url with you browser and goto the example folder, you will find all examples there
 
 ### Format:
 

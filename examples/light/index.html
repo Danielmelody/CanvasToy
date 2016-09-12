@@ -19,7 +19,7 @@
     var camera = new CanvasToy.PerspectiveCamera();
 
     var image = new Image();
-    image.src = '../images/sea.jpg';
+    image.src = '../images/chrome.png';
 
     var cube = new CanvasToy.Mesh(
         new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial({
@@ -30,15 +30,14 @@
     scene.addObject(cube);
     scene.addObject(camera);
 
+    scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
+    var light = new CanvasToy.PointLight();
+    light.position[2] = 10;
+    scene.addLight(light);
+
     cube.registUpdate(function() {
         cube.rotateY(0.01);
-        light.translate(0, 0, -1);
     })
-
-    scene.ambientLight = vec3.fromValues(0.3, 0.3, 0.3);
-    var light = new CanvasToy.PointLight();
-    light.idensity = 4;
-    scene.addLight(light);
     CanvasToy.engine.render(scene, camera);
   }
   </script>
