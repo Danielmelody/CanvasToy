@@ -4,11 +4,11 @@
     <title>Node Test-CanvasToy</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <link rel="stylesheet" href="../dark.css" type="text/css">
-    <script src="../../../build/canvas-toy.js" type="text/javascript"></script>
+    <script src="../../build/canvas-toy.js" type="text/javascript"></script>
   </head>
 
   <body onload="start()">
-      <canvas id="canvas" width="640" height="480"></canvas>
+      <canvas id="canvas" width="640" height="480" class="black"></canvas>
       <script>
       function start() {
   var canvas = document.getElementById('canvas');
@@ -19,17 +19,20 @@
 
   var node = new CanvasToy.Node();
 
+  var image = new Image();
+  image.src = '../images/chrome.png';
+
   var mesh1 = new CanvasToy.Mesh(
-      new CanvasToy.CubeGeometry(), new CanvasToy.BRDFPerFragMaterial({
+      new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial({
         color : vec3.fromValues(1, 1, 1),
-        texture : new CanvasToy.CubeTexture('../images/me.png')
-      }));
+        texture : new CanvasToy.Texture2D(image)
+    })]);
 
   var mesh2 = new CanvasToy.Mesh(
-      new CanvasToy.CubeGeometry(), new CanvasToy.BRDFPerVertMaterial({
+      new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerVertMaterial({
         color : vec3.fromValues(1, 1, 1),
-        texture : new CanvasToy.CubeTexture('../images/chrome.png')
-      }));
+        texture : new CanvasToy.Texture2D(image)
+    })]);
 
   node.addChild(mesh1);
   node.addChild(mesh2)
@@ -45,8 +48,8 @@
 
   node.translate(0, 0, -10.0);
 
-  mesh1.registerUpdate(() => { node.rotateY(0.01); });
-  CanvasToy.engine.startRender(scene, camera, 1000 / 60);
+  mesh1.registUpdate(() => { node.rotateY(0.01); });
+  CanvasToy.engine.render(scene, camera);
 }
 </script>
   </body>

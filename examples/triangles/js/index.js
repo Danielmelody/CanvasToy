@@ -38,19 +38,19 @@ function render() {
   camera.fovy = 45;
   var gl = CanvasToy.engine.gl;
   var triangleFaceMaterial = new CanvasToy.Material({
-    texture : new CanvasToy.Texture2D(source.src),
+    texture : new CanvasToy.Texture2D(source),
     color : vec3.fromValues(1, 1, 1)
   });
   triangleFaceMaterial.vertexShaderSource = triangleVertShader;
   triangleFaceMaterial.fragShaderSource = triangleFragShader;
 
-  var rect = new CanvasToy.Mesh(new CanvasToy.RectGeomotry(),
+  var rect = new CanvasToy.Mesh(new CanvasToy.RectGeometry(),
                                 [ triangleFaceMaterial ]);
   rect.translate(0, 0, -1.0);
   scene.addObject(rect);
   scene.addObject(camera);
-  rect.registerUpdate(() => { rect.translate(0, 0, 0); });
-  CanvasToy.engine.startRender(scene, camera, 1000 / 60);
+  rect.registUpdate(() => { rect.translate(0, 0, 0); });
+  CanvasToy.engine.render(scene, camera);
 }
 
 source.onload = () => { getShaderSources(); };

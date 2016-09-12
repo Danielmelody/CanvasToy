@@ -55,7 +55,7 @@
           object.translate(0, 0, -40);
           var time = 0;
           object.rotateY(Math.PI / 2);
-          object.registerUpdate(() => {
+          object.registUpdate(() => {
             time += 1 / 60
             object.rotateY(0.01);
             // object.translate(0, 0.03 * Math.cos(time / 2), 0);

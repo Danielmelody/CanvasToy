@@ -36,7 +36,7 @@
         scene2.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
         scene1.clearColor = [0, 1, 1, 0];
         cube2.rotateY(1);
-        cube2.registerUpdate(() => {
+        cube2.registUpdate(() => {
             cube1.rotateY(0.01);
             cube2.rotateY(0.002);
         });

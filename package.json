@@ -30,7 +30,7 @@
     "test": "cd tests && sh testing.sh",
     "testci": "cd tests && sh testingci.sh",
     "build": "./building.sh",
-    "example": "cd examples && sh runExample.sh"
+    "example": "open http://localhost:8080/examples"
   },
   "config": {
     "commitizen": {
