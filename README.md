@@ -1,5 +1,6 @@
 # CanvasToy.js
 
+![](https://travis-ci.org/UniqueStudio/CanvasToy.svg?branch=master)
 
 lightweight webgl rendering tool
 

@@ -7881,20 +7881,19 @@ var Testing;
 var Testing;
 (function (Testing) {
     describe('Node testing', function () {
-        var node = null;
-        var parent = null;
-        var child = null;
         beforeAll(function () {
             var canvas = Testing.createCanvas(512, 512);
             CanvasToy.setCanvas(canvas);
         });
         it("function addChild", function () {
+            var parent = new CanvasToy.Node();
+            var child = new CanvasToy.Node();
             parent.addChild(child);
             expect(parent.children).toContain(child);
             expect(child.parent).toBe(parent);
         });
         it("function apply", function () {
-            node = new CanvasToy.Node();
+            var node = new CanvasToy.Node();
             node.apply();
         });
     });
