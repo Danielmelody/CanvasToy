@@ -24,3 +24,5 @@ fabric.properties
 
 /tests/npm-debug.log
 npm-debug.log
+/tests/npm-debug.log.*
+npm-debug.log.*

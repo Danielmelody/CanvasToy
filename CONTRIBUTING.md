@@ -3,15 +3,12 @@
 ### Install dependency:
 
 ```bash
-npm install -g typescript typescript-formatter
+npm install -g typescript@2 typescript-formatter
 npm install
 ```
 
-to update typescript to latest version, you must upgrade it after install
+we use typescript **2.x** rather than current **1.x** to match [tsconfig.json schema on the official site](http://json.schemastore.org/tsconfig)
 
-```bash
-npm upgrade -g typescript
-```
 
 ### Building:
 

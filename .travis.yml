@@ -19,8 +19,7 @@ before_script:
   - sleep 3
 
 install:
-    - npm install -g typescript
-    - npm upgrade -g typescript
+    - npm install -g typescript@2
     - npm install
 
 script:
