@@ -42,20 +42,22 @@ function loadResources() {
 }
 
 function createSmoothGeometry(randomVerticles, triangles) {
-    var geometry = new CanvasToy.Geometry();
-    geometry.faces = triangles;
-    for (var i = 0; i < randomVerticles.length; ++i) {
-        geometry.positions.push(randomVerticles[i][0] * 2 - 1);
-        geometry.positions.push(randomVerticles[i][1] * 2 - 1);
-        geometry.positions.push(0);
-        geometry.uvs.push(randomVerticles[i][0]);
-        geometry.uvs.push(randomVerticles[i][1]);
-    }
-    return geometry;
+  var geometry = new CanvasToy.Geometry();
+  geometry.faces = triangles;
+  for (var i = 0; i < randomVerticles.length; ++i) {
+    geometry.positions.push(randomVerticles[i][0] * 2 - 1);
+    geometry.positions.push(randomVerticles[i][1] * 2 - 1);
+    geometry.positions.push(0);
+    geometry.uvs.push(randomVerticles[i][0]);
+    geometry.uvs.push(randomVerticles[i][1]);
+  }
+  return geometry;
 }
 
 function createFlatGeometry(randomVerticles, triangles) {
   var geometry = new CanvasToy.Geometry();
+  geometry.trianglePoint1s = [];
+  geometry.trianglePoint2s = [];
   for (var i = 0; i < triangles.length; i += 3) {
     var averageX = (randomVerticles[triangles[i]][0] +
                     randomVerticles[triangles[i + 1]][0] +
@@ -69,6 +71,17 @@ function createFlatGeometry(randomVerticles, triangles) {
       geometry.positions.push(randomVerticles[triangles[j]][0] * 2 - 1);
       geometry.positions.push(randomVerticles[triangles[j]][1] * 2 - 1);
       geometry.positions.push(0);
+
+      var indices = [ i, i + 1, i + 2 ];
+      indices = indices.slice(j - i, 1);
+
+      for (var p = 0; p < indices.length; ++p) {
+        geometry.trianglePoint1s.push(
+            randomVerticles[triangles[indices[0]]][0] * 2 - 1)
+        geometry.trianglePoint2s.push(
+            randomVerticles[triangles[indices[1]]][0] * 2 - 1)
+      }
+
       geometry.uvs.push(averageX);
       geometry.uvs.push(averageY);
       geometry.faces.push(j);
@@ -91,7 +104,6 @@ function render() {
   triangleFaceMaterial.vertexShaderSource = triangleVertShader;
   triangleFaceMaterial.fragShaderSource = triangleFragShader;
 
-
   var randomVerticles = [];
   randomVerticles.push([ 0, 0 ]);
   randomVerticles.push([ 0, 1 ]);
@@ -102,10 +114,10 @@ function render() {
   }
   var triangles = Delaunay.triangulate(randomVerticles);
 
-
   var meshGeometry = createSmoothGeometry(randomVerticles, triangles);
-  console.log(meshGeometry);
   var rect = new CanvasToy.Mesh(meshGeometry, [ triangleFaceMaterial ]);
+  triangleFaceMaterial.program.addAttribute("trianglePos1", )
+
   rect.translate(0, 0, -1.0);
   rttScene.addObject(rect);
   rttScene.addObject(rttCamera);
