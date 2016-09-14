@@ -29,7 +29,7 @@
   "scripts": {
     "test": "cd tests && sh testing.sh",
     "testci": "cd tests && sh testingci.sh",
-    "build": "./building.sh",
+    "build": "sh building.sh",
     "example": "cd examples && sh runExample.sh"
   },
   "config": {

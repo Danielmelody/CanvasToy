@@ -19,7 +19,7 @@ module CanvasToy {
             mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
         }
 
-        public adaptTargetRadio(target: {width: number, height: number}) {
+        public adaptTargetRadio(target: { width: number, height: number }) {
             this.left = -target.width / 2;
             this.right = target.width / 2;
             this.top = target.height / 2;

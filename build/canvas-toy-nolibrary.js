@@ -259,9 +259,7 @@ var CanvasToy;
     var Material = (function () {
         function Material(paramter) {
             if (paramter === void 0) { paramter = { texture: undefined, color: CanvasToy.colors.white }; }
-            this.attributes = {};
-            this.uniforms = {};
-            this.samplers = {};
+            this.program = new CanvasToy.Program();
             this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
             this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
             this.specular = vec3.fromValues(1, 1, 1);
@@ -269,25 +267,30 @@ var CanvasToy;
             this.shadingMode = ShadingMode.smoothShading;
             if (paramter.texture != undefined) {
                 this.map = paramter.texture;
-                this.addAttribute('aTextureCoord', this.map);
             }
             if (paramter.color != undefined) {
                 this.color = paramter.color;
-                this.addUniform('uColor', this.color);
             }
         }
-        Material.prototype.addAttribute = function (name, data) {
-            this.attributes[name] = data;
-        };
-        Material.prototype.addUniform = function (name, data) {
-            this.uniforms[name] = data;
-        };
         return Material;
     }());
     CanvasToy.Material = Material;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var VertexBuffer = (function () {
+        function VertexBuffer(name, size, type, data, stride) {
+            this.buffer = null;
+            this.name = name;
+            this.size = size;
+            this.type = type;
+            this.data = data ? data : [];
+            this.stride = stride ? stride : 0;
+            this.buffer = CanvasToy.engine.gl.createBuffer();
+        }
+        return VertexBuffer;
+    }());
+    CanvasToy.VertexBuffer = VertexBuffer;
     var Program = (function () {
         function Program() {
             this.uniforms = {};
@@ -309,17 +312,17 @@ var CanvasToy;
                 this.vertexBuffers[buffer.name] = buffer;
             }
         };
-        Program.prototype.setAttribute0 = function (newVertexBuffer) {
-            this.attribute0 = newVertexBuffer;
+        Program.prototype.setAttribute0 = function (name, size, type, data, stride) {
+            this.attribute0 = new VertexBuffer(name, size, type, data, stride);
             this.attribute0.index = 0;
-            this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
+            this.vertexBuffers[name] = this.attribute0;
             CanvasToy.engine.gl.bindAttribLocation(this.webGlProgram, 0, this.attribute0.name);
-            return newVertexBuffer;
         };
-        Program.prototype.addAttribute = function (newVertexBuffer) {
-            newVertexBuffer.index = CanvasToy.engine.gl.getAttribLocation(this.webGlProgram, newVertexBuffer.name);
-            this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
-            return newVertexBuffer;
+        Program.prototype.addAttribute = function (name, size, type, data, stride) {
+            var buffer = new VertexBuffer(name, size, type, data, stride);
+            buffer.index = CanvasToy.engine.gl.getAttribLocation(this.webGlProgram, name);
+            this.vertexBuffers[name] = buffer;
+            return buffer;
         };
         Program.prototype.addUniform = function (name, onUpdateUniform) {
             CanvasToy.engine.gl.useProgram(this.webGlProgram);
@@ -361,7 +364,7 @@ var CanvasToy;
         function Mesh(geometry, materials) {
             _super.call(this);
             this.drawMode = CanvasToy.engine.gl.STATIC_DRAW;
-            this.programs = [];
+            this.materiels = [];
             this.materials = [];
             this.maps = [];
             this.normalMatrix = mat4.create();
@@ -825,35 +828,31 @@ var CanvasToy;
                 ].join("\n") + '\n';
                 if (CanvasToy.debug) {
                 }
-                var program = new CanvasToy.Program();
-                mesh.programs.push(program);
-                program.material = material;
-                program.webGlProgram = CanvasToy.createEntileShader(this_1.gl, prefixVertex + material.vertexShaderSource, prefixFragment + material.fragShaderSource);
-                this_1.gl.useProgram(program.webGlProgram);
-                program.addUniform("modelViewProjectionMatrix", function (mesh, camera) {
+                material.program.webGlProgram = CanvasToy.createEntileShader(this_1.gl, prefixVertex + material.vertexShaderSource, prefixFragment + material.fragShaderSource);
+                this_1.gl.useProgram(material.program.webGlProgram);
+                material.program.addUniform("modelViewProjectionMatrix", function (mesh, camera) {
                     var mvpMatrix = mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), mat4.invert(mat4.create(), camera.matrix), mesh.matrix));
-                    CanvasToy.engine.gl.uniformMatrix4fv(program.uniforms["modelViewProjectionMatrix"], false, new Float32Array(mvpMatrix));
+                    CanvasToy.engine.gl.uniformMatrix4fv(material.program.uniforms["modelViewProjectionMatrix"], false, new Float32Array(mvpMatrix));
                 });
-                this_1.gl.useProgram(program.webGlProgram);
-                program.indexBuffer = this_1.gl.createBuffer();
-                this_1.gl.bindBuffer(this_1.gl.ELEMENT_ARRAY_BUFFER, program.indexBuffer);
-                this_1.gl.bufferData(this_1.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.geometry.faces), program.drawMode);
-                program.setAttribute0(new CanvasToy.VertexBuffer("position", 3, this_1.gl.FLOAT)).data = mesh.geometry.positions;
+                this_1.gl.useProgram(material.program.webGlProgram);
+                material.program.indexBuffer = this_1.gl.createBuffer();
+                this_1.gl.bindBuffer(this_1.gl.ELEMENT_ARRAY_BUFFER, material.program.indexBuffer);
+                this_1.gl.bufferData(this_1.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.geometry.faces), material.program.drawMode);
+                material.program.setAttribute0("position", 3, this_1.gl.FLOAT, mesh.geometry.positions);
                 if (material.color != undefined) {
-                    program.addUniform("color", function () {
-                        CanvasToy.engine.gl.uniform4f(program.uniforms["color"], material.color[0], material.color[1], material.color[2], material.color[3]);
+                    material.program.addUniform("color", function () {
+                        CanvasToy.engine.gl.uniform4f(material.program.uniforms["color"], material.color[0], material.color[1], material.color[2], material.color[3]);
                     });
                 }
                 if (material.map != undefined) {
-                    this_1.loadTexture(program, 'uTextureSampler', material.map);
-                    program.addAttribute(new CanvasToy.VertexBuffer("aTextureCoord", 2, this_1.gl.FLOAT))
-                        .data = mesh.geometry.uvs;
+                    this_1.loadTexture(material.program, 'uTextureSampler', material.map);
+                    material.program.addAttribute("aTextureCoord", 2, this_1.gl.FLOAT, mesh.geometry.uvs);
                     console.log(mesh.geometry.uvs);
                 }
                 if (scene.openLight) {
-                    this_1.setUplights(scene, program, mesh, camera);
+                    this_1.setUplights(scene, material, mesh, camera);
                 }
-                this_1.copyToVertexBuffer(program);
+                this_1.copyToVertexBuffer(material.program);
             };
             var this_1 = this;
             var prefixVertex, prefixFragment;
@@ -907,27 +906,24 @@ var CanvasToy;
                 CanvasToy.engine.gl.uniform1i(program.uniforms[sampler], texture.unit);
             });
         };
-        Renderer.prototype.setUplights = function (scene, program, mesh, camera) {
+        Renderer.prototype.setUplights = function (scene, material, mesh, camera) {
             var _this = this;
-            program.addUniform("normalMatrix", function (mesh, camera) {
-                CanvasToy.engine.gl.uniformMatrix4fv(program.uniforms["normalMatrix"], false, new Float32Array(mesh.normalMatrix));
+            material.program.addUniform("normalMatrix", function (mesh, camera) {
+                CanvasToy.engine.gl.uniformMatrix4fv(material.program.uniforms["normalMatrix"], false, new Float32Array(mesh.normalMatrix));
             });
-            program.addUniform("ambient", function (mesh, camera) {
-                CanvasToy.engine.gl.uniform3f(program.uniforms["ambient"], scene.ambientLight[0], scene.ambientLight[1], scene.ambientLight[2]);
+            material.program.addUniform("ambient", function (mesh, camera) {
+                CanvasToy.engine.gl.uniform3f(material.program.uniforms["ambient"], scene.ambientLight[0], scene.ambientLight[1], scene.ambientLight[2]);
             });
-            program.addUniform("eyePosition", function (mesh, camera) {
-                CanvasToy.engine.gl.uniform3f(program.uniforms["eyePosition"], camera.position[0], camera.position[1], camera.position[2]);
+            material.program.addUniform("eyePosition", function (mesh, camera) {
+                CanvasToy.engine.gl.uniform3f(material.program.uniforms["eyePosition"], camera.position[0], camera.position[1], camera.position[2]);
             });
-            switch (program.material.shadingMode) {
+            switch (material.shadingMode) {
                 case CanvasToy.ShadingMode.flatShading:
                     mesh.geometry.generateFlatNormal();
-                    program.addAttribute(new CanvasToy.VertexBuffer("aNormal", 3, this.gl.FLOAT))
-                        .data = mesh.geometry.flatNormals;
+                    material.program.addAttribute("aNormal", 3, this.gl.FLOAT, mesh.geometry.flatNormals);
                     break;
                 case CanvasToy.ShadingMode.smoothShading:
-                    program.addAttribute(new CanvasToy.VertexBuffer("aNormal", 3, this.gl.FLOAT))
-                        .data = mesh.geometry.normals;
-                    console.log('addAttribute');
+                    material.program.addAttribute("aNormal", 3, this.gl.FLOAT, mesh.geometry.normals);
                     break;
             }
             var index = 0;
@@ -936,17 +932,17 @@ var CanvasToy;
                 specular = "lights[" + index + "].specular";
                 idensity = "lights[" + index + "].idensity";
                 position = "lights[" + index + "].position";
-                program.addUniform(diffuse, function (mesh, camera) {
-                    _this.gl.uniform3f(program.uniforms[diffuse], light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+                material.program.addUniform(diffuse, function (mesh, camera) {
+                    _this.gl.uniform3f(material.program.uniforms[diffuse], light.diffuse[0], light.diffuse[1], light.diffuse[2]);
                 });
-                program.addUniform(specular, function (mesh, camera) {
-                    _this.gl.uniform3f(program.uniforms[specular], light.specular[0], light.specular[1], light.specular[2]);
+                material.program.addUniform(specular, function (mesh, camera) {
+                    _this.gl.uniform3f(material.program.uniforms[specular], light.specular[0], light.specular[1], light.specular[2]);
                 });
-                program.addUniform(position, function (mesh, camera) {
-                    _this.gl.uniform3f(program.uniforms[position], light.position[0], light.position[1], light.position[2]);
+                material.program.addUniform(position, function (mesh, camera) {
+                    _this.gl.uniform3f(material.program.uniforms[position], light.position[0], light.position[1], light.position[2]);
                 });
-                program.addUniform(idensity, function (mesh, camera) {
-                    _this.gl.uniform1f(program.uniforms[idensity], light.idensity);
+                material.program.addUniform(idensity, function (mesh, camera) {
+                    _this.gl.uniform1f(material.program.uniforms[idensity], light.idensity);
                 });
             };
             var diffuse, specular, idensity, position;
@@ -970,8 +966,9 @@ var CanvasToy;
             var gl = this.gl;
             if (object instanceof CanvasToy.Mesh) {
                 var mesh = object;
-                for (var _i = 0, _a = mesh.programs; _i < _a.length; _i++) {
-                    var program = _a[_i];
+                for (var _i = 0, _a = mesh.materiels; _i < _a.length; _i++) {
+                    var material = _a[_i];
+                    var program = material.program;
                     this.gl.useProgram(program.webGlProgram);
                     for (var updaters in program.uniformUpdaters) {
                         program.uniformUpdaters[updaters](object, camera);
@@ -990,22 +987,6 @@ var CanvasToy;
         return Renderer;
     }());
     CanvasToy.Renderer = Renderer;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var VertexBuffer = (function () {
-        function VertexBuffer(name, size, type, data, stride) {
-            this.buffer = null;
-            this.name = name;
-            this.size = size;
-            this.type = type;
-            this.data = data ? data : [];
-            this.stride = stride ? stride : 0;
-            this.buffer = CanvasToy.engine.gl.createBuffer();
-        }
-        return VertexBuffer;
-    }());
-    CanvasToy.VertexBuffer = VertexBuffer;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {

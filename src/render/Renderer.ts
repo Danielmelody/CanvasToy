@@ -166,14 +166,11 @@ module CanvasToy {
                     // console.log(prefixFragment + mesh.material.fragShaderSource)
                 }
 
-                let program = new Program();
-                mesh.programs.push(program);
-                program.material = material;
-                program.webGlProgram = createEntileShader(this.gl, prefixVertex + material.vertexShaderSource,
+                material.program.webGlProgram = createEntileShader(this.gl, prefixVertex + material.vertexShaderSource,
                     prefixFragment + material.fragShaderSource);
 
-                this.gl.useProgram(program.webGlProgram);
-                program.addUniform("modelViewProjectionMatrix", (mesh, camera) => {
+                this.gl.useProgram(material.program.webGlProgram);
+                material.program.addUniform("modelViewProjectionMatrix", (mesh, camera) => {
                     let mvpMatrix = mat4.multiply(
                         mat4.create(),
                         camera.projectionMatrix,
@@ -182,21 +179,21 @@ module CanvasToy {
                             mesh.matrix)
                     );
                     engine.gl.uniformMatrix4fv(
-                        program.uniforms["modelViewProjectionMatrix"],
+                        material.program.uniforms["modelViewProjectionMatrix"],
                         false, new Float32Array(mvpMatrix));
                 });
-                this.gl.useProgram(program.webGlProgram);
-                program.indexBuffer = this.gl.createBuffer();
-                this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, program.indexBuffer);
+                this.gl.useProgram(material.program.webGlProgram);
+                material.program.indexBuffer = this.gl.createBuffer();
+                this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, material.program.indexBuffer);
                 this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
-                    new Uint16Array(mesh.geometry.faces), program.drawMode);
-                program.setAttribute0(new VertexBuffer("position", 3,
-                    this.gl.FLOAT)).data = mesh.geometry.positions;
+                    new Uint16Array(mesh.geometry.faces), material.program.drawMode);
+                material.program.setAttribute0("position", 3,
+                    this.gl.FLOAT, mesh.geometry.positions);
 
                 if (material.color != undefined) {
-                    program.addUniform("color", () => {
+                    material.program.addUniform("color", () => {
                         engine.gl.uniform4f(
-                            program.uniforms["color"],
+                            material.program.uniforms["color"],
                             material.color[0],
                             material.color[1],
                             material.color[2],
@@ -205,17 +202,15 @@ module CanvasToy {
                 }
 
                 if (material.map != undefined) {
-                    this.loadTexture(program, 'uTextureSampler', material.map);
-                    program.addAttribute(
-                        new VertexBuffer("aTextureCoord", 2, this.gl.FLOAT))
-                        .data = mesh.geometry.uvs;
+                    this.loadTexture(material.program, 'uTextureSampler', material.map);
+                    material.program.addAttribute("aTextureCoord", 2, this.gl.FLOAT, mesh.geometry.uvs);
                     console.log(mesh.geometry.uvs);
                 }
 
                 if (scene.openLight) {
-                    this.setUplights(scene, program, mesh, camera);
+                    this.setUplights(scene, material, mesh, camera);
                 }
-                this.copyToVertexBuffer(program);
+                this.copyToVertexBuffer(material.program);
             }
         }
 
@@ -274,39 +269,34 @@ module CanvasToy {
             })
         }
 
-        public setUplights(scene: Scene, program: Program, mesh: Mesh, camera: Camera) {
-            program.addUniform("normalMatrix", (mesh, camera) => {
+        public setUplights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
+            material.program.addUniform("normalMatrix", (mesh, camera) => {
                 engine.gl.uniformMatrix4fv(
-                    program.uniforms["normalMatrix"],
+                    material.program.uniforms["normalMatrix"],
                     false, new Float32Array(mesh.normalMatrix));
             });
-            program.addUniform("ambient", (mesh, camera) => {
+            material.program.addUniform("ambient", (mesh, camera) => {
                 // alert(scene.ambientLight);
-                engine.gl.uniform3f(program.uniforms["ambient"],
+                engine.gl.uniform3f(material.program.uniforms["ambient"],
                     scene.ambientLight[0],
                     scene.ambientLight[1],
                     scene.ambientLight[2]
                 )
             });
-            program.addUniform("eyePosition", (mesh, camera) => {
-                engine.gl.uniform3f(program.uniforms["eyePosition"],
+            material.program.addUniform("eyePosition", (mesh, camera) => {
+                engine.gl.uniform3f(material.program.uniforms["eyePosition"],
                     camera.position[0],
                     camera.position[1],
                     camera.position[2]
                 )
             });
-            switch (program.material.shadingMode) {
+            switch (material.shadingMode) {
                 case ShadingMode.flatShading:
                     mesh.geometry.generateFlatNormal();
-                    program.addAttribute(
-                        new VertexBuffer("aNormal", 3, this.gl.FLOAT))
-                        .data = mesh.geometry.flatNormals;
+                    material.program.addAttribute("aNormal", 3, this.gl.FLOAT, mesh.geometry.flatNormals);
                     break;
                 case ShadingMode.smoothShading:
-                    program.addAttribute(
-                        new VertexBuffer("aNormal", 3, this.gl.FLOAT))
-                        .data = mesh.geometry.normals;
-                    console.log('addAttribute');
+                    material.program.addAttribute("aNormal", 3, this.gl.FLOAT, mesh.geometry.normals);
                     break;
 
             }
@@ -316,29 +306,29 @@ module CanvasToy {
                 var specular = "lights[" + index + "].specular";
                 var idensity = "lights[" + index + "].idensity";
                 var position = "lights[" + index + "].position";
-                program.addUniform(diffuse, (mesh, camera) => {
-                    this.gl.uniform3f(program.uniforms[diffuse],
+                material.program.addUniform(diffuse, (mesh, camera) => {
+                    this.gl.uniform3f(material.program.uniforms[diffuse],
                         light.diffuse[0],
                         light.diffuse[1],
                         light.diffuse[2]
                     );
                 });
-                program.addUniform(specular, (mesh, camera) => {
-                    this.gl.uniform3f(program.uniforms[specular],
+                material.program.addUniform(specular, (mesh, camera) => {
+                    this.gl.uniform3f(material.program.uniforms[specular],
                         light.specular[0],
                         light.specular[1],
                         light.specular[2]
                     );
                 });
-                program.addUniform(position, (mesh, camera) => {
-                    this.gl.uniform3f(program.uniforms[position],
+                material.program.addUniform(position, (mesh, camera) => {
+                    this.gl.uniform3f(material.program.uniforms[position],
                         light.position[0],
                         light.position[1],
                         light.position[2]
                     );
                 });
-                program.addUniform(idensity, (mesh, camera) => {
-                    this.gl.uniform1f(program.uniforms[idensity],
+                material.program.addUniform(idensity, (mesh, camera) => {
+                    this.gl.uniform1f(material.program.uniforms[idensity],
                         light.idensity
                     );
                 });
@@ -360,7 +350,8 @@ module CanvasToy {
             let gl = this.gl;
             if (object instanceof Mesh) {
                 let mesh = <Mesh>object;
-                for (let program of mesh.programs) {
+                for (let material of mesh.materiels) {
+                    let program = material.program;
                     this.gl.useProgram(program.webGlProgram);
                     for (let updaters in program.uniformUpdaters) {
                         program.uniformUpdaters[updaters](object, camera);

@@ -9,7 +9,7 @@ module CanvasToy {
 
         public drawMode: number = engine.gl.STATIC_DRAW;
 
-        public programs: Array<Program> = [];
+        public materiels: Array<Material> = [];
 
         public geometry: Geometry;
 

@@ -17,7 +17,7 @@ module CanvasToy {
             this.projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
         }
 
-        public adaptTargetRadio(target: {width: number, height: number}) {
+        public adaptTargetRadio(target: { width: number, height: number }) {
             this.aspect = target.width / target.height;
             this.apply();
         }

@@ -17,9 +17,7 @@ module CanvasToy {
 
     export class Material {
 
-        public attributes = {};
-        public uniforms = {};
-        public samplers = {};
+        public program: Program = new Program();
 
         public vertexShaderSource: string;
         public fragShaderSource: string;
@@ -48,22 +46,13 @@ module CanvasToy {
         public reflactivity: number;
 
         constructor(paramter: { texture: Texture, color: Vec4Array } = { texture: undefined, color: CanvasToy.colors.white }) {
+
             if (paramter.texture != undefined) {
                 this.map = paramter.texture;
-                this.addAttribute('aTextureCoord', this.map);
             }
             if (paramter.color != undefined) {
                 this.color = paramter.color;
-                this.addUniform('uColor', this.color);
             }
-        }
-
-        addAttribute(name: string, data: any) {
-            this.attributes[name] = data;
-        }
-
-        addUniform(name: string, data: any) {
-            this.uniforms[name] = data;
         }
 
     }

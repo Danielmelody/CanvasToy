@@ -7,6 +7,24 @@ module CanvasToy {
         attributes: VertexBuffer[];
     }
 
+    export class VertexBuffer {
+        name: string;
+        size: number;
+        type: number
+        data: number[];
+        index: number;
+        stride: number;
+        buffer: WebGLBuffer = null
+        constructor(name: string, size: number, type: number, data: number[], stride?: number) {
+            this.name = name;
+            this.size = size;
+            this.type = type;
+            this.data = data ? data : [];
+            this.stride = stride ? stride : 0;
+            this.buffer = engine.gl.createBuffer();
+        }
+    }
+
     export class Program {
         uniforms: {} = {};
         uniformUpdaters: {} = {};
@@ -17,7 +35,6 @@ module CanvasToy {
         public indexBuffer: WebGLBuffer;
         public attribute0: VertexBuffer;
         public vertexBuffers = {};
-        public material: Material;
         Program(parameter: ProgramParamter) {
             this.uniforms = parameter.uniforms;
             this.attributes = parameter.attributes;
@@ -30,18 +47,18 @@ module CanvasToy {
             }
         }
 
-        setAttribute0(newVertexBuffer: VertexBuffer): VertexBuffer {
-            this.attribute0 = newVertexBuffer;
+        setAttribute0(name: string, size: number, type: number, data: number[], stride?: number) {
+            this.attribute0 = new VertexBuffer(name, size, type, data, stride);
             this.attribute0.index = 0;
-            this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
+            this.vertexBuffers[name] = this.attribute0;
             engine.gl.bindAttribLocation(this.webGlProgram, 0, this.attribute0.name);
-            return newVertexBuffer;
         }
 
-        addAttribute(newVertexBuffer: VertexBuffer): VertexBuffer {
-            newVertexBuffer.index = engine.gl.getAttribLocation(this.webGlProgram, newVertexBuffer.name);
-            this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
-            return newVertexBuffer;
+        addAttribute(name: string, size: number, type: number, data: number[], stride?: number) {
+            let buffer = new VertexBuffer(name, size, type, data, stride);
+            buffer.index = engine.gl.getAttribLocation(this.webGlProgram, name);
+            this.vertexBuffers[name] = buffer;
+            return buffer;
         }
 
         addUniform(name: string, onUpdateUniform: (mesh: Mesh, camera: Camera) => void) {
