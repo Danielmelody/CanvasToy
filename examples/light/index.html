@@ -22,9 +22,9 @@
     image.src = '../images/chrome.png';
 
     var cube = new CanvasToy.Mesh(
-        new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial({
+        new CanvasToy.CubeGeometry(), [new CanvasToy.Material({
           color : vec3.fromValues(1, 1, 1),
-          texture : new CanvasToy.Texture2D(image)
+          mainTexture: new CanvasToy.Texture2D(image)
       })]);
     cube.translate(0, 0, -3);
     scene.addObject(cube);

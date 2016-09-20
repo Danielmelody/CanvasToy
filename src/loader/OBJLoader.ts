@@ -72,9 +72,6 @@ module CanvasToy {
             objects.splice(0, 1);
             objects.forEach((objectContent) => {
                 let geometry: Geometry = new Geometry();
-                geometry.positions = [];
-                geometry.normals = [];
-                geometry.uvs = [];
                 let faces = objectContent.match(indexPattern);
                 faces == null ? null : faces.forEach((faceStr) => {
                     parseAsTriangle(faceStr.match(faceSplitVertPattern), (triangleFaces) => {
@@ -82,15 +79,17 @@ module CanvasToy {
                             let match = perVertData.match(facePerVertPattern);
                             if (match != null && match[1] != null) {
                                 let positionIndex = parseInt(match[1]) - 1;
-                                geometry.faces.push(geometry.positions.length / 3);
-                                fillAVertex(geometry.positions, unIndexedPositions[positionIndex])
-                                match[2] === '' ? null : fillAVertex(geometry.uvs, unIndexedUVs[parseInt(match[2]) - 1]);
-                                match[3] === '' ? null : fillAVertex(geometry.normals, unIndexedNormals[parseInt(match[3]) - 1]);
+                                geometry.faces.data.push(geometry.attributes.position.data.length / 3);
+                                geometry.addVertex({
+                                    position: unIndexedPositions[positionIndex],
+                                    uv: unIndexedUVs[parseInt(match[2]) - 1],
+                                    normal: unIndexedNormals[parseInt(match[3]) - 1]
+                                })
                             }
                         })
                     })
                 });
-                let mesh = new Mesh(geometry, [new BRDFPerVertMaterial()]);
+                let mesh = new Mesh(geometry, [new Material()]);
                 container.addChild(mesh);
             });
             return container;

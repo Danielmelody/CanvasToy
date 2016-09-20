@@ -20,7 +20,7 @@ module CanvasToy {
         ) {
             super(
                 null,
-                engine.gl.TEXTURE_CUBE_MAP,
+                gl.TEXTURE_CUBE_MAP,
                 wrapS,
                 wrapT,
                 magFilter,
@@ -43,7 +43,6 @@ module CanvasToy {
 
         public setUpTextureData() {
             if (super.setUpTextureData()) {
-                let gl = engine.gl;
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xneg);
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xpos);
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.yneg);

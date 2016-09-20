@@ -4,38 +4,78 @@ module CanvasToy {
 
     export class Geometry {
 
-        public positions: number[] = [];
-        public uvs: number[] = [];
-        public normals: number[] = [];
-        public faces: number[] = [];
-        public flatNormals: number[] = [];
+        public attributes = {
+            position: new Attribute({ type: DataType.float, size: 3, data: [] }),
+            uv: new Attribute({ type: DataType.float, size: 2, data: [] }),
+            normal: new Attribute({ type: DataType.float, size: 3, data: [] }),
+            flatNormal: new Attribute({ type: DataType.float, size: 3, data: [] })
+        }
 
-        constructor(size?: number) {
+        public faces = { data: [], buffer: gl.createBuffer() };
+
+        constructor() {
 
         }
 
+        public setAttribute(name, attribute: Attribute) {
+            this.attributes[name] = attribute;
+        }
+
+        public addVertex(vertex: any) {
+            for (let attributeName in this.attributes) {
+                if (this.attributes[attributeName] != undefined) {
+                    if (vertex[attributeName] == undefined) {
+                        console.error('miss ' + attributeName + ' data in new vertex');
+                        return;
+                    }
+                    if (vertex[attributeName].length != this.attributes[attributeName].size) {
+                        console.error('length ' + attributeName + 'wrong');
+                        return;
+                    }
+                    this.attributes[attributeName].data = this.attributes[attributeName].data.concat(vertex[attributeName]);
+                }
+            }
+        }
+
+        public removeAttribute(name: string) {
+            this.attributes[name] = undefined;
+        }
+
+        public getVertexByIndex(index: number) {
+            let vertex: any = {};
+            for (let attributeName in this.attributes) {
+                vertex[attributeName] = []
+                for (let i = 0; i < this.attributes[attributeName].stride; ++i) {
+                    vertex[attributeName].push(this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i])
+                }
+            }
+            return vertex;
+        }
+
+
+        public getTriangleByIndex(triangleIndex: number) {
+            return [
+                this.getVertexByIndex(triangleIndex * 3),
+                this.getVertexByIndex(triangleIndex * 3 + 1),
+                this.getVertexByIndex(triangleIndex * 3 + 2)
+            ];
+        }
+
+
         public generateFlatNormal() {
-            for (let i = 0; i < this.faces.length; i += 3) {
-                let flatX = (this.normals[this.faces[i] * 3] + this.normals[this.faces[i + 1] * 3] + this.normals[this.faces[i + 2] * 3]) / 3;
-                let flatY = (this.normals[this.faces[i] * 3 + 1] + this.normals[this.faces[i + 1] * 3 + 1] + this.normals[this.faces[i + 2] * 3 + 1]) / 3;
-                let flatZ = (this.normals[this.faces[i] * 3 + 2] + this.normals[this.faces[i + 1] * 3 + 2] + this.normals[this.faces[i + 2] * 3 + 2]) / 3;
+            for (let i = 0; i < this.faces.data.length; i += 3) {
+                let triangle = this.getTriangleByIndex(i / 3);
+                let flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
+                let flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
+                let flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
 
                 var flat = [
                     flatX, flatY, flatZ,
                     flatX, flatY, flatZ,
                     flatX, flatY, flatZ
                 ];
-
-                this.flatNormals = this.flatNormals.concat(flat);
+                this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
             }
-            console.log(this.flatNormals);
-        }
-
-        addVertex(index: Vec3Array, position: Vec3Array, uv: Vec2Array, normal: Vec3Array) {
-            this.faces.push.apply(index);
-            this.positions.push.apply(position);
-            (!!uv) ? this.uvs.push.apply(uv) : 0;
-            (!!normal) ? this.normals.push.apply : 0;
         }
     }
 }

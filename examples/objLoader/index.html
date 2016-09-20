@@ -30,17 +30,17 @@
         light2.position[0] = -100;
         light2.diffuse = vec3.fromValues(1, 0.5, 0.5);
         light2.specular = vec3.fromValues(1, 1, 1);
-        scene.addLight(light2);
+        //scene.addLight(light2);
         scene.addLight(light);
         var image = new Image();
         image.src='../images/sea.jpg'
-        var red = new CanvasToy.BRDFPerFragMaterial({
-          color : vec3.fromValues(1, 0, 0),
-        //  texture : new CanvasToy.Texture2D(image,
-        //                                    CanvasToy.engine.gl.RGB)
+        var red = new CanvasToy.Material({
+          color : vec3.fromValues(1, 1, 0),
+        //  mainTexture: new CanvasToy.Texture2D(image,
+        //                                    CanvasToy.gl.RGB)
         });
         var green =
-            new CanvasToy.BRDFPerFragMaterial({color : vec3.fromValues(0, 1, 0)});
+            new CanvasToy.Material({color : vec3.fromValues(0, 1, 0)});
         CanvasToy.OBJLoader.load('../models/teapot.obj', (object) => {
           scene.addObject(object);
           scene.addObject(camera);
@@ -48,7 +48,7 @@
           camera.translate(0, -5, 0);
           camera2.translate(0, 5, 0);
           for (var i = 0; i < object.children.length; ++i) {
-            object.children[i].materials = [ red, green ];
+            object.children[i].materials = [ red ];
             red.uuid = 0;
             green.uuid = 1;
           }

@@ -7,7 +7,7 @@ function start() {
 
   var logo = new CanvasToy.Texture('../../images/chrome.png');
   var sphere = new CanvasToy.SphereGeometry(1, 0.1);
-  var material = new CanvasToy.BRDFPerFragMaterial({texture : logo});
+  var material = new CanvasToy.Material({mainTexture: logo});
   var mesh = new CanvasToy.Mesh(sphere, material);
 
   // scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);

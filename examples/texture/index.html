@@ -25,8 +25,8 @@
         light.specular = vec3.fromValues(0.3, 0.3, 0.3);
         var image = new Image();
         image.src = '../images/sea.jpg';
-        var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial({
-            texture: new CanvasToy.Texture2D(image, CanvasToy.engine.gl.RGB)
+        var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.Material({
+            mainTexture: new CanvasToy.Texture2D(image, CanvasToy.gl.RGB)
         })]);
         scene.addLight(light);
         scene.addObject(camera);

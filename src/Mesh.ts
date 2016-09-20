@@ -7,9 +7,7 @@ module CanvasToy {
 
     export class Mesh extends Node {
 
-        public drawMode: number = engine.gl.STATIC_DRAW;
-
-        public programs: Array<Program> = [];
+        public drawMode: number = gl.STATIC_DRAW;
 
         public geometry: Geometry;
 

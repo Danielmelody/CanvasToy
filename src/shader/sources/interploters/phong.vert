@@ -2,8 +2,8 @@ attribute vec3 position;
 uniform mat4 modelViewProjectionMatrix;
 
 #ifdef USE_TEXTURE
-attribute vec2 aTextureCoord;
-varying vec2 vTextureCoord;
+attribute vec2 aMainUV;
+varying vec2 vMainUV;
 #endif
 
 #ifdef OPEN_LIGHT
@@ -13,6 +13,7 @@ varying vec3 vPosition;
 varying vec3 vNormal;
 #endif
 
+
 void main (){
     gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
 #ifdef OPEN_LIGHT
@@ -21,6 +22,6 @@ void main (){
 #endif
 
 #ifdef USE_TEXTURE
-    vTextureCoord = aTextureCoord;
+    vMainUV = aMainUV;
 #endif
 }

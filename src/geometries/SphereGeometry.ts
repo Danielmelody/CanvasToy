@@ -9,13 +9,11 @@ module CanvasToy {
                 for (let x = -circlrRadius; x <= circlrRadius; x += perVertDistance) {
                     let z1 = Math.sqrt(circlrRadius * circlrRadius - x * x);
                     let z2 = -z1;
-                    this.positions.push(x, y, z1);
-                    this.positions.push(x, y, z2);
+                    this.attributes.position.data.push(x, y, z1);
+                    this.attributes.position.data.push(x, y, z2);
                 }
             }
-            for (let verts of this.positions) {
-                console.log(verts);
-            }
+            // TODO: generate faces
         }
     }
 }

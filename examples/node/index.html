@@ -23,15 +23,15 @@
   image.src = '../images/chrome.png';
 
   var mesh1 = new CanvasToy.Mesh(
-      new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial({
+      new CanvasToy.CubeGeometry(), [new CanvasToy.Material({
         color : vec3.fromValues(1, 1, 1),
-        texture : new CanvasToy.Texture2D(image)
+        mainTexture: new CanvasToy.Texture2D(image)
     })]);
 
   var mesh2 = new CanvasToy.Mesh(
-      new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerVertMaterial({
+      new CanvasToy.CubeGeometry(), [new CanvasToy.Material({
         color : vec3.fromValues(1, 1, 1),
-        texture : new CanvasToy.Texture2D(image)
+        mainTexture: new CanvasToy.Texture2D(image)
     })]);
 
   node.addChild(mesh1);

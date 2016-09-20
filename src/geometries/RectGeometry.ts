@@ -4,25 +4,25 @@ module CanvasToy {
     export class RectGeometry extends Geometry {
         constructor() {
             super();
-            this.positions = [
+            this.attributes.position.data = [
                 -1.0, -1.0, 0.0,
                 1.0, -1.0, 0.0,
                 -1.0, 1.0, 0.0,
                 1.0, 1.0, 0.0,
             ];
-            this.uvs = [
+            this.attributes.uv.data = [
                 0.0, 0.0,
                 1.0, 0.0,
                 0.0, 1.0,
                 1.0, 1.0
             ];
-            this.normals = [
+            this.attributes.normal.data = [
                 1, 0, 0,
                 0, 1, 0,
                 0, 0, 1,
                 0, 1, 1,
             ];
-            this.faces = [
+            this.faces.data = [
                 0, 1, 2,
                 2, 1, 3
             ];

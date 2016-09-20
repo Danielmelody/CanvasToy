@@ -2,73 +2,167 @@
 
 module CanvasToy {
 
-    export interface ProgramParamter {
-        uniforms: string[];
-        attributes: VertexBuffer[];
+    export class Faces {
+        public buffer: WebGLBuffer = gl.createBuffer();
+        constructor(public data: number[]) { }
+    }
+
+    export class Attribute {
+        size: number = 3;
+        data: number[] = [];
+        type: number;
+        index: number = 0;
+        stride: number = 0;
+        buffer: WebGLBuffer = gl.createBuffer();
+        constructor(paramter: { type: number, size?: number, data?: number[], stride?: number }) {
+            for (let attributeInfo in paramter) {
+                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
+            }
+            switch (paramter.type) {
+                case DataType.float: this.type = gl.FLOAT; break;
+                case DataType.int: this.type = gl.INT; break;
+            }
+        }
     }
 
     export class Program {
-        uniforms: {} = {};
-        uniformUpdaters: {} = {};
-        attributes: {} = {};
+
+        faces: Faces;
+        uniforms = {};
+        attributes = {};
+        attributeLocations = {};
+        attribute0: string;
         webGlProgram: WebGLProgram;
-        drawMode: number = engine.gl.STATIC_DRAW;
+        drawMode: number = gl.STATIC_DRAW;
         textures: Array<Texture> = [];
-        public indexBuffer: WebGLBuffer;
-        public attribute0: VertexBuffer;
-        public vertexBuffers = {};
-        public material: Material;
-        Program(parameter: ProgramParamter) {
-            this.uniforms = parameter.uniforms;
-            this.attributes = parameter.attributes;
-            for (let name in parameter.uniforms) {
-                this.uniforms[name] = this.getUniformLocation(this, name);
+        vertexPrecision: string = 'highp';
+        fragmentPrecision: string = 'mediump';
+
+        constructor(parameter: { vertexShader: string, fragmentShader: string, faces?: Faces, uniforms?: any, attributes?: any, textures?: any }) {
+            this.reMake(parameter);
+        }
+
+        public reMake(parameter: { vertexShader: string, fragmentShader: string, faces?: Faces, uniforms?: any, attributes?: any, textures?: any }) {
+            this.webGlProgram = createEntileShader(gl,
+                'precision ' + this.vertexPrecision + ' float;\n' + parameter.vertexShader,
+                'precision ' + this.fragmentPrecision + ' float;\n' +parameter.fragmentShader);
+            this.resetPass(parameter);
+        }
+
+        public resetPass(parameter: { faces?: Faces, uniforms?: any, attributes?: any, textures?: any }) {
+            this.faces = (parameter.faces == undefined ? this.faces : parameter.faces);
+            for (let nameInShader in parameter.uniforms) {
+                if (parameter.uniforms[nameInShader] != undefined) {
+                    this.addUniform(nameInShader, parameter.uniforms[nameInShader]);
+                }
             }
-            for (let buffer of parameter.attributes) {
-                buffer.index = engine.gl.getAttribLocation(this, buffer.name);
-                this.vertexBuffers[buffer.name] = buffer;
+            for (let sampler in parameter.textures) {
+                this.textures[sampler] = parameter.textures[sampler];
+            }
+            for (let nameInShader in parameter.attributes) {
+                this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
+            }
+            this.checkState();
+        }
+
+        public checkState() {
+            let maxIndex = 0;
+            for (let index of this.faces.data) {
+                maxIndex = Math.max(maxIndex, index);
+            }
+            for (let attributeName in this.attributes) {
+                console.assert(this.attributes[attributeName].size <= 4 && this.attributes[attributeName].size >= 1,
+                    attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
+                console.assert((maxIndex + 1) * this.attributes[attributeName].stride <=
+                    this.attributes[attributeName].data.length,
+                    attributeName + " length error, now:" + this.attributes[attributeName].data.length
+                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
             }
         }
 
-        setAttribute0(newVertexBuffer: VertexBuffer): VertexBuffer {
-            this.attribute0 = newVertexBuffer;
-            this.attribute0.index = 0;
-            this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
-            engine.gl.bindAttribLocation(this.webGlProgram, 0, this.attribute0.name);
-            return newVertexBuffer;
+        setAttribute0(name: string) {
+            this.attribute0 = name;
+            gl.bindAttribLocation(this.webGlProgram, 0, name);
         }
 
-        addAttribute(newVertexBuffer: VertexBuffer): VertexBuffer {
-            newVertexBuffer.index = engine.gl.getAttribLocation(this.webGlProgram, newVertexBuffer.name);
-            this.vertexBuffers[newVertexBuffer.name] = newVertexBuffer;
-            return newVertexBuffer;
+        addUniform(nameInShader, uniform: { type: DataType, updator: () => any }) {
+            gl.useProgram(this.webGlProgram);
+            console.log('uniform ' + nameInShader + ' passed')
+            let location = this.getUniformLocation(nameInShader);
+            let last = uniform.updator;
+            //uniform.updator = () => { console.log(location); return last() };
+            switch (uniform.type) {
+                case DataType.float:
+                    this.uniforms[nameInShader] = () => {
+                        gl.uniform1f(location, uniform.updator());
+                    };
+                    break;
+                case DataType.int:
+                    this.uniforms[nameInShader] = () => {
+                        gl.uniform1i(location, uniform.updator());
+                    };
+                    break;
+                case DataType.vec2:
+                    this.uniforms[nameInShader] = () => {
+                        let value = uniform.updator();
+                        gl.uniform2f(location, value[0], value[1]);
+                    };
+                    break;
+                case DataType.vec3:
+                    this.uniforms[nameInShader] = () => {
+                        let value = uniform.updator();
+                        gl.uniform3f(location, value[0], value[1], value[2]);
+                    };
+                    break;
+                case DataType.vec4:
+                    this.uniforms[nameInShader] = () => {
+                        let value = uniform.updator();
+                        gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                    };
+                    break;
+                case DataType.mat2:
+                    this.uniforms[nameInShader] = () => {
+                        gl.uniformMatrix2fv(location, false, uniform.updator());
+                    };
+                case DataType.mat3:
+                    this.uniforms[nameInShader] = () => {
+                        gl.uniformMatrix3fv(location, false, uniform.updator());
+                    }; case DataType.mat4:
+                    this.uniforms[nameInShader] = () => {
+                        gl.uniformMatrix4fv(location, false, uniform.updator());
+                    };
+                    break;
+            }
         }
 
-        addUniform(name: string, onUpdateUniform: (mesh: Mesh, camera: Camera) => void) {
-            engine.gl.useProgram(this.webGlProgram);
-            this.uniforms[name] = this.getUniformLocation(this, name);
-            this.uniformUpdaters[name] = onUpdateUniform;
+        public addAttribute(nameInShader, attribute: Attribute) {
+            let location = this.getAttribLocation(nameInShader);
+            if (location != null && location != -1) {
+                this.attributes[nameInShader] = attribute;
+                this.attributeLocations[nameInShader] = location;
+                gl.enableVertexAttribArray(location);
+            }
         }
 
-        private getUniformLocation(program: Program, name: string): WebGLUniformLocation {
-            if (engine.gl == undefined || engine.gl == null) {
+        private getUniformLocation(name: string): WebGLUniformLocation {
+            if (gl == undefined || gl == null) {
                 console.error("WebGLRenderingContext has not been initialize!");
                 return null;
             }
-            var result = engine.gl.getUniformLocation(program.webGlProgram, name);
+            var result = gl.getUniformLocation(this.webGlProgram, name);
             if (result == null) {
-                console.error("uniform " + name + " not found!");
+                console.warn("uniform " + name + " not found!");
                 return null;
             }
             return result;
         }
 
-        private getAttribLocation(program: Program, name: string): number {
-            if (engine.gl == undefined || engine.gl == null) {
+        private getAttribLocation(name: string): number {
+            if (gl == undefined || gl == null) {
                 console.error("WebGLRenderingContext has not been initialize!");
                 return null;
             }
-            var result = engine.gl.getAttribLocation(program.webGlProgram, name);
+            var result = gl.getAttribLocation(this.webGlProgram, name);
             if (result == null) {
                 console.error("attribute " + name + " not found!");
                 return null;

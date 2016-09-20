@@ -8,6 +8,7 @@ tsc
 echo building: link libraries...
 cat lib/gl-matrix/gl-matrix.js > build/canvas-toy.js
 cat build/canvas-toy-nolibrary.js >> build/canvas-toy.js;
+rm build/canvas-toy-nolibrary.js
 echo building: uglifying...
 uglifyjs build/canvas-toy.js -o build/canvas-toy-min.js
 echo 'building: done.'

@@ -6,7 +6,7 @@ module CanvasToy {
         constructor() {
             super();
 
-            this.positions = [
+            this.attributes.position.data = [
                 -1.0, -1.0, 1.0,
                 1.0, -1.0, 1.0,
                 1.0, 1.0, 1.0,
@@ -43,7 +43,7 @@ module CanvasToy {
                 -1.0, 1.0, -1.0
             ];
 
-            this.uvs = [
+            this.attributes.uv.data = [
                 0, 0,
                 1, 0,
                 1, 1,
@@ -75,7 +75,7 @@ module CanvasToy {
                 0, 1,
             ];
 
-            this.normals = [
+            this.attributes.normal.data = [
                 // front
                 0.0, 0.0, 1.0,
                 0.0, 0.0, 1.0,
@@ -112,7 +112,7 @@ module CanvasToy {
 
             ];
 
-            this.faces = [
+            this.faces.data = [
                 0, 1, 2, 0, 2, 3,    // front
                 4, 5, 6, 4, 6, 7,    // back
                 8, 9, 10, 8, 10, 11,   // top

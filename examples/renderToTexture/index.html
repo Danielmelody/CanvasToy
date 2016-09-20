@@ -16,7 +16,7 @@
         var scene1 = new CanvasToy.Scene();
         var camera1 = new CanvasToy.PerspectiveCamera();
         var light = new CanvasToy.PointLight();
-        var cube1 = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial()]);
+        var cube1 = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.Material()]);
         camera1.translate(0, 0, 2);
         scene1.ambientLight = vec3.fromValues(0.2, 0.1, 0.1);
         light.idensity = 1;
@@ -30,8 +30,8 @@
         var camera2 = new CanvasToy.PerspectiveCamera();
         var scene2  = new CanvasToy.Scene();
         var rttTexture = CanvasToy.engine.renderToTexture(scene1, camera1);
-        var cube2 = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.BRDFPerFragMaterial({
-            texture: rttTexture
+        var cube2 = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(), [new CanvasToy.Material({
+            mainTexture: rttTexture
         })]);
         scene2.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
         scene1.clearColor = [0, 1, 1, 0];

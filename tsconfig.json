@@ -3,8 +3,9 @@
         "module": "amd",
         "removeComments": true,
         "outFile":"build/canvas-toy-nolibrary.js",
-        "noLib":false,
-        "target": "es5"
+        "noLib": false,
+        "target": "es5",
+        "declaration": true
     },
     "include":[
          "typings/index.d.ts",

@@ -4,7 +4,7 @@ module CanvasToy {
     export class Texture2D extends Texture {
         constructor(
             image?: HTMLImageElement,
-            format: number = engine.gl.RGB,
+            format: number = gl.RGB,
             wrapS?: number,
             wrapT?: number,
             magFilter?: number,
@@ -12,20 +12,19 @@ module CanvasToy {
         ) {
             super(
                 image,
-                engine.gl.TEXTURE_2D,
+                gl.TEXTURE_2D,
                 format,
                 wrapS,
                 wrapT,
                 magFilter,
                 minFilter
             );
-            let gl = engine.gl;
             this.glTexture = gl.createTexture();
         }
 
         public setUpTextureData() {
             if (super.setUpTextureData()) {
-                engine.gl.texImage2D(this.type, 0, this.format, this.format, engine.gl.UNSIGNED_BYTE, this.image);
+                gl.texImage2D(this.type, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.image);
             }
             return true;
         }

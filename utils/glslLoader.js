@@ -1,11 +1,25 @@
 var fs = require('fs');
 
+var walkSync = function(dir, filelist) {
+  var fs = fs || require('fs'), files = fs.readdirSync(dir);
+  filelist = filelist || [];
+  files.forEach(function(file) {
+    if (fs.statSync(dir + '/' + file).isDirectory()) {
+      filelist = walkSync(dir + '/' + file + '/', filelist);
+    } else {
+      filelist.push(dir + '/' + file);
+    }
+  });
+  return filelist;
+};
+
 function read() {
-  var srcs = fs.readdirSync('src/shader/sources');
+  var srcs = walkSync('src/shader/sources');
   var results = [ 'module CanvasToy {' ];
-  for (var i in srcs) {
-    var varName = srcs[i].split('.').join('_');
-    var content = fs.readFileSync('src/shader/sources/' + srcs[i], 'utf-8');
+  for (let i in srcs) {
+    var varName = srcs[i].replace(/[\/|\.]/g, '_');
+    varName = varName.replace('src_shader_sources_', '');
+    var content = fs.readFileSync(srcs[i], 'utf-8');
     content = content.split('\n');
     content = content.join('\\n');
     var out = 'export var ' + varName + ' = "' + content + '"';

@@ -64,6 +64,7 @@ module CanvasToy {
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
             alert("error: " + typeInfo + "\n" + gl.getShaderInfoLog(shader));
+            console.log(source);
             return null;
         }
 
@@ -85,10 +86,5 @@ module CanvasToy {
         let vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
         let fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
         return linkShader(gl, vertShader, fragShader);
-    }
-
-    function setProgram(camera: Camera, fog, material: Material, object: Object3d) {
-        //TODO: implement function
-
     }
 }
