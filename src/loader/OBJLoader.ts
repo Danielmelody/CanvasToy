@@ -82,7 +82,7 @@ module CanvasToy {
                                 geometry.faces.data.push(geometry.attributes.position.data.length / 3);
                                 geometry.addVertex({
                                     position: unIndexedPositions[positionIndex],
-                                    uv: unIndexedUVs[parseInt(match[2]) - 1],
+                                    uv: [unIndexedUVs[parseInt(match[2]) - 1][0], unIndexedUVs[parseInt(match[2]) - 1][1]],
                                     normal: unIndexedNormals[parseInt(match[3]) - 1]
                                 })
                             }

@@ -68,7 +68,6 @@ function createFlatGeometry(randomVerticles, triangles) {
       'triangleUV2',
       new CanvasToy.Attribute(
           {type : CanvasToy.DataType.float, size : 2, data : []}));
-  geometry.otherTriangleUV = [ [], [] ];
   for (var i = 0; i < triangles.length; i += 3) {
     for (var j = i; j < i + 3; ++j) {
       var indices = [ i, i + 1, i + 2 ];
@@ -95,9 +94,9 @@ function render() {
   canvas.width = source.width;
   canvas.height = source.height;
   CanvasToy.setCanvas(canvas);
-  var rttScene = new CanvasToy.Scene();
-  var rttCamera = new CanvasToy.PerspectiveCamera();
-  rttCamera.fovy = 45;
+  var scene = new CanvasToy.Scene();
+  var camera = new CanvasToy.PerspectiveCamera();
+  camera.fovy = 45;
   var gl = CanvasToy.gl;
   sourceTexture = new CanvasToy.Texture2D(source);
 
@@ -106,17 +105,18 @@ function render() {
   randomVerticles.push([ 0, 1 ]);
   randomVerticles.push([ 1, 0 ]);
   randomVerticles.push([ 1, 1 ]);
-  for (var i = 0; i < 2000; ++i) {
+  for (var i = 0; i < 5000; ++i) {
     randomVerticles.push([ Math.random(), Math.random() ]);
   }
   var triangles = Delaunay.triangulate(randomVerticles);
 
   var geometry = createFlatGeometry(randomVerticles, triangles);
 
-  var triangleFaceMaterial = new CanvasToy.Material({
-    mainTexture : sourceTexture,
-    color : vec3.fromValues(1, 1, 1),
-    program : new CanvasToy.Program({
+  var triangleFaceMaterial = new CanvasToy.Material(
+      {mainTexture : sourceTexture, color : vec3.fromValues(1, 1, 1)});
+
+  triangleFaceMaterial.program.addPassing(function() {
+    return {
       faces : geometry.faces,
       vertexShader : triangleVertShader,
       fragmentShader : triangleFragShader,
@@ -124,17 +124,14 @@ function render() {
         triangleUV1 : geometry.attributes.triangleUV1,
         triangleUV2 : geometry.attributes.triangleUV2
       }
-    })
+    };
   });
-  triangleFaceMaterial.vertexShaderSource = triangleVertShader;
-  triangleFaceMaterial.fragShaderSource = triangleFragShader;
-
   var rect = new CanvasToy.Mesh(geometry, [ triangleFaceMaterial ]);
   rect.translate(0, 0, -1.0);
-  rttScene.addObject(rect);
-  rttScene.addObject(rttCamera);
+  scene.addObject(rect);
+  scene.addObject(camera);
   rect.registUpdate(() => { rect.translate(0, 0, 0); });
-  CanvasToy.engine.render(rttScene, rttCamera);
+  CanvasToy.engine.render(scene, camera);
 }
 
 source.onload = () => {

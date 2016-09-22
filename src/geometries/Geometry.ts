@@ -25,7 +25,6 @@ module CanvasToy {
             for (let attributeName in this.attributes) {
                 if (this.attributes[attributeName] != undefined) {
                     if (vertex[attributeName] == undefined) {
-                        console.error('miss ' + attributeName + ' data in new vertex');
                         return;
                     }
                     if (vertex[attributeName].length != this.attributes[attributeName].size) {

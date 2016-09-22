@@ -167,11 +167,10 @@ declare module CanvasToy {
         color: Vec4Array;
         interplotationMethod: InterplotationMethod;
         lightingMode: LightingMode;
+        program: Program;
     }
     class Material implements IMaterial {
         program: Program;
-        vertexShaderSource: string;
-        fragShaderSource: string;
         color: Vec4Array;
         mainTexture: Texture;
         ambient: Vec3Array;
@@ -188,10 +187,22 @@ declare module CanvasToy {
         normalMap: Texture;
         reflactivity: number;
         constructor(paramter?: IMaterial);
-        buildProgram(mesh: Mesh, scene: Scene, camera: Camera): void;
+        configShader(): {
+            vertexShader: string;
+            fragmentShader: string;
+        };
     }
 }
 declare module CanvasToy {
+    interface ProgramPass {
+        faces?: Faces;
+        uniforms?: any;
+        attributes?: any;
+        textures?: any;
+        vertexShader?: string;
+        fragmentShader?: string;
+        prefix?: string[];
+    }
     class Faces {
         data: number[];
         buffer: WebGLBuffer;
@@ -211,8 +222,10 @@ declare module CanvasToy {
             stride?: number;
         });
     }
-    class Program {
+    class Program implements ProgramPass {
         faces: Faces;
+        enableDepthTest: boolean;
+        enableStencilTest: boolean;
         uniforms: {};
         attributes: {};
         attributeLocations: {};
@@ -222,33 +235,19 @@ declare module CanvasToy {
         textures: Array<Texture>;
         vertexPrecision: string;
         fragmentPrecision: string;
-        constructor(parameter: {
-            vertexShader: string;
-            fragmentShader: string;
-            faces?: Faces;
-            uniforms?: any;
-            attributes?: any;
-            textures?: any;
-        });
-        reMake(parameter: {
-            vertexShader: string;
-            fragmentShader: string;
-            faces?: Faces;
-            uniforms?: any;
-            attributes?: any;
-            textures?: any;
-        }): void;
-        resetPass(parameter: {
-            faces?: Faces;
-            uniforms?: any;
-            attributes?: any;
-            textures?: any;
-        }): void;
+        vertexShader: string;
+        fragmentShader: string;
+        prefix: string[];
+        private passings;
+        constructor(passing: (mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass);
+        make(material: Material, mesh: Mesh, scene: Scene, camera: Camera): void;
+        addPassing(passing: (mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass): void;
+        private rePass(parameter);
         checkState(): void;
         setAttribute0(name: string): void;
         addUniform(nameInShader: any, uniform: {
             type: DataType;
-            updator: () => any;
+            updator: (mesh?, camera?) => any;
         }): void;
         addAttribute(nameInShader: any, attribute: Attribute): void;
         private getUniformLocation(name);
@@ -319,6 +318,8 @@ declare module CanvasToy {
         fragPrecision: string;
         isAnimating: boolean;
         renderQueue: Array<Function>;
+        scenes: Array<Scene>;
+        cameras: Array<Camera>;
         constructor(canvas: HTMLCanvasElement);
         renderToTexture(scene: Scene, camera: Camera): RenderTargetTexture;
         render(scene: Scene, camera: Camera): void;
@@ -392,6 +393,7 @@ declare module CanvasToy {
         VertexShader = 0,
         FragmentShader = 1,
     }
+    function mixin(toObject: Object, fromObject: Object): void;
     function initWebwebglContext(canvas: any): WebGLRenderingContext;
     function getDomScriptText(script: HTMLScriptElement): string;
     function createEntileShader(gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram;

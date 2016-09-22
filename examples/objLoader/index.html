@@ -35,12 +35,14 @@
         var image = new Image();
         image.src='../images/sea.jpg'
         var red = new CanvasToy.Material({
-          color : vec3.fromValues(1, 1, 0),
-        //  mainTexture: new CanvasToy.Texture2D(image,
-        //                                    CanvasToy.gl.RGB)
+          color : vec3.fromValues(1, 0, 0),
+        mainTexture: new CanvasToy.Texture2D(image,
+                                           CanvasToy.gl.RGB)
         });
         var green =
             new CanvasToy.Material({color : vec3.fromValues(0, 1, 0)});
+        //red.program.enableDepthTest = false;
+        //green.program.enableDepthTest = false;
         CanvasToy.OBJLoader.load('../models/teapot.obj', (object) => {
           scene.addObject(object);
           scene.addObject(camera);
@@ -48,7 +50,7 @@
           camera.translate(0, -5, 0);
           camera2.translate(0, 5, 0);
           for (var i = 0; i < object.children.length; ++i) {
-            object.children[i].materials = [ red ];
+            object.children[i].materials = [ red , green ];
             red.uuid = 0;
             green.uuid = 1;
           }
@@ -60,7 +62,6 @@
             object.rotateY(0.01);
             // object.translate(0, 0.03 * Math.cos(time / 2), 0);
           });
-          //CanvasToy.engine.render(scene, camera);
           CanvasToy.engine.render(scene, camera2);
           CanvasToy.engine.render(scene, camera);
         });

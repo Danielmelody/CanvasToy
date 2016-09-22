@@ -29,14 +29,12 @@ module CanvasToy {
         color: Vec4Array,
         interplotationMethod: InterplotationMethod,
         lightingMode: LightingMode,
+        program: Program
     }
 
     export class Material implements IMaterial {
 
         public program: Program;
-
-        public vertexShaderSource: string;
-        public fragShaderSource: string;
 
         public color: Vec4Array;
         public mainTexture: Texture;
@@ -69,6 +67,60 @@ module CanvasToy {
                     this[name] = paramter[name];
                 }
             }
+            let shaderSrc = this.configShader();
+            if (!this.program) {
+                this.program = new Program((mesh: Mesh, scene: Scene, camera: Camera) => {
+                    return {
+                        vertexShader: shaderSrc.vertexShader,
+                        fragmentShader: shaderSrc.fragmentShader,
+                        faces: mesh.geometry.faces,
+                        textures: {
+                            uMainTexture: this.mainTexture
+                        },
+                        uniforms: {
+                            modelViewProjectionMatrix: {
+                                type: DataType.mat4,
+                                updator: (mesh: Mesh, camera: Camera) => {
+                                    return new Float32Array(mat4.multiply(
+                                        mat4.create(),
+                                        camera.projectionMatrix,
+                                        mat4.multiply(mat4.create(),
+                                            mat4.invert(mat4.create(), camera.matrix),
+                                            mesh.matrix))
+                                    );
+                                }
+                            },
+                            color: !this.color ? undefined : {
+                                type: DataType.vec4, updator: () => {
+                                    return this.color;
+                                }
+                            },
+                            ambient: !scene.openLight ? undefined : {
+                                type: DataType.vec3,
+                                updator: () => { return scene.ambientLight }
+                            },
+                            normalMatrix: !scene.openLight ? undefined : {
+                                type: DataType.mat4,
+                                updator: () => { return new Float32Array(mesh.normalMatrix); }
+                            },
+                            eyePos: !scene.openLight ? undefined : {
+                                type: DataType.vec3,
+                                updator: (mesh: Mesh, camera: Camera) => { return camera.position }
+                            }
+                        },
+                        attributes: {
+                            position: mesh.geometry.attributes.position,
+                            aMainUV: !this.mainTexture ? undefined : mesh.geometry.attributes.uv,
+                            aNormal: !scene.openLight ?
+                                undefined :
+                                this.interplotationMethod == InterplotationMethod.Flat ?
+                                    mesh.geometry.attributes.flatNormal : mesh.geometry.attributes.normal
+                        }
+                    };
+                })
+            }
+        }
+        public configShader() {
             let interplotationVert: string = "";
             let interplotationFrag: string = "";
             switch (this.interplotationMethod) {
@@ -94,84 +146,7 @@ module CanvasToy {
                     lightCalculator = calculators__phong_glsl;
                     break;
             }
-            this.vertexShaderSource = lightCalculator + interplotationVert;
-            this.fragShaderSource = lightCalculator + interplotationFrag;
+            return { vertexShader: lightCalculator + interplotationVert, fragmentShader: lightCalculator + interplotationFrag }
         }
-
-        buildProgram(mesh: Mesh, scene: Scene, camera: Camera) {
-            var prefixVertex = [
-                this.mainTexture ? '#define USE_TEXTURE ' : '',
-                this.color ? '#define USE_COLOR ' : '',
-                scene.openLight ? '#define OPEN_LIGHT\n#define LIGHT_NUM '
-                    + scene.lights.length : ''
-            ].join("\n") + '\n';
-
-            var prefixFragment = [
-                this.mainTexture ? '#define USE_TEXTURE ' : '',
-                this.color ? '#define USE_COLOR ' : '',
-                scene.openLight ? '#define OPEN_LIGHT \n#define LIGHT_NUM '
-                    + scene.lights.length : ''
-            ].join("\n") + '\n';
-
-            if (debug) {
-                console.log(prefixVertex + this.vertexShaderSource);
-                console.log(prefixFragment + this.fragShaderSource)
-            }
-            if (this.interplotationMethod == InterplotationMethod.Flat) {
-                mesh.geometry.generateFlatNormal();
-            }
-            let pass = {
-                vertexShader: prefixVertex + this.vertexShaderSource,
-                fragmentShader: prefixFragment + this.fragShaderSource,
-                faces: mesh.geometry.faces,
-                textures: {
-                    uMainTexture: this.mainTexture
-                },
-                uniforms: {
-                    modelViewProjectionMatrix: {
-                        type: DataType.mat4,
-                        updator: () => {
-                            return new Float32Array(mat4.multiply(
-                                mat4.create(),
-                                camera.projectionMatrix,
-                                mat4.multiply(mat4.create(),
-                                    mat4.invert(mat4.create(), camera.matrix),
-                                    mesh.matrix))
-                            );
-                        }
-                    },
-                    color: !this.color ? undefined : {
-                        type: DataType.vec4, updator: () => {
-                            return this.color;
-                        }
-                    },
-                    ambient: !scene.openLight ? undefined : {
-                        type: DataType.vec3,
-                        updator: () => { return scene.ambientLight }
-                    },
-                    normalMatrix: !scene.openLight ? undefined : {
-                        type: DataType.mat4,
-                        updator: () => { return new Float32Array(mesh.normalMatrix); }
-                    },
-                    eyePos: !scene.openLight ? undefined : {
-                        type: DataType.vec3,
-                        updator: () => { return camera.position }
-                    }
-                },
-                attributes: {
-                    position: mesh.geometry.attributes.position,
-                    aMainUV: !this.mainTexture ? undefined : mesh.geometry.attributes.uv,
-                    aNormal: !scene.openLight ?
-                        undefined :
-                        this.interplotationMethod == InterplotationMethod.Flat ?
-                            mesh.geometry.attributes.flatNormal : mesh.geometry.attributes.normal
-                }
-            };
-            if (this.program) {
-                this.program.reMake(pass);
-            } else {
-                this.program = new Program(pass);
-            }
-        };
     }
 }

@@ -2,6 +2,17 @@
 
 module CanvasToy {
 
+
+    export interface ProgramPass {
+        faces?: Faces;
+        uniforms?: any;
+        attributes?: any;
+        textures?: any;
+        vertexShader?: string;
+        fragmentShader?: string;
+        prefix?: string[]
+    }
+
     export class Faces {
         public buffer: WebGLBuffer = gl.createBuffer();
         constructor(public data: number[]) { }
@@ -25,9 +36,11 @@ module CanvasToy {
         }
     }
 
-    export class Program {
+    export class Program implements ProgramPass {
 
         faces: Faces;
+        enableDepthTest: boolean = true;
+        enableStencilTest: boolean = true;
         uniforms = {};
         attributes = {};
         attributeLocations = {};
@@ -37,19 +50,46 @@ module CanvasToy {
         textures: Array<Texture> = [];
         vertexPrecision: string = 'highp';
         fragmentPrecision: string = 'mediump';
+        vertexShader: string;
+        fragmentShader: string;
 
-        constructor(parameter: { vertexShader: string, fragmentShader: string, faces?: Faces, uniforms?: any, attributes?: any, textures?: any }) {
-            this.reMake(parameter);
+        prefix: string[] = [];
+
+        private passings:Array<(mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass> = [];
+
+        constructor(passing: (mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass) {
+            this.passings.push(passing);
         }
 
-        public reMake(parameter: { vertexShader: string, fragmentShader: string, faces?: Faces, uniforms?: any, attributes?: any, textures?: any }) {
-            this.webGlProgram = createEntileShader(gl,
-                'precision ' + this.vertexPrecision + ' float;\n' + parameter.vertexShader,
-                'precision ' + this.fragmentPrecision + ' float;\n' +parameter.fragmentShader);
-            this.resetPass(parameter);
+        public make(material: Material, mesh: Mesh, scene: Scene, camera: Camera) {
+            this.prefix = [
+                material.mainTexture ? '#define USE_TEXTURE ' : '',
+                material.color ? '#define USE_COLOR ' : '',
+                scene.openLight ? '#define OPEN_LIGHT \n#define LIGHT_NUM '
+                    + scene.lights.length : ''
+            ];
+            if (!!this.passings) {
+                let passes = this.passings.map((passing) => {return passing(mesh, scene, camera)});
+                let finalPass:any = {};
+                passes.forEach((pass) => {
+                    mixin(finalPass, pass);
+                });
+                this.rePass(finalPass);
+            };
         }
 
-        public resetPass(parameter: { faces?: Faces, uniforms?: any, attributes?: any, textures?: any }) {
+        public addPassing(passing : (mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass) {
+            this.passings.push(passing);
+        }
+
+        private rePass(parameter: ProgramPass) {
+            if (!!(parameter.vertexShader) || !!(parameter.fragmentShader) || !!(parameter.prefix)) {
+                this.vertexShader = parameter.vertexShader || this.vertexShader;
+                this.fragmentShader = parameter.fragmentShader || this.fragmentShader;
+                this.webGlProgram = createEntileShader(gl,
+                    'precision ' + this.vertexPrecision + ' float;\n' + this.prefix.join('\n') + '\n' + this.vertexShader,
+                    'precision ' + this.fragmentPrecision + ' float;\n' + this.prefix.join('\n') + '\n' +  this.fragmentShader);
+            }
             this.faces = (parameter.faces == undefined ? this.faces : parameter.faces);
             for (let nameInShader in parameter.uniforms) {
                 if (parameter.uniforms[nameInShader] != undefined) {
@@ -63,6 +103,7 @@ module CanvasToy {
                 this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
             }
             this.checkState();
+            console.log(this);
         }
 
         public checkState() {
@@ -85,7 +126,7 @@ module CanvasToy {
             gl.bindAttribLocation(this.webGlProgram, 0, name);
         }
 
-        addUniform(nameInShader, uniform: { type: DataType, updator: () => any }) {
+        addUniform(nameInShader, uniform: { type: DataType, updator: (mesh?, camera?) => any }) {
             gl.useProgram(this.webGlProgram);
             console.log('uniform ' + nameInShader + ' passed')
             let location = this.getUniformLocation(nameInShader);
@@ -93,43 +134,43 @@ module CanvasToy {
             //uniform.updator = () => { console.log(location); return last() };
             switch (uniform.type) {
                 case DataType.float:
-                    this.uniforms[nameInShader] = () => {
-                        gl.uniform1f(location, uniform.updator());
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        gl.uniform1f(location, uniform.updator(mesh, camera));
                     };
                     break;
                 case DataType.int:
-                    this.uniforms[nameInShader] = () => {
-                        gl.uniform1i(location, uniform.updator());
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        gl.uniform1i(location, uniform.updator(mesh, camera));
                     };
                     break;
                 case DataType.vec2:
-                    this.uniforms[nameInShader] = () => {
-                        let value = uniform.updator();
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        let value = uniform.updator(mesh, camera);
                         gl.uniform2f(location, value[0], value[1]);
                     };
                     break;
                 case DataType.vec3:
-                    this.uniforms[nameInShader] = () => {
-                        let value = uniform.updator();
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        let value = uniform.updator(mesh, camera);
                         gl.uniform3f(location, value[0], value[1], value[2]);
                     };
                     break;
                 case DataType.vec4:
-                    this.uniforms[nameInShader] = () => {
-                        let value = uniform.updator();
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        let value = uniform.updator(mesh, camera);
                         gl.uniform4f(location, value[0], value[1], value[2], value[3]);
                     };
                     break;
                 case DataType.mat2:
-                    this.uniforms[nameInShader] = () => {
-                        gl.uniformMatrix2fv(location, false, uniform.updator());
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        gl.uniformMatrix2fv(location, false, uniform.updator(mesh, camera));
                     };
                 case DataType.mat3:
-                    this.uniforms[nameInShader] = () => {
-                        gl.uniformMatrix3fv(location, false, uniform.updator());
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        gl.uniformMatrix3fv(location, false, uniform.updator(mesh, camera));
                     }; case DataType.mat4:
-                    this.uniforms[nameInShader] = () => {
-                        gl.uniformMatrix4fv(location, false, uniform.updator());
+                    this.uniforms[nameInShader] = (mesh?, camera?) => {
+                        gl.uniformMatrix4fv(location, false, uniform.updator(mesh, camera));
                     };
                     break;
             }
@@ -138,6 +179,7 @@ module CanvasToy {
         public addAttribute(nameInShader, attribute: Attribute) {
             let location = this.getAttribLocation(nameInShader);
             if (location != null && location != -1) {
+                console.log('add attribute ' + nameInShader);
                 this.attributes[nameInShader] = attribute;
                 this.attributeLocations[nameInShader] = location;
                 gl.enableVertexAttribArray(location);

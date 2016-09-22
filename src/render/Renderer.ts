@@ -24,6 +24,10 @@ module CanvasToy {
 
         renderQueue: Array<Function> = [];
 
+        scenes: Array<Scene> = [];
+
+        cameras: Array<Camera> = [];
+
         constructor(public canvas: HTMLCanvasElement) {
             gl = initWebwebglContext(canvas);
             this.initMatrix();
@@ -31,8 +35,8 @@ module CanvasToy {
             gl.enable(gl.DEPTH_TEST);
             gl.depthFunc(gl.LEQUAL);
             this.renderQueue.push(() => {
-                gl.viewport(0, 0, canvas.width, canvas.height);
-                gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+                // gl.viewport(0, 0, canvas.width, canvas.height);
+                // gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
             })
             setInterval(() => {
                 for (let renderCommand of this.renderQueue) {
@@ -93,7 +97,13 @@ module CanvasToy {
         }
 
         public render(scene: Scene, camera: Camera) {
-            this.buildScene(scene, camera);
+            if (this.scenes.indexOf(scene) == -1) {
+                this.scenes.push(scene);
+                this.buildScene(scene, camera);
+            } if (this.cameras.indexOf(camera) == -1) {
+                this.cameras.push(camera);
+                camera.adaptTargetRadio(this.canvas);
+            }
             this.renderQueue.push(() => {
                 gl.clearColor(
                     scene.clearColor[0],
@@ -117,7 +127,6 @@ module CanvasToy {
                     this.makeMeshPrograms(scene, mesh, camera);
                 }
             }
-            camera.adaptTargetRadio(this.canvas);
             scene.programSetUp = true;
             console.log('make shaders');
         }
@@ -132,7 +141,7 @@ module CanvasToy {
 
             if (mesh.materials.length > 1) {
                 gl.enable(gl.BLEND);
-                gl.blendFunc(gl.ONE, gl.DST_COLOR);
+                gl.blendFunc(gl.SRC_COLOR, gl.ONE_MINUS_SRC_COLOR);
             }
 
             for (let material of mesh.materials) {
@@ -150,14 +159,14 @@ module CanvasToy {
                     return;
                 }
 
-                material.buildProgram(mesh, scene, camera);
+                material.program.make(material, mesh, scene, camera);
 
                 gl.useProgram(material.program.webGlProgram);
 
                 for (let textureName in material.program.textures) {
                     if (material.program.textures[textureName] != undefined) {
-                    this.loadTexture(material.program, textureName, material.program.textures[textureName]);
-                }
+                        this.loadTexture(material.program, textureName, material.program.textures[textureName]);
+                    }
                 }
 
                 if (scene.openLight) {
@@ -249,6 +258,16 @@ module CanvasToy {
                 let mesh = <Mesh>object;
                 for (let material of mesh.materials) {
                     let program = material.program;
+                    if (program.enableDepthTest) {
+                        gl.enable(gl.DEPTH_TEST);
+                    } else {
+                        gl.disable(gl.DEPTH_TEST);
+                    }
+                    /*if (program.enableStencilTest) {
+                        gl.enable(gl.STENCIL_TEST);
+                    } else {
+                        gl.disable(gl.STENCIL_TEST);
+                    }*/
                     gl.useProgram(program.webGlProgram);
                     for (let uniformName in program.uniforms) {
                         if (program.uniforms[uniformName] != undefined) {

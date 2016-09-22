@@ -5,6 +5,17 @@ module CanvasToy {
         FragmentShader
     }
 
+    export function mixin(toObject: Object, fromObject: Object) {
+        for (let property in fromObject) {
+            if (toObject[property] instanceof Object) {
+                mixin(toObject[property], fromObject[property]);
+            } else {
+                toObject[property] = fromObject[property];
+            }
+        }
+    }
+
+
     export function initWebwebglContext(canvas): WebGLRenderingContext {
         var gl: WebGLRenderingContext = null;
         try {
@@ -85,6 +96,10 @@ module CanvasToy {
     export function createEntileShader(gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram {
         let vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
         let fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
+        if (debug) {
+            console.log(vertShader);
+            console.log(fragShader);
+        }
         return linkShader(gl, vertShader, fragShader);
     }
 }
