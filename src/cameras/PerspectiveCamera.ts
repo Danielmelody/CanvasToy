@@ -1,6 +1,7 @@
 /// <reference path="./Camera.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
+
     export class PerspectiveCamera extends Camera {
         constructor(
             public aspect: number = 1,
@@ -9,7 +10,6 @@ module CanvasToy {
             public far: number = 10000
         ) {
             super();
-            this.apply();
         }
 
         public apply() {

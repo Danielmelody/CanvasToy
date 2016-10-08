@@ -1,7 +1,7 @@
 /// <reference path="../textures/Texture.ts"/>
 /// <reference path="../materials/Material.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
 
     export function setCanvas(canvas: HTMLCanvasElement) {
         engine = new Renderer(canvas);

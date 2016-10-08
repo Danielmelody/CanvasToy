@@ -1,5 +1,7 @@
 /// <reference path="../CanvasToy.ts"/>
-module CanvasToy {
+
+
+namespace CanvasToy {
 
     export abstract class Texture {
         public glTexture: WebGLTexture;

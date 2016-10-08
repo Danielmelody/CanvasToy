@@ -1,6 +1,6 @@
 /// <reference path="../CanvasToy.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
 
     export class Geometry {
 

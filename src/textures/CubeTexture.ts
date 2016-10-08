@@ -1,6 +1,6 @@
 /// <reference path="./Texture.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
     export class CubeTexture extends Texture {
 
 

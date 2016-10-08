@@ -2,10 +2,10 @@
     "compilerOptions":{
         "module": "amd",
         "removeComments": true,
-        "outFile":"build/debug/canvas-toy.js",
+        "outFile":"build/release/canvas-toy.js",
         "noLib": false,
         "target": "es5",
-        "sourceMap": true,
+        "sourceMap": false,
         "allowJs": true
     },
     "include":[

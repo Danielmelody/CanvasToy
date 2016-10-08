@@ -1,6 +1,6 @@
 # CanvasToy.js
 
-![](https://travis-ci.org/UniqueStudio/CanvasToy.svg?branch=master)
+![](https://travis-ci.org/Danielhu229/CanvasToy.svg?branch=master)
 
 lightweight webgl rendering tool
 
@@ -19,7 +19,7 @@ lightweight webgl rendering tool
 -   Encapsulation of commonly used noise
 -   build && test using pure node.js and typescript compiler, without gulp or grunt, webpack and bash , etc.
 
-### Contribute: 
+### Contribute:
 
 see [CONTRIBUTING.md](CONTRIBUTING.md)
 

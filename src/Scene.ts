@@ -1,4 +1,4 @@
-/// <reference path="./Node.ts"/>
+/// <reference path="./Object3d.ts"/>
 
 module CanvasToy {
 
@@ -25,28 +25,25 @@ module CanvasToy {
 
         update(dt: number) {
             for (let object of this.objects) {
-                object.update(dt);
+                if (!object.parent) {
+                    object.update(dt);
+                }
             }
         }
 
         addObject(object: Object3d) {
             this.objects.push(object);
             object.scene = this;
-            if (object instanceof Node) {
-                let node = <Node>object;
-                node.children.forEach((child) => {
-                    this.addObject(child);
-                })
-            }
+            object.children.forEach((child) => {
+                this.addObject(child);
+            });
         }
 
         removeObject(object: Object3d) {
-            if (object instanceof Node) {
-                let node = <Node>object;
-                node.children.forEach((child) => {
-                    this.removeObject(child);
-                })
-            }
+
+            object.children.forEach((child) => {
+                this.removeObject(child);
+            })
             this.objects.splice(this.objects.indexOf(object));
         }
 

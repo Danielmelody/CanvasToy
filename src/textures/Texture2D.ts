@@ -1,6 +1,6 @@
 /// <reference path="./Texture.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
     export class Texture2D extends Texture {
         constructor(
             image?: HTMLImageElement,

@@ -1,4 +1,6 @@
-module Testing {
+
+
+namespace Testing {
     class Object3dIm extends CanvasToy.Object3d {
         public apply() { };
         public registUpdateTest() {
@@ -30,5 +32,16 @@ module Testing {
             object3d.registStartTest();
             object3d.registStartTest();
         });
+        it("function addChild", () => {
+            let parent = new CanvasToy.Object3d();
+            let child = new CanvasToy.Object3d();
+            parent.addChild(child);
+            expect(parent.children).toContain(child);
+            expect(child.parent).toBe(parent);
+        })
+        it("function apply", () => {
+            let object3d = new CanvasToy.Object3d();
+            object3d.apply();
+        })
     });
 }

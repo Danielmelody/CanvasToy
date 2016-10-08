@@ -1,11 +1,9 @@
-/// <reference path="./geometries/Geometry.ts"/>
-/// <reference path="./materials/Material.ts"/>
-/// <reference path="./Node.ts"/>
-/// <reference path="./render/Program.ts"/>
+/// <reference path="./CanvasToy.ts"/>
+/// <reference path="./Object3d.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
 
-    export class Mesh extends Node {
+    export class Mesh extends Object3d {
 
         public drawMode: number = gl.STATIC_DRAW;
 

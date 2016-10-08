@@ -1,6 +1,6 @@
 /// <reference path="./Light.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
     export class DirectionalLight extends Light {
 
         constructor() {

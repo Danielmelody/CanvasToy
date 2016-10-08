@@ -1,5 +1,5 @@
 /// <reference path="./Light.ts"/> 
-module CanvasToy {
+namespace CanvasToy {
     export class PointLight extends Light {
         constructor() {
             super();

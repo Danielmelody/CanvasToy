@@ -1,4 +1,4 @@
-module CanvasToy {
+namespace CanvasToy {
     var version = 2;
     export var engine: Renderer;
     export var gl: WebGLRenderingContext = null;

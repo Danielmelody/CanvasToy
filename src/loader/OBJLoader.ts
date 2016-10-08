@@ -1,26 +1,25 @@
-/// <reference path="../geometries/Geometry.ts"/>
+/// <reference path="../Object3d.ts"/>
 /// <reference path="../materials/Material.ts"/>
-module CanvasToy {
+/// <reference path="../geometries/Geometry.ts"/>
+/// <reference path="../Mesh.ts"/>
 
-    /*
-     for details of Wavefront .obj file ,see http://www.martinreddy.net/gfx/3d/OBJ.spec
-    */
+namespace CanvasToy {
 
-    export module OBJLoader {
+    export class OBJLoader {
 
-        var commentPattern = /\#.*/mg;
-        var numberPattern = /([0-9]|\.|\-|e)+/g;
-        var faceSplitVertPattern = /([0-9]|\/|\-)+/g;
-        var facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/
-        var objectSplitPattern = /[o|g]\s+.+/mg;
-        var materialPattern = /usemtl\s.+/;
-        var vertexPattern = /v\s+([0-9]|\s|\.|\-|e)+/mg;
-        var uvPattern = /vt\s+([0-9]|\s|\.|\-|e)+/mg;
-        var normalPattern = /vn\s+([0-9]|\s|\.|\-|e)+/mg;
-        var indexPattern = /f\s+([0-9]|\s|\/|\-)+/mg;
+        static commentPattern = /\#.*/mg;
+        static numberPattern = /([0-9]|\.|\-|e)+/g;
+        static faceSplitVertPattern = /([0-9]|\/|\-)+/g;
+        static facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/
+        static objectSplitPattern = /[o|g]\s+.+/mg;
+        static materialPattern = /usemtl\s.+/;
+        static vertexPattern = /v\s+([0-9]|\s|\.|\-|e)+/mg;
+        static uvPattern = /vt\s+([0-9]|\s|\.|\-|e)+/mg;
+        static normalPattern = /vn\s+([0-9]|\s|\.|\-|e)+/mg;
+        static indexPattern = /f\s+([0-9]|\s|\/|\-)+/mg;
 
-        function fetch(url: string, onload: (content: string) => void) {
-            var request = new XMLHttpRequest();
+        private static fetch(url: string, onload: (content: string) => void) {
+            let request = new XMLHttpRequest();
             request.onreadystatechange = () => {
                 if (request.readyState == 4 && request.status == 200) {
                     if (onload) {
@@ -32,14 +31,14 @@ module CanvasToy {
             request.send();
         }
 
-        function praiseAttibuteLines(lines) {
+        private static praiseAttibuteLines(lines) {
             let result: Array<Array<number>> = [];
             if (lines == null) {
                 return;
             }
             lines.forEach((expression: string) => {
                 let data: Array<number> = [];
-                expression.match(numberPattern).forEach(
+                expression.match(OBJLoader.numberPattern).forEach(
                     (expression) => {
                         if (expression != "") {
                             data.push(parseFloat(expression));
@@ -51,32 +50,32 @@ module CanvasToy {
             return result;
         }
 
-        function fillAVertex(target: Array<number>, data: Array<number>) {
+        private static fillAVertex(target: Array<number>, data: Array<number>) {
             for (let i = 0; i < data.length; ++i) {
                 target.push(data[i]);
             }
         }
 
-        function parseAsTriangle(faces: Array<string>, forEachFace: (face: Array<string>) => void) {
+        private static parseAsTriangle(faces: Array<string>, forEachFace: (face: Array<string>) => void) {
             for (let i = 0; i < faces.length - 2; ++i) {
                 let triangleFace = [faces[0], faces[i + 1], faces[i + 2]];
                 forEachFace(triangleFace);
             }
         }
 
-        function buildUpMeshes(content: string, unIndexedPositions: Array<Array<number>>,
+        private static buildUpMeshes(content: string, unIndexedPositions: Array<Array<number>>,
             unIndexedUVs: Array<Array<number>>, unIndexedNormals: Array<Array<number>>)
-            : Node {
-            let container: Node = new Node();
-            let objects = content.split(objectSplitPattern);
+            : Object3d {
+            let container: Object3d = new Object3d();
+            let objects = content.split(OBJLoader.objectSplitPattern);
             objects.splice(0, 1);
             objects.forEach((objectContent) => {
                 let geometry: Geometry = new Geometry();
-                let faces = objectContent.match(indexPattern);
+                let faces = objectContent.match(OBJLoader.indexPattern);
                 faces == null ? null : faces.forEach((faceStr) => {
-                    parseAsTriangle(faceStr.match(faceSplitVertPattern), (triangleFaces) => {
+                    OBJLoader.parseAsTriangle(faceStr.match(OBJLoader.faceSplitVertPattern), (triangleFaces) => {
                         triangleFaces.forEach((perVertData) => {
-                            let match = perVertData.match(facePerVertPattern);
+                            let match = perVertData.match(OBJLoader.facePerVertPattern);
                             if (match != null && match[1] != null) {
                                 let positionIndex = parseInt(match[1]) - 1;
                                 geometry.faces.data.push(geometry.attributes.position.data.length / 3);
@@ -95,17 +94,17 @@ module CanvasToy {
             return container;
         }
 
-        export function load(url: string, onload: (meshes: Node) => void) {
-            fetch(url, (content: string) => {
+        public static load(url: string, onload: (meshes: Object3d) => void) {
+            OBJLoader.fetch(url, (content: string) => {
                 // remove comment
-                content = content.replace(commentPattern, '');
-                let positionlines: Array<string> = content.match(vertexPattern)
-                let uvlines: Array<string> = content.match(uvPattern);
-                let normallines: Array<string> = content.match(normalPattern);
-                let unIndexedPositions = praiseAttibuteLines(positionlines);
-                let unIndexedUVs = praiseAttibuteLines(uvlines);
-                let unIndexedNormals = praiseAttibuteLines(normallines);
-                let container = buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                content = content.replace(OBJLoader.commentPattern, '');
+                let positionlines: Array<string> = content.match(OBJLoader.vertexPattern)
+                let uvlines: Array<string> = content.match(OBJLoader.uvPattern);
+                let normallines: Array<string> = content.match(OBJLoader.normalPattern);
+                let unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
+                let unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
+                let unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
+                let container = OBJLoader.buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
                 onload(container);
             });
         }

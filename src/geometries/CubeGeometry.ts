@@ -1,6 +1,7 @@
 /// <reference path="./Geometry.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
+
     export class CubeGeometry extends Geometry {
 
         constructor() {

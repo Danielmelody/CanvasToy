@@ -3,14 +3,21 @@
           "rootDir":".",
           "module": "amd",
           "removeComments": true,
-          "outFile":"canvas-toy-test-tmp.js",
-          "target": "es5"
+          "outFile":"canvas-toy-test.js",
+          "target": "es5",
+          "allowJs": true
     },
     "include": [
+        "../lib/**/*.js",
         "../typings/index.d.ts",
+        "typings/index.d.ts",
         "../src/**/*.ts",
         "Util.ts",
         "unit/**/*.ts"
     ],
-    "compileOnSave": true
+    "exclude":[
+        "../examples/**/*.ts",
+        "../build/**/*.ts",
+        "../node_modules/**/*.ts"
+    ]
 }

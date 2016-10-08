@@ -1,6 +1,7 @@
 /// <reference path="./Geometry.ts"/>
+//
+namespace CanvasToy {
 
-module CanvasToy {
     export class RectGeometry extends Geometry {
         constructor() {
             super();

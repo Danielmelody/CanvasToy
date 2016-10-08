@@ -1,14 +1,14 @@
-/// <reference path="../Node.ts"/>
+/// <reference path="../Object3d.ts"/>
 
-module CanvasToy {
-    /*
-     * @author Danielhu229 http://hustdanielhu.com
-     */
-    export abstract class Camera extends Node {
-        public projectionMatrix: Mat4Array;
+namespace CanvasToy {
+    export abstract class Camera extends Object3d {
+        public projectionMatrix: Mat4Array = mat4.create();
+
         constructor() {
             super();
-            this.projectionMatrix = mat4.create();
+        }
+        public apply() {
+            super.apply();
         }
         public abstract adaptTargetRadio(target: { width: number, height: number });
     }

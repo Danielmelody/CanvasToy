@@ -1,7 +1,7 @@
 /// <reference path="../CanvasToy.ts"/>
 /// <reference path="../textures/Texture.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
 
     export var colors = {
         white: vec4.fromValues(1, 1, 1, 1),
@@ -85,7 +85,7 @@ module CanvasToy {
                                         mat4.create(),
                                         camera.projectionMatrix,
                                         mat4.multiply(mat4.create(),
-                                            mat4.invert(mat4.create(), camera.matrix),
+                                            camera.objectToWorldMatrix,
                                             mesh.matrix))
                                     );
                                 }
@@ -104,8 +104,15 @@ module CanvasToy {
                                 updator: () => { return new Float32Array(mesh.normalMatrix); }
                             },
                             eyePos: !scene.openLight ? undefined : {
-                                type: DataType.vec3,
-                                updator: (mesh: Mesh, camera: Camera) => { return camera.position }
+                                type: DataType.vec4,
+                                updator: (mesh: Mesh, camera: Camera) => {
+                                    return vec4.fromValues(
+                                        camera.position[0],
+                                        camera.position[1],
+                                        camera.position[2],
+                                        1
+                                    )
+                                }
                             }
                         },
                         attributes: {

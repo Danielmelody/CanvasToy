@@ -1,4 +1,4 @@
-module CanvasToy {
+namespace CanvasToy {
 
     export enum ShaderType {
         VertexShader,

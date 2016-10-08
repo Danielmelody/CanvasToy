@@ -1,6 +1,7 @@
 /// <reference path="./Camera.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
+
     export class OrthoCamera extends Camera {
         constructor(
             public left: number = -1,
