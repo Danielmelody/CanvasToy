@@ -8,7 +8,14 @@ module CanvasToy {
     }
 
 
+    export enum RenderMode {
+        Dynamic,
+        Static
+    }
+
     export class Renderer {
+
+        renderMode: RenderMode = RenderMode.Dynamic;
 
         preloadRes: any[] = [];
 
@@ -28,6 +35,20 @@ module CanvasToy {
 
         cameras: Array<Camera> = [];
 
+        frameRate: number = 1000 / 60;
+
+        private stopped: boolean = false;
+
+        main = () => {
+            for (let renderCommand of this.renderQueue) {
+                renderCommand();
+            }
+            if (this.stopped) {
+                return;
+            }
+            setTimeout(this.main, this.frameRate);
+        }
+
         constructor(public canvas: HTMLCanvasElement) {
             gl = initWebwebglContext(canvas);
             this.initMatrix();
@@ -38,11 +59,7 @@ module CanvasToy {
                 // gl.viewport(0, 0, canvas.width, canvas.height);
                 // gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
             })
-            setInterval(() => {
-                for (let renderCommand of this.renderQueue) {
-                    renderCommand();
-                }
-            }, 1000 / 60);
+            setTimeout(this.main, this.frameRate);
         }
 
         public renderToTexture(scene: Scene, camera: Camera): RenderTargetTexture {
@@ -104,17 +121,34 @@ module CanvasToy {
                 this.cameras.push(camera);
                 camera.adaptTargetRadio(this.canvas);
             }
-            this.renderQueue.push(() => {
-                gl.clearColor(
-                    scene.clearColor[0],
-                    scene.clearColor[1],
-                    scene.clearColor[2],
-                    scene.clearColor[3]
-                );
-                for (let object of scene.objects) {
-                    this.renderObject(camera, object);
-                }
-            })
+            switch (this.renderMode) {
+                case RenderMode.Static:
+                    this.renderQueue = [];
+                    gl.clearColor(
+                        scene.clearColor[0],
+                        scene.clearColor[1],
+                        scene.clearColor[2],
+                        scene.clearColor[3]
+                    );
+                    gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+                    for (let object of scene.objects) {
+                        this.renderObject(camera, object);
+                    }
+                    break;
+                case RenderMode.Dynamic:
+                    this.renderQueue.push(() => {
+                        gl.clearColor(
+                            scene.clearColor[0],
+                            scene.clearColor[1],
+                            scene.clearColor[2],
+                            scene.clearColor[3]
+                        );
+                        for (let object of scene.objects) {
+                            this.renderObject(camera, object);
+                        }
+                    })
+                    break;
+            }
         }
 
         public buildScene(scene: Scene, camera: Camera) {
@@ -231,7 +265,7 @@ module CanvasToy {
                     updator: () => { return light.specular }
                 });
                 material.program.addUniform(position, {
-                    type: DataType.vec3,
+                    type: DataType.vec4,
                     updator: () => { return light.position }
                 });
                 material.program.addUniform(idensity, {
@@ -242,7 +276,6 @@ module CanvasToy {
         }
 
         private copyDataToVertexBuffer(geometry: Geometry) {
-            console.log("copyDataToVertexBuffer");
             for (let name in geometry.attributes) {
                 let attribute: Attribute = geometry.attributes[name];
                 if (attribute != undefined) {

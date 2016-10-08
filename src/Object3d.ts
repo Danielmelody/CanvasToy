@@ -12,11 +12,35 @@ module CanvasToy {
 
         public matrix: Mat4Array = mat4.create();
 
-        public position: Vec3Array = vec4.create();
+        private _position: Vec4Array = vec4.create();
+        get position(): Vec4Array {
+            return this._position;
+        }
+        set position(_position: Vec4Array) {
+            console.assert(_position && _position.length == 4, "invalid object position paramter");
+            mat4.translate(this.localMatrix, mat4.create(), _position);
+            this._position = _position;
+        }
 
-        public size: Vec3Array = vec3.create();
+        private _localScale: Vec3Array = vec3.create();
+        get localScale(): Vec3Array {
+            return this._localScale;
+        }
+        set localScale(_localScale: Vec3Array) {
+            console.assert(_localScale && _localScale.length == 3, "invalid object scale paramter");
+            this.localMatrix = mat4.scale(mat4.create(), this.localMatrix, _localScale);
+            this._localScale = _localScale;
+        }
 
-        public rotate: Vec3Array = vec3.create();
+        private _rotation: Vec4Array = quat.create();
+        get rotation(): Vec3Array {
+            return this._rotation;
+        }
+        set rotation(_rotation: Vec4Array) {
+            console.assert(_rotation && _rotation.length == 3, "invalid object rotation paramter");
+            this._rotation = mat4.fromQuat(quat.create(), this._rotation);
+            this._rotation = _rotation;
+        }
 
         protected updateEvents: Array<Function> = [];
 
@@ -54,8 +78,6 @@ module CanvasToy {
             this.localMatrix = mat4.translate(mat4.create(), this.localMatrix, vec3.fromValues(deltaX, deltaY, deltaZ));
         }
 
-        public translateTo(deltaX: number, deltaY: number, deltaZ: number) { }
-
         public rotateX(angle: number) {
             this.localMatrix = mat4.rotateX(mat4.create(), this.localMatrix, angle);
         }
@@ -67,16 +89,5 @@ module CanvasToy {
         public rotateZ(angle: number) {
             this.localMatrix = mat4.rotateZ(mat4.create(), this.localMatrix, angle);
         }
-
-        public scale(rateX: number, rateY?: number, rateZ?: number) {
-            if (rateY == undefined) {
-                var rateY = rateX;
-            }
-            if (rateZ == undefined) {
-                var rateZ = rateX;
-            }
-            this.localMatrix = mat4.scale(mat4.create(), this.localMatrix, vec3.fromValues(rateX, rateY, rateZ));
-        }
-
     }
 }

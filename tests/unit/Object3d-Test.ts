@@ -28,6 +28,7 @@ module Testing {
         it("function startUpdate", () => {
             let object3d = new Object3dIm();
             object3d.registStartTest();
+            object3d.registStartTest();
         });
     });
 }

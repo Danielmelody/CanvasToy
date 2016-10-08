@@ -55,7 +55,7 @@ module CanvasToy {
 
         prefix: string[] = [];
 
-        private passings:Array<(mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass> = [];
+        private passings: Array<(mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass> = [];
 
         constructor(passing: (mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass) {
             this.passings.push(passing);
@@ -69,8 +69,8 @@ module CanvasToy {
                     + scene.lights.length : ''
             ];
             if (!!this.passings) {
-                let passes = this.passings.map((passing) => {return passing(mesh, scene, camera)});
-                let finalPass:any = {};
+                let passes = this.passings.map((passing) => { return passing(mesh, scene, camera) });
+                let finalPass: any = {};
                 passes.forEach((pass) => {
                     mixin(finalPass, pass);
                 });
@@ -78,7 +78,7 @@ module CanvasToy {
             };
         }
 
-        public addPassing(passing : (mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass) {
+        public addPassing(passing: (mesh: Mesh, scene: Scene, camera: Camera) => ProgramPass) {
             this.passings.push(passing);
         }
 
@@ -88,7 +88,7 @@ module CanvasToy {
                 this.fragmentShader = parameter.fragmentShader || this.fragmentShader;
                 this.webGlProgram = createEntileShader(gl,
                     'precision ' + this.vertexPrecision + ' float;\n' + this.prefix.join('\n') + '\n' + this.vertexShader,
-                    'precision ' + this.fragmentPrecision + ' float;\n' + this.prefix.join('\n') + '\n' +  this.fragmentShader);
+                    'precision ' + this.fragmentPrecision + ' float;\n' + this.prefix.join('\n') + '\n' + this.fragmentShader);
             }
             this.faces = (parameter.faces == undefined ? this.faces : parameter.faces);
             for (let nameInShader in parameter.uniforms) {
@@ -103,7 +103,6 @@ module CanvasToy {
                 this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
             }
             this.checkState();
-            console.log(this);
         }
 
         public checkState() {
@@ -128,7 +127,6 @@ module CanvasToy {
 
         addUniform(nameInShader, uniform: { type: DataType, updator: (mesh?, camera?) => any }) {
             gl.useProgram(this.webGlProgram);
-            console.log('uniform ' + nameInShader + ' passed')
             let location = this.getUniformLocation(nameInShader);
             let last = uniform.updator;
             //uniform.updator = () => { console.log(location); return last() };
@@ -179,7 +177,6 @@ module CanvasToy {
         public addAttribute(nameInShader, attribute: Attribute) {
             let location = this.getAttribLocation(nameInShader);
             if (location != null && location != -1) {
-                console.log('add attribute ' + nameInShader);
                 this.attributes[nameInShader] = attribute;
                 this.attributeLocations[nameInShader] = location;
                 gl.enableVertexAttribArray(location);

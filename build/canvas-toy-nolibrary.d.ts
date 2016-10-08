@@ -35,9 +35,12 @@ declare module CanvasToy {
         scene: Scene;
         localMatrix: Mat4Array;
         matrix: Mat4Array;
-        position: Vec3Array;
-        size: Vec3Array;
-        rotate: Vec3Array;
+        private _position;
+        position: Vec4Array;
+        private _localScale;
+        localScale: Vec3Array;
+        private _rotation;
+        rotation: Vec3Array;
         protected updateEvents: Array<Function>;
         protected startEvents: Array<Function>;
         constructor();
@@ -47,11 +50,9 @@ declare module CanvasToy {
         start(): void;
         update(dt: number): void;
         translate(deltaX: number, deltaY: number, deltaZ: number): void;
-        translateTo(deltaX: number, deltaY: number, deltaZ: number): void;
         rotateX(angle: number): void;
         rotateY(angle: number): void;
         rotateZ(angle: number): void;
-        scale(rateX: number, rateY?: number, rateZ?: number): void;
     }
 }
 declare module CanvasToy {
@@ -297,6 +298,12 @@ declare module CanvasToy {
     }
 }
 declare module CanvasToy {
+    class DirectionalLight extends Light {
+        constructor();
+        apply(): void;
+    }
+}
+declare module CanvasToy {
     class PointLight extends Light {
         constructor();
         apply(): void;
@@ -309,8 +316,13 @@ declare module CanvasToy {
 }
 declare module CanvasToy {
     function setCanvas(canvas: HTMLCanvasElement): void;
+    enum RenderMode {
+        Dynamic = 0,
+        Static = 1,
+    }
     class Renderer {
         canvas: HTMLCanvasElement;
+        renderMode: RenderMode;
         preloadRes: any[];
         usedTextureNum: number;
         renderTargets: Array<RenderTargetTexture>;
@@ -320,6 +332,9 @@ declare module CanvasToy {
         renderQueue: Array<Function>;
         scenes: Array<Scene>;
         cameras: Array<Camera>;
+        frameRate: number;
+        private stopped;
+        main: () => void;
         constructor(canvas: HTMLCanvasElement);
         renderToTexture(scene: Scene, camera: Camera): RenderTargetTexture;
         render(scene: Scene, camera: Camera): void;

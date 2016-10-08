@@ -88,7 +88,7 @@ module CanvasToy {
         gl.attachShader(shaderProgram, fragmentShader);
         gl.linkProgram(shaderProgram);
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            alert("Unable to initialize the shader program.\n" + gl.getProgramInfoLog(shaderProgram));
+            alert("error: link shader program failed.\n" + gl.getProgramInfoLog(shaderProgram));
         }
         return shaderProgram;
     };
