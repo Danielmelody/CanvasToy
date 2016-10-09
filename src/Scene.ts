@@ -1,6 +1,6 @@
 /// <reference path="./Object3d.ts"/>
 
-module CanvasToy {
+namespace CanvasToy {
 
     export class Scene {
 
@@ -23,7 +23,7 @@ module CanvasToy {
             window.setInterval(() => this.update(1000 / 60), 1000 / 60);
         }
 
-        update(dt: number) {
+        public update(dt: number) {
             for (let object of this.objects) {
                 if (!object.parent) {
                     object.update(dt);
@@ -31,7 +31,7 @@ module CanvasToy {
             }
         }
 
-        addObject(object: Object3d) {
+        public addObject(object: Object3d) {
             this.objects.push(object);
             object.scene = this;
             object.children.forEach((child) => {
@@ -39,15 +39,15 @@ module CanvasToy {
             });
         }
 
-        removeObject(object: Object3d) {
+        public removeObject(object: Object3d) {
 
             object.children.forEach((child) => {
                 this.removeObject(child);
-            })
+            });
             this.objects.splice(this.objects.indexOf(object));
         }
 
-        addLight(light: Light) {
+        public addLight(light: Light) {
             this.openLight = true;
             this.lights.push(light);
             light.scene = this;

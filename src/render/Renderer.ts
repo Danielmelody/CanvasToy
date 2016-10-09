@@ -7,7 +7,6 @@ namespace CanvasToy {
         engine = new Renderer(canvas);
     }
 
-
     export enum RenderMode {
         Dynamic,
         Static
@@ -15,41 +14,34 @@ namespace CanvasToy {
 
     export class Renderer {
 
-        renderMode: RenderMode = RenderMode.Dynamic;
+        public canvas: HTMLCanvasElement = null;
 
-        preloadRes: any[] = [];
+        public renderMode: RenderMode = RenderMode.Dynamic;
 
-        usedTextureNum: number = 0;
+        public preloadRes: any[] = [];
 
-        renderTargets: Array<RenderTargetTexture> = [];
+        public usedTextureNum: number = 0;
 
-        vertPrecision: string = "highp";
+        public renderTargets: Array<RenderTargetTexture> = [];
 
-        fragPrecision: string = "mediump";
+        public vertPrecision: string = "highp";
 
-        isAnimating: boolean = false;
+        public fragPrecision: string = "mediump";
 
-        renderQueue: Array<Function> = [];
+        public isAnimating: boolean = false;
 
-        scenes: Array<Scene> = [];
+        public renderQueue: Array<Function> = [];
 
-        cameras: Array<Camera> = [];
+        public scenes: Array<Scene> = [];
 
-        frameRate: number = 1000 / 60;
+        public cameras: Array<Camera> = [];
+
+        public frameRate: number = 1000 / 60;
 
         private stopped: boolean = false;
 
-        main = () => {
-            for (let renderCommand of this.renderQueue) {
-                renderCommand();
-            }
-            if (this.stopped) {
-                return;
-            }
-            setTimeout(this.main, this.frameRate);
-        }
-
-        constructor(public canvas: HTMLCanvasElement) {
+        constructor(canvas: HTMLCanvasElement) {
+            this.canvas = canvas;
             gl = initWebwebglContext(canvas);
             this.initMatrix();
             gl.clearDepth(1.0);
@@ -58,7 +50,7 @@ namespace CanvasToy {
             this.renderQueue.push(() => {
                 // gl.viewport(0, 0, canvas.width, canvas.height);
                 // gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-            })
+            });
             setTimeout(this.main, this.frameRate);
         }
 
@@ -66,7 +58,15 @@ namespace CanvasToy {
             let rttTexture = new RenderTargetTexture(scene, camera);
             // bind texture
             gl.bindTexture(gl.TEXTURE_2D, rttTexture.glTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, rttTexture.format, this.canvas.width, this.canvas.height, 0, rttTexture.format, gl.UNSIGNED_BYTE, null);
+            gl.texImage2D(gl.TEXTURE_2D,
+                0, rttTexture.format,
+                this.canvas.width,
+                this.canvas.height,
+                0,
+                rttTexture.format,
+                gl.UNSIGNED_BYTE,
+                null
+            );
             gl.texParameteri(rttTexture.type, gl.TEXTURE_WRAP_S, rttTexture.wrapS);
             gl.texParameteri(rttTexture.type, gl.TEXTURE_WRAP_T, rttTexture.wrapT);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, rttTexture.magFilter);
@@ -84,8 +84,8 @@ namespace CanvasToy {
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture.glTexture, 0);
             gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rttTexture.depthBuffer);
 
-            if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-                console.log('frame buffer not completed');
+            if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+                console.log("frame buffer not completed"); // TODO: replace console.log with productive code
             }
 
             gl.bindTexture(gl.TEXTURE_2D, null);
@@ -109,15 +109,16 @@ namespace CanvasToy {
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                 gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-            })
+            });
             return rttTexture;
         }
 
         public render(scene: Scene, camera: Camera) {
-            if (this.scenes.indexOf(scene) == -1) {
+            if (this.scenes.indexOf(scene) === -1) {
                 this.scenes.push(scene);
                 this.buildScene(scene, camera);
-            } if (this.cameras.indexOf(camera) == -1) {
+            }
+            if (this.cameras.indexOf(camera) === -1) {
                 this.cameras.push(camera);
                 camera.adaptTargetRadio(this.canvas);
             }
@@ -146,7 +147,9 @@ namespace CanvasToy {
                         for (let object of scene.objects) {
                             this.renderObject(camera, object);
                         }
-                    })
+                    });
+                    break;
+                default:
                     break;
             }
         }
@@ -162,7 +165,6 @@ namespace CanvasToy {
                 }
             }
             scene.programSetUp = true;
-            console.log('make shaders');
         }
 
         public makeMeshPrograms(scene: Scene, mesh: Mesh, camera: Camera) {
@@ -171,7 +173,7 @@ namespace CanvasToy {
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
                 new Uint16Array(mesh.geometry.faces.data), gl.STATIC_DRAW);
 
-            this.copyDataToVertexBuffer(mesh.geometry)
+            this.copyDataToVertexBuffer(mesh.geometry);
 
             if (mesh.materials.length > 1) {
                 gl.enable(gl.BLEND);
@@ -182,11 +184,11 @@ namespace CanvasToy {
 
                 let cameraInScene = false;
                 for (let object of scene.objects) {
-                    if (object == camera) {
+                    if (object === camera) {
                         cameraInScene = true;
                         break;
                     }
-                };
+                }
 
                 if (!cameraInScene) {
                     console.error("Camera has not been added in Scene. Rendering stopped");
@@ -198,7 +200,7 @@ namespace CanvasToy {
                 gl.useProgram(material.program.webGlProgram);
 
                 for (let textureName in material.program.textures) {
-                    if (material.program.textures[textureName] != undefined) {
+                    if (material.program.textures[textureName] !== undefined) {
                         this.loadTexture(material.program, textureName, material.program.textures[textureName]);
                     }
                 }
@@ -209,7 +211,7 @@ namespace CanvasToy {
             }
         }
 
-        loadTexture(program: Program, sampler: string, texture: Texture) {
+        public loadTexture(program: Program, sampler: string, texture: Texture) {
             if (texture instanceof RenderTargetTexture) {
                 texture.unit = this.usedTextureNum;
                 this.usedTextureNum++;
@@ -229,11 +231,11 @@ namespace CanvasToy {
                     lastOnload.apply(texture.image, et);
                 }
                 this.addTexture(program, sampler, texture);
-            }
+            };
 
         }
 
-        addTexture(program: Program, sampler: string, texture: Texture) {
+        public addTexture(program: Program, sampler: string, texture: Texture) {
             texture.unit = this.usedTextureNum;
             this.usedTextureNum++;
             program.textures.push(texture);
@@ -246,42 +248,46 @@ namespace CanvasToy {
             gl.texParameteri(texture.type, gl.TEXTURE_MAG_FILTER, texture.magFilter);
             gl.texParameteri(texture.type, gl.TEXTURE_MIN_FILTER, texture.minFilter);
             texture.setUpTextureData();
-            program.addUniform(sampler, { type: DataType.int, updator: () => { return texture.unit } });
+            program.addUniform(sampler, { type: DataType.int, updator: () => { return texture.unit; } });
         }
 
         public setUplights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
             for (let index in scene.lights) {
-                let light = scene.lights[index];
-                var diffuse = "lights[" + index + "].diffuse";
-                var specular = "lights[" + index + "].specular";
-                var idensity = "lights[" + index + "].idensity";
-                var position = "lights[" + index + "].position";
-                material.program.addUniform(diffuse, {
-                    type: DataType.vec3,
-                    updator: () => { return light.diffuse }
-                });
-                material.program.addUniform(specular, {
-                    type: DataType.vec3,
-                    updator: () => { return light.specular }
-                });
-                material.program.addUniform(position, {
-                    type: DataType.vec4,
-                    updator: () => { return light.position }
-                });
-                material.program.addUniform(idensity, {
-                    type: DataType.float,
-                    updator: () => { return light.idensity }
-                });
+                if (scene.lights.hasOwnProperty(index)) {
+                    let light = scene.lights[index];
+                    let diffuse = "lights[" + index + "].diffuse";
+                    let specular = "lights[" + index + "].specular";
+                    let idensity = "lights[" + index + "].idensity";
+                    let position = "lights[" + index + "].position";
+                    material.program.addUniform(diffuse, {
+                        type: DataType.vec3,
+                        updator: () => { return light.diffuse; },
+                    });
+                    material.program.addUniform(specular, {
+                        type: DataType.vec3,
+                        updator: () => { return light.specular; },
+                    });
+                    material.program.addUniform(position, {
+                        type: DataType.vec4,
+                        updator: () => { return light.position; },
+                    });
+                    material.program.addUniform(idensity, {
+                        type: DataType.float,
+                        updator: () => { return light.idensity; },
+                    });
+                }
             }
         }
 
         private copyDataToVertexBuffer(geometry: Geometry) {
             for (let name in geometry.attributes) {
-                let attribute: Attribute = geometry.attributes[name];
-                if (attribute != undefined) {
-                    gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                    console.log(name + "buffer size:" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
+                if (geometry.attributes.hasOwnProperty(name)) {
+                    let attribute: Attribute = geometry.attributes[name];
+                    if (attribute !== undefined) {
+                        gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
+                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
+                        console.log(name + "buffer size:" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
+                    }
                 }
             }
         };
@@ -303,24 +309,36 @@ namespace CanvasToy {
                     }*/
                     gl.useProgram(program.webGlProgram);
                     for (let uniformName in program.uniforms) {
-                        if (program.uniforms[uniformName] != undefined) {
+                        if (program.uniforms[uniformName] !== undefined) {
                             program.uniforms[uniformName](object, camera);
                         }
                     }
                     for (let attributeName in program.attributes) {
-                        gl.bindBuffer(gl.ARRAY_BUFFER, program.attributes[attributeName].buffer);
-                        gl.vertexAttribPointer(
-                            program.attributeLocations[attributeName],
-                            program.attributes[attributeName].size,
-                            program.attributes[attributeName].type,
-                            false,
-                            0,
-                            0);
+                        if (program.attributes.hasOwnProperty(attributeName)) {
+                            gl.bindBuffer(gl.ARRAY_BUFFER, program.attributes[attributeName].buffer);
+                            gl.vertexAttribPointer(
+                                program.attributeLocations[attributeName],
+                                program.attributes[attributeName].size,
+                                program.attributes[attributeName].type,
+                                false,
+                                0,
+                                0);
+                        }
                     }
                     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
                     gl.drawElements(gl.TRIANGLES, mesh.geometry.faces.data.length, gl.UNSIGNED_SHORT, 0);
                 }
             }
+        }
+
+        private main = () => {
+            for (let renderCommand of this.renderQueue) {
+                renderCommand();
+            }
+            if (this.stopped) {
+                return;
+            }
+            setTimeout(this.main, this.frameRate);
         }
 
         private initMatrix() {

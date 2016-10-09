@@ -2,17 +2,21 @@
 
 namespace CanvasToy {
     export class CubeTexture extends Texture {
-
-
+        public xneg: HTMLImageElement;
+        public xpos: HTMLImageElement;
+        public yneg: HTMLImageElement;
+        public ypos: HTMLImageElement;
+        public zneg: HTMLImageElement;
+        public zpos: HTMLImageElement;
         private count: number = 6;
 
         constructor(
-            public xneg: HTMLImageElement,
-            public xpos: HTMLImageElement,
-            public yneg: HTMLImageElement,
-            public ypos: HTMLImageElement,
-            public zneg: HTMLImageElement,
-            public zpos: HTMLImageElement,
+            xneg: HTMLImageElement,
+            xpos: HTMLImageElement,
+            yneg: HTMLImageElement,
+            ypos: HTMLImageElement,
+            zneg: HTMLImageElement,
+            zpos: HTMLImageElement,
             wrapS?: number,
             wrapT?: number,
             magFilter?: number,
@@ -26,19 +30,18 @@ namespace CanvasToy {
                 magFilter,
                 minFilter
             );
+            this.xneg = xneg;
+            this.xpos = xpos;
+            this.yneg = yneg;
+            this.ypos = ypos;
+            this.zneg = zneg;
+            this.zpos = zpos;
             this.xneg.onload = this.onLoad;
             this.xpos.onload = this.onLoad;
             this.yneg.onload = this.onLoad;
             this.ypos.onload = this.onLoad;
             this.zneg.onload = this.onLoad;
             this.zpos.onload = this.onLoad;
-        }
-
-        private onLoad() {
-            this.count--;
-            if (this.count == 0) {
-                this.isReadyToUpdate = true;
-            }
         }
 
         public setUpTextureData() {
@@ -51,6 +54,13 @@ namespace CanvasToy {
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.zpos);
             }
             return true;
+        }
+
+        private onLoad() {
+            this.count--;
+            if (this.count === 0) {
+                this.isReadyToUpdate = true;
+            }
         }
     }
 }

@@ -1,0 +1,21 @@
+{
+  "extends": "tslint:latest",
+  "rules": {
+    "no-constructor-vars": true,
+    "no-namespace": false,
+    "no-reference": false,
+    "variable-name": [true, "allow-leading-underscore"],
+    "no-bitwise": false,
+    "object-literal-sort-keys": false,
+    "no-console": false,
+    "interface-name": false,
+    "whitespace": [
+        "check-branch",
+        "check-decl",
+        "check-operator",
+        "check-module",
+        "check-separator",
+        "check-type"
+    ]
+  }
+}

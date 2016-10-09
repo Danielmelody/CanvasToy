@@ -3,8 +3,12 @@ namespace CanvasToy {
         public frameBuffer: WebGLFramebuffer;
         public depthBuffer: WebGLRenderbuffer;
         public stencilBuffer: WebGLRenderbuffer;
-        constructor(public scene: Scene, public camera: Camera) {
+        public scene: Scene;
+        public camera: Camera;
+        constructor(scene: Scene, camera: Camera) {
             super();
+            this.scene = scene;
+            this.camera = camera;
         }
     }
 }

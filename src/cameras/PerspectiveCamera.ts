@@ -3,13 +3,21 @@
 namespace CanvasToy {
 
     export class PerspectiveCamera extends Camera {
+        public aspect: number;
+        public fovy: number;
+        public near: number;
+        public far: number;
         constructor(
-            public aspect: number = 1,
-            public fovy: number = 45,
-            public near: number = 0.01,
-            public far: number = 10000
+            aspect: number = 1,
+            fovy: number = 45,
+            near: number = 0.01,
+            far: number = 10000
         ) {
             super();
+            this.aspect = aspect;
+            this.fovy = fovy;
+            this.near = near;
+            this.far = far;
         }
 
         public apply() {

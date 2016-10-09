@@ -29,7 +29,7 @@ namespace CanvasToy {
         public set matrix(_matrix: Mat4Array) {
             this._matrix = _matrix;
             mat4.invert(this.objectToWorldMatrix, this.matrix);
-            console.assert(!!this.objectToWorldMatrix, 'object matrix cannot invert');
+            console.assert(!!this.objectToWorldMatrix, "object matrix cannot invert");
         }
 
         protected _localPosition: Vec3Array = vec3.create();
@@ -37,8 +37,8 @@ namespace CanvasToy {
             return this._localPosition;
         }
         public set localPosition(_localPosition: Vec3Array) {
-            console.assert(_localPosition && _localPosition.length == 3, "invalid object position paramter");
-            let delta = vec4.sub(vec4.create(), _localPosition, this._localPosition)
+            console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
+            let delta = vec4.sub(vec4.create(), _localPosition, this._localPosition);
             vec4.add(this._position, delta, vec4.clone(this._position));
             this._localPosition = _localPosition;
         }
@@ -48,19 +48,18 @@ namespace CanvasToy {
             return this._position;
         }
         public set position(_position: Vec3Array) {
-            console.assert(_position && _position.length == 3, "invalid object position paramter");
-            let delta = vec4.sub(vec4.create(), _position, this._position)
+            console.assert(_position && _position.length === 3, "invalid object position paramter");
+            let delta = vec4.sub(vec4.create(), _position, this._position);
             vec4.add(this._localPosition, delta, vec4.clone(this._localPosition));
             this._position = _position;
         }
-
 
         protected _localScale: Vec3Array = vec3.fromValues(1, 1, 1);
         public get localScale(): Vec3Array {
             return this._localScale;
         }
         public set localScale(_localScale: Vec3Array) {
-            console.assert(_localScale && _localScale.length == 3, "invalid object scale paramter");
+            console.assert(_localScale && _localScale.length === 3, "invalid object scale paramter");
             this._localScale = _localScale;
         }
 
@@ -69,7 +68,7 @@ namespace CanvasToy {
             return this._scale;
         }
         public set scale(_scale: Vec3Array) {
-            console.assert(_scale && _scale.length == 3, "invalid object scale paramter");
+            console.assert(_scale && _scale.length === 3, "invalid object scale paramter");
             this._scale = _scale;
         }
 
@@ -78,7 +77,7 @@ namespace CanvasToy {
             return this._localRotation;
         }
         public set localRotation(_localRotation: QuatArray) {
-            console.assert(_localRotation && _localRotation.length == 4, "invalid object rotation paramter");
+            console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
             this._localRotation = _localRotation;
             quat.multiply(this._rotation, this._localRotation, this.parent.rotation);
         }
@@ -88,7 +87,7 @@ namespace CanvasToy {
             return this._rotation;
         }
         public set rotation(_rotation: QuatArray) {
-            console.assert(_rotation && _rotation.length == 4, "invalid object rotation paramter");
+            console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
             this._rotation = _rotation;
         }
 
@@ -108,7 +107,7 @@ namespace CanvasToy {
                 this.localRotation,
                 this.localPosition,
                 this.localScale
-            )
+            );
             let current: Object3d = this;
             this.matrix = mat4.clone(this.localMatrix);
             if (!!current.parent) {

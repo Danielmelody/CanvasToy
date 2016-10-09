@@ -15,7 +15,7 @@ namespace CanvasToy {
                 0.0, 0.0,
                 1.0, 0.0,
                 0.0, 1.0,
-                1.0, 1.0
+                1.0, 1.0,
             ];
             this.attributes.normal.data = [
                 1, 0, 0,
@@ -25,7 +25,7 @@ namespace CanvasToy {
             ];
             this.faces.data = [
                 0, 1, 2,
-                2, 1, 3
+                2, 1, 3,
             ];
         }
     }

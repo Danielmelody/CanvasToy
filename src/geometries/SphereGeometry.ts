@@ -3,7 +3,9 @@
 namespace CanvasToy {
 
     class SphereGeometry extends Geometry {
-        constructor(public radius: number, public perVertDistance: number) {
+        public radius: number;
+        public perVertDistance: number;
+        constructor(radius: number, perVertDistance: number) {
             super();
             for (let y = - radius; y <= radius; y += perVertDistance) {
                 let circlrRadius = Math.sqrt(radius * radius - y * y);

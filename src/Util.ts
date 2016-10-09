@@ -15,16 +15,14 @@ namespace CanvasToy {
         }
     }
 
-
     export function initWebwebglContext(canvas): WebGLRenderingContext {
-        var gl: WebGLRenderingContext = null;
         try {
-            gl = canvas.getContext('experimental-webgl');
+            gl = canvas.getContext("experimental-webgl");
         } catch (e) {
-            gl = canvas.getContext('webgl');
+            gl = canvas.getContext("webgl");
         }
         if (!gl) {
-            alert("can't init webgl, current browser may not support it.");
+            alert("Cannot init webgl, current browser may not support it.");
         }
         return gl;
     }
@@ -35,18 +33,16 @@ namespace CanvasToy {
             return null;
         }
 
-        var theSource = "";
-        var currentChild = script.firstChild;
+        let theSource = "";
+        let currentChild = script.firstChild;
 
         while (currentChild) {
-            if (currentChild.nodeType == 3) {
+            if (currentChild.nodeType === 3) {
                 theSource += currentChild.textContent;
             }
 
             currentChild = currentChild.nextSibling;
         }
-
-        var shader: WebGLShader;
 
         // Send the source to the shader object
 
@@ -54,14 +50,14 @@ namespace CanvasToy {
 
     function createSeparatedShader(gl: WebGLRenderingContext, source: string, type: ShaderType): WebGLShader {
 
-        var shader: WebGLShader;
+        let shader: WebGLShader;
 
-        var typeInfo;
+        let typeInfo;
 
-        if (type == ShaderType.FragmentShader) {
+        if (type === ShaderType.FragmentShader) {
             shader = gl.createShader(gl.FRAGMENT_SHADER);
             typeInfo = "fragment shader";
-        } else if (type == ShaderType.VertexShader) {
+        } else if (type === ShaderType.VertexShader) {
             shader = gl.createShader(gl.VERTEX_SHADER);
             typeInfo = "vertex shader";
         }
@@ -75,15 +71,18 @@ namespace CanvasToy {
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
             alert("error: " + typeInfo + "\n" + gl.getShaderInfoLog(shader));
-            console.log(source);
             return null;
         }
 
         return shader;
     }
 
-    function linkShader(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
-        var shaderProgram = gl.createProgram();
+    function linkShader(
+        gl: WebGLRenderingContext,
+        vertexShader: WebGLShader,
+        fragmentShader: WebGLShader
+    ): WebGLProgram {
+        let shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
         gl.linkProgram(shaderProgram);
@@ -93,13 +92,12 @@ namespace CanvasToy {
         return shaderProgram;
     };
 
-    export function createEntileShader(gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram {
+    export function createEntileShader(
+        gl: WebGLRenderingContext, vertexShaderSource: string,
+        fragmentShaderSource: string
+    ): WebGLProgram {
         let vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
         let fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
-        if (debug) {
-            console.log(vertShader);
-            console.log(fragShader);
-        }
         return linkShader(gl, vertShader, fragShader);
     }
 }

@@ -6,9 +6,5 @@ namespace CanvasToy {
         constructor() {
             super();
         }
-
-        apply() {
-
-        }
     }
 }

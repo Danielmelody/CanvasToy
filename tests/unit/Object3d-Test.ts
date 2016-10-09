@@ -1,6 +1,5 @@
-
-
 namespace Testing {
+
     class Object3dIm extends CanvasToy.Object3d {
         public apply() { };
         public registUpdateTest() {

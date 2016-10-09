@@ -1,14 +1,15 @@
 /// <reference path="../CanvasToy.ts"/>
+/// <reference path="../shader/shaders.ts"/>
 /// <reference path="../textures/Texture.ts"/>
 
 namespace CanvasToy {
 
-    export var colors = {
-        white: vec4.fromValues(1, 1, 1, 1),
+    export let colors = {
         black: vec4.fromValues(0, 0, 0, 1),
         gray: vec4.fromValues(0.5, 0.5, 0.5, 1),
-        red: vec4.fromValues(1, 0, 0, 1)
-    }
+        red: vec4.fromValues(1, 0, 0, 1),
+        white: vec4.fromValues(1, 1, 1, 1),
+    };
 
     export enum InterplotationMethod {
         Flat,
@@ -26,10 +27,10 @@ namespace CanvasToy {
 
     export interface IMaterial {
         mainTexture: Texture;
-        color: Vec4Array,
-        interplotationMethod: InterplotationMethod,
-        lightingMode: LightingMode,
-        program: Program
+        color: Vec4Array;
+        interplotationMethod: InterplotationMethod;
+        lightingMode: LightingMode;
+        program: Program;
     }
 
     export class Material implements IMaterial {
@@ -64,7 +65,9 @@ namespace CanvasToy {
         constructor(paramter?: IMaterial) {
             if (!!paramter) {
                 for (let name in paramter) {
-                    this[name] = paramter[name];
+                    if (paramter.hasOwnProperty(name)) {
+                        this[name] = paramter[name];
+                    }
                 }
             }
             let shaderSrc = this.configShader();
@@ -75,56 +78,56 @@ namespace CanvasToy {
                         fragmentShader: shaderSrc.fragmentShader,
                         faces: mesh.geometry.faces,
                         textures: {
-                            uMainTexture: this.mainTexture
+                            uMainTexture: this.mainTexture,
                         },
                         uniforms: {
                             modelViewProjectionMatrix: {
                                 type: DataType.mat4,
-                                updator: (mesh: Mesh, camera: Camera) => {
+                                updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
                                     return new Float32Array(mat4.multiply(
                                         mat4.create(),
-                                        camera.projectionMatrix,
+                                        cameraOnUpdate.projectionMatrix,
                                         mat4.multiply(mat4.create(),
                                             camera.objectToWorldMatrix,
-                                            mesh.matrix))
+                                            meshOnUpdate.matrix))
                                     );
-                                }
+                                },
                             },
                             color: !this.color ? undefined : {
                                 type: DataType.vec4, updator: () => {
                                     return this.color;
-                                }
+                                },
                             },
                             ambient: !scene.openLight ? undefined : {
                                 type: DataType.vec3,
-                                updator: () => { return scene.ambientLight }
+                                updator: () => { return scene.ambientLight; },
                             },
                             normalMatrix: !scene.openLight ? undefined : {
                                 type: DataType.mat4,
-                                updator: () => { return new Float32Array(mesh.normalMatrix); }
+                                updator: () => { return new Float32Array(mesh.normalMatrix); },
                             },
                             eyePos: !scene.openLight ? undefined : {
                                 type: DataType.vec4,
-                                updator: (mesh: Mesh, camera: Camera) => {
+                                updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
                                     return vec4.fromValues(
-                                        camera.position[0],
-                                        camera.position[1],
-                                        camera.position[2],
+                                        cameraOnUpdate.position[0],
+                                        cameraOnUpdate.position[1],
+                                        cameraOnUpdate.position[2],
                                         1
-                                    )
-                                }
-                            }
+                                    );
+                                },
+                            },
                         },
                         attributes: {
                             position: mesh.geometry.attributes.position,
                             aMainUV: !this.mainTexture ? undefined : mesh.geometry.attributes.uv,
                             aNormal: !scene.openLight ?
                                 undefined :
-                                this.interplotationMethod == InterplotationMethod.Flat ?
-                                    mesh.geometry.attributes.flatNormal : mesh.geometry.attributes.normal
-                        }
+                                this.interplotationMethod === InterplotationMethod.Flat ?
+                                    mesh.geometry.attributes.flatNormal : mesh.geometry.attributes.normal,
+                        },
                     };
-                })
+                });
             }
         }
         public configShader() {
@@ -143,6 +146,7 @@ namespace CanvasToy {
                     interplotationVert = interploters__phong_vert;
                     interplotationFrag = interploters__phong_frag;
                     break;
+                default: break;
             }
             let lightCalculator = "";
             switch (this.lightingMode) {
@@ -152,8 +156,12 @@ namespace CanvasToy {
                 case (LightingMode.Phong):
                     lightCalculator = calculators__phong_glsl;
                     break;
+                default: break;
             }
-            return { vertexShader: lightCalculator + interplotationVert, fragmentShader: lightCalculator + interplotationFrag }
+            return {
+                vertexShader: lightCalculator + interplotationVert,
+                fragmentShader: lightCalculator + interplotationFrag,
+            };
         }
     }
 }
