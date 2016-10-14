@@ -7,9 +7,6 @@ namespace CanvasToy {
         constructor() {
             super();
         }
-        public apply() {
-            super.apply();
-        }
         public abstract adaptTargetRadio(target: { width: number, height: number });
     }
 }

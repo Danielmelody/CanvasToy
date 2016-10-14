@@ -2,4 +2,4 @@
 
 tsc -v
 tsc
-karma start karma.conf.js --browsers Firefox --single-run
+karma start karma.conf.js --browsers Firefox

@@ -3,7 +3,7 @@ uniform vec4 color;
 #endif
 
 #ifdef USE_TEXTURE // texture declaration
-letying vec2 vMainUV;
+varying vec2 vMainUV;
 uniform sampler2D uMainTexture;
 vec4 textureColor;
 #endif
@@ -16,8 +16,8 @@ struct Light {
     vec4 position;
     bool directional;
 };
-letying vec4 vPosition;
-letying vec3 vNormal;
+varying vec4 vPosition;
+varying vec3 vNormal;
 uniform vec3 ambient;
 uniform vec4 eyePos;
 vec3 totalLighting;

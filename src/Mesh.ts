@@ -21,8 +21,8 @@ namespace CanvasToy {
             this.geometry = geometry;
         }
 
-        public apply() {
-            super.apply();
+        public genOtherMatrixs() {
+            super.genOtherMatrixs();
             mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));
         }
     }

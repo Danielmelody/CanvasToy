@@ -1,4 +1,4 @@
-module Testing {
+namespace Testing {
     describe('PerspectiveCamera testing', () => {
         it("function adapTargetRadio", () => {
             let canvas = Testing.createCanvas(512, 512);

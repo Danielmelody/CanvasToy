@@ -29,9 +29,7 @@ namespace CanvasToy {
         public buffer: WebGLBuffer = gl.createBuffer();
         constructor(paramter: { type: number, size?: number, data?: number[], stride?: number }) {
             for (let attributeInfo in paramter) {
-                if (paramter.hasOwnProperty(attributeInfo)) {
-                    this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
-                }
+                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
             }
             switch (paramter.type) {
                 case DataType.float: this.type = gl.FLOAT; break;
@@ -59,9 +57,9 @@ namespace CanvasToy {
 
         public prefix: string[] = [];
 
-        private passings: Array<(mesh: Mesh, scene: Scene, camera: Camera) => IProgramPass> = [];
+        private passings: Array<(mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramPass> = [];
 
-        constructor(passing: (mesh: Mesh, scene: Scene, camera: Camera) => IProgramPass) {
+        constructor(passing: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramPass) {
             this.passings.push(passing);
         }
 
@@ -73,7 +71,7 @@ namespace CanvasToy {
                     + scene.lights.length : "",
             ];
             if (!!this.passings) {
-                let passes = this.passings.map((passing) => { return passing(mesh, scene, camera); });
+                let passes = this.passings.map((passing) => { return passing(mesh, scene, camera, material); });
                 let finalPass: any = {};
                 passes.forEach((pass) => {
                     mixin(finalPass, pass);
@@ -92,14 +90,12 @@ namespace CanvasToy {
                 maxIndex = Math.max(maxIndex, index);
             }
             for (let attributeName in this.attributes) {
-                if (this.attributes.hasOwnProperty(attributeName)) {
-                    console.assert(this.attributes[attributeName].size <= 4 && this.attributes[attributeName].size >= 1,
-                        attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
-                    console.assert((maxIndex + 1) * this.attributes[attributeName].stride <=
-                        this.attributes[attributeName].data.length,
-                        attributeName + " length error, now:" + this.attributes[attributeName].data.length
-                        + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
-                }
+                console.assert(this.attributes[attributeName].size <= 4 && this.attributes[attributeName].size >= 1,
+                    attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
+                console.assert((maxIndex + 1) * this.attributes[attributeName].stride <=
+                    this.attributes[attributeName].data.length,
+                    attributeName + " length error, now:" + this.attributes[attributeName].data.length
+                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
             }
         }
 
@@ -195,14 +191,10 @@ namespace CanvasToy {
                 }
             }
             for (let sampler in parameter.textures) {
-                if (parameter.textures.hasOwnProperty(sampler)) {
-                    this.textures[sampler] = parameter.textures[sampler];
-                }
+                this.textures[sampler] = parameter.textures[sampler];
             }
             for (let nameInShader in parameter.attributes) {
-                if (parameter.attributes.hasOwnProperty(name)) {
-                    this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
-                }
+                this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
             }
             this.checkState();
         }
@@ -221,4 +213,61 @@ namespace CanvasToy {
         }
 
     }
+
+    export let defaultProgramPass = (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {
+        return {
+            vertexShader: material.shaderSource.vertexShader,
+            fragmentShader: material.shaderSource.fragmentShader,
+            faces: mesh.geometry.faces,
+            textures: {
+                uMainTexture: material.mainTexture,
+            },
+            uniforms: {
+                modelViewProjectionMatrix: {
+                    type: DataType.mat4,
+                    updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
+                        return new Float32Array(mat4.multiply(
+                            mat4.create(),
+                            cameraOnUpdate.projectionMatrix,
+                            mat4.multiply(mat4.create(),
+                                camera.objectToWorldMatrix,
+                                meshOnUpdate.matrix))
+                        );
+                    },
+                },
+                color: !material.color ? undefined : {
+                    type: DataType.vec4, updator: () => {
+                        return material.color;
+                    },
+                },
+                ambient: !scene.openLight ? undefined : {
+                    type: DataType.vec3,
+                    updator: () => { return scene.ambientLight; },
+                },
+                normalMatrix: !scene.openLight ? undefined : {
+                    type: DataType.mat4,
+                    updator: () => { return new Float32Array(mesh.normalMatrix); },
+                },
+                eyePos: !scene.openLight ? undefined : {
+                    type: DataType.vec4,
+                    updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
+                        return vec4.fromValues(
+                            cameraOnUpdate.position[0],
+                            cameraOnUpdate.position[1],
+                            cameraOnUpdate.position[2],
+                            1
+                        );
+                    },
+                },
+            },
+            attributes: {
+                position: mesh.geometry.attributes.position,
+                aMainUV: !material.mainTexture ? undefined : mesh.geometry.attributes.uv,
+                aNormal: !scene.openLight ?
+                    undefined :
+                    material.interplotationMethod === InterplotationMethod.Flat ?
+                        mesh.geometry.attributes.flatNormal : mesh.geometry.attributes.normal,
+            },
+        };
+    };
 }

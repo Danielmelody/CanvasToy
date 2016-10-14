@@ -40,13 +40,11 @@ namespace CanvasToy {
         public getVertexByIndex(index: number) {
             let vertex: any = {};
             for (let attributeName in this.attributes) {
-                if (this.attributes.hasOwnProperty(attributeName)) {
-                    vertex[attributeName] = [];
-                    for (let i = 0; i < this.attributes[attributeName].stride; ++i) {
-                        vertex[attributeName].push(
-                            this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i]
-                        );
-                    }
+                vertex[attributeName] = [];
+                for (let i = 0; i < this.attributes[attributeName].stride; ++i) {
+                    vertex[attributeName].push(
+                        this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i]
+                    );
                 }
             }
             return vertex;

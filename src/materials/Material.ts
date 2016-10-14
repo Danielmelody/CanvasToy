@@ -1,4 +1,5 @@
 /// <reference path="../CanvasToy.ts"/>
+/// <reference path="../render/Program.ts"/>
 /// <reference path="../shader/shaders.ts"/>
 /// <reference path="../textures/Texture.ts"/>
 
@@ -62,72 +63,17 @@ namespace CanvasToy {
 
         public reflactivity: number;
 
+        public shaderSource: { vertexShader: string, fragmentShader: string };
+
         constructor(paramter?: IMaterial) {
             if (!!paramter) {
                 for (let name in paramter) {
-                    if (paramter.hasOwnProperty(name)) {
-                        this[name] = paramter[name];
-                    }
+                    this[name] = paramter[name];
                 }
             }
-            let shaderSrc = this.configShader();
+            this.configShader();
             if (!this.program) {
-                this.program = new Program((mesh: Mesh, scene: Scene, camera: Camera) => {
-                    return {
-                        vertexShader: shaderSrc.vertexShader,
-                        fragmentShader: shaderSrc.fragmentShader,
-                        faces: mesh.geometry.faces,
-                        textures: {
-                            uMainTexture: this.mainTexture,
-                        },
-                        uniforms: {
-                            modelViewProjectionMatrix: {
-                                type: DataType.mat4,
-                                updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
-                                    return new Float32Array(mat4.multiply(
-                                        mat4.create(),
-                                        cameraOnUpdate.projectionMatrix,
-                                        mat4.multiply(mat4.create(),
-                                            camera.objectToWorldMatrix,
-                                            meshOnUpdate.matrix))
-                                    );
-                                },
-                            },
-                            color: !this.color ? undefined : {
-                                type: DataType.vec4, updator: () => {
-                                    return this.color;
-                                },
-                            },
-                            ambient: !scene.openLight ? undefined : {
-                                type: DataType.vec3,
-                                updator: () => { return scene.ambientLight; },
-                            },
-                            normalMatrix: !scene.openLight ? undefined : {
-                                type: DataType.mat4,
-                                updator: () => { return new Float32Array(mesh.normalMatrix); },
-                            },
-                            eyePos: !scene.openLight ? undefined : {
-                                type: DataType.vec4,
-                                updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
-                                    return vec4.fromValues(
-                                        cameraOnUpdate.position[0],
-                                        cameraOnUpdate.position[1],
-                                        cameraOnUpdate.position[2],
-                                        1
-                                    );
-                                },
-                            },
-                        },
-                        attributes: {
-                            position: mesh.geometry.attributes.position,
-                            aMainUV: !this.mainTexture ? undefined : mesh.geometry.attributes.uv,
-                            aNormal: !scene.openLight ?
-                                undefined :
-                                this.interplotationMethod === InterplotationMethod.Flat ?
-                                    mesh.geometry.attributes.flatNormal : mesh.geometry.attributes.normal,
-                        },
-                    };
-                });
+                this.program = new Program(defaultProgramPass);
             }
         }
         public configShader() {
@@ -158,7 +104,7 @@ namespace CanvasToy {
                     break;
                 default: break;
             }
-            return {
+            this.shaderSource = {
                 vertexShader: lightCalculator + interplotationVert,
                 fragmentShader: lightCalculator + interplotationFrag,
             };

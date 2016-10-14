@@ -3,7 +3,7 @@ uniform vec4 color;
 #endif // color declaration
 
 #ifdef USE_TEXTURE // texture declaration
-letying vec2 vMainUV;
+varying vec2 vMainUV;
 uniform sampler2D uMainTexture;
 vec4 textureColor;
 #endif // texture declaration
@@ -18,10 +18,10 @@ struct Light {
 };
 uniform vec3 ambient;
 uniform vec4 eyePos;
-letying vec4 position;
+varying vec4 position;
 vec3 totalLighting;
 uniform Light lights[LIGHT_NUM];
-letying vec3 vNormal;
+varying vec3 vNormal;
 #endif // light declaration
 
 void main() {

@@ -3,12 +3,12 @@
 namespace CanvasToy {
     export class Texture2D extends Texture {
         constructor(
-            image?: HTMLImageElement,
+            image: HTMLImageElement,
             format: number = gl.RGB,
-            wrapS?: number,
-            wrapT?: number,
-            magFilter?: number,
-            minFilter?: number
+            wrapS: number = gl.CLAMP_TO_EDGE,
+            wrapT: number = gl.CLAMP_TO_EDGE,
+            magFilter: number = gl.NEAREST,
+            minFilter: number = gl.NEAREST
         ) {
             super(
                 image,
@@ -19,7 +19,6 @@ namespace CanvasToy {
                 magFilter,
                 minFilter
             );
-            this.glTexture = gl.createTexture();
         }
 
         public setUpTextureData() {

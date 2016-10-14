@@ -33,7 +33,7 @@ interface DoneFn extends Function {
     (): void;
 
     /** fails the spec and indicates that it has completed. If the message is an Error, Error.message is used */
-    fail: (message?: Error|string) => void;
+    fail: (message?: Error | string) => void;
 }
 
 declare function spyOn(object: any, method: string): jasmine.Spy;
@@ -59,7 +59,7 @@ declare namespace jasmine {
     function addMatchers(matchers: CustomMatcherFactories): void;
     function stringMatching(str: string): Any;
     function stringMatching(str: RegExp): Any;
-    function formatErrorMsg(domain: string, usage: string) : (msg: string) => string
+    function formatErrorMsg(domain: string, usage: string): (msg: string) => string
 
     interface Any {
 
@@ -222,12 +222,12 @@ declare namespace jasmine {
         passed(): boolean;
     }
 
-    interface MessageResult extends Result  {
+    interface MessageResult extends Result {
         values: any;
         trace: Trace;
     }
 
-    interface ExpectationResult extends Result  {
+    interface ExpectationResult extends Result {
         matcherName: string;
         passed(): boolean;
         expected: any;
@@ -237,10 +237,10 @@ declare namespace jasmine {
     }
 
     interface Order {
-        new (options: {random: boolean, seed: string}): any;
+        new (options: { random: boolean, seed: string }): any;
         random: boolean;
         seed: string;
-        sort<T>(items: T[]) : T[];
+        sort<T>(items: T[]): T[];
     }
 
     namespace errors {
@@ -253,7 +253,7 @@ declare namespace jasmine {
     interface TreeProcessor {
         new (attrs: any): any;
         execute: (done: Function) => void;
-        processTree() : any;
+        processTree(): any;
     }
 
     interface Trace {

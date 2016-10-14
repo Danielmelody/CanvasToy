@@ -9,6 +9,7 @@
     "object-literal-sort-keys": false,
     "no-console": false,
     "interface-name": false,
+    "forin": false,
     "whitespace": [
         "check-branch",
         "check-decl",

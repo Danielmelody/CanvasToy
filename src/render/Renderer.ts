@@ -253,41 +253,38 @@ namespace CanvasToy {
 
         public setUplights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
             for (let index in scene.lights) {
-                if (scene.lights.hasOwnProperty(index)) {
-                    let light = scene.lights[index];
-                    let diffuse = "lights[" + index + "].diffuse";
-                    let specular = "lights[" + index + "].specular";
-                    let idensity = "lights[" + index + "].idensity";
-                    let position = "lights[" + index + "].position";
-                    material.program.addUniform(diffuse, {
-                        type: DataType.vec3,
-                        updator: () => { return light.diffuse; },
-                    });
-                    material.program.addUniform(specular, {
-                        type: DataType.vec3,
-                        updator: () => { return light.specular; },
-                    });
-                    material.program.addUniform(position, {
-                        type: DataType.vec4,
-                        updator: () => { return light.position; },
-                    });
-                    material.program.addUniform(idensity, {
-                        type: DataType.float,
-                        updator: () => { return light.idensity; },
-                    });
-                }
+                let light = scene.lights[index];
+                let diffuse = "lights[" + index + "].diffuse";
+                let specular = "lights[" + index + "].specular";
+                let idensity = "lights[" + index + "].idensity";
+                let position = "lights[" + index + "].position";
+                material.program.addUniform(diffuse, {
+                    type: DataType.vec3,
+                    updator: () => { return light.diffuse; },
+                });
+                material.program.addUniform(specular, {
+                    type: DataType.vec3,
+                    updator: () => { return light.specular; },
+                });
+                material.program.addUniform(position, {
+                    type: DataType.vec4,
+                    updator: () => { return light.position; },
+                });
+                material.program.addUniform(idensity, {
+                    type: DataType.float,
+                    updator: () => { return light.idensity; },
+                });
             }
         }
 
         private copyDataToVertexBuffer(geometry: Geometry) {
             for (let name in geometry.attributes) {
-                if (geometry.attributes.hasOwnProperty(name)) {
-                    let attribute: Attribute = geometry.attributes[name];
-                    if (attribute !== undefined) {
-                        gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                        console.log(name + "buffer size:" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
-                    }
+                let attribute: Attribute = geometry.attributes[name];
+                if (attribute !== undefined) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
+                    console.log(name + "buffer size:" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
+
                 }
             }
         };
@@ -314,16 +311,14 @@ namespace CanvasToy {
                         }
                     }
                     for (let attributeName in program.attributes) {
-                        if (program.attributes.hasOwnProperty(attributeName)) {
-                            gl.bindBuffer(gl.ARRAY_BUFFER, program.attributes[attributeName].buffer);
-                            gl.vertexAttribPointer(
-                                program.attributeLocations[attributeName],
-                                program.attributes[attributeName].size,
-                                program.attributes[attributeName].type,
-                                false,
-                                0,
-                                0);
-                        }
+                        gl.bindBuffer(gl.ARRAY_BUFFER, program.attributes[attributeName].buffer);
+                        gl.vertexAttribPointer(
+                            program.attributeLocations[attributeName],
+                            program.attributes[attributeName].size,
+                            program.attributes[attributeName].type,
+                            false,
+                            0,
+                            0);
                     }
                     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
                     gl.drawElements(gl.TRIANGLES, mesh.geometry.faces.data.length, gl.UNSIGNED_SHORT, 0);

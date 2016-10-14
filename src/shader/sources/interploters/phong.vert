@@ -3,14 +3,14 @@ uniform mat4 modelViewProjectionMatrix;
 
 #ifdef USE_TEXTURE
 attribute vec2 aMainUV;
-letying vec2 vMainUV;
+varying vec2 vMainUV;
 #endif
 
 #ifdef OPEN_LIGHT
 uniform mat4 normalMatrix;
 attribute vec3 aNormal;
-letying vec4 vPosition;
-letying vec3 vNormal;
+varying vec4 vPosition;
+varying vec3 vNormal;
 #endif
 
 // #ifdef SHOW_LIGHT_POS

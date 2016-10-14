@@ -20,14 +20,14 @@ namespace CanvasToy {
             this.far = far;
         }
 
-        public apply() {
-            super.apply();
+        public genOtherMatrixs() {
+            super.genOtherMatrixs();
             this.projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
         }
 
         public adaptTargetRadio(target: { width: number, height: number }) {
             this.aspect = target.width / target.height;
-            this.apply();
+            this.genOtherMatrixs();
         }
     }
 }

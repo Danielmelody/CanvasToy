@@ -27,8 +27,8 @@ namespace CanvasToy {
             mat4.ortho(this.projectionMatrix, left, right, bottom, top, near, far);
         }
 
-        public apply() {
-            super.apply();
+        public genOtherMatrixs() {
+            super.genOtherMatrixs();
             mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
         }
 

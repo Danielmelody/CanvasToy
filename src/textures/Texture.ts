@@ -8,12 +8,12 @@ namespace CanvasToy {
         public dataCompleted: boolean = false;
         public isReadyToUpdate: boolean = false;
         public image?: HTMLImageElement;
-        public type: number = gl.TEXTURE_2D;
-        public format: number = gl.RGB;
-        public wrapS: number = gl.CLAMP_TO_EDGE;
-        public wrapT: number = gl.CLAMP_TO_EDGE;
-        public magFilter: number = gl.NEAREST;
-        public minFilter: number = gl.NEAREST;
+        public type: number;
+        public format: number;
+        public wrapS: number;
+        public wrapT: number;
+        public magFilter: number;
+        public minFilter: number;
         constructor(
             image?: HTMLImageElement,
             type: number = gl.TEXTURE_2D,
@@ -22,6 +22,13 @@ namespace CanvasToy {
             wrapT: number = gl.CLAMP_TO_EDGE,
             magFilter: number = gl.NEAREST,
             minFilter: number = gl.NEAREST) {
+            this.image = image;
+            this.type = type;
+            this.format = format;
+            this.wrapS = wrapS;
+            this.wrapT = wrapT;
+            this.magFilter = magFilter;
+            this.minFilter = minFilter;
             this.glTexture = gl.createTexture();
         }
         public setUpTextureData() {

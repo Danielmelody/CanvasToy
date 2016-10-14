@@ -1,5 +1,5 @@
-module Testing {
-    describe('OrhtoCamera testing', () => {
+namespace Testing {
+    describe("OrhtoCamera testing", () => {
         it("function adapTargetRadio", () => {
             let canvas = Testing.createCanvas(512, 512);
             CanvasToy.setCanvas(canvas);
@@ -8,7 +8,7 @@ module Testing {
             let y = Math.random() % 100;
             camera.adaptTargetRadio({
                 width: x,
-                height: y
+                height: y,
             });
             expect((camera.right - camera.left) / (camera.top - camera.bottom)).toEqual(x / y);
         })

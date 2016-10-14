@@ -12,7 +12,7 @@ module.exports = function(config) {
     frameworks : [ 'jasmine' ],
 
     // list of files / patterns to load in the browser
-    files : [ 'canvas-toy-test.js' ],
+    files : [ 'build/canvas-toy-test.js' ],
 
     // list of files to exclude
     exclude : [],
@@ -49,7 +49,7 @@ module.exports = function(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun : false,
+    singleRun : true,
 
     // Concurrency level
     // how many browser should be started simultaneous
