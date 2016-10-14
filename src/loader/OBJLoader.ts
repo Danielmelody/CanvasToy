@@ -103,7 +103,7 @@ namespace CanvasToy {
                     });
                 }
                 let mesh = new Mesh(geometry, [new Material()]);
-                container.addChild(mesh);
+                mesh.parent = container;
             });
             return container;
         }

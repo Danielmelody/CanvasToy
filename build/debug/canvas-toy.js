@@ -3040,20 +3040,31 @@ var CanvasToy;
     var Object3d = (function () {
         function Object3d(tag) {
             this.children = [];
-            this.parent = null;
             this.objectToWorldMatrix = mat4.create();
+            this._parent = null;
             this._localMatrix = mat4.create();
             this._matrix = mat4.create();
             this._localPosition = vec3.create();
             this._localRotation = quat.create();
-            this._localScale = vec3.fromValues(1, 1, 1);
+            this._localScaling = vec3.fromValues(1, 1, 1);
             this._position = vec3.create();
-            this._scale = vec3.fromValues(1, 1, 1);
+            this._scaling = vec3.fromValues(1, 1, 1);
             this._rotation = quat.create();
             this.updateEvents = [];
             this.startEvents = [];
             this.tag = tag;
         }
+        Object.defineProperty(Object3d.prototype, "parent", {
+            get: function () {
+                return this._parent;
+            },
+            set: function (_parent) {
+                _parent.children.push(this);
+                this._parent = _parent;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Object3d.prototype, "localMatrix", {
             get: function () {
                 return this._localMatrix;
@@ -3064,10 +3075,6 @@ var CanvasToy;
         Object.defineProperty(Object3d.prototype, "matrix", {
             get: function () {
                 return this._matrix;
-            },
-            set: function (_matrix) {
-                this._matrix = _matrix;
-                this.genOtherMatrixs();
             },
             enumerable: true,
             configurable: true
@@ -3080,7 +3087,7 @@ var CanvasToy;
                 console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
                 this._localPosition = _localPosition;
                 this.composeFromLocalMatrix();
-                if (!!this.parent) {
+                if (!!this._parent) {
                     mat4.getTranslation(this._position, this.matrix);
                 }
                 else {
@@ -3099,7 +3106,7 @@ var CanvasToy;
                 console.assert(_position && _position.length === 3, "invalid object position paramter");
                 this._position = _position;
                 this.composeFromGlobalMatrix();
-                if (!!this.parent) {
+                if (!!this._parent) {
                     mat4.getTranslation(this._localPosition, this._localMatrix);
                 }
                 else {
@@ -3119,7 +3126,7 @@ var CanvasToy;
                 quat.normalize(_localRotation, quat.clone(_localRotation));
                 this._localRotation = _localRotation;
                 this.composeFromLocalMatrix();
-                if (!!this.parent) {
+                if (!!this._parent) {
                     mat4.getRotation(this._rotation, this.matrix);
                 }
                 else {
@@ -3139,7 +3146,7 @@ var CanvasToy;
                 quat.normalize(_rotation, quat.clone(_rotation));
                 this._rotation = _rotation;
                 this.composeFromGlobalMatrix();
-                if (!!this.parent) {
+                if (!!this._parent) {
                     mat4.getRotation(this._localRotation, this.localMatrix);
                 }
                 else {
@@ -3150,55 +3157,50 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Object3d.prototype, "localScale", {
+        Object.defineProperty(Object3d.prototype, "localScaling", {
             get: function () {
-                return this._localScale;
+                return this._localScaling;
             },
-            set: function (_localScale) {
-                console.assert(_localScale && _localScale.length === 3, "invalid object scale paramter");
-                if (!!this.parent) {
-                    vec3.mul(this._scale, this.parent.scale, this._localScale);
+            set: function (_localScaling) {
+                console.assert(_localScaling && _localScaling.length === 3, "invalid object scale paramter");
+                this._localScaling = _localScaling;
+                if (!!this._parent) {
+                    vec3.mul(this._scaling, this._parent.scaling, this._localScaling);
                 }
                 else {
-                    this._scale = vec3.clone(_localScale);
+                    this._scaling = vec3.clone(_localScaling);
                 }
-                this._localScale = _localScale;
+                this.applyToChildren();
             },
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Object3d.prototype, "scale", {
+        Object.defineProperty(Object3d.prototype, "scaling", {
             get: function () {
-                return this._scale;
+                return this._scaling;
             },
-            set: function (_scale) {
-                console.assert(_scale && _scale.length === 3, "invalid object scale paramter");
-                this._scale = _scale;
+            set: function (_scaling) {
+                console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
+                this._scaling = _scaling;
+                if (!!this._parent) {
+                    vec3.div(this.localScaling, this.scaling, this._parent.scaling);
+                }
+                else {
+                    this.localScaling = vec3.clone(_scaling);
+                }
+                this.applyToChildren();
             },
             enumerable: true,
             configurable: true
         });
-        Object3d.prototype.composeFromLocalMatrix = function () {
-            mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScale);
+        Object3d.prototype.setTransformFromParent = function () {
             if (!!this.parent) {
-                this.matrix = mat4.mul(mat4.create(), this.parent.matrix, this.localMatrix);
+                this._matrix = mat4.mul(mat4.create(), this.parent.matrix, this.localMatrix);
+                this.genOtherMatrixs();
+                mat4.getTranslation(this._position, this.matrix);
+                mat4.getRotation(this._rotation, this.matrix);
+                vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
             }
-            else {
-                this.matrix = mat4.clone(this._localMatrix);
-            }
-        };
-        Object3d.prototype.composeFromGlobalMatrix = function () {
-            this.matrix = mat4.fromRotationTranslationScale(mat4.create(), this.rotation, this.position, this.scale);
-            if (!!this.parent) {
-                mat4.mul(this.localMatrix, this.parent.objectToWorldMatrix, this.matrix);
-            }
-            else {
-                this._localMatrix = mat4.clone(this._matrix);
-            }
-        };
-        Object3d.prototype.addChild = function (child) {
-            this.children.push(child);
-            child.parent = this;
         };
         Object3d.prototype.registUpdate = function (updateFunction) {
             this.updateEvents.push(updateFunction);
@@ -3238,12 +3240,30 @@ var CanvasToy;
         Object3d.prototype.genOtherMatrixs = function () {
             mat4.invert(this.objectToWorldMatrix, this.matrix);
         };
+        Object3d.prototype.composeFromLocalMatrix = function () {
+            mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
+            if (!!this._parent) {
+                mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
+            }
+            else {
+                this._matrix = mat4.clone(this._localMatrix);
+            }
+            this.genOtherMatrixs();
+        };
+        Object3d.prototype.composeFromGlobalMatrix = function () {
+            mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
+            this.genOtherMatrixs();
+            if (!!this._parent) {
+                mat4.mul(this._localMatrix, this._parent.objectToWorldMatrix, this.matrix);
+            }
+            else {
+                this._localMatrix = mat4.clone(this._matrix);
+            }
+        };
         Object3d.prototype.applyToChildren = function () {
             for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
                 var child = _a[_i];
-                child.matrix = mat4.mul(mat4.create(), this.matrix, child.localMatrix);
-                mat4.getTranslation(child._position, child.matrix);
-                mat4.getRotation(child._rotation, child.matrix);
+                child.setTransformFromParent();
             }
         };
         return Object3d;
@@ -4070,7 +4090,7 @@ var CanvasToy;
                     });
                 }
                 var mesh = new CanvasToy.Mesh(geometry, [new CanvasToy.Material()]);
-                container.addChild(mesh);
+                mesh.parent = container;
             });
             return container;
         };

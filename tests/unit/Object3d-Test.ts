@@ -14,6 +14,23 @@ namespace Testing {
         });
         it("constructor", () => { expect(object3d).toBeDefined(); });
 
+        describe("set parent", () => {
+            it("should be child of parent", () => {
+                let parent = new Object3dIm();
+                object3d.parent = parent;
+                expect(parent.children).toContain(object3d);
+            });
+        });
+
+        describe("set matrx", () => {
+            beforeEach(() => {
+                object3d.matrix = mat4.translate(mat4.create(), object3d.matrix, vec3.fromValues(1, 2, 3));
+            });
+            it("should change localMatrix", () => {
+                expect(object3d.localMatrix).toBeEqualish(object3d.matrix);
+            })
+        })
+
         describe("set localPosition", () => {
 
             describe("on root object", () => {
@@ -34,7 +51,7 @@ namespace Testing {
             describe("on no-root object", () => {
                 beforeEach(() => {
                     let parent = new Object3dIm();
-                    parent.addChild(object3d);
+                    object3d.parent = parent;
                     parent.localPosition = vec3.fromValues(1, 2, 3);
                     object3d.localPosition = vec3.fromValues(1, 2, 3);
                 });
@@ -64,7 +81,7 @@ namespace Testing {
                 });
                 it("should change children", () => {
                     let child = new Object3dIm();
-                    object3d.addChild(child);
+                    child.parent = object3d;
                     object3d.position = vec3.fromValues(0, 0, 0);
                     child.position = vec3.fromValues(1, 2, 3);
                     object3d.position = vec3.fromValues(1, 2, 3);
@@ -76,7 +93,7 @@ namespace Testing {
             describe("on no-root object", () => {
                 beforeEach(() => {
                     let parent = new Object3dIm();
-                    parent.addChild(object3d);
+                    object3d.parent = parent;
                     parent.position = vec3.fromValues(1, 2, 3);
                     object3d.position = vec3.fromValues(2, 4, 6);
                 });
@@ -116,7 +133,7 @@ namespace Testing {
                 beforeEach(() => {
                     let tempRotation = quat.create();
                     let parent = new Object3dIm();
-                    parent.addChild(object3d);
+                    object3d.parent = parent;
                     parent.localRotation = quat.rotateX(parent.localRotation, quat.create(), 1);
                     object3d.localRotation = quat.rotateY(object3d.localRotation, quat.create(), 1);
                     result = quat.rotateY(tempRotation, quat.rotateX(tempRotation, quat.create(), 1), 1);
@@ -148,7 +165,7 @@ namespace Testing {
                 });
                 it("should change children", () => {
                     let child = new Object3dIm();
-                    object3d.addChild(child);
+                    child.parent = object3d;
                     object3d.rotation = quat.create();
                     child.rotation = quat.rotateY(quat.create(), quat.create(), 1);
                     object3d.rotation = quat.rotateX(quat.create(), quat.create(), 1);
@@ -161,7 +178,7 @@ namespace Testing {
                 let result;
                 beforeEach(() => {
                     let parent = new Object3dIm();
-                    parent.addChild(object3d);
+                    object3d.parent = parent;
                     parent.rotation = quat.rotateX(parent.rotation, quat.create(), 1);
                     object3d.rotation = quat.rotateY(object3d.rotation, parent.rotation, 1);
                     result = quat.rotateY(quat.create(), quat.create(), 1);
@@ -171,8 +188,52 @@ namespace Testing {
                         .toBeEqualish(result);
                 });
             });
+        });
 
-        })
-
+        describe("set transform from parent", () => {
+            let parent;
+            let childLastLocalMatrix;
+            let expectedGlobalMatrix;
+            beforeEach(() => {
+                parent = new Object3dIm();
+                spyOn(parent, "setTransformFromParent");
+                parent.localPostion = vec3.fromValues(1, 2, 3);
+                parent.localRotation = quat.rotateX(quat.create(), quat.create(), 1);
+                parent.localScaling = vec3.fromValues(4, 5, 6);
+                object3d.localPosition = vec3.fromValues(1, 2, 3);
+                object3d.localRotation = quat.rotateX(quat.create(), quat.create(), 1);
+                object3d.localScaling = vec3.fromValues(4, 5, 6);
+                childLastLocalMatrix = mat4.clone(object3d.localMatrix);
+                expectedGlobalMatrix = mat4.mul(mat4.create(), parent.localMatrix, object3d.localMatrix);
+                object3d.parent = parent;
+            });
+            it("should not be called to root object", () => {
+                expect(parent.setTransformFromParent).not.toHaveBeenCalled();
+            })
+            it("should not change child local matrix", () => {
+                object3d.setTransformFromParent();
+                expect(object3d.localMatrix).toBeEqualish(childLastLocalMatrix);
+            });
+            it("should not change child local position", () => {
+                object3d.setTransformFromParent();
+                expect(object3d.localPosition).toBeEqualish(vec3.fromValues(1, 2, 3));
+            });
+            it("should not change child local rotation", () => {
+                object3d.setTransformFromParent();
+                expect(object3d.localRotation).toBeEqualish(quat.rotateX(quat.create(), quat.create(), 1));
+            });
+            it("should not change child local scaling", () => {
+                object3d.setTransformFromParent();
+                expect(object3d.localScaling).toBeEqualish(vec3.fromValues(4, 5, 6));
+            });
+            it("should change child global matrix", () => {
+                object3d.setTransformFromParent();
+                expect(object3d.matrix).toBeEqualish(expectedGlobalMatrix);
+            });
+            it("should change child global position", () => {
+                object3d.setTransformFromParent();
+                expect(object3d.position).toBeEqualish(mat4.getTranslation(vec3.create(), expectedGlobalMatrix));
+            });
+        });
     });
 }
