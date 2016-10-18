@@ -51,8 +51,7 @@ namespace CanvasToy {
 
         /**
          * Set transform parent of this object, will also add this to parent‘s children list automatically
-         * @param  {Object3d} _parent [description]
-         * @return {[type]}           [description]
+         * @param  {Object3d} _parent
          */
         public set parent(_parent: Object3d) {
             _parent.children.push(this);
@@ -103,6 +102,7 @@ namespace CanvasToy {
         public get position(): Vec3Array {
             return this._position;
         }
+
         /**
          * set position globally
          * @param  {Vec3Array} _position

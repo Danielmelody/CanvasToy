@@ -1,3 +1,9 @@
+namespace jasmine {
+    export interface ToyMatchers extends Matchers {
+        toBeEqualish(expected: any, expectationFailOutput?: any): boolean;
+    }
+}
+
 namespace Testing {
     export const EPSILON = 0.00001;
     export function createCanvas(width: number, height: number) {
