@@ -1,6 +1,9 @@
 # ignore node.js dependency
 node_modules/
 
+# ignore bower dependency
+bower_components/
+
 # User-specific stuff:
 .idea/
 

@@ -19,8 +19,9 @@ before_script:
   - sleep 3
 
 install:
-    - npm install -g typescript@2
+    - npm install -g typescript bower
     - npm install
+    - bower install
 
 script:
     - npm run testci

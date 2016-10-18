@@ -5,6 +5,7 @@
 ```bash
 npm install -g typescript@2 typescript-formatter http-server
 npm install
+bower install
 ```
 
 we use typescript **2.x** rather than current **1.x** to match [tsconfig.json schema on the official site](http://json.schemastore.org/tsconfig)

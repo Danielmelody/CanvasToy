@@ -9,7 +9,7 @@
     },
     "include": [
         "../typings/index.d.ts",
-        "../lib/**/*.js",
+        "../bower_components/gl-matrix/dist/gl-matrix.js",
         "../src/**/*.ts",
         "typings/index.d.ts",
         "Util.ts",
