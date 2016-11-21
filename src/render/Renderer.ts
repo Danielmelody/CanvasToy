@@ -47,15 +47,10 @@ namespace CanvasToy {
             gl.clearDepth(1.0);
             gl.enable(gl.DEPTH_TEST);
             gl.depthFunc(gl.LEQUAL);
-            this.renderQueue.push(() => {
-                // gl.viewport(0, 0, canvas.width, canvas.height);
-                // gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-            });
             setTimeout(this.main, this.frameRate);
         }
 
-        public renderToTexture(scene: Scene, camera: Camera): RenderTargetTexture {
-            let rttTexture = new RenderTargetTexture(scene, camera);
+        public renderToTexture(scene: Scene, camera: Camera, rttTexture: RenderTargetTexture): RenderTargetTexture {
             // bind texture
             gl.bindTexture(gl.TEXTURE_2D, rttTexture.glTexture);
             gl.texImage2D(gl.TEXTURE_2D,
@@ -77,12 +72,18 @@ namespace CanvasToy {
             gl.bindFramebuffer(gl.FRAMEBUFFER, rttTexture.frameBuffer);
 
             // create render buffer for depth test
-            rttTexture.depthBuffer = gl.createRenderbuffer();
-            gl.bindRenderbuffer(gl.RENDERBUFFER, rttTexture.depthBuffer);
-            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.canvas.width, this.canvas.height);
-
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture.glTexture, 0);
-            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rttTexture.depthBuffer);
+            if (rttTexture.enableColorBuffer) {
+                rttTexture.colorBuffer = gl.createRenderbuffer();
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture.glTexture, 0);
+            }
+            if (rttTexture.enableDepthBuffer) {
+                rttTexture.depthBuffer = gl.createRenderbuffer();
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, rttTexture.glTexture, 0);
+            }
+            if (rttTexture.enableDepthBuffer) {
+                rttTexture.stencilBuffer = gl.createRenderbuffer();
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.TEXTURE_2D, rttTexture.glTexture, 0);
+            }
 
             if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
                 console.log("frame buffer not completed"); // TODO: replace console.log with productive code
@@ -96,7 +97,7 @@ namespace CanvasToy {
 
             this.renderQueue.push(() => {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, rttTexture.frameBuffer);
-                gl.bindRenderbuffer(gl.RENDERBUFFER, rttTexture.depthBuffer);
+                gl.bindRenderbuffer(gl.RENDERBUFFER, rttTexture.colorBuffer);
                 gl.clearColor(
                     scene.clearColor[0],
                     scene.clearColor[1],
@@ -254,6 +255,8 @@ namespace CanvasToy {
         public setUplights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
             for (let index in scene.lights) {
                 let light = scene.lights[index];
+
+                // light properties pass
                 let diffuse = "lights[" + index + "].diffuse";
                 let specular = "lights[" + index + "].specular";
                 let idensity = "lights[" + index + "].idensity";
@@ -274,6 +277,9 @@ namespace CanvasToy {
                     type: DataType.float,
                     updator: () => { return light.idensity; },
                 });
+
+                // shadow map setup
+                light.shadowRtt = new RenderTargetTexture();
             }
         }
 
@@ -288,6 +294,10 @@ namespace CanvasToy {
                 }
             }
         };
+
+        private renderLight(light, scene) {
+
+        }
 
         private renderObject(camera: Camera, object: Object) {
             if (object instanceof Mesh) {

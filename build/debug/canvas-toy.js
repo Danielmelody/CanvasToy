@@ -3951,6 +3951,43 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var BufferForRender;
+    (function (BufferForRender) {
+        BufferForRender[BufferForRender["Color"] = 0] = "Color";
+        BufferForRender[BufferForRender["Depth"] = 1] = "Depth";
+        BufferForRender[BufferForRender["Stencil"] = 2] = "Stencil";
+    })(BufferForRender || (BufferForRender = {}));
+    var RenderTargetTexture = (function (_super) {
+        __extends(RenderTargetTexture, _super);
+        function RenderTargetTexture() {
+            _super.call(this);
+            this.bufferForRender = BufferForRender.Color;
+            this.enableColorBuffer = true;
+            this.enableDepthBuffer = false;
+            this.enableStencilBuffer = false;
+        }
+        Object.defineProperty(RenderTargetTexture.prototype, "renderBuffer", {
+            get: function () {
+                switch (this.bufferForRender) {
+                    case BufferForRender.Color:
+                        return this.colorBuffer;
+                    case BufferForRender.Depth:
+                        return this.depthBuffer;
+                    case BufferForRender.Stencil:
+                        return this.stencilBuffer;
+                    default:
+                        return this.colorBuffer;
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return RenderTargetTexture;
+    }(CanvasToy.Texture));
+    CanvasToy.RenderTargetTexture = RenderTargetTexture;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var Light = (function (_super) {
         __extends(Light, _super);
         function Light() {
@@ -3958,9 +3995,6 @@ var CanvasToy;
             this.diffuse = vec3.fromValues(1, 1, 1);
             this.specular = vec3.fromValues(1, 1, 1);
             this.idensity = 1.0;
-            this.paramterToWebgl = [
-                this.diffuse
-            ];
         }
         return Light;
     }(CanvasToy.Object3d));
@@ -3994,6 +4028,7 @@ var CanvasToy;
         __extends(PointLight, _super);
         function PointLight() {
             _super.call(this);
+            this.projectCamera = new CanvasToy.PerspectiveCamera();
         }
         return PointLight;
     }(CanvasToy.Light));
@@ -4149,13 +4184,10 @@ var CanvasToy;
             CanvasToy.gl.clearDepth(1.0);
             CanvasToy.gl.enable(CanvasToy.gl.DEPTH_TEST);
             CanvasToy.gl.depthFunc(CanvasToy.gl.LEQUAL);
-            this.renderQueue.push(function () {
-            });
             setTimeout(this.main, this.frameRate);
         }
-        Renderer.prototype.renderToTexture = function (scene, camera) {
+        Renderer.prototype.renderToTexture = function (scene, camera, rttTexture) {
             var _this = this;
-            var rttTexture = new CanvasToy.RenderTargetTexture(scene, camera);
             CanvasToy.gl.bindTexture(CanvasToy.gl.TEXTURE_2D, rttTexture.glTexture);
             CanvasToy.gl.texImage2D(CanvasToy.gl.TEXTURE_2D, 0, rttTexture.format, this.canvas.width, this.canvas.height, 0, rttTexture.format, CanvasToy.gl.UNSIGNED_BYTE, null);
             CanvasToy.gl.texParameteri(rttTexture.type, CanvasToy.gl.TEXTURE_WRAP_S, rttTexture.wrapS);
@@ -4164,11 +4196,18 @@ var CanvasToy;
             CanvasToy.gl.texParameteri(CanvasToy.gl.TEXTURE_2D, CanvasToy.gl.TEXTURE_MIN_FILTER, rttTexture.minFilter);
             rttTexture.frameBuffer = CanvasToy.gl.createFramebuffer();
             CanvasToy.gl.bindFramebuffer(CanvasToy.gl.FRAMEBUFFER, rttTexture.frameBuffer);
-            rttTexture.depthBuffer = CanvasToy.gl.createRenderbuffer();
-            CanvasToy.gl.bindRenderbuffer(CanvasToy.gl.RENDERBUFFER, rttTexture.depthBuffer);
-            CanvasToy.gl.renderbufferStorage(CanvasToy.gl.RENDERBUFFER, CanvasToy.gl.DEPTH_COMPONENT16, this.canvas.width, this.canvas.height);
-            CanvasToy.gl.framebufferTexture2D(CanvasToy.gl.FRAMEBUFFER, CanvasToy.gl.COLOR_ATTACHMENT0, CanvasToy.gl.TEXTURE_2D, rttTexture.glTexture, 0);
-            CanvasToy.gl.framebufferRenderbuffer(CanvasToy.gl.FRAMEBUFFER, CanvasToy.gl.DEPTH_ATTACHMENT, CanvasToy.gl.RENDERBUFFER, rttTexture.depthBuffer);
+            if (rttTexture.enableColorBuffer) {
+                rttTexture.colorBuffer = CanvasToy.gl.createRenderbuffer();
+                CanvasToy.gl.framebufferTexture2D(CanvasToy.gl.FRAMEBUFFER, CanvasToy.gl.COLOR_ATTACHMENT0, CanvasToy.gl.TEXTURE_2D, rttTexture.glTexture, 0);
+            }
+            if (rttTexture.enableDepthBuffer) {
+                rttTexture.depthBuffer = CanvasToy.gl.createRenderbuffer();
+                CanvasToy.gl.framebufferTexture2D(CanvasToy.gl.FRAMEBUFFER, CanvasToy.gl.DEPTH_ATTACHMENT, CanvasToy.gl.TEXTURE_2D, rttTexture.glTexture, 0);
+            }
+            if (rttTexture.enableDepthBuffer) {
+                rttTexture.stencilBuffer = CanvasToy.gl.createRenderbuffer();
+                CanvasToy.gl.framebufferTexture2D(CanvasToy.gl.FRAMEBUFFER, CanvasToy.gl.STENCIL_ATTACHMENT, CanvasToy.gl.TEXTURE_2D, rttTexture.glTexture, 0);
+            }
             if (CanvasToy.gl.checkFramebufferStatus(CanvasToy.gl.FRAMEBUFFER) !== CanvasToy.gl.FRAMEBUFFER_COMPLETE) {
                 console.log("frame buffer not completed");
             }
@@ -4178,7 +4217,7 @@ var CanvasToy;
             this.buildScene(scene, camera);
             this.renderQueue.push(function () {
                 CanvasToy.gl.bindFramebuffer(CanvasToy.gl.FRAMEBUFFER, rttTexture.frameBuffer);
-                CanvasToy.gl.bindRenderbuffer(CanvasToy.gl.RENDERBUFFER, rttTexture.depthBuffer);
+                CanvasToy.gl.bindRenderbuffer(CanvasToy.gl.RENDERBUFFER, rttTexture.colorBuffer);
                 CanvasToy.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
                 CanvasToy.gl.clear(CanvasToy.gl.DEPTH_BUFFER_BIT | CanvasToy.gl.COLOR_BUFFER_BIT);
                 for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
@@ -4331,6 +4370,7 @@ var CanvasToy;
                     type: CanvasToy.DataType.float,
                     updator: function () { return light.idensity; },
                 });
+                light.shadowRtt = new CanvasToy.RenderTargetTexture();
             };
             for (var index in scene.lights) {
                 _loop_1(index);
@@ -4347,6 +4387,8 @@ var CanvasToy;
             }
         };
         ;
+        Renderer.prototype.renderLight = function (light, scene) {
+        };
         Renderer.prototype.renderObject = function (camera, object) {
             if (object instanceof CanvasToy.Mesh) {
                 var mesh = object;
@@ -4466,19 +4508,6 @@ var CanvasToy;
         return CubeTexture;
     }(CanvasToy.Texture));
     CanvasToy.CubeTexture = CubeTexture;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var RenderTargetTexture = (function (_super) {
-        __extends(RenderTargetTexture, _super);
-        function RenderTargetTexture(scene, camera) {
-            _super.call(this);
-            this.scene = scene;
-            this.camera = camera;
-        }
-        return RenderTargetTexture;
-    }(CanvasToy.Texture));
-    CanvasToy.RenderTargetTexture = RenderTargetTexture;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
