@@ -7,7 +7,7 @@ function start() {
 
   var logo = new CanvasToy.Texture('../../images/chrome.png');
   var sphere = new CanvasToy.SphereGeometry(1, 0.1);
-  var material = new CanvasToy.Material({mainTexture: logo});
+  var material = new CanvasToy.Material({mainTexture : logo});
   var mesh = new CanvasToy.Mesh(sphere, material);
 
   // scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
@@ -18,7 +18,7 @@ function start() {
   light.idensity = 0.5;
   scene.addLight(light);
   var angle = 0.01;
-  mesh.translate(0, 0, -6.0);
+  mesh.translate([ 0, 0, -6.0 ]);
   var time = 0;
   mesh.rotateX(1);
   mesh.registerUpdate(() => {

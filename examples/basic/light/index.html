@@ -26,11 +26,11 @@
           color : vec3.fromValues(1, 1, 1),
           mainTexture: new CanvasToy.Texture2D(image)
       })]);
-    cube.translate(0, 0, -3);
+    cube.translate([0, 0, -6]);
     scene.addObject(cube);
     scene.addObject(camera);
 
-    scene.ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
+    scene.ambientLight = [0.1, 0.1, 0.1];
     var light = new CanvasToy.PointLight();
     light.position[2] = 10;
     scene.addLight(light);

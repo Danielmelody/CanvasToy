@@ -34,8 +34,8 @@
         mainTexture: new CanvasToy.Texture2D(image)
     })]);
 
-  node.addChild(mesh1);
-  node.addChild(mesh2)
+  mesh1.parent = node;
+  mesh2.parent = node;
   scene.addObject(node);
   scene.addObject(camera);
   scene.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);
