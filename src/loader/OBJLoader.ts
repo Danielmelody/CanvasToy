@@ -54,9 +54,9 @@ namespace CanvasToy {
             lines.forEach((expression: string) => {
                 let data: Array<number> = [];
                 expression.match(OBJLoader.numberPattern).forEach(
-                    () => {
+                    (floatNum) => {
                         if (expression !== "") {
-                            data.push(parseFloat(expression));
+                            data.push(parseFloat(floatNum));
                         }
                     }
                 );
@@ -73,7 +73,8 @@ namespace CanvasToy {
         }
 
         protected static buildUpMeshes(
-            content: string, unIndexedPositions: Array<Array<number>>,
+            content: string,
+            unIndexedPositions: Array<Array<number>>,
             unIndexedUVs: Array<Array<number>>,
             unIndexedNormals: Array<Array<number>>
         ): Object3d {

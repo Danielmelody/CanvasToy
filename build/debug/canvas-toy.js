@@ -4083,9 +4083,9 @@ var CanvasToy;
             }
             lines.forEach(function (expression) {
                 var data = [];
-                expression.match(OBJLoader.numberPattern).forEach(function () {
+                expression.match(OBJLoader.numberPattern).forEach(function (floatNum) {
                     if (expression !== "") {
-                        data.push(parseFloat(expression));
+                        data.push(parseFloat(floatNum));
                     }
                 });
                 result.push(data);
