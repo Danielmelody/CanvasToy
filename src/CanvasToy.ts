@@ -19,6 +19,6 @@ namespace CanvasToy {
         vec4,
         mat2,
         mat3,
-        mat4
+        mat4,
     }
 }

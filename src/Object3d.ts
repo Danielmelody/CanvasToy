@@ -12,7 +12,7 @@ namespace CanvasToy {
 
         public scene: Scene;
 
-        public children: Array<Object3d> = [];
+        public children: Object3d[] = [];
 
         public objectToWorldMatrix: Mat4Array = mat4.create();
 
@@ -29,8 +29,8 @@ namespace CanvasToy {
         protected _scaling: Vec3Array = vec3.fromValues(1, 1, 1);
         protected _rotation: QuatArray = quat.create();
 
-        protected updateEvents: Array<Function> = [];
-        protected startEvents: Array<Function> = [];
+        protected updateEvents: Function[] = [];
+        protected startEvents: Function[] = [];
 
         /**
          * Create a Object3d instance
@@ -245,7 +245,7 @@ namespace CanvasToy {
          * Start Animating object by keep calling update per frame
          */
         public start() {
-            for (let event of this.startEvents) {
+            for (const event of this.startEvents) {
                 event();
             }
         }
@@ -255,10 +255,10 @@ namespace CanvasToy {
          * @param  {number} dt delta time
          */
         public update(dt: number) {
-            for (let event of this.updateEvents) {
+            for (const event of this.updateEvents) {
                 event(dt);
             }
-            for (let child of this.children) {
+            for (const child of this.children) {
                 child.update(dt);
             }
         }
@@ -305,7 +305,7 @@ namespace CanvasToy {
                 this.localMatrix,
                 this.localRotation,
                 this.localPosition,
-                this.localScaling
+                this.localScaling,
             );
             if (!!this._parent) {
                 mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
@@ -320,7 +320,7 @@ namespace CanvasToy {
                 this._matrix,
                 this.rotation,
                 this.position,
-                this.scaling
+                this.scaling,
             );
             this.genOtherMatrixs();
             if (!!this._parent) {
@@ -331,7 +331,7 @@ namespace CanvasToy {
         }
 
         private applyToChildren() {
-            for (let child of this.children) {
+            for (const child of this.children) {
                 child.setTransformFromParent();
             }
         }

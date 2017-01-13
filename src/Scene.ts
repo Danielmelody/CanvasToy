@@ -5,9 +5,9 @@ namespace CanvasToy {
     export class Scene {
 
         // TODO: optimize objects storage management;
-        public objects: Array<Object3d> = [];
+        public objects: Object3d[] = [];
 
-        public lights: Array<Light> = [];
+        public lights: Light[] = [];
 
         public ambientLight: Vec3Array = vec3.fromValues(0, 0, 0);
 
@@ -15,7 +15,7 @@ namespace CanvasToy {
 
         public enableShadowMap: boolean = false;
 
-        public clearColor: Array<number> = [0, 0, 0, 0];
+        public clearColor: number[] = [0, 0, 0, 0];
 
         public programSetUp: boolean = false;
 
@@ -24,7 +24,7 @@ namespace CanvasToy {
         }
 
         public update(dt: number) {
-            for (let object of this.objects) {
+            for (const object of this.objects) {
                 if (!object.parent) {
                     object.update(dt);
                 }

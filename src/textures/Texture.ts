@@ -1,7 +1,7 @@
 /// <reference path="../CanvasToy.ts"/>
 
 namespace CanvasToy {
-    export abstract class Texture {
+    export class Texture {
         public glTexture: WebGLTexture;
         public textureCoord: number[] = [];
         public unit: number;
@@ -37,6 +37,6 @@ namespace CanvasToy {
             }
             this.dataCompleted = true;
             return true;
-        };
+        }
     }
 }

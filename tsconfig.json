@@ -6,7 +6,7 @@
         "noLib": false,
         "target": "es5",
         "sourceMap": true,
-        "allowJs": true
+        "declaration": true
     },
     "include":[
         "bower_components/gl-matrix/dist/gl-matrix.js",

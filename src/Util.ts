@@ -2,11 +2,11 @@ namespace CanvasToy {
 
     export enum ShaderType {
         VertexShader,
-        FragmentShader
+        FragmentShader,
     }
 
     export function mixin(toObject: Object, fromObject: Object) {
-        for (let property in fromObject) {
+        for (const property in fromObject) {
             if (toObject[property] instanceof Object) {
                 mixin(toObject[property], fromObject[property]);
             } else {
@@ -80,7 +80,7 @@ namespace CanvasToy {
     function linkShader(
         gl: WebGLRenderingContext,
         vertexShader: WebGLShader,
-        fragmentShader: WebGLShader
+        fragmentShader: WebGLShader,
     ): WebGLProgram {
         let shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
@@ -94,7 +94,7 @@ namespace CanvasToy {
 
     export function createEntileShader(
         gl: WebGLRenderingContext, vertexShaderSource: string,
-        fragmentShaderSource: string
+        fragmentShaderSource: string,
     ): WebGLProgram {
         let vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
         let fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);

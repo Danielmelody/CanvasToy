@@ -1,0 +1,14 @@
+{
+    "compilerOptions":{
+        "removeComments": true,
+        "target": "es5",
+        "allowJs": false,
+        "outFile": "index.js"
+    },
+    "include":[
+        "../typings/index.d.ts",
+        "../build/debug/canvas-toy.d.ts",
+        "**/*.ts"
+    ],
+   "compileOnSave": true
+}

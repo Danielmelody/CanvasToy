@@ -9,7 +9,7 @@ namespace CanvasToy {
 
     export enum RenderMode {
         Dynamic,
-        Static
+        Static,
     }
 
     export class Renderer {
@@ -22,7 +22,7 @@ namespace CanvasToy {
 
         public usedTextureNum: number = 0;
 
-        public renderTargets: Array<RenderTargetTexture> = [];
+        public renderTargets: Texture[] = [];
 
         public vertPrecision: string = "highp";
 
@@ -30,11 +30,13 @@ namespace CanvasToy {
 
         public isAnimating: boolean = false;
 
-        public renderQueue: Array<Function> = [];
+        public renderQueue: Function[] = [];
 
-        public scenes: Array<Scene> = [];
+        public fbos: FrameBuffer[] = [];
 
-        public cameras: Array<Camera> = [];
+        public scenes: Scene[] = [];
+
+        public cameras: Camera[] = [];
 
         public frameRate: number = 1000 / 60;
 
@@ -50,79 +52,70 @@ namespace CanvasToy {
             setTimeout(this.main, this.frameRate);
         }
 
-        public renderToTexture(scene: Scene, camera: Camera, rttTexture: RenderTargetTexture): RenderTargetTexture {
-            // bind texture
-            gl.bindTexture(gl.TEXTURE_2D, rttTexture.glTexture);
-            gl.texImage2D(gl.TEXTURE_2D,
-                0, rttTexture.format,
-                this.canvas.width,
-                this.canvas.height,
-                0,
-                rttTexture.format,
-                gl.UNSIGNED_BYTE,
-                null
-            );
-            gl.texParameteri(rttTexture.type, gl.TEXTURE_WRAP_S, rttTexture.wrapS);
-            gl.texParameteri(rttTexture.type, gl.TEXTURE_WRAP_T, rttTexture.wrapT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, rttTexture.magFilter);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, rttTexture.minFilter);
+        public createFrameBuffer(): FrameBuffer {
+            const fbo = new FrameBuffer();
+            this.fbos.push(fbo);
+            return fbo;
+        }
 
-            // create frame buffer, as rendering target
-            rttTexture.frameBuffer = gl.createFramebuffer();
-            gl.bindFramebuffer(gl.FRAMEBUFFER, rttTexture.frameBuffer);
-
-            // create render buffer for depth test
-            if (rttTexture.enableColorBuffer) {
-                rttTexture.colorBuffer = gl.createRenderbuffer();
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture.glTexture, 0);
-            }
-            if (rttTexture.enableDepthBuffer) {
-                rttTexture.depthBuffer = gl.createRenderbuffer();
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, rttTexture.glTexture, 0);
-            }
-            if (rttTexture.enableDepthBuffer) {
-                rttTexture.stencilBuffer = gl.createRenderbuffer();
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.TEXTURE_2D, rttTexture.glTexture, 0);
-            }
-
-            if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
-                console.log("frame buffer not completed"); // TODO: replace console.log with productive code
-            }
-
-            gl.bindTexture(gl.TEXTURE_2D, null);
-            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-            this.buildScene(scene, camera);
-
-            this.renderQueue.push(() => {
-                gl.bindFramebuffer(gl.FRAMEBUFFER, rttTexture.frameBuffer);
-                gl.bindRenderbuffer(gl.RENDERBUFFER, rttTexture.colorBuffer);
-                gl.clearColor(
-                    scene.clearColor[0],
-                    scene.clearColor[1],
-                    scene.clearColor[2],
-                    scene.clearColor[3]
-                );
-                gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-                for (let object of scene.objects) {
-                    this.renderObject(camera, object);
+        public renderFBO(
+            scene: Scene, camera: Camera) {
+            this.buildSingleRender(scene, camera);
+            for (let frameBuffer of this.fbos) {
+                frameBuffer = frameBuffer as FrameBuffer;
+                gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
+                for (const rboi in frameBuffer.rbos) {
+                    const renderBuffer: RenderBuffer = frameBuffer.rbos[rboi];
+                    const rttTexture = renderBuffer.targetTexture;
+                    if (rttTexture != null) {
+                        gl.bindTexture(gl.TEXTURE_2D, rttTexture.glTexture);
+                        gl.texImage2D(gl.TEXTURE_2D,
+                            0, rttTexture.format,
+                            this.canvas.width,
+                            this.canvas.height,
+                            0,
+                            rttTexture.format,
+                            gl.UNSIGNED_BYTE,
+                            null,
+                        );
+                        gl.framebufferTexture2D(
+                            gl.FRAMEBUFFER,
+                            renderBuffer.attachment,
+                            gl.TEXTURE_2D,
+                            rttTexture.glTexture,
+                            0);
+                        gl.bindTexture(gl.TEXTURE_2D, null);
+                        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+                    }
+                }
+                this.renderQueue.push(() => {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
+                    for (const rboi in frameBuffer.rbos) {
+                        const renderBuffer: RenderBuffer = frameBuffer.rbos[rboi];
+                        gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer.glRenderBuffer);
+                        gl.clearColor(
+                            scene.clearColor[0],
+                            scene.clearColor[1],
+                            scene.clearColor[2],
+                            scene.clearColor[3],
+                        );
+                        gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+                        for (const object of scene.objects) {
+                            this.renderObject(camera, object);
+                        }
+                        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+                    }
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                });
+                if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+                    console.log("frame buffer not completed"); // TODO: replace console.log with productive code
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-            });
-            return rttTexture;
+            }
         }
 
         public render(scene: Scene, camera: Camera) {
-            if (this.scenes.indexOf(scene) === -1) {
-                this.scenes.push(scene);
-                this.buildScene(scene, camera);
-            }
-            if (this.cameras.indexOf(camera) === -1) {
-                this.cameras.push(camera);
-                camera.adaptTargetRadio(this.canvas);
-            }
+            this.buildSingleRender(scene, camera);
             switch (this.renderMode) {
                 case RenderMode.Static:
                     this.renderQueue = [];
@@ -130,10 +123,10 @@ namespace CanvasToy {
                         scene.clearColor[0],
                         scene.clearColor[1],
                         scene.clearColor[2],
-                        scene.clearColor[3]
+                        scene.clearColor[3],
                     );
                     gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-                    for (let object of scene.objects) {
+                    for (const object of scene.objects) {
                         this.renderObject(camera, object);
                     }
                     break;
@@ -143,9 +136,9 @@ namespace CanvasToy {
                             scene.clearColor[0],
                             scene.clearColor[1],
                             scene.clearColor[2],
-                            scene.clearColor[3]
+                            scene.clearColor[3],
                         );
-                        for (let object of scene.objects) {
+                        for (const object of scene.objects) {
                             this.renderObject(camera, object);
                         }
                     });
@@ -155,13 +148,16 @@ namespace CanvasToy {
             }
         }
 
-        public buildScene(scene: Scene, camera: Camera) {
-            if (this.preloadRes.length > 0) {
+        public buildSingleRender(scene: Scene, camera: Camera) {
+            if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
             }
-            for (let object of scene.objects) {
+            this.cameras.push(camera);
+            this.scenes.push(scene);
+            camera.adaptTargetRadio(this.canvas);
+            for (const object of scene.objects) {
                 if (object instanceof Mesh) {
-                    let mesh = <Mesh>object;
+                    const mesh = object as Mesh;
                     this.makeMeshPrograms(scene, mesh, camera);
                 }
             }
@@ -181,10 +177,10 @@ namespace CanvasToy {
                 gl.blendFunc(gl.SRC_COLOR, gl.ONE_MINUS_SRC_COLOR);
             }
 
-            for (let material of mesh.materials) {
+            for (const material of mesh.materials) {
 
                 let cameraInScene = false;
-                for (let object of scene.objects) {
+                for (const object of scene.objects) {
                     if (object === camera) {
                         cameraInScene = true;
                         break;
@@ -200,7 +196,7 @@ namespace CanvasToy {
 
                 gl.useProgram(material.program.webGlProgram);
 
-                for (let textureName in material.program.textures) {
+                for (const textureName in material.program.textures) {
                     if (material.program.textures[textureName] !== undefined) {
                         this.loadTexture(material.program, textureName, material.program.textures[textureName]);
                     }
@@ -213,30 +209,34 @@ namespace CanvasToy {
         }
 
         public loadTexture(program: Program, sampler: string, texture: Texture) {
-            if (texture instanceof RenderTargetTexture) {
-                texture.unit = this.usedTextureNum;
-                this.usedTextureNum++;
-                program.textures.push(texture);
-                gl.useProgram(program.webGlProgram);
-                gl.activeTexture(gl.TEXTURE0 + texture.unit);
-                gl.bindTexture(texture.type, texture.glTexture);
+            // if (texture instanceof RenderTargetTexture) {
+            //     texture.unit = this.usedTextureNum;
+            //     this.usedTextureNum++;
+            //     program.textures.push(texture);
+            //     gl.useProgram(program.webGlProgram);
+            //     gl.activeTexture(gl.TEXTURE0 + texture.unit);
+            //     gl.bindTexture(texture.type, texture.glTexture);
+            //     return;
+            // }
+            if (!texture.image) {
+                this.addTextureToProgram(program, sampler, texture);
                 return;
             }
-            let lastOnload = texture.image.onload;
+            const lastOnload = texture.image.onload;
             if (texture.image.complete) {
-                this.addTexture(program, sampler, texture);
+                this.addTextureToProgram(program, sampler, texture);
                 return;
             }
             texture.image.onload = (et: Event) => {
                 if (lastOnload) {
                     lastOnload.apply(texture.image, et);
                 }
-                this.addTexture(program, sampler, texture);
+                this.addTextureToProgram(program, sampler, texture);
             };
 
         }
 
-        public addTexture(program: Program, sampler: string, texture: Texture) {
+        public addTextureToProgram(program: Program, sampler: string, texture: Texture) {
             texture.unit = this.usedTextureNum;
             this.usedTextureNum++;
             program.textures.push(texture);
@@ -253,14 +253,14 @@ namespace CanvasToy {
         }
 
         public setUplights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
-            for (let index in scene.lights) {
-                let light = scene.lights[index];
+            for (const index in scene.lights) {
+                const light = scene.lights[index];
 
                 // light properties pass
-                let diffuse = "lights[" + index + "].diffuse";
-                let specular = "lights[" + index + "].specular";
-                let idensity = "lights[" + index + "].idensity";
-                let position = "lights[" + index + "].position";
+                const diffuse = "lights[" + index + "].diffuse";
+                const specular = "lights[" + index + "].specular";
+                const idensity = "lights[" + index + "].idensity";
+                const position = "lights[" + index + "].position";
                 material.program.addUniform(diffuse, {
                     type: DataType.vec3,
                     updator: () => { return light.diffuse; },
@@ -279,13 +279,13 @@ namespace CanvasToy {
                 });
 
                 // shadow map setup
-                light.shadowRtt = new RenderTargetTexture();
+                light.shadowRtt = new Texture();
             }
         }
 
         private copyDataToVertexBuffer(geometry: Geometry) {
-            for (let name in geometry.attributes) {
-                let attribute: Attribute = geometry.attributes[name];
+            for (const name in geometry.attributes) {
+                const attribute: Attribute = geometry.attributes[name];
                 if (attribute !== undefined) {
                     gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
                     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
@@ -293,17 +293,17 @@ namespace CanvasToy {
 
                 }
             }
-        };
+        }
 
         private renderLight(light, scene) {
-
+            // Undo
         }
 
         private renderObject(camera: Camera, object: Object) {
             if (object instanceof Mesh) {
-                let mesh = <Mesh>object;
-                for (let material of mesh.materials) {
-                    let program = material.program;
+                const mesh = object as Mesh;
+                for (const material of mesh.materials) {
+                    const program = material.program;
                     if (program.enableDepthTest) {
                         gl.enable(gl.DEPTH_TEST);
                     } else {
@@ -315,12 +315,12 @@ namespace CanvasToy {
                         gl.disable(gl.STENCIL_TEST);
                     }*/
                     gl.useProgram(program.webGlProgram);
-                    for (let uniformName in program.uniforms) {
+                    for (const uniformName in program.uniforms) {
                         if (program.uniforms[uniformName] !== undefined) {
                             program.uniforms[uniformName](object, camera);
                         }
                     }
-                    for (let attributeName in program.attributes) {
+                    for (const attributeName in program.attributes) {
                         gl.bindBuffer(gl.ARRAY_BUFFER, program.attributes[attributeName].buffer);
                         gl.vertexAttribPointer(
                             program.attributeLocations[attributeName],
@@ -337,7 +337,7 @@ namespace CanvasToy {
         }
 
         private main = () => {
-            for (let renderCommand of this.renderQueue) {
+            for (const renderCommand of this.renderQueue) {
                 renderCommand();
             }
             if (this.stopped) {

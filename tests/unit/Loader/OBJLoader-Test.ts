@@ -9,14 +9,14 @@ namespace Testing {
                 });
                 it("should match '#' comments", () => {
                     str =
-                    `# comment
+                        `# comment
                     not-comment
                     `;
                     expect(str.match(pattern)[0]).toBe("# comment");
                 });
                 it("should not match no-'#' comments", () => {
                     str =
-                    `not-comment
+                        `not-comment
                     not-comment
                     `;
                     expect(str.match(pattern)).toBe(null);

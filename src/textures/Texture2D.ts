@@ -8,7 +8,7 @@ namespace CanvasToy {
             wrapS: number = gl.CLAMP_TO_EDGE,
             wrapT: number = gl.CLAMP_TO_EDGE,
             magFilter: number = gl.NEAREST,
-            minFilter: number = gl.NEAREST
+            minFilter: number = gl.NEAREST,
         ) {
             super(
                 image,
@@ -17,7 +17,7 @@ namespace CanvasToy {
                 wrapS,
                 wrapT,
                 magFilter,
-                minFilter
+                minFilter,
             );
         }
 

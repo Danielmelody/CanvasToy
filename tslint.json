@@ -1,7 +1,6 @@
 {
   "extends": "tslint:latest",
   "rules": {
-    "no-constructor-vars": true,
     "no-namespace": false,
     "no-reference": false,
     "variable-name": [true, "allow-leading-underscore"],
@@ -10,6 +9,7 @@
     "no-console": false,
     "interface-name": false,
     "forin": false,
+    "max-classes-per-file": false,
     "whitespace": [
         "check-branch",
         "check-decl",

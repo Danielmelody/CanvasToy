@@ -20,7 +20,7 @@ namespace CanvasToy {
             wrapS?: number,
             wrapT?: number,
             magFilter?: number,
-            minFilter?: number
+            minFilter?: number,
         ) {
             super(
                 null,
@@ -28,7 +28,7 @@ namespace CanvasToy {
                 wrapS,
                 wrapT,
                 magFilter,
-                minFilter
+                minFilter,
             );
             this.xneg = xneg;
             this.xpos = xpos;

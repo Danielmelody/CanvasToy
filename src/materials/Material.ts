@@ -15,7 +15,7 @@ namespace CanvasToy {
     export enum InterplotationMethod {
         Flat,
         Gouraud,
-        Phong
+        Phong,
     }
 
     export enum LightingMode {
@@ -23,15 +23,15 @@ namespace CanvasToy {
         Phong,
         Cell,
         Blinn_Phong,
-        Physical
+        Physical,
     }
 
     export interface IMaterial {
-        mainTexture: Texture;
-        color: Vec4Array;
-        interplotationMethod: InterplotationMethod;
-        lightingMode: LightingMode;
-        program: Program;
+        mainTexture?: Texture;
+        color?: Vec4Array;
+        interplotationMethod?: InterplotationMethod;
+        lightingMode?: LightingMode;
+        program?: Program;
     }
 
     export class Material implements IMaterial {
@@ -65,9 +65,9 @@ namespace CanvasToy {
 
         public shaderSource: { vertexShader: string, fragmentShader: string };
 
-        constructor(paramter?: IMaterial) {
+        constructor(paramter: IMaterial = {}) {
             if (!!paramter) {
-                for (let name in paramter) {
+                for (const name in paramter) {
                     this[name] = paramter[name];
                 }
             }

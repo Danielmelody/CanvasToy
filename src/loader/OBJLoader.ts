@@ -11,9 +11,9 @@ namespace CanvasToy {
             OBJLoader.fetch(url, (content: string) => {
                 // remove comment
                 content = content.replace(OBJLoader.commentPattern, "");
-                let positionlines: Array<string> = content.match(OBJLoader.vertexPattern);
-                let uvlines: Array<string> = content.match(OBJLoader.uvPattern);
-                let normallines: Array<string> = content.match(OBJLoader.normalPattern);
+                let positionlines: string[] = content.match(OBJLoader.vertexPattern);
+                let uvlines: string[] = content.match(OBJLoader.uvPattern);
+                let normallines: string[] = content.match(OBJLoader.normalPattern);
                 let unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
                 let unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
                 let unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
@@ -47,25 +47,25 @@ namespace CanvasToy {
         }
 
         protected static praiseAttibuteLines(lines) {
-            let result: Array<Array<number>> = [];
+            let result: number[][] = [];
             if (lines === null) {
                 return;
             }
             lines.forEach((expression: string) => {
-                let data: Array<number> = [];
+                let data: number[] = [];
                 expression.match(OBJLoader.numberPattern).forEach(
                     (floatNum) => {
                         if (expression !== "") {
                             data.push(parseFloat(floatNum));
                         }
-                    }
+                    },
                 );
                 result.push(data);
             });
             return result;
         }
 
-        protected static parseAsTriangle(faces: Array<string>, forEachFace: (face: Array<string>) => void) {
+        protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void) {
             for (let i = 0; i < faces.length - 2; ++i) {
                 let triangleFace = [faces[0], faces[i + 1], faces[i + 2]];
                 forEachFace(triangleFace);
@@ -74,9 +74,9 @@ namespace CanvasToy {
 
         protected static buildUpMeshes(
             content: string,
-            unIndexedPositions: Array<Array<number>>,
-            unIndexedUVs: Array<Array<number>>,
-            unIndexedNormals: Array<Array<number>>
+            unIndexedPositions: number[][],
+            unIndexedUVs: number[][],
+            unIndexedNormals: number[][],
         ): Object3d {
             let container: Object3d = new Object3d();
             let objects = content.split(OBJLoader.objectSplitPattern);

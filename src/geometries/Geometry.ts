@@ -18,7 +18,7 @@ namespace CanvasToy {
         }
 
         public addVertex(vertex: any) {
-            for (let attributeName in this.attributes) {
+            for (const attributeName in this.attributes) {
                 if (this.attributes[attributeName] !== undefined) {
                     if (vertex[attributeName] === undefined) {
                         return;
@@ -39,7 +39,7 @@ namespace CanvasToy {
 
         public getVertexByIndex(index: number) {
             let vertex: any = {};
-            for (let attributeName in this.attributes) {
+            for (const attributeName in this.attributes) {
                 vertex[attributeName] = [];
                 for (let i = 0; i < this.attributes[attributeName].stride; ++i) {
                     vertex[attributeName].push(

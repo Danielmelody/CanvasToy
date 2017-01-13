@@ -15,7 +15,7 @@ namespace CanvasToy {
             bottom: number = -1,
             top: number = 1,
             near: number = 0.001,
-            far: number = 10000
+            far: number = 10000,
         ) {
             super();
             this.left = left;

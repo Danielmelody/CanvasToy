@@ -9,13 +9,13 @@ namespace CanvasToy {
 
         public geometry: Geometry;
 
-        public materials: Array<Material> = [];
+        public materials: Material[] = [];
 
         public maps: Texture[] = [];
 
         public normalMatrix: Mat4Array = mat4.create();
 
-        constructor(geometry: Geometry, materials: Array<Material>) {
+        constructor(geometry: Geometry, materials: Material[]) {
             super();
             this.materials = materials;
             this.geometry = geometry;

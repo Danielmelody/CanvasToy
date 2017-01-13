@@ -11,7 +11,7 @@ namespace CanvasToy {
             aspect: number = 1,
             fovy: number = 45,
             near: number = 0.01,
-            far: number = 10000
+            far: number = 10000,
         ) {
             super();
             this.aspect = aspect;
