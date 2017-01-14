@@ -219,7 +219,7 @@ var CanvasToy;
             this.localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
         };
         Object3d.prototype.rotateZ = function (angle) {
-            this.localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
+            this.localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
         };
         Object3d.prototype.genOtherMatrixs = function () {
             mat4.invert(this.objectToWorldMatrix, this.matrix);
@@ -631,8 +631,8 @@ var CanvasToy;
             uniforms: {
                 modelViewProjectionMatrix: {
                     type: CanvasToy.DataType.mat4,
-                    updator: function (meshOnUpdate, cameraOnUpdate) {
-                        return new Float32Array(mat4.multiply(mat4.create(), cameraOnUpdate.projectionMatrix, mat4.multiply(mat4.create(), camera.objectToWorldMatrix, meshOnUpdate.matrix)));
+                    updator: function (mesh, camera) {
+                        return new Float32Array(mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.objectToWorldMatrix, mesh.matrix)));
                     },
                 },
                 color: !material.color ? undefined : {
@@ -650,8 +650,8 @@ var CanvasToy;
                 },
                 eyePos: !scene.openLight ? undefined : {
                     type: CanvasToy.DataType.vec4,
-                    updator: function (meshOnUpdate, cameraOnUpdate) {
-                        return vec4.fromValues(cameraOnUpdate.position[0], cameraOnUpdate.position[1], cameraOnUpdate.position[2], 1);
+                    updator: function (mesh, camera) {
+                        return vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1);
                     },
                 },
             },
@@ -1291,11 +1291,11 @@ var CanvasToy;
             }
         };
         Renderer.prototype.buildSingleRender = function (scene, camera) {
+            camera.adaptTargetRadio(this.canvas);
             if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
             }
             this.scenes.push(scene);
-            camera.adaptTargetRadio(this.canvas);
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
                 if (object instanceof CanvasToy.Mesh) {

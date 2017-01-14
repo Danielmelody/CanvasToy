@@ -33,7 +33,8 @@ examples.push((canvas: HTMLCanvasElement) => {
         scene.addObject(camera);
         scene.addObject(camera2);
         camera.translate([0, -8, 0]);
-        camera2.translate([0, 8, 0]);
+        camera2.translate([0, -8, 0]);
+        camera2.rotateZ(Math.PI);
         for (const childObj of object.children) {
             const child = childObj as CanvasToy.Mesh;
             child.materials = [red, green];
@@ -44,7 +45,6 @@ examples.push((canvas: HTMLCanvasElement) => {
         object.registUpdate(() => {
             time += 1 / 60;
             object.rotateY(0.01);
-            camera2.rotateY(0.01);
         });
         CanvasToy.engine.render(scene, camera2);
         CanvasToy.engine.render(scene, camera);

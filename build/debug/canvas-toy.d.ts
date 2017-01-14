@@ -217,7 +217,7 @@ declare namespace CanvasToy {
         uniforms: {
             modelViewProjectionMatrix: {
                 type: DataType;
-                updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => Float32Array;
+                updator: (mesh: Mesh, camera: Camera) => Float32Array;
             };
             color: {
                 type: DataType;
@@ -233,7 +233,7 @@ declare namespace CanvasToy {
             };
             eyePos: {
                 type: DataType;
-                updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => GLM.IArray;
+                updator: (mesh: Mesh, camera: Camera) => GLM.IArray;
             };
         };
         attributes: {

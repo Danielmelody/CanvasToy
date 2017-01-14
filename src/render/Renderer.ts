@@ -149,11 +149,11 @@ namespace CanvasToy {
         }
 
         public buildSingleRender(scene: Scene, camera: Camera) {
+            camera.adaptTargetRadio(this.canvas);
             if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
             }
             this.scenes.push(scene);
-            camera.adaptTargetRadio(this.canvas);
             for (const object of scene.objects) {
                 if (object instanceof Mesh) {
                     const mesh = object as Mesh;

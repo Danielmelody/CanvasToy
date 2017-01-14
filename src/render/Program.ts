@@ -280,11 +280,11 @@ namespace CanvasToy {
                 },
                 eyePos: !scene.openLight ? undefined : {
                     type: DataType.vec4,
-                    updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
+                    updator: (mesh: Mesh, camera: Camera) => {
                         return vec4.fromValues(
-                            cameraOnUpdate.position[0],
-                            cameraOnUpdate.position[1],
-                            cameraOnUpdate.position[2],
+                            camera.position[0],
+                            camera.position[1],
+                            camera.position[2],
                             1,
                         );
                     },

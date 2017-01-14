@@ -26,7 +26,8 @@ examples.push(function (canvas) {
         scene.addObject(camera);
         scene.addObject(camera2);
         camera.translate([0, -8, 0]);
-        camera2.translate([0, 8, 0]);
+        camera2.translate([0, -8, 0]);
+        camera2.rotateZ(Math.PI);
         for (var _i = 0, _a = object.children; _i < _a.length; _i++) {
             var childObj = _a[_i];
             var child = childObj;
@@ -38,7 +39,6 @@ examples.push(function (canvas) {
         object.registUpdate(function () {
             time += 1 / 60;
             object.rotateY(0.01);
-            camera2.rotateY(0.01);
         });
         CanvasToy.engine.render(scene, camera2);
         CanvasToy.engine.render(scene, camera);

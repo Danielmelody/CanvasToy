@@ -293,7 +293,7 @@ namespace CanvasToy {
          * @param  {number} angle angle (in radians) to rotate
          */
         public rotateZ(angle: number) {
-            this.localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
+            this.localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
         }
 
         protected genOtherMatrixs() {
