@@ -1,7 +1,7 @@
 /// <reference path="../../../build/debug/canvas-toy.d.ts"/>
 /// <reference path="../../../typings/index.d.ts"/>
 /// <reference path="../../index.ts"/>
-
+/*
 examples.push((canvas: HTMLCanvasElement) => {
     CanvasToy.setCanvas(canvas);
     const scenes = Array(2, 0).map(() => new CanvasToy.Scene());
@@ -40,3 +40,4 @@ examples.push((canvas: HTMLCanvasElement) => {
     CanvasToy.engine.renderFBO(scenes[0], cameras[0]);
     CanvasToy.engine.render(scenes[1], cameras[1]);
 });
+*/

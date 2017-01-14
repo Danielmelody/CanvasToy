@@ -455,7 +455,7 @@ var CanvasToy;
     }());
     CanvasToy.Attribute = Attribute;
     var Program = (function () {
-        function Program(passing) {
+        function Program(source, componentBuilder) {
             this.enableDepthTest = true;
             this.enableStencilTest = true;
             this.uniforms = {};
@@ -466,27 +466,44 @@ var CanvasToy;
             this.vertexPrecision = "highp";
             this.fragmentPrecision = "mediump";
             this.prefix = [];
-            this.passings = [];
-            this.passings.push(passing);
+            this.source = source;
+            this.componentBuilder = componentBuilder;
         }
-        Program.prototype.make = function (material, mesh, scene, camera) {
+        Program.prototype.make = function (mesh, scene, camera, material) {
             this.prefix = [
                 material.mainTexture ? "#define USE_TEXTURE " : "",
                 material.color ? "#define USE_COLOR " : "",
                 scene.openLight ? "#define OPEN_LIGHT \n#define LIGHT_NUM "
                     + scene.lights.length : "",
             ];
-            if (!!this.passings) {
-                var passes = this.passings.map(function (passing) { return passing(mesh, scene, camera, material); });
-                var finalPass_1 = {};
-                passes.forEach(function (pass) {
-                    CanvasToy.mixin(finalPass_1, pass);
-                });
-                this.rePass(finalPass_1);
+            this.webGlProgram = CanvasToy.createEntileShader(CanvasToy.gl, "precision " + this.vertexPrecision + " float;\n" + this.prefix.join("\n") + "\n"
+                + this.source.vertexShader, "precision " + this.fragmentPrecision + " float;\n" + this.prefix.join("\n") + "\n"
+                + this.source.fragmentShader);
+            var componets = this.componentBuilder(mesh, scene, camera, material);
+            this.faces = (componets.faces === undefined ? this.faces : componets.faces);
+            for (var nameInShader in componets.uniforms) {
+                if (componets.uniforms[nameInShader] !== undefined) {
+                    this.addUniform(nameInShader, componets.uniforms[nameInShader]);
+                }
             }
+            for (var sampler in componets.textures) {
+                this.textures[sampler] = componets.textures[sampler];
+            }
+            for (var nameInShader in componets.attributes) {
+                this.addAttribute(nameInShader, componets.attributes[nameInShader]);
+            }
+            this.checkState();
         };
-        Program.prototype.addPassing = function (passing) {
-            this.passings.push(passing);
+        Program.prototype.pass = function (mesh, camera, materiel) {
+            for (var uniformName in this.uniforms) {
+                if (this.uniforms[uniformName] !== undefined) {
+                    this.uniforms[uniformName](mesh, camera);
+                }
+            }
+            for (var attributeName in this.attributes) {
+                CanvasToy.gl.bindBuffer(CanvasToy.gl.ARRAY_BUFFER, this.attributes[attributeName].buffer);
+                CanvasToy.gl.vertexAttribPointer(this.attributeLocations[attributeName], this.attributes[attributeName].size, this.attributes[attributeName].type, false, 0, 0);
+            }
         };
         Program.prototype.checkState = function () {
             var maxIndex = 0;
@@ -573,14 +590,7 @@ var CanvasToy;
             }
             return result;
         };
-        Program.prototype.rePass = function (parameter) {
-            if (!!(parameter.vertexShader) || !!(parameter.fragmentShader) || !!(parameter.prefix)) {
-                this.vertexShader = parameter.vertexShader || this.vertexShader;
-                this.fragmentShader = parameter.fragmentShader || this.fragmentShader;
-                this.webGlProgram = CanvasToy.createEntileShader(CanvasToy.gl, "precision " + this.vertexPrecision + " float;\n" + this.prefix.join("\n") + "\n"
-                    + this.vertexShader, "precision " + this.fragmentPrecision + " float;\n" + this.prefix.join("\n") + "\n"
-                    + this.fragmentShader);
-            }
+        Program.prototype.addPassProcesser = function (parameter) {
             this.faces = (parameter.faces === undefined ? this.faces : parameter.faces);
             for (var nameInShader in parameter.uniforms) {
                 if (parameter.uniforms[nameInShader] !== undefined) {
@@ -737,7 +747,7 @@ var CanvasToy;
             }
             this.configShader();
             if (!this.program) {
-                this.program = new CanvasToy.Program(CanvasToy.defaultProgramPass);
+                this.program = new CanvasToy.Program(this.shaderSource, CanvasToy.defaultProgramPass);
             }
         }
         Material.prototype.configShader = function () {
@@ -1284,7 +1294,6 @@ var CanvasToy;
             if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
             }
-            this.cameras.push(camera);
             this.scenes.push(scene);
             camera.adaptTargetRadio(this.canvas);
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
@@ -1318,7 +1327,7 @@ var CanvasToy;
                     console.error("Camera has not been added in Scene. Rendering stopped");
                     return;
                 }
-                material.program.make(material, mesh, scene, camera);
+                material.program.make(mesh, scene, camera, material);
                 CanvasToy.gl.useProgram(material.program.webGlProgram);
                 for (var textureName in material.program.textures) {
                     if (material.program.textures[textureName] !== undefined) {
@@ -1416,16 +1425,14 @@ var CanvasToy;
                     else {
                         CanvasToy.gl.disable(CanvasToy.gl.DEPTH_TEST);
                     }
+                    if (program.enableStencilTest) {
+                        CanvasToy.gl.enable(CanvasToy.gl.STENCIL_TEST);
+                    }
+                    else {
+                        CanvasToy.gl.disable(CanvasToy.gl.STENCIL_TEST);
+                    }
                     CanvasToy.gl.useProgram(program.webGlProgram);
-                    for (var uniformName in program.uniforms) {
-                        if (program.uniforms[uniformName] !== undefined) {
-                            program.uniforms[uniformName](object, camera);
-                        }
-                    }
-                    for (var attributeName in program.attributes) {
-                        CanvasToy.gl.bindBuffer(CanvasToy.gl.ARRAY_BUFFER, program.attributes[attributeName].buffer);
-                        CanvasToy.gl.vertexAttribPointer(program.attributeLocations[attributeName], program.attributes[attributeName].size, program.attributes[attributeName].type, false, 0, 0);
-                    }
+                    program.pass(mesh, camera, material);
                     CanvasToy.gl.bindBuffer(CanvasToy.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
                     CanvasToy.gl.drawElements(CanvasToy.gl.TRIANGLES, mesh.geometry.faces.data.length, CanvasToy.gl.UNSIGNED_SHORT, 0);
                 }

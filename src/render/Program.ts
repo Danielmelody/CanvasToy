@@ -2,13 +2,16 @@
 
 namespace CanvasToy {
 
-    export interface IProgramPass {
+    export interface IProgramSource {
+        vertexShader?: string;
+        fragmentShader?: string;
+    }
+
+    export interface IProgramcomponentBuilder {
         faces?: Faces;
         uniforms?: any;
         attributes?: any;
         textures?: any;
-        vertexShader?: string;
-        fragmentShader?: string;
         prefix?: string[];
     }
 
@@ -18,6 +21,11 @@ namespace CanvasToy {
         constructor(data: number[]) {
             this.data = data;
         }
+    }
+
+    export interface IUniform {
+        type: DataType;
+        updator: (mesh?, camera?) => any;
     }
 
     export class Attribute {
@@ -39,7 +47,7 @@ namespace CanvasToy {
         }
     }
 
-    export class Program implements IProgramPass {
+    export class Program implements IProgramcomponentBuilder {
         public faces: Faces;
         public enableDepthTest: boolean = true;
         public enableStencilTest: boolean = true;
@@ -52,36 +60,66 @@ namespace CanvasToy {
         public textures: Texture[] = [];
         public vertexPrecision: string = "highp";
         public fragmentPrecision: string = "mediump";
-        public vertexShader: string;
-        public fragmentShader: string;
-
         public prefix: string[] = [];
 
-        private passings: Array<(mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramPass> = [];
+        private componentBuilder:
+        (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder;
 
-        constructor(passing: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramPass) {
-            this.passings.push(passing);
+        private source: IProgramSource;
+
+        constructor(
+            source: IProgramSource,
+            componentBuilder:
+                (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder) {
+            this.source = source;
+            this.componentBuilder = componentBuilder;
         }
 
-        public make(material: Material, mesh: Mesh, scene: Scene, camera: Camera) {
+        public make(mesh: Mesh, scene: Scene, camera: Camera, material: Material) {
             this.prefix = [
                 material.mainTexture ? "#define USE_TEXTURE " : "",
                 material.color ? "#define USE_COLOR " : "",
                 scene.openLight ? "#define OPEN_LIGHT \n#define LIGHT_NUM "
                     + scene.lights.length : "",
             ];
-            if (!!this.passings) {
-                const passes = this.passings.map((passing) => { return passing(mesh, scene, camera, material); });
-                const finalPass: any = {};
-                passes.forEach((pass) => {
-                    mixin(finalPass, pass);
-                });
-                this.rePass(finalPass);
+            this.webGlProgram = createEntileShader(gl,
+                "precision " + this.vertexPrecision + " float;\n" + this.prefix.join("\n") + "\n"
+                + this.source.vertexShader,
+                "precision " + this.fragmentPrecision + " float;\n" + this.prefix.join("\n") + "\n"
+                + this.source.fragmentShader);
+            const componets = this.componentBuilder(mesh, scene, camera, material);
+            this.faces = (componets.faces === undefined ? this.faces : componets.faces);
+            for (const nameInShader in componets.uniforms) {
+                if (componets.uniforms[nameInShader] !== undefined) {
+                    this.addUniform(nameInShader, componets.uniforms[nameInShader]);
+                }
             }
+            for (const sampler in componets.textures) {
+                this.textures[sampler] = componets.textures[sampler];
+            }
+            for (const nameInShader in componets.attributes) {
+                this.addAttribute(nameInShader, componets.attributes[nameInShader]);
+            }
+            this.checkState();
+
         }
 
-        public addPassing(passing: (mesh: Mesh, scene: Scene, camera: Camera) => IProgramPass) {
-            this.passings.push(passing);
+        public pass(mesh: Mesh, camera: Camera, materiel: Material) {
+            for (const uniformName in this.uniforms) {
+                if (this.uniforms[uniformName] !== undefined) {
+                    this.uniforms[uniformName](mesh, camera);
+                }
+            }
+            for (const attributeName in this.attributes) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.attributes[attributeName].buffer);
+                gl.vertexAttribPointer(
+                    this.attributeLocations[attributeName],
+                    this.attributes[attributeName].size,
+                    this.attributes[attributeName].type,
+                    false,
+                    0,
+                    0);
+            }
         }
 
         public checkState() {
@@ -104,7 +142,7 @@ namespace CanvasToy {
             gl.bindAttribLocation(this.webGlProgram, 0, name);
         }
 
-        public addUniform(nameInShader, uniform: { type: DataType, updator: (mesh?, camera?) => any }) {
+        public addUniform(nameInShader, uniform: IUniform) {
             gl.useProgram(this.webGlProgram);
             const location = this.getUniformLocation(nameInShader);
             switch (uniform.type) {
@@ -174,16 +212,7 @@ namespace CanvasToy {
             return result;
         }
 
-        private rePass(parameter: IProgramPass) {
-            if (!!(parameter.vertexShader) || !!(parameter.fragmentShader) || !!(parameter.prefix)) {
-                this.vertexShader = parameter.vertexShader || this.vertexShader;
-                this.fragmentShader = parameter.fragmentShader || this.fragmentShader;
-                this.webGlProgram = createEntileShader(gl,
-                    "precision " + this.vertexPrecision + " float;\n" + this.prefix.join("\n") + "\n"
-                    + this.vertexShader,
-                    "precision " + this.fragmentPrecision + " float;\n" + this.prefix.join("\n") + "\n"
-                    + this.fragmentShader);
-            }
+        private addPassProcesser(parameter: IProgramcomponentBuilder) {
             this.faces = (parameter.faces === undefined ? this.faces : parameter.faces);
             for (const nameInShader in parameter.uniforms) {
                 if (parameter.uniforms[nameInShader] !== undefined) {

@@ -152,7 +152,6 @@ namespace CanvasToy {
             if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
             }
-            this.cameras.push(camera);
             this.scenes.push(scene);
             camera.adaptTargetRadio(this.canvas);
             for (const object of scene.objects) {
@@ -192,7 +191,7 @@ namespace CanvasToy {
                     return;
                 }
 
-                material.program.make(material, mesh, scene, camera);
+                material.program.make(mesh, scene, camera, material);
 
                 gl.useProgram(material.program.webGlProgram);
 
@@ -309,27 +308,13 @@ namespace CanvasToy {
                     } else {
                         gl.disable(gl.DEPTH_TEST);
                     }
-                    /*if (program.enableStencilTest) {
+                    if (program.enableStencilTest) {
                         gl.enable(gl.STENCIL_TEST);
                     } else {
                         gl.disable(gl.STENCIL_TEST);
-                    }*/
+                    }
                     gl.useProgram(program.webGlProgram);
-                    for (const uniformName in program.uniforms) {
-                        if (program.uniforms[uniformName] !== undefined) {
-                            program.uniforms[uniformName](object, camera);
-                        }
-                    }
-                    for (const attributeName in program.attributes) {
-                        gl.bindBuffer(gl.ARRAY_BUFFER, program.attributes[attributeName].buffer);
-                        gl.vertexAttribPointer(
-                            program.attributeLocations[attributeName],
-                            program.attributes[attributeName].size,
-                            program.attributes[attributeName].type,
-                            false,
-                            0,
-                            0);
-                    }
+                    program.pass(mesh, camera, material);
                     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
                     gl.drawElements(gl.TRIANGLES, mesh.geometry.faces.data.length, gl.UNSIGNED_SHORT, 0);
                 }

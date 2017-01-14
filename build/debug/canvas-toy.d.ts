@@ -143,19 +143,25 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
-    interface IProgramPass {
+    interface IProgramSource {
+        vertexShader?: string;
+        fragmentShader?: string;
+    }
+    interface IProgramcomponentBuilder {
         faces?: Faces;
         uniforms?: any;
         attributes?: any;
         textures?: any;
-        vertexShader?: string;
-        fragmentShader?: string;
         prefix?: string[];
     }
     class Faces {
         buffer: WebGLBuffer;
         data: number[];
         constructor(data: number[]);
+    }
+    interface IUniform {
+        type: DataType;
+        updator: (mesh?, camera?) => any;
     }
     class Attribute {
         size: number;
@@ -171,7 +177,7 @@ declare namespace CanvasToy {
             stride?: number;
         });
     }
-    class Program implements IProgramPass {
+    class Program implements IProgramcomponentBuilder {
         faces: Faces;
         enableDepthTest: boolean;
         enableStencilTest: boolean;
@@ -184,22 +190,18 @@ declare namespace CanvasToy {
         textures: Texture[];
         vertexPrecision: string;
         fragmentPrecision: string;
-        vertexShader: string;
-        fragmentShader: string;
         prefix: string[];
-        private passings;
-        constructor(passing: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramPass);
-        make(material: Material, mesh: Mesh, scene: Scene, camera: Camera): void;
-        addPassing(passing: (mesh: Mesh, scene: Scene, camera: Camera) => IProgramPass): void;
+        private componentBuilder;
+        private source;
+        constructor(source: IProgramSource, componentBuilder: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder);
+        make(mesh: Mesh, scene: Scene, camera: Camera, material: Material): void;
+        pass(mesh: Mesh, camera: Camera, materiel: Material): void;
         checkState(): void;
         setAttribute0(name: string): void;
-        addUniform(nameInShader: any, uniform: {
-            type: DataType;
-            updator: (mesh?, camera?) => any;
-        }): void;
+        addUniform(nameInShader: any, uniform: IUniform): void;
         addAttribute(nameInShader: any, attribute: Attribute): void;
         private getUniformLocation(name);
-        private rePass(parameter);
+        private addPassProcesser(parameter);
         private getAttribLocation(name);
     }
     const defaultProgramPass: (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {

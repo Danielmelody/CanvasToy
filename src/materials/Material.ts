@@ -73,7 +73,7 @@ namespace CanvasToy {
             }
             this.configShader();
             if (!this.program) {
-                this.program = new Program(defaultProgramPass);
+                this.program = new Program(this.shaderSource, defaultProgramPass);
             }
         }
         public configShader() {
