@@ -254,13 +254,13 @@ namespace CanvasToy {
             uniforms: {
                 modelViewProjectionMatrix: {
                     type: DataType.mat4,
-                    updator: (meshOnUpdate: Mesh, cameraOnUpdate: Camera) => {
+                    updator: (mesh: Mesh, camera: Camera) => {
                         return new Float32Array(mat4.multiply(
                             mat4.create(),
-                            cameraOnUpdate.projectionMatrix,
+                            camera.projectionMatrix,
                             mat4.multiply(mat4.create(),
                                 camera.objectToWorldMatrix,
-                                meshOnUpdate.matrix),
+                                mesh.matrix),
                         ),
                         );
                     },
