@@ -15,23 +15,19 @@ namespace CanvasToy {
         public magFilter: number;
         public minFilter: number;
         constructor(
+            gl: WebGLRenderingContext,
             image?: HTMLImageElement,
-            type: number = gl.TEXTURE_2D,
-            format: number = gl.RGB,
-            wrapS: number = gl.CLAMP_TO_EDGE,
-            wrapT: number = gl.CLAMP_TO_EDGE,
-            magFilter: number = gl.NEAREST,
-            minFilter: number = gl.NEAREST) {
-            this.image = image;
-            this.type = type;
-            this.format = format;
-            this.wrapS = wrapS;
-            this.wrapT = wrapT;
-            this.magFilter = magFilter;
-            this.minFilter = minFilter;
+        ) {
+            this.type = gl.TEXTURE_2D;
+            this.format = gl.RGB;
+            this.wrapS = gl.CLAMP_TO_EDGE;
+            this.wrapT = gl.CLAMP_TO_EDGE;
+            this.magFilter = gl.NEAREST;
+            this.minFilter = gl.NEAREST;
             this.glTexture = gl.createTexture();
+            this.image = image;
         }
-        public setUpTextureData() {
+        public setUpTextureData(gl: WebGLRenderingContext) {
             if (this.dataCompleted) {
                 return false;
             }

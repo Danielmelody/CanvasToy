@@ -11,25 +11,15 @@ namespace CanvasToy {
         private count: number = 6;
 
         constructor(
+            gl: WebGLRenderingContext,
             xneg: HTMLImageElement,
             xpos: HTMLImageElement,
             yneg: HTMLImageElement,
             ypos: HTMLImageElement,
             zneg: HTMLImageElement,
             zpos: HTMLImageElement,
-            wrapS?: number,
-            wrapT?: number,
-            magFilter?: number,
-            minFilter?: number,
         ) {
-            super(
-                null,
-                gl.TEXTURE_CUBE_MAP,
-                wrapS,
-                wrapT,
-                magFilter,
-                minFilter,
-            );
+            super(gl);
             this.xneg = xneg;
             this.xpos = xpos;
             this.yneg = yneg;
@@ -44,8 +34,8 @@ namespace CanvasToy {
             this.zpos.onload = this.onLoad;
         }
 
-        public setUpTextureData() {
-            if (super.setUpTextureData()) {
+        public setUpTextureData(gl: WebGLRenderingContext) {
+            if (super.setUpTextureData(gl)) {
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xneg);
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xpos);
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.yneg);

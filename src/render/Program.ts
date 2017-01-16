@@ -16,10 +16,11 @@ namespace CanvasToy {
     }
 
     export class Faces {
-        public buffer: WebGLBuffer = gl.createBuffer();
+        public buffer: WebGLBuffer;
         public data: number[] = [];
-        constructor(data: number[]) {
+        constructor(gl: WebGLRenderingContext, data: number[]) {
             this.data = data;
+            this.buffer = gl.createBuffer()
         }
     }
 
@@ -34,8 +35,14 @@ namespace CanvasToy {
         public type: number;
         public index: number = 0;
         public stride: number = 0;
-        public buffer: WebGLBuffer = gl.createBuffer();
-        constructor(paramter: { type: number, size?: number, data?: number[], stride?: number }) {
+        public buffer: WebGLBuffer = null;
+        public gl: WebGLRenderingContext = null;
+        constructor(
+            gl: WebGLRenderingContext,
+            paramter: { type: number, size?: number, data?: number[], stride?: number },
+        ) {
+            this.buffer = gl.createBuffer();
+            this.gl = gl;
             for (const attributeInfo in paramter) {
                 this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
             }
@@ -48,6 +55,7 @@ namespace CanvasToy {
     }
 
     export class Program implements IProgramcomponentBuilder {
+        public gl: WebGLRenderingContext;
         public faces: Faces;
         public enableDepthTest: boolean = true;
         public enableStencilTest: boolean = true;
@@ -56,26 +64,29 @@ namespace CanvasToy {
         public attributeLocations = {};
         public attribute0: string;
         public webGlProgram: WebGLProgram;
-        public drawMode: number = gl.STATIC_DRAW;
         public textures: Texture[] = [];
         public vertexPrecision: string = "highp";
         public fragmentPrecision: string = "mediump";
         public prefix: string[] = [];
 
+        public drawMode = (gl: WebGLRenderingContext) => { return gl.STATIC_DRAW };
+
         private componentBuilder:
-        (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder;
+        (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => IProgramcomponentBuilder;
 
         private source: IProgramSource;
 
         constructor(
+            gl: WebGLRenderingContext,
             source: IProgramSource,
             componentBuilder:
                 (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder) {
+            this.gl = gl;
             this.source = source;
             this.componentBuilder = componentBuilder;
         }
 
-        public make(mesh: Mesh, scene: Scene, camera: Camera, material: Material) {
+        public make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material) {
             this.prefix = [
                 material.mainTexture ? "#define USE_TEXTURE " : "",
                 material.color ? "#define USE_COLOR " : "",
@@ -111,8 +122,8 @@ namespace CanvasToy {
                 }
             }
             for (const attributeName in this.attributes) {
-                gl.bindBuffer(gl.ARRAY_BUFFER, this.attributes[attributeName].buffer);
-                gl.vertexAttribPointer(
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.attributes[attributeName].buffer);
+                this.gl.vertexAttribPointer(
                     this.attributeLocations[attributeName],
                     this.attributes[attributeName].size,
                     this.attributes[attributeName].type,
@@ -139,51 +150,51 @@ namespace CanvasToy {
 
         public setAttribute0(name: string) {
             this.attribute0 = name;
-            gl.bindAttribLocation(this.webGlProgram, 0, name);
+            this.gl.bindAttribLocation(this.webGlProgram, 0, name);
         }
 
         public addUniform(nameInShader, uniform: IUniform) {
-            gl.useProgram(this.webGlProgram);
+            this.gl.useProgram(this.webGlProgram);
             const location = this.getUniformLocation(nameInShader);
             switch (uniform.type) {
                 case DataType.float:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        gl.uniform1f(location, uniform.updator(mesh, camera));
+                        this.gl.uniform1f(location, uniform.updator(mesh, camera));
                     };
                     break;
                 case DataType.int:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        gl.uniform1i(location, uniform.updator(mesh, camera));
+                        this.gl.uniform1i(location, uniform.updator(mesh, camera));
                     };
                     break;
                 case DataType.vec2:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
                         const value = uniform.updator(mesh, camera);
-                        gl.uniform2f(location, value[0], value[1]);
+                        this.gl.uniform2f(location, value[0], value[1]);
                     };
                     break;
                 case DataType.vec3:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
                         const value = uniform.updator(mesh, camera);
-                        gl.uniform3f(location, value[0], value[1], value[2]);
+                        this.gl.uniform3f(location, value[0], value[1], value[2]);
                     };
                     break;
                 case DataType.vec4:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
                         const value = uniform.updator(mesh, camera);
-                        gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                        this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
                     };
                     break;
                 case DataType.mat2:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        gl.uniformMatrix2fv(location, false, uniform.updator(mesh, camera));
+                        this.gl.uniformMatrix2fv(location, false, uniform.updator(mesh, camera));
                     };
                 case DataType.mat3:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        gl.uniformMatrix3fv(location, false, uniform.updator(mesh, camera));
+                        this.gl.uniformMatrix3fv(location, false, uniform.updator(mesh, camera));
                     }; case DataType.mat4:
                     this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        gl.uniformMatrix4fv(location, false, uniform.updator(mesh, camera));
+                        this.gl.uniformMatrix4fv(location, false, uniform.updator(mesh, camera));
                     };
                     break;
                 default: break;
@@ -195,16 +206,16 @@ namespace CanvasToy {
             if (location !== null && location !== -1) {
                 this.attributes[nameInShader] = attribute;
                 this.attributeLocations[nameInShader] = location;
-                gl.enableVertexAttribArray(location);
+                this.gl.enableVertexAttribArray(location);
             }
         }
 
         private getUniformLocation(name: string): WebGLUniformLocation {
-            if (gl === undefined || gl === null) {
+            if (this.gl === undefined || this.gl === null) {
                 console.error("WebGLRenderingContext has not been initialize!");
                 return null;
             }
-            const result = gl.getUniformLocation(this.webGlProgram, name);
+            const result = this.gl.getUniformLocation(this.webGlProgram, name);
             if (result === null) {
                 console.warn("uniform " + name + " not found!");
                 return null;
@@ -229,11 +240,11 @@ namespace CanvasToy {
         }
 
         private getAttribLocation(name: string): number {
-            if (gl === undefined || gl === null) {
+            if (this.gl === undefined || this.gl === null) {
                 console.error("WebGLRenderingContext has not been initialize!");
                 return null;
             }
-            const result = gl.getAttribLocation(this.webGlProgram, name);
+            const result = this.gl.getAttribLocation(this.webGlProgram, name);
             if (result === null) {
                 console.error("attribute " + name + " not found!");
                 return null;
@@ -245,8 +256,6 @@ namespace CanvasToy {
 
     export const defaultProgramPass = (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {
         return {
-            vertexShader: material.shaderSource.vertexShader,
-            fragmentShader: material.shaderSource.fragmentShader,
             faces: mesh.geometry.faces,
             textures: {
                 uMainTexture: material.mainTexture,

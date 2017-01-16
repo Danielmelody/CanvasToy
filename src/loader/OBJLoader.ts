@@ -7,17 +7,18 @@ namespace CanvasToy {
 
     export class OBJLoader {
 
-        public static load(url: string, onload: (meshes: Object3d) => void) {
+        public static load(gl: WebGLRenderingContext, url: string, onload: (meshes: Object3d) => void) {
             OBJLoader.fetch(url, (content: string) => {
                 // remove comment
                 content = content.replace(OBJLoader.commentPattern, "");
-                let positionlines: string[] = content.match(OBJLoader.vertexPattern);
-                let uvlines: string[] = content.match(OBJLoader.uvPattern);
-                let normallines: string[] = content.match(OBJLoader.normalPattern);
-                let unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
-                let unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
-                let unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
-                let container = OBJLoader.buildUpMeshes(content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                const positionlines: string[] = content.match(OBJLoader.vertexPattern);
+                const uvlines: string[] = content.match(OBJLoader.uvPattern);
+                const normallines: string[] = content.match(OBJLoader.normalPattern);
+                const unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
+                const unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
+                const unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
+                const container = OBJLoader.buildUpMeshes(
+                    gl, content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
                 onload(container);
             });
         }
@@ -34,7 +35,7 @@ namespace CanvasToy {
         protected static indexPattern = /f\s+([-+]?[0-9]*\.?[0-9]+ ?|\/)+/mg;
 
         protected static fetch(url: string, onload: (content: string) => void) {
-            let request = new XMLHttpRequest();
+            const request = new XMLHttpRequest();
             request.onreadystatechange = () => {
                 if (request.readyState === 4 && request.status === 200) {
                     if (onload) {
@@ -47,12 +48,12 @@ namespace CanvasToy {
         }
 
         protected static praiseAttibuteLines(lines) {
-            let result: number[][] = [];
+            const result: number[][] = [];
             if (lines === null) {
                 return;
             }
             lines.forEach((expression: string) => {
-                let data: number[] = [];
+                const data: number[] = [];
                 expression.match(OBJLoader.numberPattern).forEach(
                     (floatNum) => {
                         if (expression !== "") {
@@ -67,30 +68,31 @@ namespace CanvasToy {
 
         protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void) {
             for (let i = 0; i < faces.length - 2; ++i) {
-                let triangleFace = [faces[0], faces[i + 1], faces[i + 2]];
+                const triangleFace = [faces[0], faces[i + 1], faces[i + 2]];
                 forEachFace(triangleFace);
             }
         }
 
         protected static buildUpMeshes(
+            gl: WebGLRenderingContext,
             content: string,
             unIndexedPositions: number[][],
             unIndexedUVs: number[][],
             unIndexedNormals: number[][],
         ): Object3d {
-            let container: Object3d = new Object3d();
-            let objects = content.split(OBJLoader.objectSplitPattern);
+            const container: Object3d = new Object3d();
+            const objects = content.split(OBJLoader.objectSplitPattern);
             objects.splice(0, 1);
             objects.forEach((objectContent) => {
-                let geometry: Geometry = new Geometry();
-                let faces = objectContent.match(OBJLoader.indexPattern);
+                const geometry: Geometry = new Geometry(gl);
+                const faces = objectContent.match(OBJLoader.indexPattern);
                 if (faces !== null) {
                     faces.forEach((faceStr) => {
                         OBJLoader.parseAsTriangle(faceStr.match(OBJLoader.faceSplitVertPattern), (triangleFaces) => {
                             triangleFaces.forEach((perVertData) => {
-                                let match = perVertData.match(OBJLoader.facePerVertPattern);
+                                const match = perVertData.match(OBJLoader.facePerVertPattern);
                                 console.assert(match !== null && match[1] !== null, "obj file error");
-                                let positionIndex = parseInt(match[1], 0) - 1;
+                                const positionIndex = parseInt(match[1], 0) - 1;
                                 geometry.faces.data.push(geometry.attributes.position.data.length / 3);
                                 geometry.addVertex({
                                     position: unIndexedPositions[positionIndex],
@@ -103,7 +105,7 @@ namespace CanvasToy {
                         });
                     });
                 }
-                let mesh = new Mesh(geometry, [new Material()]);
+                const mesh = new Mesh(geometry, [new Material(gl)]);
                 mesh.parent = container;
             });
             return container;

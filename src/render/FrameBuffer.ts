@@ -11,20 +11,26 @@ namespace CanvasToy {
     export class RenderBuffer {
         public readonly frameBuffer: FrameBuffer;
         public attachment: number;
-        public glRenderBuffer: WebGLRenderbuffer = gl.createRenderbuffer();
+        public glRenderBuffer: WebGLRenderbuffer;
         public targetTexture: Texture;
-        constructor(frameBuffer: FrameBuffer) {
+        constructor(gl: WebGLRenderingContext, frameBuffer: FrameBuffer) {
             this.frameBuffer = frameBuffer;
+            this.glRenderBuffer = gl.createRenderbuffer();
         }
-        public toTexture(): Texture {
-            this.targetTexture = new Texture();
+        public toTexture(gl: WebGLRenderingContext): Texture {
+            this.targetTexture = new Texture(gl);
             return this.targetTexture;
         }
     }
 
     export class FrameBuffer {
-        public glFramebuffer: WebGLFramebuffer = gl.createFramebuffer();
+        public glFramebuffer: WebGLFramebuffer;
         public rbos: any = {};
+
+        constructor(gl: WebGLRenderingContext) {
+            this.glFramebuffer = gl.createFramebuffer();
+        }
+
         public getRenderBuffer(usage: BufferUsage): RenderBuffer {
             switch (usage) {
                 case BufferUsage.Color:
@@ -38,22 +44,22 @@ namespace CanvasToy {
             }
         }
 
-        public enableRenderBuffer(usage: BufferUsage) {
+        public enableRenderBuffer(gl: WebGLRenderingContext, usage: BufferUsage) {
             switch (usage) {
                 case BufferUsage.Color:
-                    this.rbos.color = new RenderBuffer(this);
+                    this.rbos.color = new RenderBuffer(gl, this);
                     this.rbos.color.attachment = gl.COLOR_ATTACHMENT0;
                     break;
                 case BufferUsage.Depth:
-                    this.rbos.depth = new RenderBuffer(this);
+                    this.rbos.depth = new RenderBuffer(gl, this);
                     this.rbos.depth.attachment = gl.DEPTH_ATTACHMENT;
                     break;
                 case BufferUsage.Stencil:
-                    this.rbos.stencil = new RenderBuffer(this);
+                    this.rbos.stencil = new RenderBuffer(gl, this);
                     this.rbos.stencil.attachment = gl.STENCIL_ATTACHMENT;
                     break;
                 default:
-                    this.rbos.color = new RenderBuffer(this);
+                    this.rbos.color = new RenderBuffer(gl, this);
                     this.rbos.color.attachment = gl.COLOR_ATTACHMENT0;
                     break;
             }

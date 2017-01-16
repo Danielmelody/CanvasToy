@@ -1,6 +1,4 @@
 declare namespace CanvasToy {
-    let engine: Renderer;
-    let gl: WebGLRenderingContext;
     let debug: boolean;
     interface Vec2Array extends GLM.IArray {
     }
@@ -119,10 +117,8 @@ declare namespace CanvasToy {
             normal: Attribute;
             flatNormal: Attribute;
         };
-        faces: {
-            data: any[];
-            buffer: WebGLBuffer;
-        };
+        faces: Faces;
+        constructor(gl: WebGLRenderingContext);
         setAttribute(name: any, attribute: Attribute): void;
         addVertex(vertex: any): void;
         removeAttribute(name: string): void;
@@ -133,12 +129,12 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class Mesh extends Object3d {
-        drawMode: number;
         geometry: Geometry;
         materials: Material[];
         maps: Texture[];
         normalMatrix: Mat4Array;
         constructor(geometry: Geometry, materials: Material[]);
+        drawMode(gl: WebGLRenderingContext): number;
         genOtherMatrixs(): void;
     }
 }
@@ -157,7 +153,7 @@ declare namespace CanvasToy {
     class Faces {
         buffer: WebGLBuffer;
         data: number[];
-        constructor(data: number[]);
+        constructor(gl: WebGLRenderingContext, data: number[]);
     }
     interface IUniform {
         type: DataType;
@@ -170,7 +166,8 @@ declare namespace CanvasToy {
         index: number;
         stride: number;
         buffer: WebGLBuffer;
-        constructor(paramter: {
+        gl: WebGLRenderingContext;
+        constructor(gl: WebGLRenderingContext, paramter: {
             type: number;
             size?: number;
             data?: number[];
@@ -178,6 +175,7 @@ declare namespace CanvasToy {
         });
     }
     class Program implements IProgramcomponentBuilder {
+        gl: WebGLRenderingContext;
         faces: Faces;
         enableDepthTest: boolean;
         enableStencilTest: boolean;
@@ -186,15 +184,15 @@ declare namespace CanvasToy {
         attributeLocations: {};
         attribute0: string;
         webGlProgram: WebGLProgram;
-        drawMode: number;
         textures: Texture[];
         vertexPrecision: string;
         fragmentPrecision: string;
         prefix: string[];
+        drawMode: (gl: WebGLRenderingContext) => number;
         private componentBuilder;
         private source;
-        constructor(source: IProgramSource, componentBuilder: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder);
-        make(mesh: Mesh, scene: Scene, camera: Camera, material: Material): void;
+        constructor(gl: WebGLRenderingContext, source: IProgramSource, componentBuilder: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder);
+        make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material): void;
         pass(mesh: Mesh, camera: Camera, materiel: Material): void;
         checkState(): void;
         setAttribute0(name: string): void;
@@ -205,12 +203,7 @@ declare namespace CanvasToy {
         private getAttribLocation(name);
     }
     const defaultProgramPass: (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {
-        vertexShader: string;
-        fragmentShader: string;
-        faces: {
-            data: any[];
-            buffer: WebGLBuffer;
-        };
+        faces: Faces;
         textures: {
             uMainTexture: Texture;
         };
@@ -266,8 +259,8 @@ declare namespace CanvasToy {
         wrapT: number;
         magFilter: number;
         minFilter: number;
-        constructor(image?: HTMLImageElement, type?: number, format?: number, wrapS?: number, wrapT?: number, magFilter?: number, minFilter?: number);
-        setUpTextureData(): boolean;
+        constructor(gl: WebGLRenderingContext, image?: HTMLImageElement);
+        setUpTextureData(gl: WebGLRenderingContext): boolean;
     }
 }
 declare namespace CanvasToy {
@@ -317,23 +310,23 @@ declare namespace CanvasToy {
             vertexShader: string;
             fragmentShader: string;
         };
-        constructor(paramter?: IMaterial);
+        constructor(gl: WebGLRenderingContext, paramter?: IMaterial);
         configShader(): void;
     }
 }
 declare namespace CanvasToy {
     class Water extends Mesh {
-        constructor();
+        constructor(gl: WebGLRenderingContext);
     }
 }
 declare namespace CanvasToy {
     class CubeGeometry extends Geometry {
-        constructor();
+        constructor(gl: WebGLRenderingContext);
     }
 }
 declare namespace CanvasToy {
     class RectGeometry extends Geometry {
-        constructor();
+        constructor(gl: WebGLRenderingContext);
     }
 }
 declare namespace CanvasToy {
@@ -364,7 +357,7 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class OBJLoader {
-        static load(url: string, onload: (meshes: Object3d) => void): void;
+        static load(gl: WebGLRenderingContext, url: string, onload: (meshes: Object3d) => void): void;
         protected static commentPattern: RegExp;
         protected static numberPattern: RegExp;
         protected static faceSplitVertPattern: RegExp;
@@ -377,7 +370,7 @@ declare namespace CanvasToy {
         protected static fetch(url: string, onload: (content: string) => void): void;
         protected static praiseAttibuteLines(lines: any): number[][];
         protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void): void;
-        protected static buildUpMeshes(content: string, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
+        protected static buildUpMeshes(gl: WebGLRenderingContext, content: string, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
     }
 }
 declare namespace CanvasToy {
@@ -391,24 +384,25 @@ declare namespace CanvasToy {
         attachment: number;
         glRenderBuffer: WebGLRenderbuffer;
         targetTexture: Texture;
-        constructor(frameBuffer: FrameBuffer);
-        toTexture(): Texture;
+        constructor(gl: WebGLRenderingContext, frameBuffer: FrameBuffer);
+        toTexture(gl: WebGLRenderingContext): Texture;
     }
     class FrameBuffer {
         glFramebuffer: WebGLFramebuffer;
         rbos: any;
+        constructor(gl: WebGLRenderingContext);
         getRenderBuffer(usage: BufferUsage): RenderBuffer;
-        enableRenderBuffer(usage: BufferUsage): void;
+        enableRenderBuffer(gl: WebGLRenderingContext, usage: BufferUsage): void;
     }
 }
 declare namespace CanvasToy {
-    function setCanvas(canvas: HTMLCanvasElement): void;
     enum RenderMode {
         Dynamic = 0,
         Static = 1,
     }
     class Renderer {
-        canvas: HTMLCanvasElement;
+        readonly canvas: HTMLCanvasElement;
+        readonly gl: WebGLRenderingContext;
         renderMode: RenderMode;
         preloadRes: any[];
         usedTextureNum: number;
@@ -463,15 +457,15 @@ declare namespace CanvasToy {
         zneg: HTMLImageElement;
         zpos: HTMLImageElement;
         private count;
-        constructor(xneg: HTMLImageElement, xpos: HTMLImageElement, yneg: HTMLImageElement, ypos: HTMLImageElement, zneg: HTMLImageElement, zpos: HTMLImageElement, wrapS?: number, wrapT?: number, magFilter?: number, minFilter?: number);
-        setUpTextureData(): boolean;
+        constructor(gl: WebGLRenderingContext, xneg: HTMLImageElement, xpos: HTMLImageElement, yneg: HTMLImageElement, ypos: HTMLImageElement, zneg: HTMLImageElement, zpos: HTMLImageElement);
+        setUpTextureData(gl: WebGLRenderingContext): boolean;
         private onLoad();
     }
 }
 declare namespace CanvasToy {
     class Texture2D extends Texture {
-        constructor(image: HTMLImageElement, format?: number, wrapS?: number, wrapT?: number, magFilter?: number, minFilter?: number);
-        setUpTextureData(): boolean;
+        constructor(gl: WebGLRenderingContext, image: HTMLImageElement);
+        setUpTextureData(gl: WebGLRenderingContext): boolean;
     }
 }
 declare namespace CanvasToy {

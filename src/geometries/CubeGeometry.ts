@@ -4,9 +4,8 @@ namespace CanvasToy {
 
     export class CubeGeometry extends Geometry {
 
-        constructor() {
-            super();
-
+        constructor(gl: WebGLRenderingContext) {
+            super(gl);
             this.attributes.position.data = [
                 -1.0, -1.0, 1.0,
                 1.0, -1.0, 1.0,

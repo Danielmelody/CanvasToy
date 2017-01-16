@@ -3,7 +3,7 @@
 /// <reference path="../../index.ts"/>
 
 examples.push((canvas: HTMLCanvasElement) => {
-    CanvasToy.setCanvas(canvas);
+    const renderer = new CanvasToy.Renderer(canvas);
     const scene = new CanvasToy.Scene();
     const camera = new CanvasToy.PerspectiveCamera();
     const camera2 = new CanvasToy.PerspectiveCamera();
@@ -21,14 +21,14 @@ examples.push((canvas: HTMLCanvasElement) => {
     scene.addLight(light);
     const image = new Image();
     image.src = "basic/images/sea.jpg";
-    const red = new CanvasToy.Material({
+    const red = new CanvasToy.Material(renderer.gl, {
         color: vec3.fromValues(1, 0, 0),
-        mainTexture: new CanvasToy.Texture2D(image,
-            CanvasToy.gl.RGB),
+        mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
     });
+    red.mainTexture.type = renderer.gl.RGB;
     const green =
-        new CanvasToy.Material({ color: [0, 1, 0] });
-    CanvasToy.OBJLoader.load("basic/models/teapot.obj", (object) => {
+        new CanvasToy.Material(renderer.gl, { color: [0, 1, 0] });
+    CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot.obj", (object) => {
         scene.addObject(object);
         scene.addObject(camera);
         scene.addObject(camera2);
@@ -46,7 +46,7 @@ examples.push((canvas: HTMLCanvasElement) => {
             time += 1 / 60;
             object.rotateY(0.01);
         });
-        CanvasToy.engine.render(scene, camera2);
-        CanvasToy.engine.render(scene, camera);
+        renderer.render(scene, camera2);
+        renderer.render(scene, camera);
     });
 });

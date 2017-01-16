@@ -16,6 +16,7 @@ namespace CanvasToy {
     }
 
     export function initWebwebglContext(canvas): WebGLRenderingContext {
+        let gl = undefined;
         try {
             gl = canvas.getContext("experimental-webgl");
         } catch (e) {

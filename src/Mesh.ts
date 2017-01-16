@@ -5,8 +5,6 @@ namespace CanvasToy {
 
     export class Mesh extends Object3d {
 
-        public drawMode: number = gl.STATIC_DRAW;
-
         public geometry: Geometry;
 
         public materials: Material[] = [];
@@ -19,6 +17,10 @@ namespace CanvasToy {
             super();
             this.materials = materials;
             this.geometry = geometry;
+        }
+
+        public drawMode(gl: WebGLRenderingContext): number {
+            return gl.STATIC_DRAW;
         }
 
         public genOtherMatrixs() {

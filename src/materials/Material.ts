@@ -65,7 +65,7 @@ namespace CanvasToy {
 
         public shaderSource: { vertexShader: string, fragmentShader: string };
 
-        constructor(paramter: IMaterial = {}) {
+        constructor(gl: WebGLRenderingContext, paramter: IMaterial = {}) {
             if (!!paramter) {
                 for (const name in paramter) {
                     this[name] = paramter[name];
@@ -73,7 +73,7 @@ namespace CanvasToy {
             }
             this.configShader();
             if (!this.program) {
-                this.program = new Program(this.shaderSource, defaultProgramPass);
+                this.program = new Program(gl, this.shaderSource, defaultProgramPass);
             }
         }
         public configShader() {

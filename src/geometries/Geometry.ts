@@ -4,14 +4,24 @@ namespace CanvasToy {
 
     export class Geometry {
 
-        public attributes = {
-            position: new Attribute({ type: DataType.float, size: 3, data: [] }),
-            uv: new Attribute({ type: DataType.float, size: 2, data: [] }),
-            normal: new Attribute({ type: DataType.float, size: 3, data: [] }),
-            flatNormal: new Attribute({ type: DataType.float, size: 3, data: [] }),
+        public attributes: {
+            position: Attribute,
+            uv: Attribute,
+            normal: Attribute,
+            flatNormal: Attribute,
         };
 
-        public faces = { data: [], buffer: gl.createBuffer() };
+        public faces: Faces;
+
+        constructor(gl: WebGLRenderingContext) {
+            this.attributes = {
+                position: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
+                uv: new Attribute(gl, { type: DataType.float, size: 2, data: [] }),
+                normal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
+                flatNormal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
+            };
+            this.faces = { data: [], buffer: gl.createBuffer() };
+        }
 
         public setAttribute(name, attribute: Attribute) {
             this.attributes[name] = attribute;
@@ -38,12 +48,12 @@ namespace CanvasToy {
         }
 
         public getVertexByIndex(index: number) {
-            let vertex: any = {};
+            const vertex: any = {};
             for (const attributeName in this.attributes) {
                 vertex[attributeName] = [];
                 for (let i = 0; i < this.attributes[attributeName].stride; ++i) {
                     vertex[attributeName].push(
-                        this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i]
+                        this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i],
                     );
                 }
             }
@@ -60,12 +70,12 @@ namespace CanvasToy {
 
         public generateFlatNormal() {
             for (let i = 0; i < this.faces.data.length; i += 3) {
-                let triangle = this.getTriangleByIndex(i / 3);
-                let flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
-                let flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
-                let flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
+                const triangle = this.getTriangleByIndex(i / 3);
+                const flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
+                const flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
+                const flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
 
-                let flat = [
+                const flat = [
                     flatX, flatY, flatZ,
                     flatX, flatY, flatZ,
                     flatX, flatY, flatZ,

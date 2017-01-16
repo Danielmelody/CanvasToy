@@ -1,6 +1,5 @@
 namespace CanvasToy {
-    export let engine: Renderer;
-    export let gl: WebGLRenderingContext = null;
+
     export let debug: boolean = true;
     export interface Vec2Array extends GLM.IArray { }
     export interface Vec3Array extends GLM.IArray { }
