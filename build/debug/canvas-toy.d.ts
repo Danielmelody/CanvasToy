@@ -253,12 +253,13 @@ declare namespace CanvasToy {
         dataCompleted: boolean;
         isReadyToUpdate: boolean;
         image?: HTMLImageElement;
-        type: number;
+        target: number;
         format: number;
         wrapS: number;
         wrapT: number;
         magFilter: number;
         minFilter: number;
+        type: number;
         constructor(gl: WebGLRenderingContext, image?: HTMLImageElement);
         setUpTextureData(gl: WebGLRenderingContext): boolean;
     }
@@ -374,25 +375,39 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
-    enum BufferUsage {
-        Color = 0,
-        Depth = 1,
-        Stencil = 2,
+    enum AttachmentType {
+        Texture = 0,
+        RenderBuffer = 1,
     }
-    class RenderBuffer {
+    class Attachment {
         readonly frameBuffer: FrameBuffer;
-        attachment: number;
         glRenderBuffer: WebGLRenderbuffer;
         targetTexture: Texture;
-        constructor(gl: WebGLRenderingContext, frameBuffer: FrameBuffer);
+        readonly attachmentCode: (gl) => number;
+        private _innerFormatForBuffer;
+        private _innerFormatForTexture;
+        private _type;
+        private _isAble;
+        constructor(frameBuffer: FrameBuffer, attachmentCode: (gl: WebGLRenderingContext) => number);
+        readonly innerFormatForBuffer: number;
+        readonly innerFormatForTexture: number;
+        readonly type: AttachmentType;
+        readonly isAble: boolean;
+        enable(): this;
+        disable(): this;
+        setInnerFormatForBuffer(innerFormatForBuffer: number): this;
+        setInnerFormatForTexture(innerFormatForTexture: number): this;
+        setType(gl: WebGLRenderingContext, type: AttachmentType): this;
         toTexture(gl: WebGLRenderingContext): Texture;
     }
     class FrameBuffer {
         glFramebuffer: WebGLFramebuffer;
-        rbos: any;
+        attachments: {
+            color: Attachment;
+            depth: Attachment;
+            stencil: Attachment;
+        };
         constructor(gl: WebGLRenderingContext);
-        getRenderBuffer(usage: BufferUsage): RenderBuffer;
-        enableRenderBuffer(gl: WebGLRenderingContext, usage: BufferUsage): void;
     }
 }
 declare namespace CanvasToy {
@@ -403,6 +418,7 @@ declare namespace CanvasToy {
     class Renderer {
         readonly canvas: HTMLCanvasElement;
         readonly gl: WebGLRenderingContext;
+        readonly ext: any;
         renderMode: RenderMode;
         preloadRes: any[];
         usedTextureNum: number;

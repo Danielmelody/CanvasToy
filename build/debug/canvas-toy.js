@@ -687,12 +687,13 @@ var CanvasToy;
             this.textureCoord = [];
             this.dataCompleted = false;
             this.isReadyToUpdate = false;
-            this.type = gl.TEXTURE_2D;
+            this.target = gl.TEXTURE_2D;
             this.format = gl.RGB;
             this.wrapS = gl.CLAMP_TO_EDGE;
             this.wrapT = gl.CLAMP_TO_EDGE;
             this.magFilter = gl.NEAREST;
             this.minFilter = gl.NEAREST;
+            this.type = gl.UNSIGNED_BYTE;
             this.glTexture = gl.createTexture();
             this.image = image;
         }
@@ -1109,61 +1110,101 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var BufferUsage;
-    (function (BufferUsage) {
-        BufferUsage[BufferUsage["Color"] = 0] = "Color";
-        BufferUsage[BufferUsage["Depth"] = 1] = "Depth";
-        BufferUsage[BufferUsage["Stencil"] = 2] = "Stencil";
-    })(BufferUsage = CanvasToy.BufferUsage || (CanvasToy.BufferUsage = {}));
-    var RenderBuffer = (function () {
-        function RenderBuffer(gl, frameBuffer) {
+    var AttachmentType;
+    (function (AttachmentType) {
+        AttachmentType[AttachmentType["Texture"] = 0] = "Texture";
+        AttachmentType[AttachmentType["RenderBuffer"] = 1] = "RenderBuffer";
+    })(AttachmentType = CanvasToy.AttachmentType || (CanvasToy.AttachmentType = {}));
+    var Attachment = (function () {
+        function Attachment(frameBuffer, attachmentCode) {
+            this._innerFormatForBuffer = -1;
+            this._innerFormatForTexture = -1;
+            this._isAble = true;
             this.frameBuffer = frameBuffer;
-            this.glRenderBuffer = gl.createRenderbuffer();
+            this.attachmentCode = attachmentCode;
         }
-        RenderBuffer.prototype.toTexture = function (gl) {
+        Object.defineProperty(Attachment.prototype, "innerFormatForBuffer", {
+            get: function () {
+                return this._innerFormatForBuffer;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Attachment.prototype, "innerFormatForTexture", {
+            get: function () {
+                return this._innerFormatForTexture;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Attachment.prototype, "type", {
+            get: function () {
+                return this._type;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Attachment.prototype, "isAble", {
+            get: function () {
+                return this._isAble;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Attachment.prototype.enable = function () {
+            this._isAble = true;
+            return this;
+        };
+        Attachment.prototype.disable = function () {
+            this._isAble = false;
+            return this;
+        };
+        Attachment.prototype.setInnerFormatForBuffer = function (innerFormatForBuffer) {
+            this._innerFormatForBuffer = innerFormatForBuffer;
+            return this;
+        };
+        Attachment.prototype.setInnerFormatForTexture = function (innerFormatForTexture) {
+            this._innerFormatForTexture = innerFormatForTexture;
+            return this;
+        };
+        Attachment.prototype.setType = function (gl, type) {
+            this._type = type;
+            if (type === AttachmentType.Texture) {
+                this.targetTexture = new CanvasToy.Texture(gl);
+                this.glRenderBuffer = null;
+            }
+            else {
+                this.glRenderBuffer = gl.createRenderbuffer();
+                this.targetTexture = null;
+            }
+            return this;
+        };
+        Attachment.prototype.toTexture = function (gl) {
             this.targetTexture = new CanvasToy.Texture(gl);
             return this.targetTexture;
         };
-        return RenderBuffer;
+        return Attachment;
     }());
-    CanvasToy.RenderBuffer = RenderBuffer;
+    CanvasToy.Attachment = Attachment;
     var FrameBuffer = (function () {
         function FrameBuffer(gl) {
-            this.rbos = {};
+            this.attachments = {
+                color: new Attachment(this, function (gl) { return gl.COLOR_ATTACHMENT0; }),
+                depth: new Attachment(this, function (gl) { return gl.DEPTH_ATTACHMENT; }),
+                stencil: new Attachment(this, function (gl) { return gl.STENCIL_ATTACHMENT; }),
+            };
             this.glFramebuffer = gl.createFramebuffer();
+            this.attachments.color.setType(gl, AttachmentType.Texture)
+                .setInnerFormatForBuffer(gl.RGBA4)
+                .setInnerFormatForTexture(gl.RGBA);
+            this.attachments.depth.setType(gl, AttachmentType.RenderBuffer)
+                .setInnerFormatForBuffer(gl.DEPTH_COMPONENT16)
+                .setInnerFormatForTexture(gl.DEPTH_COMPONENT);
+            this.attachments.stencil.setType(gl, AttachmentType.RenderBuffer)
+                .setInnerFormatForBuffer(gl.STENCIL_INDEX8)
+                .setInnerFormatForTexture(gl.STENCIL_INDEX)
+                .disable();
         }
-        FrameBuffer.prototype.getRenderBuffer = function (usage) {
-            switch (usage) {
-                case BufferUsage.Color:
-                    return this.rbos.color;
-                case BufferUsage.Depth:
-                    return this.rbos.depth;
-                case BufferUsage.Stencil:
-                    return this.rbos.stencil;
-                default:
-                    return this.rbos.color;
-            }
-        };
-        FrameBuffer.prototype.enableRenderBuffer = function (gl, usage) {
-            switch (usage) {
-                case BufferUsage.Color:
-                    this.rbos.color = new RenderBuffer(gl, this);
-                    this.rbos.color.attachment = gl.COLOR_ATTACHMENT0;
-                    break;
-                case BufferUsage.Depth:
-                    this.rbos.depth = new RenderBuffer(gl, this);
-                    this.rbos.depth.attachment = gl.DEPTH_ATTACHMENT;
-                    break;
-                case BufferUsage.Stencil:
-                    this.rbos.stencil = new RenderBuffer(gl, this);
-                    this.rbos.stencil.attachment = gl.STENCIL_ATTACHMENT;
-                    break;
-                default:
-                    this.rbos.color = new RenderBuffer(gl, this);
-                    this.rbos.color.attachment = gl.COLOR_ATTACHMENT0;
-                    break;
-            }
-        };
         return FrameBuffer;
     }());
     CanvasToy.FrameBuffer = FrameBuffer;
@@ -1180,6 +1221,7 @@ var CanvasToy;
             var _this = this;
             this.canvas = null;
             this.gl = null;
+            this.ext = null;
             this.renderMode = RenderMode.Dynamic;
             this.preloadRes = [];
             this.usedTextureNum = 0;
@@ -1205,6 +1247,7 @@ var CanvasToy;
             };
             this.canvas = canvas;
             this.gl = CanvasToy.initWebwebglContext(canvas);
+            this.ext = this.gl.getExtension("WEBGL_depth_texture");
             this.initMatrix();
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
@@ -1222,30 +1265,38 @@ var CanvasToy;
             var _loop_1 = function (frameBuffer) {
                 frameBuffer = frameBuffer;
                 this_1.gl.bindFramebuffer(this_1.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
-                for (var rboi in frameBuffer.rbos) {
-                    var renderBuffer = frameBuffer.rbos[rboi];
-                    var rttTexture = renderBuffer.targetTexture;
-                    if (rttTexture != null) {
-                        this_1.gl.bindTexture(this_1.gl.TEXTURE_2D, rttTexture.glTexture);
-                        this_1.gl.texImage2D(this_1.gl.TEXTURE_2D, 0, rttTexture.format, this_1.canvas.width, this_1.canvas.height, 0, rttTexture.format, this_1.gl.UNSIGNED_BYTE, null);
-                        this_1.gl.framebufferTexture2D(this_1.gl.FRAMEBUFFER, renderBuffer.attachment, this_1.gl.TEXTURE_2D, rttTexture.glTexture, 0);
-                        this_1.gl.bindTexture(this_1.gl.TEXTURE_2D, null);
-                        this_1.gl.bindRenderbuffer(this_1.gl.RENDERBUFFER, null);
+                for (var atti in frameBuffer.attachments) {
+                    var attachment = frameBuffer.attachments[atti];
+                    if (!attachment.isAble) {
+                        continue;
                     }
+                    switch (attachment.type) {
+                        case CanvasToy.AttachmentType.Texture:
+                            this_1.gl.bindTexture(this_1.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
+                            this_1.gl.texImage2D(this_1.gl.TEXTURE_2D, 0, attachment.innerFormatForTexture, this_1.canvas.width, this_1.canvas.height, 0, attachment.innerFormatForTexture, attachment.targetTexture.type, null);
+                            this_1.gl.framebufferTexture2D(this_1.gl.FRAMEBUFFER, attachment.attachmentCode(this_1.gl), this_1.gl.TEXTURE_2D, attachment.targetTexture.glTexture, 0);
+                            this_1.gl.bindTexture(this_1.gl.TEXTURE_2D, null);
+                            break;
+                        case CanvasToy.AttachmentType.RenderBuffer:
+                            this_1.gl.bindRenderbuffer(this_1.gl.RENDERBUFFER, attachment.glRenderBuffer);
+                            this_1.gl.renderbufferStorage(this_1.gl.RENDERBUFFER, attachment.innerFormatForBuffer, this_1.canvas.width, this_1.canvas.height);
+                            this_1.gl.framebufferRenderbuffer(this_1.gl.FRAMEBUFFER, attachment.attachmentCode(this_1.gl), this_1.gl.RENDERBUFFER, attachment.glRenderBuffer);
+                            break;
+                        default: console.assert(false);
+                    }
+                }
+                if (this_1.gl.checkFramebufferStatus(this_1.gl.FRAMEBUFFER) !== this_1.gl.FRAMEBUFFER_COMPLETE) {
+                    console.error("" + this_1.gl.getError());
                 }
                 this_1.renderQueue.push(function () {
                     _this.gl.bindFramebuffer(_this.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
-                    for (var rboi in frameBuffer.rbos) {
-                        var renderBuffer = frameBuffer.rbos[rboi];
-                        _this.gl.bindRenderbuffer(_this.gl.RENDERBUFFER, renderBuffer.glRenderBuffer);
-                        _this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
-                        _this.gl.clear(_this.gl.DEPTH_BUFFER_BIT | _this.gl.COLOR_BUFFER_BIT);
-                        for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                            var object = _a[_i];
-                            _this.renderObject(camera, object);
-                        }
-                        _this.gl.bindRenderbuffer(_this.gl.RENDERBUFFER, null);
+                    _this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
+                    _this.gl.clear(_this.gl.DEPTH_BUFFER_BIT | _this.gl.COLOR_BUFFER_BIT);
+                    for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                        var object = _a[_i];
+                        _this.renderObject(camera, object);
                     }
+                    _this.gl.bindRenderbuffer(_this.gl.RENDERBUFFER, null);
                     _this.gl.bindFramebuffer(_this.gl.FRAMEBUFFER, null);
                 });
                 if (this_1.gl.checkFramebufferStatus(this_1.gl.FRAMEBUFFER) !== this_1.gl.FRAMEBUFFER_COMPLETE) {
@@ -1359,11 +1410,11 @@ var CanvasToy;
             this.gl.useProgram(program.webGlProgram);
             this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
             this.gl.activeTexture(this.gl.TEXTURE0 + texture.unit);
-            this.gl.bindTexture(texture.type, texture.glTexture);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_WRAP_S, texture.wrapS);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_WRAP_T, texture.wrapT);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_MAG_FILTER, texture.magFilter);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_MIN_FILTER, texture.minFilter);
+            this.gl.bindTexture(texture.target, texture.glTexture);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_S, texture.wrapS);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_T, texture.wrapT);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MAG_FILTER, texture.magFilter);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MIN_FILTER, texture.minFilter);
             texture.setUpTextureData(this.gl);
             program.addUniform(sampler, { type: CanvasToy.DataType.int, updator: function () { return texture.unit; } });
         };
@@ -1537,7 +1588,7 @@ var CanvasToy;
         }
         Texture2D.prototype.setUpTextureData = function (gl) {
             if (_super.prototype.setUpTextureData.call(this, gl)) {
-                gl.texImage2D(this.type, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.image);
+                gl.texImage2D(this.target, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.image);
             }
             return true;
         };

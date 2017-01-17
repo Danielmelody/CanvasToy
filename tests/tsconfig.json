@@ -5,7 +5,7 @@
           "outFile":"build/canvas-toy-test.js",
           "target": "es5",
           "allowJs": true,
-          "sourceMap": true
+          "sourceMap": false
     },
     "include": [
         "../typings/index.d.ts",

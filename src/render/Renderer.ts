@@ -14,6 +14,8 @@ namespace CanvasToy {
 
         public readonly gl: WebGLRenderingContext = null;
 
+        public readonly ext = null;
+
         public renderMode: RenderMode = RenderMode.Dynamic;
 
         public preloadRes: any[] = [];
@@ -43,6 +45,7 @@ namespace CanvasToy {
         constructor(canvas: HTMLCanvasElement) {
             this.canvas = canvas;
             this.gl = initWebwebglContext(canvas);
+            this.ext = this.gl.getExtension("WEBGL_depth_texture");
             this.initMatrix();
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
@@ -62,47 +65,68 @@ namespace CanvasToy {
             for (let frameBuffer of this.fbos) {
                 frameBuffer = frameBuffer as FrameBuffer;
                 this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
-                for (const rboi in frameBuffer.rbos) {
-                    const renderBuffer: RenderBuffer = frameBuffer.rbos[rboi];
-                    const rttTexture = renderBuffer.targetTexture;
-                    if (rttTexture != null) {
-                        this.gl.bindTexture(this.gl.TEXTURE_2D, rttTexture.glTexture);
-                        this.gl.texImage2D(this.gl.TEXTURE_2D,
-                            0, rttTexture.format,
-                            this.canvas.width,
-                            this.canvas.height,
-                            0,
-                            rttTexture.format,
-                            this.gl.UNSIGNED_BYTE,
-                            null,
-                        );
-                        this.gl.framebufferTexture2D(
-                            this.gl.FRAMEBUFFER,
-                            renderBuffer.attachment,
-                            this.gl.TEXTURE_2D,
-                            rttTexture.glTexture,
-                            0);
-                        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-                        this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, null);
+                for (const atti in frameBuffer.attachments) {
+                    const attachment: Attachment = frameBuffer.attachments[atti];
+                    if (!attachment.isAble) {
+                        continue;
                     }
+                    switch (attachment.type) {
+                        case AttachmentType.Texture:
+                            this.gl.bindTexture(this.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
+                            this.gl.texImage2D(this.gl.TEXTURE_2D,
+                                0,
+                                attachment.innerFormatForTexture,
+                                this.canvas.width,
+                                this.canvas.height,
+                                0,
+                                attachment.innerFormatForTexture,
+                                attachment.targetTexture.type,
+                                null,
+                            );
+                            this.gl.framebufferTexture2D(
+                                this.gl.FRAMEBUFFER,
+                                attachment.attachmentCode(this.gl),
+                                this.gl.TEXTURE_2D,
+                                attachment.targetTexture.glTexture,
+                                0);
+                            this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+                            break;
+                        case AttachmentType.RenderBuffer:
+                            this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, attachment.glRenderBuffer);
+                            this.gl.renderbufferStorage(
+                                this.gl.RENDERBUFFER,
+                                attachment.innerFormatForBuffer,
+                                this.canvas.width,
+                                this.canvas.height,
+                            );
+                            this.gl.framebufferRenderbuffer(
+                                this.gl.FRAMEBUFFER,
+                                attachment.attachmentCode(this.gl),
+                                this.gl.RENDERBUFFER,
+                                attachment.glRenderBuffer,
+                            );
+                            break;
+                        default: console.assert(false);
+                    }
+
                 }
+                if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) !== this.gl.FRAMEBUFFER_COMPLETE) {
+                    console.error("" + this.gl.getError());
+                }
+
                 this.renderQueue.push(() => {
                     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
-                    for (const rboi in frameBuffer.rbos) {
-                        const renderBuffer: RenderBuffer = frameBuffer.rbos[rboi];
-                        this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, renderBuffer.glRenderBuffer);
-                        this.gl.clearColor(
-                            scene.clearColor[0],
-                            scene.clearColor[1],
-                            scene.clearColor[2],
-                            scene.clearColor[3],
-                        );
-                        this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-                        for (const object of scene.objects) {
-                            this.renderObject(camera, object);
-                        }
-                        this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, null);
+                    this.gl.clearColor(
+                        scene.clearColor[0],
+                        scene.clearColor[1],
+                        scene.clearColor[2],
+                        scene.clearColor[3],
+                    );
+                    this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+                    for (const object of scene.objects) {
+                        this.renderObject(camera, object);
                     }
+                    this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, null);
                     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
                 });
                 if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) !== this.gl.FRAMEBUFFER_COMPLETE) {
@@ -212,7 +236,7 @@ namespace CanvasToy {
             //     program.textures.push(texture);
             //     this.gl.useProgram(program.webGlProgram);
             //     this.gl.activeTexture(this.gl.TEXTURE0 + texture.unit);
-            //     this.gl.bindTexture(texture.type, texture.glTexture);
+            //     this.gl.bindTexture(texture.target, texture.glTexture);
             //     return;
             // }
             if (!texture.image) {
@@ -240,11 +264,11 @@ namespace CanvasToy {
             this.gl.useProgram(program.webGlProgram);
             this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
             this.gl.activeTexture(this.gl.TEXTURE0 + texture.unit);
-            this.gl.bindTexture(texture.type, texture.glTexture);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_WRAP_S, texture.wrapS);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_WRAP_T, texture.wrapT);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_MAG_FILTER, texture.magFilter);
-            this.gl.texParameteri(texture.type, this.gl.TEXTURE_MIN_FILTER, texture.minFilter);
+            this.gl.bindTexture(texture.target, texture.glTexture);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_S, texture.wrapS);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_T, texture.wrapT);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MAG_FILTER, texture.magFilter);
+            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MIN_FILTER, texture.minFilter);
             texture.setUpTextureData(this.gl);
             program.addUniform(sampler, { type: DataType.int, updator: () => { return texture.unit; } });
         }

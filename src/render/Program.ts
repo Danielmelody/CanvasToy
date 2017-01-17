@@ -20,7 +20,7 @@ namespace CanvasToy {
         public data: number[] = [];
         constructor(gl: WebGLRenderingContext, data: number[]) {
             this.data = data;
-            this.buffer = gl.createBuffer()
+            this.buffer = gl.createBuffer();
         }
     }
 

@@ -14,7 +14,7 @@ namespace CanvasToy {
 
         public setUpTextureData(gl: WebGLRenderingContext) {
             if (super.setUpTextureData(gl)) {
-                gl.texImage2D(this.type, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.image);
+                gl.texImage2D(this.target, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.image);
             }
             return true;
         }

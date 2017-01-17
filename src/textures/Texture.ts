@@ -8,22 +8,24 @@ namespace CanvasToy {
         public dataCompleted: boolean = false;
         public isReadyToUpdate: boolean = false;
         public image?: HTMLImageElement;
-        public type: number;
+        public target: number;
         public format: number;
         public wrapS: number;
         public wrapT: number;
         public magFilter: number;
         public minFilter: number;
+        public type: number;
         constructor(
             gl: WebGLRenderingContext,
             image?: HTMLImageElement,
         ) {
-            this.type = gl.TEXTURE_2D;
+            this.target = gl.TEXTURE_2D;
             this.format = gl.RGB;
             this.wrapS = gl.CLAMP_TO_EDGE;
             this.wrapT = gl.CLAMP_TO_EDGE;
             this.magFilter = gl.NEAREST;
             this.minFilter = gl.NEAREST;
+            this.type = gl.UNSIGNED_BYTE;
             this.glTexture = gl.createTexture();
             this.image = image;
         }

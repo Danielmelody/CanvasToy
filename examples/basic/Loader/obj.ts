@@ -25,7 +25,6 @@ examples.push((canvas: HTMLCanvasElement) => {
         color: vec3.fromValues(1, 0, 0),
         mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
     });
-    red.mainTexture.type = renderer.gl.RGB;
     const green =
         new CanvasToy.Material(renderer.gl, { color: [0, 1, 0] });
     CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot.obj", (object) => {

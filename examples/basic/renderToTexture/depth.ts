@@ -26,7 +26,10 @@ examples.push((canvas: HTMLCanvasElement) => {
     scenes[0].addObject(cubes[0]);
 
     const fbo = renderer.createFrameBuffer();
-    const rttTexture = fbo.attachments.color.targetTexture;
+    fbo.attachments.depth
+    .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
+    .targetTexture.type = renderer.gl.UNSIGNED_SHORT;
+    const rttTexture = fbo.attachments.depth.targetTexture;
 
     cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {
         mainTexture: rttTexture,
