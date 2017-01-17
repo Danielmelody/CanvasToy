@@ -680,23 +680,124 @@ var CanvasToy;
     CanvasToy.interploters__phong_frag = "#ifdef USE_COLOR // color declaration\nuniform vec4 color;\n#endif\n\n#ifdef USE_TEXTURE // texture declaration\nvarying vec2 vMainUV;\nuniform sampler2D uMainTexture;\nvec4 textureColor;\n#endif\n\n#ifdef OPEN_LIGHT\nstruct Light {\n    vec3 specular;\n    vec3 diffuse;\n    float idensity;\n    vec4 position;\n    bool directional;\n};\nvarying vec4 vPosition;\nvarying vec3 vNormal;\nuniform vec3 ambient;\nuniform vec4 eyePos;\nvec3 totalLighting;\nuniform Light lights[LIGHT_NUM];\n#endif\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#ifdef USE_COLOR\n    gl_FragColor = color;\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(vPosition, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4.0, lights[index].idensity);\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
     CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec4 vPosition;\nvarying vec3 vNormal;\n#endif\n\n// #ifdef SHOW_LIGHT_POS\n\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef USE_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
 })(CanvasToy || (CanvasToy = {}));
+function builder(_thisArg) {
+    return _thisArg;
+}
 var CanvasToy;
 (function (CanvasToy) {
     var Texture = (function () {
         function Texture(gl, image) {
-            this.textureCoord = [];
             this.dataCompleted = false;
             this.isReadyToUpdate = false;
-            this.target = gl.TEXTURE_2D;
-            this.format = gl.RGB;
-            this.wrapS = gl.CLAMP_TO_EDGE;
-            this.wrapT = gl.CLAMP_TO_EDGE;
-            this.magFilter = gl.NEAREST;
-            this.minFilter = gl.NEAREST;
-            this.type = gl.UNSIGNED_BYTE;
+            this.setTarget(gl.TEXTURE_2D)
+                .setFormat(gl.RGB)
+                .setWrapS(gl.CLAMP_TO_EDGE)
+                .setWrapT(gl.CLAMP_TO_EDGE)
+                .setMagFilter(gl.NEAREST)
+                .setMinFilter(gl.NEAREST)
+                .setType(gl.UNSIGNED_BYTE);
             this.glTexture = gl.createTexture();
-            this.image = image;
+            this._image = image;
         }
+        Object.defineProperty(Texture.prototype, "unit", {
+            get: function () {
+                return this._unit;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "image", {
+            get: function () {
+                return this._image;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "target", {
+            get: function () {
+                return this._target;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "format", {
+            get: function () {
+                return this._format;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "wrapS", {
+            get: function () {
+                return this._wrapS;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "wrapT", {
+            get: function () {
+                return this._wrapT;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "magFilter", {
+            get: function () {
+                return this._magFilter;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "minFilter", {
+            get: function () {
+                return this._minFilter;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Texture.prototype, "type", {
+            get: function () {
+                return this._type;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Texture.prototype.setUnit = function (_unit) {
+            this._unit = _unit;
+            return this;
+        };
+        Texture.prototype.setImage = function (_image) {
+            this._image = _image;
+            return this;
+        };
+        Texture.prototype.setTarget = function (_target) {
+            this._target = _target;
+            return this;
+        };
+        Texture.prototype.setFormat = function (_format) {
+            this._format = _format;
+            return this;
+        };
+        Texture.prototype.setWrapS = function (_wrapS) {
+            this._wrapS = _wrapS;
+            return this;
+        };
+        Texture.prototype.setWrapT = function (_wrapT) {
+            this._wrapT = _wrapT;
+            return this;
+        };
+        Texture.prototype.setMagFilter = function (_magFilter) {
+            this._magFilter = _magFilter;
+            return this;
+        };
+        Texture.prototype.setMinFilter = function (_minFilter) {
+            this._minFilter = _minFilter;
+            return this;
+        };
+        Texture.prototype.setType = function (_type) {
+            this._type = _type;
+            return this;
+        };
         Texture.prototype.setUpTextureData = function (gl) {
             if (this.dataCompleted) {
                 return false;
@@ -1404,7 +1505,7 @@ var CanvasToy;
             };
         };
         Renderer.prototype.addTextureToProgram = function (program, sampler, texture) {
-            texture.unit = this.usedTextureNum;
+            texture.setUnit(this.usedTextureNum);
             this.usedTextureNum++;
             program.textures.push(texture);
             this.gl.useProgram(program.webGlProgram);
@@ -1588,7 +1689,7 @@ var CanvasToy;
         }
         Texture2D.prototype.setUpTextureData = function (gl) {
             if (_super.prototype.setUpTextureData.call(this, gl)) {
-                gl.texImage2D(this.target, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.image);
+                gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
             }
             return true;
         };

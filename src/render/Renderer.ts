@@ -258,7 +258,7 @@ namespace CanvasToy {
         }
 
         public addTextureToProgram(program: Program, sampler: string, texture: Texture) {
-            texture.unit = this.usedTextureNum;
+            texture.setUnit(this.usedTextureNum);
             this.usedTextureNum++;
             program.textures.push(texture);
             this.gl.useProgram(program.webGlProgram);

@@ -6,7 +6,8 @@
         "noLib": false,
         "target": "es5",
         "sourceMap": true,
-        "declaration": true
+        "declaration": true,
+        "experimentalDecorators": true
     },
     "include":[
         "bower_components/gl-matrix/dist/gl-matrix.js",

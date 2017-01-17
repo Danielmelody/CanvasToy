@@ -12,8 +12,8 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     const image = new Image();
     image.src = "basic/images/chrome.png";
-    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image);
-    cubes[0].materials[0].mainTexture.format = renderer.gl.RGBA;
+    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
+        .setFormat(renderer.gl.RGBA);
     cameras[0].position = [0, 0, 5];
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);

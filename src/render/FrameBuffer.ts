@@ -19,7 +19,7 @@ namespace CanvasToy {
         private _type: AttachmentType;
         private _isAble = true;
 
-        constructor(frameBuffer: FrameBuffer, attachmentCode: (gl: WebGLRenderingContext) => number ) {
+        constructor(frameBuffer: FrameBuffer, attachmentCode: (gl: WebGLRenderingContext) => number) {
             this.frameBuffer = frameBuffer;
             this.attachmentCode = attachmentCode;
         }

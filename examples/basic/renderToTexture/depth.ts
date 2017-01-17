@@ -12,8 +12,8 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     const image = new Image();
     image.src = "basic/images/chrome.png";
-    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image);
-    cubes[0].materials[0].mainTexture.format = renderer.gl.RGBA;
+    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
+        .setFormat(renderer.gl.RGBA);
     cameras[0].position = [0, 0, 5];
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
@@ -27,8 +27,8 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     const fbo = renderer.createFrameBuffer();
     fbo.attachments.depth
-    .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
-    .targetTexture.type = renderer.gl.UNSIGNED_SHORT;
+        .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
+        .targetTexture.setType(renderer.gl.UNSIGNED_SHORT);
     const rttTexture = fbo.attachments.depth.targetTexture;
 
     cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {

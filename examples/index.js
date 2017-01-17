@@ -75,8 +75,8 @@ examples.push(function (canvas) {
     var cubes = [new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl)])];
     var image = new Image();
     image.src = "basic/images/chrome.png";
-    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image);
-    cubes[0].materials[0].mainTexture.format = renderer.gl.RGBA;
+    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
+        .setFormat(renderer.gl.RGBA);
     cameras[0].position = [0, 0, 5];
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
@@ -107,8 +107,6 @@ examples.push(function (canvas) {
 });
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
-    console.dir(renderer.gl);
-    console.assert(renderer.ext != null);
     var scenes = Array(2, 0).map(function () { return new CanvasToy.Scene(); });
     var cameras = Array(2, 0).map(function () { return new CanvasToy.PerspectiveCamera(); });
     var light = new CanvasToy.PointLight();
@@ -116,22 +114,23 @@ examples.push(function (canvas) {
     var cubes = [new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl)])];
     var image = new Image();
     image.src = "basic/images/chrome.png";
-    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image);
-    cubes[0].materials[0].mainTexture.format = renderer.gl.RGBA;
+    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
+        .setFormat(renderer.gl.RGBA);
     cameras[0].position = [0, 0, 5];
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     light.idensity = 1;
     light.position = [100, 0, 100];
-    light.diffuse = [0, 1, 1];
+    light.diffuse = [1, 1, 1];
+    light.specular = [1, 1, 0.3];
     scenes[0].addLight(light);
     scenes[0].addObject(cameras[0]);
     scenes[0].addObject(cubes[0]);
     var fbo = renderer.createFrameBuffer();
-    fbo.attachments.depth.setType(renderer.gl, CanvasToy.AttachmentType.Texture);
-    fbo.attachments.color.setType(renderer.gl, CanvasToy.AttachmentType.RenderBuffer);
+    fbo.attachments.depth
+        .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
+        .targetTexture.setType(renderer.gl.UNSIGNED_SHORT);
     var rttTexture = fbo.attachments.depth.targetTexture;
-    rttTexture.type = renderer.gl.UNSIGNED_SHORT;
     cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {
             mainTexture: rttTexture,
         })]));

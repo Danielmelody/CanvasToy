@@ -245,22 +245,40 @@ declare module CanvasToy {
     var interploters__phong_frag: string;
     var interploters__phong_vert: string;
 }
+declare function builder(_thisArg: any): any;
 declare namespace CanvasToy {
     class Texture {
-        glTexture: WebGLTexture;
-        textureCoord: number[];
-        unit: number;
+        readonly glTexture: WebGLTexture;
         dataCompleted: boolean;
         isReadyToUpdate: boolean;
-        image?: HTMLImageElement;
-        target: number;
-        format: number;
-        wrapS: number;
-        wrapT: number;
-        magFilter: number;
-        minFilter: number;
-        type: number;
+        private _unit;
+        private _image;
+        private _target;
+        private _format;
+        private _wrapS;
+        private _wrapT;
+        private _magFilter;
+        private _minFilter;
+        private _type;
         constructor(gl: WebGLRenderingContext, image?: HTMLImageElement);
+        readonly unit: number;
+        readonly image: HTMLImageElement;
+        readonly target: number;
+        readonly format: number;
+        readonly wrapS: number;
+        readonly wrapT: number;
+        readonly magFilter: number;
+        readonly minFilter: number;
+        readonly type: number;
+        setUnit(_unit: number): this;
+        setImage(_image: HTMLImageElement): this;
+        setTarget(_target: number): this;
+        setFormat(_format: number): this;
+        setWrapS(_wrapS: number): this;
+        setWrapT(_wrapT: number): this;
+        setMagFilter(_magFilter: number): this;
+        setMinFilter(_minFilter: number): this;
+        setType(_type: number): this;
         setUpTextureData(gl: WebGLRenderingContext): boolean;
     }
 }
