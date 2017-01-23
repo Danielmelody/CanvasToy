@@ -10,21 +10,20 @@ examples.push((canvas: HTMLCanvasElement) => {
     scene.ambientLight = [0.2, 0.1, 0.1];
     const light = new CanvasToy.PointLight();
     light.position = [100, 0, 100];
-    light.color = [0.3, 0.3, 0.3];
-
-    const light2 = new CanvasToy.PointLight();
-    light2.position = [100, 0, 100];
-    light2.color = [1, 1, 1];
+    light.color = [1, 1, 1];
 
     scene.addLight(light);
-    const image = new Image();
-    image.src = "basic/images/sea.jpg";
-    const red = new CanvasToy.StandardMaterial(renderer.gl, {
-        color: vec3.fromValues(1, 0, 0),
-        mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
+
+    const woodImage = new Image();
+    woodImage.src = "basic/images/wood.jpg";
+
+    const wood = new CanvasToy.StandardMaterial(renderer.gl, {
+        mainTexture: new CanvasToy.Texture2D(renderer.gl, woodImage)
+            .setFormat(renderer.gl.RGB)
+            .setWrapS(renderer.gl.REPEAT)
+            .setWrapT(renderer.gl.REPEAT),
+        specular: [0.1, 0.1, 0.1],
     });
-    const green =
-        new CanvasToy.StandardMaterial(renderer.gl, { color: [0, 1, 0] });
     CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot.obj", (object) => {
         scene.addObject(object);
         scene.addObject(camera);
@@ -34,16 +33,17 @@ examples.push((canvas: HTMLCanvasElement) => {
         camera2.rotateZ(Math.PI);
         for (const childObj of object.children) {
             const child = childObj as CanvasToy.Mesh;
-            child.materials = [red, green];
+            child.materials = [wood];
         }
-        object.translate([0, 0, -50]);
+        object.translate([0, -10, -40]);
         let time = 0;
         object.rotateY(Math.PI / 2);
         object.registUpdate(() => {
             time += 1 / 60;
+            light.translate([0, 10 * Math.cos(time * 4), 0]);
             object.rotateY(0.01);
         });
-        renderer.render(scene, camera2);
+        // renderer.render(scene, camera2);
         renderer.render(scene, camera);
     });
 });

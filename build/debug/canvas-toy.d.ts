@@ -304,7 +304,9 @@ declare namespace CanvasToy {
     };
     interface IMaterial {
         mainTexture?: Texture;
-        color?: Vec4Array;
+        color?: Vec3Array;
+        diffuse?: Vec3Array;
+        specular?: Vec3Array;
         interplotationMethod?: InterplotationMethod;
         lightingMode?: LightingMode;
         program?: Program;

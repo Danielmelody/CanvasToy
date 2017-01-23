@@ -25,44 +25,21 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    var image = new Image();
-    image.src = "basic/images/chrome.png";
-    var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
-            color: vec3.fromValues(1, 1, 1),
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
-        })]);
-    cube.translate([0, 0, -6]);
-    scene.addObject(cube);
-    scene.addObject(camera);
-    scene.ambientLight = [0.1, 0.1, 0.1];
-    var light = new CanvasToy.PointLight();
-    light.position[2] = 10;
-    scene.addLight(light);
-    cube.registUpdate(function () {
-        cube.rotateY(0.01);
-    });
-    renderer.render(scene, camera);
-});
-examples.push(function (canvas) {
-    var renderer = new CanvasToy.Renderer(canvas);
-    var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.PerspectiveCamera();
     var camera2 = new CanvasToy.PerspectiveCamera();
     scene.ambientLight = [0.2, 0.1, 0.1];
     var light = new CanvasToy.PointLight();
     light.position = [100, 0, 100];
-    light.color = [0.3, 0.3, 0.3];
-    var light2 = new CanvasToy.PointLight();
-    light2.position = [100, 0, 100];
-    light2.color = [1, 1, 1];
+    light.color = [1, 1, 1];
     scene.addLight(light);
-    var image = new Image();
-    image.src = "basic/images/sea.jpg";
-    var red = new CanvasToy.StandardMaterial(renderer.gl, {
-        color: vec3.fromValues(1, 0, 0),
-        mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
+    var woodImage = new Image();
+    woodImage.src = "basic/images/wood.jpg";
+    var wood = new CanvasToy.StandardMaterial(renderer.gl, {
+        mainTexture: new CanvasToy.Texture2D(renderer.gl, woodImage)
+            .setFormat(renderer.gl.RGB)
+            .setWrapS(renderer.gl.REPEAT)
+            .setWrapT(renderer.gl.REPEAT),
+        specular: [0.1, 0.1, 0.1],
     });
-    var green = new CanvasToy.StandardMaterial(renderer.gl, { color: [0, 1, 0] });
     CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot.obj", function (object) {
         scene.addObject(object);
         scene.addObject(camera);
@@ -73,16 +50,16 @@ examples.push(function (canvas) {
         for (var _i = 0, _a = object.children; _i < _a.length; _i++) {
             var childObj = _a[_i];
             var child = childObj;
-            child.materials = [red, green];
+            child.materials = [wood];
         }
-        object.translate([0, 0, -50]);
+        object.translate([0, -10, -40]);
         var time = 0;
         object.rotateY(Math.PI / 2);
         object.registUpdate(function () {
             time += 1 / 60;
+            light.translate([0, 10 * Math.cos(time * 4), 0]);
             object.rotateY(0.01);
         });
-        renderer.render(scene, camera2);
         renderer.render(scene, camera);
     });
 });
