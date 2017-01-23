@@ -9,12 +9,9 @@ varying vec2 vMainUV;
 #ifdef OPEN_LIGHT
 uniform mat4 normalMatrix;
 attribute vec3 aNormal;
-varying vec4 vPosition;
 varying vec3 vNormal;
+varying vec4 vPosition;
 #endif
-
-// #ifdef SHOW_LIGHT_POS
-
 
 void main (){
     gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);

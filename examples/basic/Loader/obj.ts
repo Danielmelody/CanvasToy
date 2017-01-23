@@ -10,23 +10,21 @@ examples.push((canvas: HTMLCanvasElement) => {
     scene.ambientLight = [0.2, 0.1, 0.1];
     const light = new CanvasToy.PointLight();
     light.position = [100, 0, 100];
-    light.diffuse = [1, 1, 1];
-    light.specular = [0.3, 0.3, 0.3];
+    light.color = [0.3, 0.3, 0.3];
 
     const light2 = new CanvasToy.PointLight();
     light2.position = [100, 0, 100];
-    light2.diffuse = [1, 0.5, 0.5];
-    light2.specular = [1, 1, 1];
+    light2.color = [1, 1, 1];
 
     scene.addLight(light);
     const image = new Image();
     image.src = "basic/images/sea.jpg";
-    const red = new CanvasToy.Material(renderer.gl, {
+    const red = new CanvasToy.StandardMaterial(renderer.gl, {
         color: vec3.fromValues(1, 0, 0),
         mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
     });
     const green =
-        new CanvasToy.Material(renderer.gl, { color: [0, 1, 0] });
+        new CanvasToy.StandardMaterial(renderer.gl, { color: [0, 1, 0] });
     CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot.obj", (object) => {
         scene.addObject(object);
         scene.addObject(camera);

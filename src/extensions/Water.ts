@@ -6,7 +6,7 @@ namespace CanvasToy {
 
     export class Water extends Mesh {
         constructor(gl: WebGLRenderingContext) {
-            super(new Geometry(gl), [new Material(gl)]);
+            super(new Geometry(gl), [new StandardMaterial(gl)]);
         }
     }
 

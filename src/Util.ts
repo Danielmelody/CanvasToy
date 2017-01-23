@@ -71,7 +71,8 @@ namespace CanvasToy {
         // See if it compiled successfully
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert("error: " + typeInfo + "\n" + gl.getShaderInfoLog(shader));
+            console.error("error: " + typeInfo + "\n" + gl.getShaderInfoLog(shader));
+            console.error(source);
             return null;
         }
 
@@ -83,12 +84,12 @@ namespace CanvasToy {
         vertexShader: WebGLShader,
         fragmentShader: WebGLShader,
     ): WebGLProgram {
-        let shaderProgram = gl.createProgram();
+        const shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
         gl.linkProgram(shaderProgram);
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            alert("error: link shader program failed.\n" + gl.getProgramInfoLog(shaderProgram));
+            console.error("error: link shader program failed.\n" + gl.getProgramInfoLog(shaderProgram));
         }
         return shaderProgram;
     };

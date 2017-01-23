@@ -1,28 +1,8 @@
 attribute vec3 position;
 uniform mat4 modelViewProjectionMatrix;
 
-#ifdef USE_TEXTURE // texture
 attribute vec2 aMainUV;
 varying vec2 vMainUV;
-#endif // texture
-
-#ifdef OPEN_LIGHT // light
-struct Light {
-    vec3 specular;
-    vec3 diffuse;
-    float idensity;
-    vec4 position;
-    bool directional;
-}; // light
-
-uniform vec3 ambient;
-uniform vec4 eyePos;
-uniform mat4 normalMatrix;
-attribute vec3 aNormal;
-varying vec3 vLightColor;
-vec3 totalLighting;
-uniform Light lights[LIGHT_NUM];
-#endif
 
 void main (){
     gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);

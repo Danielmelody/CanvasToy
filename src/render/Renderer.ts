@@ -278,17 +278,12 @@ namespace CanvasToy {
                 const light = scene.lights[index];
 
                 // light properties pass
-                const diffuse = "lights[" + index + "].diffuse";
-                const specular = "lights[" + index + "].specular";
+                const color = "lights[" + index + "].color";
                 const idensity = "lights[" + index + "].idensity";
                 const position = "lights[" + index + "].position";
-                material.program.addUniform(diffuse, {
+                material.program.addUniform(color, {
                     type: DataType.vec3,
-                    updator: () => { return light.diffuse; },
-                });
-                material.program.addUniform(specular, {
-                    type: DataType.vec3,
-                    updator: () => { return light.specular; },
+                    updator: () => { return light.color; },
                 });
                 material.program.addUniform(position, {
                     type: DataType.vec4,

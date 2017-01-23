@@ -1,33 +1,29 @@
-#ifdef USE_COLOR // color declaration
-uniform vec4 color;
-#endif
+uniform vec3 ambient;
 
-#ifdef USE_TEXTURE // texture declaration
-varying vec2 vMainUV;
-uniform sampler2D uMainTexture;
-vec4 textureColor;
-#endif
+
+uniform vec3 color;
+uniform vec3 materialSpec;
+uniform vec3 materialDiff;
+uniform vec3 materialAmbient;
 
 #ifdef OPEN_LIGHT
-struct Light {
-    vec3 specular;
-    vec3 diffuse;
-    float idensity;
-    vec4 position;
-    bool directional;
-};
-varying vec4 vPosition;
-varying vec3 vNormal;
-uniform vec3 ambient;
 uniform vec4 eyePos;
-vec3 totalLighting;
-uniform Light lights[LIGHT_NUM];
+varying vec3 vNormal;
+varying vec4 vPosition;
 #endif
+
+#ifdef USE_TEXTURE
+uniform sampler2D uMainTexture;
+varying vec2 vMainUV;
+#endif
+
+uniform Light lights[LIGHT_NUM];
+uniform SpotLight spotLights[LIGHT_NUM];
 
 void main () {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 #ifdef USE_COLOR
-    gl_FragColor = color;
+    gl_FragColor = vec4(color, 1.0);
 #endif
 
 #ifdef USE_TEXTURE
@@ -35,9 +31,18 @@ void main () {
 #endif
 #ifdef OPEN_LIGHT
     vec3 normal = normalize(vNormal);
-    totalLighting = ambient;
+    vec3 totalLighting = ambient;
     for (int index = 0; index < LIGHT_NUM; index++) {
-        totalLighting += calculate_light(vPosition, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4.0, lights[index].idensity);
+        totalLighting += calculate_light(
+            vPosition,
+            normal,
+            lights[index].position,
+            eyePos,
+            materialSpec * lights[index].color,
+            materialDiff * lights[index].color,
+            4.0,
+            lights[index].idensity
+        );
     }
     gl_FragColor *= vec4(totalLighting, 1.0);
 #endif

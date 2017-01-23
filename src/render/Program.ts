@@ -69,8 +69,6 @@ namespace CanvasToy {
         public fragmentPrecision: string = "mediump";
         public prefix: string[] = [];
 
-        public drawMode = (gl: WebGLRenderingContext) => { return gl.STATIC_DRAW };
-
         private componentBuilder:
         (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => IProgramcomponentBuilder;
 
@@ -84,6 +82,18 @@ namespace CanvasToy {
             this.gl = gl;
             this.source = source;
             this.componentBuilder = componentBuilder;
+        }
+
+        public drawMode = (gl: WebGLRenderingContext) => { return gl.STATIC_DRAW; };
+
+        public setFragmentShader(fragmentShader: string) {
+            this.source.fragmentShader = fragmentShader;
+            return this;
+        }
+
+        public setVertexShader(vertexShader: string) {
+            this.source.vertexShader = vertexShader;
+            return this;
         }
 
         public make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material) {
@@ -112,7 +122,7 @@ namespace CanvasToy {
                 this.addAttribute(nameInShader, componets.attributes[nameInShader]);
             }
             this.checkState();
-
+            return this;
         }
 
         public pass(mesh: Mesh, camera: Camera, materiel: Material) {
@@ -131,6 +141,7 @@ namespace CanvasToy {
                     0,
                     0);
             }
+            return this;
         }
 
         public checkState() {
@@ -146,11 +157,18 @@ namespace CanvasToy {
                     attributeName + " length error, now:" + this.attributes[attributeName].data.length
                     + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
             }
+            return this;
         }
 
         public setAttribute0(name: string) {
             this.attribute0 = name;
             this.gl.bindAttribLocation(this.webGlProgram, 0, name);
+            return this;
+        }
+
+        public deleteUniform(nameInShader) {
+            this.uniforms[nameInShader] = undefined;
+            return this;
         }
 
         public addUniform(nameInShader, uniform: IUniform) {
@@ -201,13 +219,20 @@ namespace CanvasToy {
             }
         }
 
-        public addAttribute(nameInShader, attribute: Attribute) {
+        public deleteAttribute(nameInShader: string) {
+            this.attributes[nameInShader] = undefined;
+            this.attributeLocations[nameInShader] = undefined;
+            return this;
+        }
+
+        public addAttribute(nameInShader: string, attribute: Attribute) {
             const location = this.getAttribLocation(nameInShader);
             if (location !== null && location !== -1) {
                 this.attributes[nameInShader] = attribute;
                 this.attributeLocations[nameInShader] = location;
                 this.gl.enableVertexAttribArray(location);
             }
+            return this;
         }
 
         private getUniformLocation(name: string): WebGLUniformLocation {
@@ -237,6 +262,7 @@ namespace CanvasToy {
                 this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
             }
             this.checkState();
+            return this;
         }
 
         private getAttribLocation(name: string): number {
@@ -251,7 +277,6 @@ namespace CanvasToy {
             }
             return result;
         }
-
     }
 
     export const defaultProgramPass = (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {
@@ -264,19 +289,28 @@ namespace CanvasToy {
                 modelViewProjectionMatrix: {
                     type: DataType.mat4,
                     updator: (mesh: Mesh, camera: Camera) => {
-                        return new Float32Array(mat4.multiply(
+                        return mat4.multiply(
                             mat4.create(),
                             camera.projectionMatrix,
                             mat4.multiply(mat4.create(),
                                 camera.objectToWorldMatrix,
                                 mesh.matrix),
-                        ),
                         );
                     },
                 },
                 color: !material.color ? undefined : {
-                    type: DataType.vec4, updator: () => {
+                    type: DataType.vec3, updator: () => {
                         return material.color;
+                    },
+                },
+                materialDiff: !material.diffuse ? undefined : {
+                    type: DataType.vec3, updator: () => {
+                        return material.diffuse;
+                    },
+                },
+                materialSpec: !material.specular ? undefined : {
+                    type: DataType.vec3, updator: () => {
+                        return material.specular;
                     },
                 },
                 ambient: !scene.openLight ? undefined : {
@@ -302,10 +336,7 @@ namespace CanvasToy {
             attributes: {
                 position: mesh.geometry.attributes.position,
                 aMainUV: !material.mainTexture ? undefined : mesh.geometry.attributes.uv,
-                aNormal: !scene.openLight ?
-                    undefined :
-                    material.interplotationMethod === InterplotationMethod.Flat ?
-                        mesh.geometry.attributes.flatNormal : mesh.geometry.attributes.normal,
+                aNormal: mesh.geometry.attributes.normal,
             },
         };
     };

@@ -12,7 +12,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     image.src = "basic/images/chrome.png";
 
     const cube = new CanvasToy.Mesh(
-        new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {
+        new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             color: vec3.fromValues(1, 1, 1),
             mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
         })]);

@@ -5,7 +5,29 @@ examples.push(function (canvas) {
     var camera = new CanvasToy.PerspectiveCamera();
     var image = new Image();
     image.src = "basic/images/chrome.png";
-    var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {
+    var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
+            color: vec3.fromValues(1, 1, 1),
+            mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
+        })]);
+    cube.translate([0, 0, -6]);
+    scene.addObject(cube);
+    scene.addObject(camera);
+    scene.ambientLight = [0.1, 0.1, 0.1];
+    var light = new CanvasToy.PointLight();
+    light.position[2] = 10;
+    scene.addLight(light);
+    cube.registUpdate(function () {
+        cube.rotateY(0.01);
+    });
+    renderer.render(scene, camera);
+});
+examples.push(function (canvas) {
+    var renderer = new CanvasToy.Renderer(canvas);
+    var scene = new CanvasToy.Scene();
+    var camera = new CanvasToy.PerspectiveCamera();
+    var image = new Image();
+    image.src = "basic/images/chrome.png";
+    var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             color: vec3.fromValues(1, 1, 1),
             mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
         })]);
@@ -29,20 +51,18 @@ examples.push(function (canvas) {
     scene.ambientLight = [0.2, 0.1, 0.1];
     var light = new CanvasToy.PointLight();
     light.position = [100, 0, 100];
-    light.diffuse = [1, 1, 1];
-    light.specular = [0.3, 0.3, 0.3];
+    light.color = [0.3, 0.3, 0.3];
     var light2 = new CanvasToy.PointLight();
     light2.position = [100, 0, 100];
-    light2.diffuse = [1, 0.5, 0.5];
-    light2.specular = [1, 1, 1];
+    light2.color = [1, 1, 1];
     scene.addLight(light);
     var image = new Image();
     image.src = "basic/images/sea.jpg";
-    var red = new CanvasToy.Material(renderer.gl, {
+    var red = new CanvasToy.StandardMaterial(renderer.gl, {
         color: vec3.fromValues(1, 0, 0),
         mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
     });
-    var green = new CanvasToy.Material(renderer.gl, { color: [0, 1, 0] });
+    var green = new CanvasToy.StandardMaterial(renderer.gl, { color: [0, 1, 0] });
     CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot.obj", function (object) {
         scene.addObject(object);
         scene.addObject(camera);
@@ -71,8 +91,9 @@ examples.push(function (canvas) {
     var scenes = Array(2, 0).map(function () { return new CanvasToy.Scene(); });
     var cameras = Array(2, 0).map(function () { return new CanvasToy.PerspectiveCamera(); });
     var light = new CanvasToy.PointLight();
-    light.specular = [1, 1, 1];
-    var cubes = [new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl)])];
+    var cubes = [
+        new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl)]),
+    ];
     var image = new Image();
     image.src = "basic/images/chrome.png";
     cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
@@ -82,16 +103,12 @@ examples.push(function (canvas) {
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     light.idensity = 1;
     light.position = [100, 0, 100];
-    light.diffuse = [1, 1, 1];
-    light.specular = [1, 1, 0.3];
     scenes[0].addLight(light);
     scenes[0].addObject(cameras[0]);
     scenes[0].addObject(cubes[0]);
     var fbo = renderer.createFrameBuffer();
     var rttTexture = fbo.attachments.color.targetTexture;
-    cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {
-            mainTexture: rttTexture,
-        })]));
+    cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: rttTexture })]));
     cubes[0].registUpdate(function () {
         cubes.forEach(function (cube) {
             cube.rotateY(0.01);
@@ -110,8 +127,9 @@ examples.push(function (canvas) {
     var scenes = Array(2, 0).map(function () { return new CanvasToy.Scene(); });
     var cameras = Array(2, 0).map(function () { return new CanvasToy.PerspectiveCamera(); });
     var light = new CanvasToy.PointLight();
-    light.specular = [1, 1, 1];
-    var cubes = [new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl)])];
+    var cubes = [
+        new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl)]),
+    ];
     var image = new Image();
     image.src = "basic/images/chrome.png";
     cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
@@ -121,8 +139,6 @@ examples.push(function (canvas) {
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     light.idensity = 1;
     light.position = [100, 0, 100];
-    light.diffuse = [1, 1, 1];
-    light.specular = [1, 1, 0.3];
     scenes[0].addLight(light);
     scenes[0].addObject(cameras[0]);
     scenes[0].addObject(cubes[0]);
@@ -131,9 +147,7 @@ examples.push(function (canvas) {
         .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
         .targetTexture.setType(renderer.gl.UNSIGNED_SHORT);
     var rttTexture = fbo.attachments.depth.targetTexture;
-    cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {
-            mainTexture: rttTexture,
-        })]));
+    cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: rttTexture })]));
     cubes[0].registUpdate(function () {
         cubes.forEach(function (cube) {
             cube.rotateY(0.01);

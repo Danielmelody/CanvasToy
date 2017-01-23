@@ -7,8 +7,10 @@ examples.push((canvas: HTMLCanvasElement) => {
     const scenes = Array(2, 0).map(() => new CanvasToy.Scene());
     const cameras = Array(2, 0).map(() => new CanvasToy.PerspectiveCamera());
     const light = new CanvasToy.PointLight();
-    light.specular = [1, 1, 1];
-    const cubes = [new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl)])];
+    const cubes = [
+        new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl),
+        [new CanvasToy.StandardMaterial(renderer.gl)]),
+     ];
 
     const image = new Image();
     image.src = "basic/images/chrome.png";
@@ -19,8 +21,6 @@ examples.push((canvas: HTMLCanvasElement) => {
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     light.idensity = 1;
     light.position = [100, 0, 100];
-    light.diffuse = [1, 1, 1];
-    light.specular = [1, 1, 0.3];
     scenes[0].addLight(light);
     scenes[0].addObject(cameras[0]);
     scenes[0].addObject(cubes[0]);
@@ -28,9 +28,12 @@ examples.push((canvas: HTMLCanvasElement) => {
     const fbo = renderer.createFrameBuffer();
     const rttTexture = fbo.attachments.color.targetTexture;
 
-    cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.Material(renderer.gl, {
-        mainTexture: rttTexture,
-    })]));
+    cubes.push(
+        new CanvasToy.Mesh(
+            new CanvasToy.CubeGeometry(renderer.gl),
+            [new CanvasToy.StandardMaterial(renderer.gl, {mainTexture: rttTexture})],
+        ),
+    );
     cubes[0].registUpdate(() => {
         cubes.forEach((cube) => {
             cube.rotateY(0.01);

@@ -188,16 +188,20 @@ declare namespace CanvasToy {
         vertexPrecision: string;
         fragmentPrecision: string;
         prefix: string[];
-        drawMode: (gl: WebGLRenderingContext) => number;
         private componentBuilder;
         private source;
         constructor(gl: WebGLRenderingContext, source: IProgramSource, componentBuilder: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder);
-        make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material): void;
-        pass(mesh: Mesh, camera: Camera, materiel: Material): void;
-        checkState(): void;
-        setAttribute0(name: string): void;
+        drawMode: (gl: WebGLRenderingContext) => number;
+        setFragmentShader(fragmentShader: string): this;
+        setVertexShader(vertexShader: string): this;
+        make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material): this;
+        pass(mesh: Mesh, camera: Camera, materiel: Material): this;
+        checkState(): this;
+        setAttribute0(name: string): this;
+        deleteUniform(nameInShader: any): this;
         addUniform(nameInShader: any, uniform: IUniform): void;
-        addAttribute(nameInShader: any, attribute: Attribute): void;
+        deleteAttribute(nameInShader: string): this;
+        addAttribute(nameInShader: string, attribute: Attribute): this;
         private getUniformLocation(name);
         private addPassProcesser(parameter);
         private getAttribLocation(name);
@@ -210,11 +214,19 @@ declare namespace CanvasToy {
         uniforms: {
             modelViewProjectionMatrix: {
                 type: DataType;
-                updator: (mesh: Mesh, camera: Camera) => Float32Array;
+                updator: (mesh: Mesh, camera: Camera) => GLM.IArray;
             };
             color: {
                 type: DataType;
-                updator: () => Vec4Array;
+                updator: () => Vec3Array;
+            };
+            materialDiff: {
+                type: DataType;
+                updator: () => Vec3Array;
+            };
+            materialSpec: {
+                type: DataType;
+                updator: () => Vec3Array;
             };
             ambient: {
                 type: DataType;
@@ -237,8 +249,9 @@ declare namespace CanvasToy {
     };
 }
 declare module CanvasToy {
-    var calculators__lambert_glsl: string;
+    var calculators__blinn_phong_glsl: string;
     var calculators__phong_glsl: string;
+    var definitions__light_glsl: string;
     var env_map_vert: string;
     var interploters__gouraud_frag: string;
     var interploters__gouraud_vert: string;
@@ -289,18 +302,6 @@ declare namespace CanvasToy {
         red: GLM.IArray;
         white: GLM.IArray;
     };
-    enum InterplotationMethod {
-        Flat = 0,
-        Gouraud = 1,
-        Phong = 2,
-    }
-    enum LightingMode {
-        Lambort = 0,
-        Phong = 1,
-        Cell = 2,
-        Blinn_Phong = 3,
-        Physical = 4,
-    }
     interface IMaterial {
         mainTexture?: Texture;
         color?: Vec4Array;
@@ -308,9 +309,9 @@ declare namespace CanvasToy {
         lightingMode?: LightingMode;
         program?: Program;
     }
-    class Material implements IMaterial {
+    abstract class Material implements IMaterial {
         program: Program;
-        color: Vec4Array;
+        color: Vec3Array;
         mainTexture: Texture;
         ambient: Vec3Array;
         ambientMap: Texture;
@@ -320,17 +321,10 @@ declare namespace CanvasToy {
         specularMap: Texture;
         opacity: Vec3Array;
         opacityMap: Texture;
-        interplotationMethod: InterplotationMethod;
-        lightingMode: LightingMode;
         bumpMap: Texture;
         normalMap: Texture;
         reflactivity: number;
-        shaderSource: {
-            vertexShader: string;
-            fragmentShader: string;
-        };
         constructor(gl: WebGLRenderingContext, paramter?: IMaterial);
-        configShader(): void;
     }
 }
 declare namespace CanvasToy {
@@ -352,8 +346,7 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     abstract class Light extends Object3d {
-        diffuse: Vec3Array;
-        specular: Vec3Array;
+        color: GLM.IArray;
         idensity: number;
         shadowRtt: Texture;
         projectCamera: Camera;
@@ -390,6 +383,11 @@ declare namespace CanvasToy {
         protected static praiseAttibuteLines(lines: any): number[][];
         protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void): void;
         protected static buildUpMeshes(gl: WebGLRenderingContext, content: string, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
+    }
+}
+declare namespace CanvasToy {
+    class StandardMaterial extends Material {
+        constructor(gl: WebGLRenderingContext, paramter?: IMaterial);
     }
 }
 declare namespace CanvasToy {
@@ -480,6 +478,30 @@ declare namespace CanvasToy {
         addObject(object: Object3d): void;
         removeObject(object: Object3d): void;
         addLight(light: Light): void;
+    }
+}
+declare namespace CanvasToy {
+    enum InterplotationMethod {
+        Flat = 0,
+        Gouraud = 1,
+        Phong = 2,
+    }
+    enum LightingMode {
+        Phong = 0,
+        Cell = 1,
+        Blinn_Phong = 2,
+        Physical = 3,
+    }
+    class StandardShaderBuilder {
+        private _definitions;
+        private _interplotationMethod;
+        private _interplotationVert;
+        private _interplotationFrag;
+        private _lightingMode;
+        private _lightingModeSource;
+        setInterplotationMethod(method: InterplotationMethod): this;
+        setLightingMode(lightingMode: LightingMode): this;
+        build(gl: WebGLRenderingContext): Program;
     }
 }
 declare namespace CanvasToy {
