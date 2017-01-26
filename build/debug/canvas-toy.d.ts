@@ -1,21 +1,13 @@
 declare namespace CanvasToy {
     let debug: boolean;
-    interface Vec2Array extends GLM.IArray {
-    }
-    interface Vec3Array extends GLM.IArray {
-    }
-    interface Vec4Array extends GLM.IArray {
-    }
-    interface Mat2Array extends GLM.IArray {
-    }
-    interface Mat2dArray extends GLM.IArray {
-    }
-    interface Mat3Array extends GLM.IArray {
-    }
-    interface Mat4Array extends GLM.IArray {
-    }
-    interface QuatArray extends GLM.IArray {
-    }
+    type Vec2Array = GLM.IArray;
+    type Vec3Array = GLM.IArray;
+    type Vec4Array = GLM.IArray;
+    type Mat2Array = GLM.IArray;
+    type Mat2dArray = GLM.IArray;
+    type Mat3Array = GLM.IArray;
+    type Mat4Array = GLM.IArray;
+    type QuatArray = GLM.IArray;
     enum DataType {
         float = 0,
         int = 1,
@@ -28,14 +20,129 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
+    function uniform<DecoratorClass>(name: string, type: DataType, updator?: (obj, camera) => {}): (proto: any, key: any) => void;
+}
+declare namespace CanvasToy {
+    interface IProgramSource {
+        vertexShader?: string;
+        fragmentShader?: string;
+    }
+    interface IProgramcomponentBuilder {
+        faces?: Faces;
+        uniforms?: any;
+        attributes?: any;
+        textures?: any;
+        prefix?: string[];
+    }
+    class Faces {
+        buffer: WebGLBuffer;
+        data: number[];
+        constructor(gl: WebGLRenderingContext, data: number[]);
+    }
+    interface IUniform {
+        name?: string;
+        type: DataType;
+        updator: (object?: Object3d, camera?: Camera) => any;
+    }
+    class Attribute {
+        size: number;
+        data: number[];
+        type: number;
+        index: number;
+        stride: number;
+        buffer: WebGLBuffer;
+        gl: WebGLRenderingContext;
+        constructor(gl: WebGLRenderingContext, paramter: {
+            type: number;
+            size?: number;
+            data?: number[];
+            stride?: number;
+        });
+    }
+    class Program implements IProgramcomponentBuilder {
+        gl: WebGLRenderingContext;
+        faces: Faces;
+        enableDepthTest: boolean;
+        enableStencilTest: boolean;
+        uniforms: {};
+        attributes: {};
+        attributeLocations: {};
+        attribute0: string;
+        webGlProgram: WebGLProgram;
+        textures: Texture[];
+        vertexPrecision: string;
+        fragmentPrecision: string;
+        prefix: string[];
+        private componentBuilder;
+        private source;
+        constructor(gl: WebGLRenderingContext, source: IProgramSource, componentBuilder: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder);
+        drawMode: (gl: WebGLRenderingContext) => number;
+        setFragmentShader(fragmentShader: string): this;
+        setVertexShader(vertexShader: string): this;
+        make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material): this;
+        pass(mesh: Mesh, camera: Camera, materiel: Material): this;
+        checkState(): this;
+        setAttribute0(name: string): this;
+        deleteUniform(nameInShader: any): this;
+        addUniform(nameInShader: any, uniform: IUniform): void;
+        deleteAttribute(nameInShader: string): this;
+        addAttribute(nameInShader: string, attribute: Attribute): this;
+        private getUniformLocation(name);
+        private addPassProcesser(parameter);
+        private getAttribLocation(name);
+    }
+    const defaultProgramPass: (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {
+        faces: Faces;
+        textures: {
+            uMainTexture: Texture;
+        };
+        uniforms: {
+            modelViewProjectionMatrix: {
+                type: DataType;
+                updator: (mesh: Mesh, camera: Camera) => GLM.IArray;
+            };
+            color: {
+                type: DataType;
+                updator: () => GLM.IArray;
+            };
+            materialDiff: {
+                type: DataType;
+                updator: () => GLM.IArray;
+            };
+            materialSpec: {
+                type: DataType;
+                updator: () => GLM.IArray;
+            };
+            ambient: {
+                type: DataType;
+                updator: () => GLM.IArray;
+            };
+            normalMatrix: {
+                type: DataType;
+                updator: () => Float32Array;
+            };
+            eyePos: {
+                type: DataType;
+                updator: (object3d: Object3d, camera: Camera) => GLM.IArray;
+            };
+        };
+        attributes: {
+            position: Attribute;
+            aMainUV: Attribute;
+            aNormal: Attribute;
+        };
+    };
+}
+declare namespace CanvasToy {
     class Object3d {
         tag: string;
         scene: Scene;
         children: Object3d[];
+        depredations: string[];
         objectToWorldMatrix: Mat4Array;
+        protected _matrix: Mat4Array;
         protected _parent: Object3d;
         protected _localMatrix: Mat4Array;
-        protected _matrix: Mat4Array;
         protected _localPosition: Vec3Array;
         protected _localRotation: QuatArray;
         protected _localScaling: Vec3Array;
@@ -63,6 +170,7 @@ declare namespace CanvasToy {
         rotateX(angle: number): void;
         rotateY(angle: number): void;
         rotateZ(angle: number): void;
+        handleUniformProperty(): void;
         protected genOtherMatrixs(): void;
         private composeFromLocalMatrix();
         private composeFromGlobalMatrix();
@@ -137,116 +245,6 @@ declare namespace CanvasToy {
         drawMode(gl: WebGLRenderingContext): number;
         genOtherMatrixs(): void;
     }
-}
-declare namespace CanvasToy {
-    interface IProgramSource {
-        vertexShader?: string;
-        fragmentShader?: string;
-    }
-    interface IProgramcomponentBuilder {
-        faces?: Faces;
-        uniforms?: any;
-        attributes?: any;
-        textures?: any;
-        prefix?: string[];
-    }
-    class Faces {
-        buffer: WebGLBuffer;
-        data: number[];
-        constructor(gl: WebGLRenderingContext, data: number[]);
-    }
-    interface IUniform {
-        type: DataType;
-        updator: (mesh?, camera?) => any;
-    }
-    class Attribute {
-        size: number;
-        data: number[];
-        type: number;
-        index: number;
-        stride: number;
-        buffer: WebGLBuffer;
-        gl: WebGLRenderingContext;
-        constructor(gl: WebGLRenderingContext, paramter: {
-            type: number;
-            size?: number;
-            data?: number[];
-            stride?: number;
-        });
-    }
-    class Program implements IProgramcomponentBuilder {
-        gl: WebGLRenderingContext;
-        faces: Faces;
-        enableDepthTest: boolean;
-        enableStencilTest: boolean;
-        uniforms: {};
-        attributes: {};
-        attributeLocations: {};
-        attribute0: string;
-        webGlProgram: WebGLProgram;
-        textures: Texture[];
-        vertexPrecision: string;
-        fragmentPrecision: string;
-        prefix: string[];
-        private componentBuilder;
-        private source;
-        constructor(gl: WebGLRenderingContext, source: IProgramSource, componentBuilder: (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder);
-        drawMode: (gl: WebGLRenderingContext) => number;
-        setFragmentShader(fragmentShader: string): this;
-        setVertexShader(vertexShader: string): this;
-        make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material): this;
-        pass(mesh: Mesh, camera: Camera, materiel: Material): this;
-        checkState(): this;
-        setAttribute0(name: string): this;
-        deleteUniform(nameInShader: any): this;
-        addUniform(nameInShader: any, uniform: IUniform): void;
-        deleteAttribute(nameInShader: string): this;
-        addAttribute(nameInShader: string, attribute: Attribute): this;
-        private getUniformLocation(name);
-        private addPassProcesser(parameter);
-        private getAttribLocation(name);
-    }
-    const defaultProgramPass: (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {
-        faces: Faces;
-        textures: {
-            uMainTexture: Texture;
-        };
-        uniforms: {
-            modelViewProjectionMatrix: {
-                type: DataType;
-                updator: (mesh: Mesh, camera: Camera) => GLM.IArray;
-            };
-            color: {
-                type: DataType;
-                updator: () => Vec3Array;
-            };
-            materialDiff: {
-                type: DataType;
-                updator: () => Vec3Array;
-            };
-            materialSpec: {
-                type: DataType;
-                updator: () => Vec3Array;
-            };
-            ambient: {
-                type: DataType;
-                updator: () => Vec3Array;
-            };
-            normalMatrix: {
-                type: DataType;
-                updator: () => Float32Array;
-            };
-            eyePos: {
-                type: DataType;
-                updator: (mesh: Mesh, camera: Camera) => GLM.IArray;
-            };
-        };
-        attributes: {
-            position: Attribute;
-            aMainUV: Attribute;
-            aNormal: Attribute;
-        };
-    };
 }
 declare module CanvasToy {
     var calculators__blinn_phong_glsl: string;
@@ -348,11 +346,16 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     abstract class Light extends Object3d {
-        color: GLM.IArray;
-        idensity: number;
-        shadowRtt: Texture;
-        projectCamera: Camera;
+        protected _color: GLM.IArray;
+        protected _idensity: number;
+        protected _position: Vec3Array;
+        protected _shadowRtt: Texture;
+        protected _projectCamera: Camera;
         constructor();
+        setColor(color: Vec3Array): this;
+        setIdensity(idensity: number): this;
+        readonly color: GLM.IArray;
+        readonly idensity: any;
     }
 }
 declare namespace CanvasToy {

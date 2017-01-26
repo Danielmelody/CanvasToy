@@ -9,7 +9,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     const light = new CanvasToy.PointLight();
     const cubes = [
         new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl),
-        [new CanvasToy.StandardMaterial(renderer.gl)]),
+            [new CanvasToy.StandardMaterial(renderer.gl)]),
     ];
 
     const image = new Image();
@@ -19,7 +19,6 @@ examples.push((canvas: HTMLCanvasElement) => {
     cameras[0].position = [0, 0, 5];
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-    light.idensity = 1;
     light.position = [100, 0, 100];
     scenes[0].addLight(light);
     scenes[0].addObject(cameras[0]);
@@ -33,7 +32,7 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     cubes.push(
         new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl),
-        [new CanvasToy.StandardMaterial(renderer.gl, {mainTexture: rttTexture})]));
+            [new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: rttTexture })]));
     cubes[0].registUpdate(() => {
         cubes.forEach((cube) => {
             cube.rotateY(0.01);

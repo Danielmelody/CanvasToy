@@ -275,27 +275,19 @@ namespace CanvasToy {
 
         public setUplights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
             for (const index in scene.lights) {
-                const light = scene.lights[index];
+                const light: any = scene.lights[index];
 
                 // light properties pass
-                const color = "lights[" + index + "].color";
-                const idensity = "lights[" + index + "].idensity";
-                const position = "lights[" + index + "].position";
-                material.program.addUniform(color, {
-                    type: DataType.vec3,
-                    updator: () => { return light.color; },
-                });
-                material.program.addUniform(position, {
-                    type: DataType.vec4,
-                    updator: () => { return light.position; },
-                });
-                material.program.addUniform(idensity, {
-                    type: DataType.float,
-                    updator: () => { return light.idensity; },
-                });
-
-                // shadow map setup
-                light.shadowRtt = new Texture(this.gl);
+                console.assert (light.uniforms !== undefined);
+                for (const uniformProperty of light.uniforms) {
+                    material.program.addUniform(`lights[${index}].${uniformProperty.name}`, {
+                        type: uniformProperty.type,
+                        updator: () => {
+                            return uniformProperty.updator(light);
+                        },
+                    });
+                }
+                // light.shadowRtt = new Texture(this.gl);
             }
         }
 

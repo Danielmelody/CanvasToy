@@ -2,13 +2,14 @@
 struct Light {
     vec3 color;
     float idensity;
-    vec4 position;
+    vec3 position;
 };
 
 struct SpotLight {
     vec3 color;
     float idensity;
-    vec4 position;
+    vec3 direction;
+    vec3 position;
 };
 
 #endif // light declaration

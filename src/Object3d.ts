@@ -1,4 +1,6 @@
 /// <reference path="./CanvasToy.ts"/>
+/// <reference path="./Decorators.ts"/>
+/// <reference path="render/Program.ts" />
 
 namespace CanvasToy {
 
@@ -14,12 +16,24 @@ namespace CanvasToy {
 
         public children: Object3d[] = [];
 
+        public depredations: string[];
+
         public objectToWorldMatrix: Mat4Array = mat4.create();
+
+        // @uniform("modelViewProjectionMatrix", DataType.mat4, (mesh: Object3d, camera: Camera) => {
+        //     return mat4.multiply(
+        //         mat4.create(),
+        //         camera.projectionMatrix,
+        //         mat4.multiply(mat4.create(),
+        //             camera.objectToWorldMatrix,
+        //             mesh.matrix),
+        //     );
+        // })
+        protected _matrix: Mat4Array = mat4.create();
 
         protected _parent: Object3d = null;
 
         protected _localMatrix: Mat4Array = mat4.create();
-        protected _matrix: Mat4Array = mat4.create();
 
         protected _localPosition: Vec3Array = vec3.create();
         protected _localRotation: QuatArray = quat.create();
@@ -39,6 +53,7 @@ namespace CanvasToy {
          */
         constructor(tag?: string) {
             this.tag = tag;
+            this.handleUniformProperty();
         }
 
         /**
@@ -294,6 +309,13 @@ namespace CanvasToy {
          */
         public rotateZ(angle: number) {
             this.localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
+        }
+
+        public handleUniformProperty() {
+            // console.warn(this);
+            // this.uniforms.forEach((uniform) => {
+            //     console.warn("handle uniform " + uniform.name);
+            // });
         }
 
         protected genOtherMatrixs() {

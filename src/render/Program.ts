@@ -25,8 +25,9 @@ namespace CanvasToy {
     }
 
     export interface IUniform {
+        name?: string;
         type: DataType;
-        updator: (mesh?, camera?) => any;
+        updator: (object?: Object3d, camera?: Camera) => any;
     }
 
     export class Attribute {
@@ -323,7 +324,7 @@ namespace CanvasToy {
                 },
                 eyePos: !scene.openLight ? undefined : {
                     type: DataType.vec4,
-                    updator: (mesh: Mesh, camera: Camera) => {
+                    updator: (object3d: Object3d, camera: Camera) => {
                         return vec4.fromValues(
                             camera.position[0],
                             camera.position[1],

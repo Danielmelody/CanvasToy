@@ -3,7 +3,8 @@
         "removeComments": true,
         "target": "es5",
         "allowJs": false,
-        "outFile": "index.js"
+        "outFile": "index.js",
+        "experimentalDecorators": true
     },
     "include":[
         "../typings/index.d.ts",

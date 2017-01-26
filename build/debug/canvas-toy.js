@@ -3,6 +3,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
 var CanvasToy;
 (function (CanvasToy) {
     CanvasToy.debug = true;
@@ -20,406 +26,19 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var Object3d = (function () {
-        function Object3d(tag) {
-            this.children = [];
-            this.objectToWorldMatrix = mat4.create();
-            this._parent = null;
-            this._localMatrix = mat4.create();
-            this._matrix = mat4.create();
-            this._localPosition = vec3.create();
-            this._localRotation = quat.create();
-            this._localScaling = vec3.fromValues(1, 1, 1);
-            this._position = vec3.create();
-            this._scaling = vec3.fromValues(1, 1, 1);
-            this._rotation = quat.create();
-            this.updateEvents = [];
-            this.startEvents = [];
-            this.tag = tag;
-        }
-        Object.defineProperty(Object3d.prototype, "parent", {
-            get: function () {
-                return this._parent;
-            },
-            set: function (_parent) {
-                _parent.children.push(this);
-                this._parent = _parent;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "localMatrix", {
-            get: function () {
-                return this._localMatrix;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "matrix", {
-            get: function () {
-                return this._matrix;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "localPosition", {
-            get: function () {
-                return this._localPosition;
-            },
-            set: function (_localPosition) {
-                console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
-                this._localPosition = _localPosition;
-                this.composeFromLocalMatrix();
-                if (!!this._parent) {
-                    mat4.getTranslation(this._position, this.matrix);
-                }
-                else {
-                    this._position = vec3.clone(_localPosition);
-                }
-                this.applyToChildren();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "position", {
-            get: function () {
-                return this._position;
-            },
-            set: function (_position) {
-                console.assert(_position && _position.length === 3, "invalid object position paramter");
-                this._position = _position;
-                this.composeFromGlobalMatrix();
-                if (!!this._parent) {
-                    mat4.getTranslation(this._localPosition, this._localMatrix);
-                }
-                else {
-                    this._localPosition = vec3.clone(_position);
-                }
-                this.applyToChildren();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "localRotation", {
-            get: function () {
-                return this._localRotation;
-            },
-            set: function (_localRotation) {
-                console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
-                quat.normalize(_localRotation, quat.clone(_localRotation));
-                this._localRotation = _localRotation;
-                this.composeFromLocalMatrix();
-                if (!!this._parent) {
-                    mat4.getRotation(this._rotation, this.matrix);
-                }
-                else {
-                    this._rotation = quat.clone(_localRotation);
-                }
-                this.applyToChildren();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "rotation", {
-            get: function () {
-                return this._rotation;
-            },
-            set: function (_rotation) {
-                console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
-                quat.normalize(_rotation, quat.clone(_rotation));
-                this._rotation = _rotation;
-                this.composeFromGlobalMatrix();
-                if (!!this._parent) {
-                    mat4.getRotation(this._localRotation, this.localMatrix);
-                }
-                else {
-                    this._localRotation = quat.clone(_rotation);
-                }
-                this.applyToChildren();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "localScaling", {
-            get: function () {
-                return this._localScaling;
-            },
-            set: function (_localScaling) {
-                console.assert(_localScaling && _localScaling.length === 3, "invalid object scale paramter");
-                this._localScaling = _localScaling;
-                if (!!this._parent) {
-                    vec3.mul(this._scaling, this._parent.scaling, this._localScaling);
-                }
-                else {
-                    this._scaling = vec3.clone(_localScaling);
-                }
-                this.applyToChildren();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Object3d.prototype, "scaling", {
-            get: function () {
-                return this._scaling;
-            },
-            set: function (_scaling) {
-                console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
-                this._scaling = _scaling;
-                if (!!this._parent) {
-                    vec3.div(this.localScaling, this.scaling, this._parent.scaling);
-                }
-                else {
-                    this.localScaling = vec3.clone(_scaling);
-                }
-                this.applyToChildren();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object3d.prototype.setTransformFromParent = function () {
-            if (!!this.parent) {
-                this._matrix = mat4.mul(mat4.create(), this.parent.matrix, this.localMatrix);
-                this.genOtherMatrixs();
-                mat4.getTranslation(this._position, this.matrix);
-                mat4.getRotation(this._rotation, this.matrix);
-                vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
-            }
+    function uniform(name, type, updator) {
+        return function (proto, key) {
+            proto.uniforms = proto.uniforms || [];
+            proto.uniforms.push({
+                name: name,
+                type: type,
+                updator: updator ? updator : function (obj) {
+                    return obj[key];
+                },
+            });
         };
-        Object3d.prototype.registUpdate = function (updateFunction) {
-            this.updateEvents.push(updateFunction);
-        };
-        Object3d.prototype.registStart = function (updateFunction) {
-            this.startEvents.push(updateFunction);
-        };
-        Object3d.prototype.start = function () {
-            for (var _i = 0, _a = this.startEvents; _i < _a.length; _i++) {
-                var event_1 = _a[_i];
-                event_1();
-            }
-        };
-        Object3d.prototype.update = function (dt) {
-            for (var _i = 0, _a = this.updateEvents; _i < _a.length; _i++) {
-                var event_2 = _a[_i];
-                event_2(dt);
-            }
-            for (var _b = 0, _c = this.children; _b < _c.length; _b++) {
-                var child = _c[_b];
-                child.update(dt);
-            }
-        };
-        Object3d.prototype.translate = function (delta) {
-            console.assert(delta instanceof Array && delta.length === 3, "invalid delta translate");
-            this.localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
-        };
-        Object3d.prototype.rotateX = function (angle) {
-            this.localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
-        };
-        Object3d.prototype.rotateY = function (angle) {
-            this.localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
-        };
-        Object3d.prototype.rotateZ = function (angle) {
-            this.localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
-        };
-        Object3d.prototype.genOtherMatrixs = function () {
-            mat4.invert(this.objectToWorldMatrix, this.matrix);
-        };
-        Object3d.prototype.composeFromLocalMatrix = function () {
-            mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
-            if (!!this._parent) {
-                mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
-            }
-            else {
-                this._matrix = mat4.clone(this._localMatrix);
-            }
-            this.genOtherMatrixs();
-        };
-        Object3d.prototype.composeFromGlobalMatrix = function () {
-            mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
-            this.genOtherMatrixs();
-            if (!!this._parent) {
-                mat4.mul(this._localMatrix, this._parent.objectToWorldMatrix, this.matrix);
-            }
-            else {
-                this._localMatrix = mat4.clone(this._matrix);
-            }
-        };
-        Object3d.prototype.applyToChildren = function () {
-            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
-                var child = _a[_i];
-                child.setTransformFromParent();
-            }
-        };
-        return Object3d;
-    }());
-    CanvasToy.Object3d = Object3d;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Camera = (function (_super) {
-        __extends(Camera, _super);
-        function Camera() {
-            var _this = _super.call(this) || this;
-            _this.projectionMatrix = mat4.create();
-            return _this;
-        }
-        return Camera;
-    }(CanvasToy.Object3d));
-    CanvasToy.Camera = Camera;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var OrthoCamera = (function (_super) {
-        __extends(OrthoCamera, _super);
-        function OrthoCamera(left, right, bottom, top, near, far) {
-            if (left === void 0) { left = -1; }
-            if (right === void 0) { right = 1; }
-            if (bottom === void 0) { bottom = -1; }
-            if (top === void 0) { top = 1; }
-            if (near === void 0) { near = 0.001; }
-            if (far === void 0) { far = 10000; }
-            var _this = _super.call(this) || this;
-            _this.left = left;
-            _this.right = right;
-            _this.bottom = bottom;
-            _this.top = top;
-            _this.near = near;
-            _this.far = far;
-            mat4.ortho(_this.projectionMatrix, left, right, bottom, top, near, far);
-            return _this;
-        }
-        OrthoCamera.prototype.genOtherMatrixs = function () {
-            _super.prototype.genOtherMatrixs.call(this);
-            mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
-        };
-        OrthoCamera.prototype.adaptTargetRadio = function (target) {
-            this.left = -target.width / 2;
-            this.right = target.width / 2;
-            this.top = target.height / 2;
-            this.bottom = -target.height / 2;
-        };
-        return OrthoCamera;
-    }(CanvasToy.Camera));
-    CanvasToy.OrthoCamera = OrthoCamera;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var PerspectiveCamera = (function (_super) {
-        __extends(PerspectiveCamera, _super);
-        function PerspectiveCamera(aspect, fovy, near, far) {
-            if (aspect === void 0) { aspect = 1; }
-            if (fovy === void 0) { fovy = 45; }
-            if (near === void 0) { near = 0.01; }
-            if (far === void 0) { far = 10000; }
-            var _this = _super.call(this) || this;
-            _this.aspect = aspect;
-            _this.fovy = fovy;
-            _this.near = near;
-            _this.far = far;
-            return _this;
-        }
-        PerspectiveCamera.prototype.genOtherMatrixs = function () {
-            _super.prototype.genOtherMatrixs.call(this);
-            this.projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
-        };
-        PerspectiveCamera.prototype.adaptTargetRadio = function (target) {
-            this.aspect = target.width / target.height;
-            this.genOtherMatrixs();
-        };
-        return PerspectiveCamera;
-    }(CanvasToy.Camera));
-    CanvasToy.PerspectiveCamera = PerspectiveCamera;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Geometry = (function () {
-        function Geometry(gl) {
-            this.attributes = {
-                position: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
-                uv: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 2, data: [] }),
-                normal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
-                flatNormal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
-            };
-            this.faces = { data: [], buffer: gl.createBuffer() };
-        }
-        Geometry.prototype.setAttribute = function (name, attribute) {
-            this.attributes[name] = attribute;
-        };
-        Geometry.prototype.addVertex = function (vertex) {
-            for (var attributeName in this.attributes) {
-                if (this.attributes[attributeName] !== undefined) {
-                    if (vertex[attributeName] === undefined) {
-                        return;
-                    }
-                    if (vertex[attributeName].length !== this.attributes[attributeName].size) {
-                        console.error("length " + attributeName + "wrong");
-                        return;
-                    }
-                    this.attributes[attributeName].data
-                        = this.attributes[attributeName].data.concat(vertex[attributeName]);
-                }
-            }
-        };
-        Geometry.prototype.removeAttribute = function (name) {
-            this.attributes[name] = undefined;
-        };
-        Geometry.prototype.getVertexByIndex = function (index) {
-            var vertex = {};
-            for (var attributeName in this.attributes) {
-                vertex[attributeName] = [];
-                for (var i = 0; i < this.attributes[attributeName].stride; ++i) {
-                    vertex[attributeName].push(this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i]);
-                }
-            }
-            return vertex;
-        };
-        Geometry.prototype.getTriangleByIndex = function (triangleIndex) {
-            return [
-                this.getVertexByIndex(triangleIndex * 3),
-                this.getVertexByIndex(triangleIndex * 3 + 1),
-                this.getVertexByIndex(triangleIndex * 3 + 2),
-            ];
-        };
-        Geometry.prototype.generateFlatNormal = function () {
-            for (var i = 0; i < this.faces.data.length; i += 3) {
-                var triangle = this.getTriangleByIndex(i / 3);
-                var flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
-                var flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
-                var flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
-                var flat = [
-                    flatX, flatY, flatZ,
-                    flatX, flatY, flatZ,
-                    flatX, flatY, flatZ,
-                ];
-                this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
-            }
-        };
-        return Geometry;
-    }());
-    CanvasToy.Geometry = Geometry;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Mesh = (function (_super) {
-        __extends(Mesh, _super);
-        function Mesh(geometry, materials) {
-            var _this = _super.call(this) || this;
-            _this.materials = [];
-            _this.maps = [];
-            _this.normalMatrix = mat4.create();
-            _this.materials = materials;
-            _this.geometry = geometry;
-            return _this;
-        }
-        Mesh.prototype.drawMode = function (gl) {
-            return gl.STATIC_DRAW;
-        };
-        Mesh.prototype.genOtherMatrixs = function () {
-            _super.prototype.genOtherMatrixs.call(this);
-            mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));
-        };
-        return Mesh;
-    }(CanvasToy.Object3d));
-    CanvasToy.Mesh = Mesh;
+    }
+    CanvasToy.uniform = uniform;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -687,7 +306,7 @@ var CanvasToy;
                 },
                 eyePos: !scene.openLight ? undefined : {
                     type: CanvasToy.DataType.vec4,
-                    updator: function (mesh, camera) {
+                    updator: function (object3d, camera) {
                         return vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1);
                     },
                 },
@@ -702,9 +321,415 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    CanvasToy.calculators__blinn_phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
+    var Object3d = (function () {
+        function Object3d(tag) {
+            this.children = [];
+            this.objectToWorldMatrix = mat4.create();
+            this._matrix = mat4.create();
+            this._parent = null;
+            this._localMatrix = mat4.create();
+            this._localPosition = vec3.create();
+            this._localRotation = quat.create();
+            this._localScaling = vec3.fromValues(1, 1, 1);
+            this._position = vec3.create();
+            this._scaling = vec3.fromValues(1, 1, 1);
+            this._rotation = quat.create();
+            this.updateEvents = [];
+            this.startEvents = [];
+            this.tag = tag;
+            this.handleUniformProperty();
+        }
+        Object.defineProperty(Object3d.prototype, "parent", {
+            get: function () {
+                return this._parent;
+            },
+            set: function (_parent) {
+                _parent.children.push(this);
+                this._parent = _parent;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "localMatrix", {
+            get: function () {
+                return this._localMatrix;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "matrix", {
+            get: function () {
+                return this._matrix;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "localPosition", {
+            get: function () {
+                return this._localPosition;
+            },
+            set: function (_localPosition) {
+                console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
+                this._localPosition = _localPosition;
+                this.composeFromLocalMatrix();
+                if (!!this._parent) {
+                    mat4.getTranslation(this._position, this.matrix);
+                }
+                else {
+                    this._position = vec3.clone(_localPosition);
+                }
+                this.applyToChildren();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "position", {
+            get: function () {
+                return this._position;
+            },
+            set: function (_position) {
+                console.assert(_position && _position.length === 3, "invalid object position paramter");
+                this._position = _position;
+                this.composeFromGlobalMatrix();
+                if (!!this._parent) {
+                    mat4.getTranslation(this._localPosition, this._localMatrix);
+                }
+                else {
+                    this._localPosition = vec3.clone(_position);
+                }
+                this.applyToChildren();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "localRotation", {
+            get: function () {
+                return this._localRotation;
+            },
+            set: function (_localRotation) {
+                console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
+                quat.normalize(_localRotation, quat.clone(_localRotation));
+                this._localRotation = _localRotation;
+                this.composeFromLocalMatrix();
+                if (!!this._parent) {
+                    mat4.getRotation(this._rotation, this.matrix);
+                }
+                else {
+                    this._rotation = quat.clone(_localRotation);
+                }
+                this.applyToChildren();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "rotation", {
+            get: function () {
+                return this._rotation;
+            },
+            set: function (_rotation) {
+                console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
+                quat.normalize(_rotation, quat.clone(_rotation));
+                this._rotation = _rotation;
+                this.composeFromGlobalMatrix();
+                if (!!this._parent) {
+                    mat4.getRotation(this._localRotation, this.localMatrix);
+                }
+                else {
+                    this._localRotation = quat.clone(_rotation);
+                }
+                this.applyToChildren();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "localScaling", {
+            get: function () {
+                return this._localScaling;
+            },
+            set: function (_localScaling) {
+                console.assert(_localScaling && _localScaling.length === 3, "invalid object scale paramter");
+                this._localScaling = _localScaling;
+                if (!!this._parent) {
+                    vec3.mul(this._scaling, this._parent.scaling, this._localScaling);
+                }
+                else {
+                    this._scaling = vec3.clone(_localScaling);
+                }
+                this.applyToChildren();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Object3d.prototype, "scaling", {
+            get: function () {
+                return this._scaling;
+            },
+            set: function (_scaling) {
+                console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
+                this._scaling = _scaling;
+                if (!!this._parent) {
+                    vec3.div(this.localScaling, this.scaling, this._parent.scaling);
+                }
+                else {
+                    this.localScaling = vec3.clone(_scaling);
+                }
+                this.applyToChildren();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object3d.prototype.setTransformFromParent = function () {
+            if (!!this.parent) {
+                this._matrix = mat4.mul(mat4.create(), this.parent.matrix, this.localMatrix);
+                this.genOtherMatrixs();
+                mat4.getTranslation(this._position, this.matrix);
+                mat4.getRotation(this._rotation, this.matrix);
+                vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
+            }
+        };
+        Object3d.prototype.registUpdate = function (updateFunction) {
+            this.updateEvents.push(updateFunction);
+        };
+        Object3d.prototype.registStart = function (updateFunction) {
+            this.startEvents.push(updateFunction);
+        };
+        Object3d.prototype.start = function () {
+            for (var _i = 0, _a = this.startEvents; _i < _a.length; _i++) {
+                var event_1 = _a[_i];
+                event_1();
+            }
+        };
+        Object3d.prototype.update = function (dt) {
+            for (var _i = 0, _a = this.updateEvents; _i < _a.length; _i++) {
+                var event_2 = _a[_i];
+                event_2(dt);
+            }
+            for (var _b = 0, _c = this.children; _b < _c.length; _b++) {
+                var child = _c[_b];
+                child.update(dt);
+            }
+        };
+        Object3d.prototype.translate = function (delta) {
+            console.assert(delta instanceof Array && delta.length === 3, "invalid delta translate");
+            this.localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
+        };
+        Object3d.prototype.rotateX = function (angle) {
+            this.localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
+        };
+        Object3d.prototype.rotateY = function (angle) {
+            this.localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
+        };
+        Object3d.prototype.rotateZ = function (angle) {
+            this.localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
+        };
+        Object3d.prototype.handleUniformProperty = function () {
+        };
+        Object3d.prototype.genOtherMatrixs = function () {
+            mat4.invert(this.objectToWorldMatrix, this.matrix);
+        };
+        Object3d.prototype.composeFromLocalMatrix = function () {
+            mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
+            if (!!this._parent) {
+                mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
+            }
+            else {
+                this._matrix = mat4.clone(this._localMatrix);
+            }
+            this.genOtherMatrixs();
+        };
+        Object3d.prototype.composeFromGlobalMatrix = function () {
+            mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
+            this.genOtherMatrixs();
+            if (!!this._parent) {
+                mat4.mul(this._localMatrix, this._parent.objectToWorldMatrix, this.matrix);
+            }
+            else {
+                this._localMatrix = mat4.clone(this._matrix);
+            }
+        };
+        Object3d.prototype.applyToChildren = function () {
+            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
+                var child = _a[_i];
+                child.setTransformFromParent();
+            }
+        };
+        return Object3d;
+    }());
+    CanvasToy.Object3d = Object3d;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Camera = (function (_super) {
+        __extends(Camera, _super);
+        function Camera() {
+            var _this = _super.call(this) || this;
+            _this.projectionMatrix = mat4.create();
+            return _this;
+        }
+        return Camera;
+    }(CanvasToy.Object3d));
+    CanvasToy.Camera = Camera;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var OrthoCamera = (function (_super) {
+        __extends(OrthoCamera, _super);
+        function OrthoCamera(left, right, bottom, top, near, far) {
+            if (left === void 0) { left = -1; }
+            if (right === void 0) { right = 1; }
+            if (bottom === void 0) { bottom = -1; }
+            if (top === void 0) { top = 1; }
+            if (near === void 0) { near = 0.001; }
+            if (far === void 0) { far = 10000; }
+            var _this = _super.call(this) || this;
+            _this.left = left;
+            _this.right = right;
+            _this.bottom = bottom;
+            _this.top = top;
+            _this.near = near;
+            _this.far = far;
+            mat4.ortho(_this.projectionMatrix, left, right, bottom, top, near, far);
+            return _this;
+        }
+        OrthoCamera.prototype.genOtherMatrixs = function () {
+            _super.prototype.genOtherMatrixs.call(this);
+            mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
+        };
+        OrthoCamera.prototype.adaptTargetRadio = function (target) {
+            this.left = -target.width / 2;
+            this.right = target.width / 2;
+            this.top = target.height / 2;
+            this.bottom = -target.height / 2;
+        };
+        return OrthoCamera;
+    }(CanvasToy.Camera));
+    CanvasToy.OrthoCamera = OrthoCamera;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var PerspectiveCamera = (function (_super) {
+        __extends(PerspectiveCamera, _super);
+        function PerspectiveCamera(aspect, fovy, near, far) {
+            if (aspect === void 0) { aspect = 1; }
+            if (fovy === void 0) { fovy = 45; }
+            if (near === void 0) { near = 0.01; }
+            if (far === void 0) { far = 10000; }
+            var _this = _super.call(this) || this;
+            _this.aspect = aspect;
+            _this.fovy = fovy;
+            _this.near = near;
+            _this.far = far;
+            return _this;
+        }
+        PerspectiveCamera.prototype.genOtherMatrixs = function () {
+            _super.prototype.genOtherMatrixs.call(this);
+            this.projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
+        };
+        PerspectiveCamera.prototype.adaptTargetRadio = function (target) {
+            this.aspect = target.width / target.height;
+            this.genOtherMatrixs();
+        };
+        return PerspectiveCamera;
+    }(CanvasToy.Camera));
+    CanvasToy.PerspectiveCamera = PerspectiveCamera;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Geometry = (function () {
+        function Geometry(gl) {
+            this.attributes = {
+                position: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
+                uv: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 2, data: [] }),
+                normal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
+                flatNormal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
+            };
+            this.faces = { data: [], buffer: gl.createBuffer() };
+        }
+        Geometry.prototype.setAttribute = function (name, attribute) {
+            this.attributes[name] = attribute;
+        };
+        Geometry.prototype.addVertex = function (vertex) {
+            for (var attributeName in this.attributes) {
+                if (this.attributes[attributeName] !== undefined) {
+                    if (vertex[attributeName] === undefined) {
+                        return;
+                    }
+                    if (vertex[attributeName].length !== this.attributes[attributeName].size) {
+                        console.error("length " + attributeName + "wrong");
+                        return;
+                    }
+                    this.attributes[attributeName].data
+                        = this.attributes[attributeName].data.concat(vertex[attributeName]);
+                }
+            }
+        };
+        Geometry.prototype.removeAttribute = function (name) {
+            this.attributes[name] = undefined;
+        };
+        Geometry.prototype.getVertexByIndex = function (index) {
+            var vertex = {};
+            for (var attributeName in this.attributes) {
+                vertex[attributeName] = [];
+                for (var i = 0; i < this.attributes[attributeName].stride; ++i) {
+                    vertex[attributeName].push(this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i]);
+                }
+            }
+            return vertex;
+        };
+        Geometry.prototype.getTriangleByIndex = function (triangleIndex) {
+            return [
+                this.getVertexByIndex(triangleIndex * 3),
+                this.getVertexByIndex(triangleIndex * 3 + 1),
+                this.getVertexByIndex(triangleIndex * 3 + 2),
+            ];
+        };
+        Geometry.prototype.generateFlatNormal = function () {
+            for (var i = 0; i < this.faces.data.length; i += 3) {
+                var triangle = this.getTriangleByIndex(i / 3);
+                var flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
+                var flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
+                var flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
+                var flat = [
+                    flatX, flatY, flatZ,
+                    flatX, flatY, flatZ,
+                    flatX, flatY, flatZ,
+                ];
+                this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
+            }
+        };
+        return Geometry;
+    }());
+    CanvasToy.Geometry = Geometry;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Mesh = (function (_super) {
+        __extends(Mesh, _super);
+        function Mesh(geometry, materials) {
+            var _this = _super.call(this) || this;
+            _this.materials = [];
+            _this.maps = [];
+            _this.normalMatrix = mat4.create();
+            _this.materials = materials;
+            _this.geometry = geometry;
+            return _this;
+        }
+        Mesh.prototype.drawMode = function (gl) {
+            return gl.STATIC_DRAW;
+        };
+        Mesh.prototype.genOtherMatrixs = function () {
+            _super.prototype.genOtherMatrixs.call(this);
+            mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));
+        };
+        return Mesh;
+    }(CanvasToy.Object3d));
+    CanvasToy.Mesh = Mesh;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    CanvasToy.calculators__blinn_phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec3 lightPos, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec3 lightPos, vec3 spotDir, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
     CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-    CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec4 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec4 position;\n};\n\n#endif // light declaration\n";
+    CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
     CanvasToy.env_map_vert = "";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient + materialAmbient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
@@ -1034,12 +1059,44 @@ var CanvasToy;
         __extends(Light, _super);
         function Light() {
             var _this = _super.call(this) || this;
-            _this.color = vec3.fromValues(1, 1, 1);
-            _this.idensity = 1.0;
+            _this._color = vec3.fromValues(1, 1, 1);
+            _this._idensity = 1.0;
+            _this._position = vec3.create();
             return _this;
         }
+        Light.prototype.setColor = function (color) {
+            this._color = color;
+            return this;
+        };
+        Light.prototype.setIdensity = function (idensity) {
+            this._idensity = idensity;
+            return this;
+        };
+        Object.defineProperty(Light.prototype, "color", {
+            get: function () {
+                return this._color;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "idensity", {
+            get: function () {
+                return this.idensity;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return Light;
     }(CanvasToy.Object3d));
+    __decorate([
+        CanvasToy.uniform("color", CanvasToy.DataType.vec3)
+    ], Light.prototype, "_color", void 0);
+    __decorate([
+        CanvasToy.uniform("idensity", CanvasToy.DataType.float)
+    ], Light.prototype, "_idensity", void 0);
+    __decorate([
+        CanvasToy.uniform("position", CanvasToy.DataType.vec3)
+    ], Light.prototype, "_position", void 0);
     CanvasToy.Light = Light;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1071,7 +1128,7 @@ var CanvasToy;
         __extends(PointLight, _super);
         function PointLight() {
             var _this = _super.call(this) || this;
-            _this.projectCamera = new CanvasToy.PerspectiveCamera();
+            _this._projectCamera = new CanvasToy.PerspectiveCamera();
             return _this;
         }
         return PointLight;
@@ -1513,24 +1570,20 @@ var CanvasToy;
         Renderer.prototype.setUplights = function (scene, material, mesh, camera) {
             var _loop_2 = function (index) {
                 var light = scene.lights[index];
-                var color = "lights[" + index + "].color";
-                var idensity = "lights[" + index + "].idensity";
-                var position = "lights[" + index + "].position";
-                material.program.addUniform(color, {
-                    type: CanvasToy.DataType.vec3,
-                    updator: function () { return light.color; },
-                });
-                material.program.addUniform(position, {
-                    type: CanvasToy.DataType.vec4,
-                    updator: function () { return light.position; },
-                });
-                material.program.addUniform(idensity, {
-                    type: CanvasToy.DataType.float,
-                    updator: function () { return light.idensity; },
-                });
-                light.shadowRtt = new CanvasToy.Texture(this_2.gl);
+                console.assert(light.uniforms !== undefined);
+                var _loop_3 = function (uniformProperty) {
+                    material.program.addUniform("lights[" + index + "]." + uniformProperty.name, {
+                        type: uniformProperty.type,
+                        updator: function () {
+                            return uniformProperty.updator(light);
+                        },
+                    });
+                };
+                for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
+                    var uniformProperty = _a[_i];
+                    _loop_3(uniformProperty);
+                }
             };
-            var this_2 = this;
             for (var index in scene.lights) {
                 _loop_2(index);
             }

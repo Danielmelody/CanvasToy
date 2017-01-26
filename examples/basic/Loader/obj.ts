@@ -10,7 +10,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     scene.ambientLight = [0.2, 0.1, 0.1];
     const light = new CanvasToy.PointLight();
     light.position = [100, 0, 100];
-    light.color = [1, 1, 1];
+    light.setColor([1, 1, 1]);
 
     scene.addLight(light);
 

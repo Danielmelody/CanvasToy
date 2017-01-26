@@ -29,7 +29,7 @@ examples.push(function (canvas) {
     scene.ambientLight = [0.2, 0.1, 0.1];
     var light = new CanvasToy.PointLight();
     light.position = [100, 0, 100];
-    light.color = [1, 1, 1];
+    light.setColor([1, 1, 1]);
     scene.addLight(light);
     var woodImage = new Image();
     woodImage.src = "basic/images/wood.jpg";
@@ -78,7 +78,6 @@ examples.push(function (canvas) {
     cameras[0].position = [0, 0, 5];
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-    light.idensity = 1;
     light.position = [100, 0, 100];
     scenes[0].addLight(light);
     scenes[0].addObject(cameras[0]);
@@ -114,7 +113,6 @@ examples.push(function (canvas) {
     cameras[0].position = [0, 0, 5];
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-    light.idensity = 1;
     light.position = [100, 0, 100];
     scenes[0].addLight(light);
     scenes[0].addObject(cameras[0]);
