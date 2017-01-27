@@ -28,8 +28,16 @@ var CanvasToy;
 (function (CanvasToy) {
     function uniform(name, type, updator) {
         return function (proto, key) {
-            proto.uniforms = proto.uniforms || [];
-            proto.uniforms.push({
+            if (!proto.hasOwnProperty("uniforms")) {
+                Object.defineProperty(proto, "uniforms", {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: [],
+                });
+            }
+            var uniforms = proto.uniforms;
+            uniforms.push({
                 name: name,
                 type: type,
                 updator: updator ? updator : function (obj) {
