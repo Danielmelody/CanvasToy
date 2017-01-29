@@ -42,4 +42,5 @@ examples.push((canvas: HTMLCanvasElement) => {
     scenes[0].addLight(light);
     renderer.renderFBO(scenes[0], cameras[0]);
     renderer.render(scenes[1], cameras[1]);
+    return renderer;
 });

@@ -1552,6 +1552,13 @@ var CanvasToy;
             this.gl.depthFunc(this.gl.LEQUAL);
             setTimeout(this.main, this.frameRate);
         }
+        Renderer.prototype.stop = function () {
+            this.stopped = true;
+        };
+        Renderer.prototype.start = function () {
+            this.stopped = false;
+            setTimeout(this.main, this.frameRate);
+        };
         Renderer.prototype.createFrameBuffer = function () {
             var fbo = new CanvasToy.FrameBuffer(this.gl);
             this.fbos.push(fbo);

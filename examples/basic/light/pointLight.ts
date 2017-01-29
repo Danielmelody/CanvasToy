@@ -29,4 +29,5 @@ examples.push((canvas: HTMLCanvasElement) => {
         cube.rotateY(0.01);
     });
     renderer.render(scene, camera);
+    return renderer;
 });

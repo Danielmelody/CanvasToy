@@ -46,4 +46,5 @@ examples.push((canvas: HTMLCanvasElement) => {
         // renderer.render(scene, camera2);
         renderer.render(scene, camera);
     });
+    return renderer;
 });

@@ -492,6 +492,8 @@ declare namespace CanvasToy {
         frameRate: number;
         private stopped;
         constructor(canvas: HTMLCanvasElement);
+        stop(): void;
+        start(): void;
         createFrameBuffer(): FrameBuffer;
         renderFBO(scene: Scene, camera: Camera): void;
         render(scene: Scene, camera: Camera): void;

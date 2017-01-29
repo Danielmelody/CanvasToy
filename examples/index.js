@@ -1,4 +1,12 @@
 var examples = [];
+function onMouseOnStart(renderer) {
+    renderer.canvas.onmouseover = function () {
+        renderer.start();
+    };
+    renderer.canvas.onmouseleave = function () {
+        renderer.stop();
+    };
+}
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
@@ -20,6 +28,7 @@ examples.push(function (canvas) {
         cube.rotateY(0.01);
     });
     renderer.render(scene, camera);
+    return renderer;
 });
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
@@ -62,6 +71,7 @@ examples.push(function (canvas) {
         });
         renderer.render(scene, camera);
     });
+    return renderer;
 });
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
@@ -93,6 +103,7 @@ examples.push(function (canvas) {
     scenes[0].addLight(light);
     renderer.renderFBO(scenes[0], cameras[0]);
     renderer.render(scenes[1], cameras[1]);
+    return renderer;
 });
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
@@ -127,4 +138,5 @@ examples.push(function (canvas) {
     scenes[0].addLight(light);
     renderer.renderFBO(scenes[0], cameras[0]);
     renderer.render(scenes[1], cameras[1]);
+    return renderer;
 });

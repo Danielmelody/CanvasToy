@@ -26,7 +26,9 @@
       newCanvas.height = 360;
       newCanvas.style.background = "black";
       table.appendChild(newCanvas);
-      examples[i](newCanvas);
+      var renderer = examples[i](newCanvas);
+      renderer.stop();
+      onMouseOnStart(renderer);
   }
   </script>
 </body>

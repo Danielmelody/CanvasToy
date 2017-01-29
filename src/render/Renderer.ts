@@ -53,6 +53,15 @@ namespace CanvasToy {
             setTimeout(this.main, this.frameRate);
         }
 
+        public stop() {
+            this.stopped = true;
+        }
+
+        public start() {
+            this.stopped = false;
+            setTimeout(this.main, this.frameRate);
+        }
+
         public createFrameBuffer(): FrameBuffer {
             const fbo = new FrameBuffer(this.gl);
             this.fbos.push(fbo);
