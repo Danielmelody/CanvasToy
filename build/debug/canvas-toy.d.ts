@@ -152,15 +152,22 @@ declare namespace CanvasToy {
         protected updateEvents: Function[];
         protected startEvents: Function[];
         constructor(tag?: string);
-        parent: Object3d;
+        readonly parent: Object3d;
+        setParent(_parent: Object3d): this;
         readonly localMatrix: Mat4Array;
         readonly matrix: Mat4Array;
-        localPosition: Vec3Array;
-        position: Vec3Array;
-        localRotation: QuatArray;
-        rotation: QuatArray;
-        localScaling: Vec3Array;
-        scaling: Vec3Array;
+        readonly localPosition: Vec3Array;
+        setLocalPosition(_localPosition: Vec3Array): this;
+        readonly position: Vec3Array;
+        setPosition(_position: Vec3Array): this;
+        readonly localRotation: QuatArray;
+        setLocalRotation(_localRotation: QuatArray): this;
+        readonly rotation: QuatArray;
+        setRotation(_rotation: QuatArray): this;
+        readonly localScaling: Vec3Array;
+        setLocalScaling(_localScaling: Vec3Array): void;
+        readonly scaling: Vec3Array;
+        setScaling(_scaling: Vec3Array): this;
         setTransformFromParent(): void;
         registUpdate(updateFunction: Function): void;
         registStart(updateFunction: Function): void;
@@ -179,8 +186,10 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     abstract class Camera extends Object3d {
-        projectionMatrix: Mat4Array;
+        readonly projectionMatrix: GLM.IArray;
+        protected _projectionMatrix: Mat4Array;
         constructor();
+        setProjectionMatrix(projectionMatrix: Mat4Array): this;
         abstract adaptTargetRadio(target: {
             width: number;
             height: number;
@@ -189,13 +198,26 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class OrthoCamera extends Camera {
-        left: number;
-        right: number;
-        bottom: number;
-        top: number;
-        near: number;
-        far: number;
-        constructor(left?: number, right?: number, bottom?: number, top?: number, near?: number, far?: number);
+        protected _left: number;
+        protected _right: number;
+        protected _bottom: number;
+        protected _top: number;
+        protected _near: number;
+        protected _far: number;
+        constructor(parameters: {
+            left?: number;
+            right?: number;
+            bottom?: number;
+            top?: number;
+            near?: number;
+            far?: number;
+        });
+        readonly left: number;
+        readonly right: number;
+        readonly top: number;
+        readonly bottom: number;
+        readonly near: number;
+        readonly far: number;
         genOtherMatrixs(): void;
         adaptTargetRadio(target: {
             width: number;
@@ -237,8 +259,8 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class Mesh extends Object3d {
-        geometry: Geometry;
-        materials: Material[];
+        readonly geometry: Geometry;
+        readonly materials: Material[];
         maps: Texture[];
         normalMatrix: Mat4Array;
         constructor(geometry: Geometry, materials: Material[]);
@@ -480,9 +502,9 @@ declare namespace CanvasToy {
         programSetUp: boolean;
         constructor();
         update(dt: number): void;
-        addObject(object: Object3d): void;
-        removeObject(object: Object3d): void;
-        addLight(light: Light): void;
+        addObject(object: Object3d): this;
+        removeObject(object: Object3d): this;
+        addLight(light: Light): this;
     }
 }
 declare namespace CanvasToy {

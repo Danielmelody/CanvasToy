@@ -278,7 +278,7 @@ namespace CanvasToy {
                 const light: any = scene.lights[index];
 
                 // light properties pass
-                console.assert (light.uniforms !== undefined);
+                console.assert(light.uniforms !== undefined);
                 for (const uniformProperty of light.uniforms) {
                     material.program.addUniform(`lights[${index}].${uniformProperty.name}`, {
                         type: uniformProperty.type,

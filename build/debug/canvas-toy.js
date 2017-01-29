@@ -351,13 +351,14 @@ var CanvasToy;
             get: function () {
                 return this._parent;
             },
-            set: function (_parent) {
-                _parent.children.push(this);
-                this._parent = _parent;
-            },
             enumerable: true,
             configurable: true
         });
+        Object3d.prototype.setParent = function (_parent) {
+            _parent.children.push(this);
+            this._parent = _parent;
+            return this;
+        };
         Object.defineProperty(Object3d.prototype, "localMatrix", {
             get: function () {
                 return this._localMatrix;
@@ -376,116 +377,121 @@ var CanvasToy;
             get: function () {
                 return this._localPosition;
             },
-            set: function (_localPosition) {
-                console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
-                this._localPosition = _localPosition;
-                this.composeFromLocalMatrix();
-                if (!!this._parent) {
-                    mat4.getTranslation(this._position, this.matrix);
-                }
-                else {
-                    this._position = vec3.clone(_localPosition);
-                }
-                this.applyToChildren();
-            },
             enumerable: true,
             configurable: true
         });
+        Object3d.prototype.setLocalPosition = function (_localPosition) {
+            console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
+            this._localPosition = _localPosition;
+            this.composeFromLocalMatrix();
+            if (!!this._parent) {
+                mat4.getTranslation(this._position, this.matrix);
+            }
+            else {
+                this._position = vec3.clone(_localPosition);
+            }
+            this.applyToChildren();
+            return this;
+        };
         Object.defineProperty(Object3d.prototype, "position", {
             get: function () {
                 return this._position;
             },
-            set: function (_position) {
-                console.assert(_position && _position.length === 3, "invalid object position paramter");
-                this._position = _position;
-                this.composeFromGlobalMatrix();
-                if (!!this._parent) {
-                    mat4.getTranslation(this._localPosition, this._localMatrix);
-                }
-                else {
-                    this._localPosition = vec3.clone(_position);
-                }
-                this.applyToChildren();
-            },
             enumerable: true,
             configurable: true
         });
+        Object3d.prototype.setPosition = function (_position) {
+            console.assert(_position && _position.length === 3, "invalid object position paramter");
+            this._position = _position;
+            this.composeFromGlobalMatrix();
+            if (!!this._parent) {
+                mat4.getTranslation(this._localPosition, this._localMatrix);
+            }
+            else {
+                this._localPosition = vec3.clone(_position);
+            }
+            this.applyToChildren();
+            return this;
+        };
         Object.defineProperty(Object3d.prototype, "localRotation", {
             get: function () {
                 return this._localRotation;
             },
-            set: function (_localRotation) {
-                console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
-                quat.normalize(_localRotation, quat.clone(_localRotation));
-                this._localRotation = _localRotation;
-                this.composeFromLocalMatrix();
-                if (!!this._parent) {
-                    mat4.getRotation(this._rotation, this.matrix);
-                }
-                else {
-                    this._rotation = quat.clone(_localRotation);
-                }
-                this.applyToChildren();
-            },
             enumerable: true,
             configurable: true
         });
+        Object3d.prototype.setLocalRotation = function (_localRotation) {
+            console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
+            quat.normalize(_localRotation, quat.clone(_localRotation));
+            this._localRotation = _localRotation;
+            this.composeFromLocalMatrix();
+            if (!!this._parent) {
+                mat4.getRotation(this._rotation, this.matrix);
+            }
+            else {
+                this._rotation = quat.clone(_localRotation);
+            }
+            this.applyToChildren();
+            return this;
+        };
         Object.defineProperty(Object3d.prototype, "rotation", {
             get: function () {
                 return this._rotation;
             },
-            set: function (_rotation) {
-                console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
-                quat.normalize(_rotation, quat.clone(_rotation));
-                this._rotation = _rotation;
-                this.composeFromGlobalMatrix();
-                if (!!this._parent) {
-                    mat4.getRotation(this._localRotation, this.localMatrix);
-                }
-                else {
-                    this._localRotation = quat.clone(_rotation);
-                }
-                this.applyToChildren();
-            },
             enumerable: true,
             configurable: true
         });
+        Object3d.prototype.setRotation = function (_rotation) {
+            console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
+            quat.normalize(_rotation, quat.clone(_rotation));
+            this._rotation = _rotation;
+            this.composeFromGlobalMatrix();
+            if (!!this._parent) {
+                mat4.getRotation(this._localRotation, this.localMatrix);
+            }
+            else {
+                this._localRotation = quat.clone(_rotation);
+            }
+            this.applyToChildren();
+            return this;
+        };
         Object.defineProperty(Object3d.prototype, "localScaling", {
             get: function () {
                 return this._localScaling;
             },
-            set: function (_localScaling) {
-                console.assert(_localScaling && _localScaling.length === 3, "invalid object scale paramter");
-                this._localScaling = _localScaling;
-                if (!!this._parent) {
-                    vec3.mul(this._scaling, this._parent.scaling, this._localScaling);
-                }
-                else {
-                    this._scaling = vec3.clone(_localScaling);
-                }
-                this.applyToChildren();
-            },
             enumerable: true,
             configurable: true
         });
+        Object3d.prototype.setLocalScaling = function (_localScaling) {
+            console.assert(_localScaling && _localScaling.length === 3, "invalid object scale paramter");
+            this._localScaling = _localScaling;
+            if (!!this._parent) {
+                vec3.mul(this._scaling, this._parent.scaling, this._localScaling);
+            }
+            else {
+                this._scaling = vec3.clone(_localScaling);
+            }
+            this.applyToChildren();
+        };
         Object.defineProperty(Object3d.prototype, "scaling", {
             get: function () {
                 return this._scaling;
             },
-            set: function (_scaling) {
-                console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
-                this._scaling = _scaling;
-                if (!!this._parent) {
-                    vec3.div(this.localScaling, this.scaling, this._parent.scaling);
-                }
-                else {
-                    this.localScaling = vec3.clone(_scaling);
-                }
-                this.applyToChildren();
-            },
             enumerable: true,
             configurable: true
         });
+        Object3d.prototype.setScaling = function (_scaling) {
+            console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
+            this._scaling = _scaling;
+            if (!!this._parent) {
+                vec3.div(this.localScaling, this.scaling, this._parent.scaling);
+            }
+            else {
+                this._localScaling = vec3.clone(_scaling);
+            }
+            this.applyToChildren();
+            return this;
+        };
         Object3d.prototype.setTransformFromParent = function () {
             if (!!this.parent) {
                 this._matrix = mat4.mul(mat4.create(), this.parent.matrix, this.localMatrix);
@@ -496,7 +502,7 @@ var CanvasToy;
             }
         };
         Object3d.prototype.registUpdate = function (updateFunction) {
-            this.updateEvents.push(updateFunction);
+            this.updateEvents.push(Function);
         };
         Object3d.prototype.registStart = function (updateFunction) {
             this.startEvents.push(updateFunction);
@@ -519,16 +525,16 @@ var CanvasToy;
         };
         Object3d.prototype.translate = function (delta) {
             console.assert(delta instanceof Array && delta.length === 3, "invalid delta translate");
-            this.localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
+            this._localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
         };
         Object3d.prototype.rotateX = function (angle) {
-            this.localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
+            this._localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
         };
         Object3d.prototype.rotateY = function (angle) {
-            this.localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
+            this._localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
         };
         Object3d.prototype.rotateZ = function (angle) {
-            this.localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
+            this._localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
         };
         Object3d.prototype.handleUniformProperty = function () {
         };
@@ -571,9 +577,20 @@ var CanvasToy;
         __extends(Camera, _super);
         function Camera() {
             var _this = _super.call(this) || this;
-            _this.projectionMatrix = mat4.create();
+            _this._projectionMatrix = mat4.create();
             return _this;
         }
+        Object.defineProperty(Camera.prototype, "projectionMatrix", {
+            get: function () {
+                return this._projectionMatrix;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Camera.prototype.setProjectionMatrix = function (projectionMatrix) {
+            this._projectionMatrix = projectionMatrix;
+            return this;
+        };
         return Camera;
     }(CanvasToy.Object3d));
     CanvasToy.Camera = Camera;
@@ -582,23 +599,60 @@ var CanvasToy;
 (function (CanvasToy) {
     var OrthoCamera = (function (_super) {
         __extends(OrthoCamera, _super);
-        function OrthoCamera(left, right, bottom, top, near, far) {
-            if (left === void 0) { left = -1; }
-            if (right === void 0) { right = 1; }
-            if (bottom === void 0) { bottom = -1; }
-            if (top === void 0) { top = 1; }
-            if (near === void 0) { near = 0.001; }
-            if (far === void 0) { far = 10000; }
+        function OrthoCamera(parameters) {
             var _this = _super.call(this) || this;
-            _this.left = left;
-            _this.right = right;
-            _this.bottom = bottom;
-            _this.top = top;
-            _this.near = near;
-            _this.far = far;
-            mat4.ortho(_this.projectionMatrix, left, right, bottom, top, near, far);
+            _this._left = -1;
+            _this._right = 1;
+            _this._bottom = -1;
+            _this._top = 1;
+            _this._near = 0.001;
+            _this._far = 1000;
+            _this._top = parameters.top;
+            mat4.ortho(_this._projectionMatrix, _this._left, _this._right, _this._bottom, _this._top, _this._near, _this._far);
             return _this;
         }
+        Object.defineProperty(OrthoCamera.prototype, "left", {
+            get: function () {
+                return this._left;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(OrthoCamera.prototype, "right", {
+            get: function () {
+                return this._right;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(OrthoCamera.prototype, "top", {
+            get: function () {
+                return this._top;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(OrthoCamera.prototype, "bottom", {
+            get: function () {
+                return this._bottom;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(OrthoCamera.prototype, "near", {
+            get: function () {
+                return this._near;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(OrthoCamera.prototype, "far", {
+            get: function () {
+                return this._far;
+            },
+            enumerable: true,
+            configurable: true
+        });
         OrthoCamera.prototype.genOtherMatrixs = function () {
             _super.prototype.genOtherMatrixs.call(this);
             mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
@@ -1149,12 +1203,36 @@ var CanvasToy;
         __extends(SpotLight, _super);
         function SpotLight() {
             var _this = _super.call(this) || this;
-            _this.coneAngle = 1;
-            _this.direction = vec3.fromValues(1, 1, 1);
+            _this._coneAngle = 1;
+            _this._direction = vec3.fromValues(1, 1, 1);
             return _this;
         }
+        Object.defineProperty(SpotLight.prototype, "coneAngle", {
+            get: function () {
+                return this._coneAngle;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SpotLight.prototype, "direction", {
+            get: function () {
+                return this._direction;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        SpotLight.prototype.setConeAngle = function (coneAngle) {
+            this._coneAngle = coneAngle;
+            return this;
+        };
         return SpotLight;
     }(CanvasToy.Light));
+    __decorate([
+        CanvasToy.uniform("coneAngle", CanvasToy.DataType.float)
+    ], SpotLight.prototype, "_coneAngle", void 0);
+    __decorate([
+        CanvasToy.uniform("direction", CanvasToy.DataType.vec3)
+    ], SpotLight.prototype, "_direction", void 0);
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1668,6 +1746,7 @@ var CanvasToy;
             object.children.forEach(function (child) {
                 _this.addObject(child);
             });
+            return this;
         };
         Scene.prototype.removeObject = function (object) {
             var _this = this;
@@ -1675,11 +1754,13 @@ var CanvasToy;
                 _this.removeObject(child);
             });
             this.objects.splice(this.objects.indexOf(object));
+            return this;
         };
         Scene.prototype.addLight = function (light) {
             this.openLight = true;
             this.lights.push(light);
             light.scene = this;
+            return this;
         };
         return Scene;
     }());

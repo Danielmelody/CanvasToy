@@ -37,6 +37,7 @@ namespace CanvasToy {
             object.children.forEach((child) => {
                 this.addObject(child);
             });
+            return this;
         }
 
         public removeObject(object: Object3d) {
@@ -45,12 +46,14 @@ namespace CanvasToy {
                 this.removeObject(child);
             });
             this.objects.splice(this.objects.indexOf(object));
+            return this;
         }
 
         public addLight(light: Light) {
             this.openLight = true;
             this.lights.push(light);
             light.scene = this;
+            return this;
         }
     }
 }

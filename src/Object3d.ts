@@ -68,9 +68,10 @@ namespace CanvasToy {
          * Set transform parent of this object, will also add this to parent‘s children list automatically
          * @param  {Object3d} _parent
          */
-        public set parent(_parent: Object3d) {
+        public setParent(_parent: Object3d) {
             _parent.children.push(this);
             this._parent = _parent;
+            return this;
         }
 
         /**
@@ -99,7 +100,7 @@ namespace CanvasToy {
          * Set position locally
          * @param  {Vec3Array} _localPosition
          */
-        public set localPosition(_localPosition: Vec3Array) {
+        public setLocalPosition(_localPosition: Vec3Array) {
             console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
             this._localPosition = _localPosition;
             this.composeFromLocalMatrix();
@@ -109,6 +110,7 @@ namespace CanvasToy {
                 this._position = vec3.clone(_localPosition);
             }
             this.applyToChildren();
+            return this;
         }
 
         /**
@@ -122,7 +124,7 @@ namespace CanvasToy {
          * set position globally
          * @param  {Vec3Array} _position
          */
-        public set position(_position: Vec3Array) {
+        public setPosition(_position: Vec3Array) {
             console.assert(_position && _position.length === 3, "invalid object position paramter");
             this._position = _position;
             this.composeFromGlobalMatrix();
@@ -132,6 +134,7 @@ namespace CanvasToy {
                 this._localPosition = vec3.clone(_position);
             }
             this.applyToChildren();
+            return this;
         }
 
         /**
@@ -146,7 +149,7 @@ namespace CanvasToy {
          * Set the rotation locally
          * @param  {QuatArray} _rotation
          */
-        public set localRotation(_localRotation: QuatArray) {
+        public setLocalRotation(_localRotation: QuatArray) {
             console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
             quat.normalize(_localRotation, quat.clone(_localRotation));
             this._localRotation = _localRotation;
@@ -157,6 +160,7 @@ namespace CanvasToy {
                 this._rotation = quat.clone(_localRotation);
             }
             this.applyToChildren();
+            return this;
         }
 
         public get rotation(): QuatArray {
@@ -167,7 +171,7 @@ namespace CanvasToy {
          * Set the rotation globally
          * @param  {QuatArray} _rotation
          */
-        public set rotation(_rotation: QuatArray) {
+        public setRotation(_rotation: QuatArray) {
             console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
             quat.normalize(_rotation, quat.clone(_rotation));
             this._rotation = _rotation;
@@ -178,6 +182,7 @@ namespace CanvasToy {
                 this._localRotation = quat.clone(_rotation);
             }
             this.applyToChildren();
+            return this;
         }
 
         /**
@@ -192,7 +197,7 @@ namespace CanvasToy {
          * Set scaling locally
          * @param  {Vec3Array} _localScaling expected local scaling factor
          */
-        public set localScaling(_localScaling: Vec3Array) {
+        public setLocalScaling(_localScaling: Vec3Array) {
             console.assert(_localScaling && _localScaling.length === 3, "invalid object scale paramter");
             this._localScaling = _localScaling;
             if (!!this._parent) {
@@ -215,15 +220,16 @@ namespace CanvasToy {
          * Set scaling factor globally.
          * @param  {Vec3Array} _scaling the given scaling factor
          */
-        public set scaling(_scaling: Vec3Array) {
+        public setScaling(_scaling: Vec3Array) {
             console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
             this._scaling = _scaling;
             if (!!this._parent) {
                 vec3.div(this.localScaling, this.scaling, this._parent.scaling);
             } else {
-                this.localScaling = vec3.clone(_scaling);
+                this._localScaling = vec3.clone(_scaling);
             }
             this.applyToChildren();
+            return this;
         }
 
         /**
@@ -245,7 +251,7 @@ namespace CanvasToy {
          * @param  {Function} updateFunction
          */
         public registUpdate(updateFunction: Function) {
-            this.updateEvents.push(updateFunction);
+            this.updateEvents.push(Function);
         }
 
         /**
@@ -284,7 +290,7 @@ namespace CanvasToy {
          */
         public translate(delta: Vec3Array) {
             console.assert(delta instanceof Array && delta.length === 3, "invalid delta translate");
-            this.localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
+            this._localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
         }
 
         /**
@@ -292,7 +298,7 @@ namespace CanvasToy {
          * @param  {number} angle angle (in radians) to rotate
          */
         public rotateX(angle: number) {
-            this.localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
+            this._localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
         }
 
         /**
@@ -300,7 +306,7 @@ namespace CanvasToy {
          * @param  {number} angle angle (in radians) to rotate
          */
         public rotateY(angle: number) {
-            this.localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
+            this._localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
         }
 
         /**
@@ -308,7 +314,7 @@ namespace CanvasToy {
          * @param  {number} angle angle (in radians) to rotate
          */
         public rotateZ(angle: number) {
-            this.localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
+            this._localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
         }
 
         public handleUniformProperty() {

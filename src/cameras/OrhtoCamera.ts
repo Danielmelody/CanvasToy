@@ -3,28 +3,84 @@
 namespace CanvasToy {
 
     export class OrthoCamera extends Camera {
-        public left: number;
-        public right: number;
-        public bottom: number;
-        public top: number;
-        public near: number;
-        public far: number;
-        constructor(
-            left: number = -1,
-            right: number = 1,
-            bottom: number = -1,
-            top: number = 1,
-            near: number = 0.001,
-            far: number = 10000,
-        ) {
+
+        protected _left: number = -1;
+        protected _right: number = 1;
+        protected _bottom: number = -1;
+        protected _top: number = 1;
+        protected _near: number = 0.001;
+        protected _far: number = 1000;
+        constructor(parameters: {
+            left?: number,
+            right?: number,
+            bottom?: number,
+            top?: number,
+            near?: number,
+            far?: number,
+        }) {
             super();
-            this.left = left;
-            this.right = right;
-            this.bottom = bottom;
-            this.top = top;
-            this.near = near;
-            this.far = far;
-            mat4.ortho(this.projectionMatrix, left, right, bottom, top, near, far);
+            this._left = parameters.left;
+            this._right = parameters.right;
+            this._bottom = parameters.bottom;
+            this._top = parameters.top;
+            this._near = parameters.near;
+            this._far = parameters.far;
+            mat4.ortho(
+                this._projectionMatrix,
+                this._left,
+                this._right,
+                this._bottom,
+                this._top,
+                this._near,
+                this._far,
+            );
+        }
+
+        public setLeft(left: number) {
+            if (left !== this._left) {
+                this._left = left;
+                this.compuseProjectionMatrix();
+            }
+        }
+
+        public get left() {
+            return this._left;
+        }
+
+        public get right() {
+            return this._right;
+        }
+
+        public get top() {
+            return this._top;
+        }
+
+        public get bottom() {
+            return this._bottom;
+        }
+
+        public get near() {
+            return this._near;
+        }
+
+        public get far() {
+            return this._far;
+        }
+
+        public compuseProjectionMatrix() {
+            mat4.ortho(
+                this._projectionMatrix,
+                this._left,
+                this._right,
+                this._bottom,
+                this._top,
+                this._near,
+                this._far,
+            );
+        }
+
+        public deCompuseProjectionMatrix() {
+            // TODO: de compute ortho camera
         }
 
         public genOtherMatrixs() {
@@ -33,10 +89,11 @@ namespace CanvasToy {
         }
 
         public adaptTargetRadio(target: { width: number, height: number }) {
-            this.left = -target.width / 2;
-            this.right = target.width / 2;
-            this.top = target.height / 2;
-            this.bottom = -target.height / 2;
+            this._left = -target.width / 2;
+            this._right = target.width / 2;
+            this._top = target.height / 2;
+            this._bottom = -target.height / 2;
+            this.compuseProjectionMatrix();
         }
     }
 }
