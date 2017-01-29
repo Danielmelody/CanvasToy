@@ -8,16 +8,16 @@ namespace CanvasToy {
         protected _near: number = 0.01;
         protected _far: number = 10000;
         constructor(parameter: {
-            aspect: number,
-            fovy: number,
-            near: number,
-            far: number,
-        }) {
+            aspect?: number,
+            fovy?: number,
+            near?: number,
+            far?: number,
+        } = {}) {
             super();
-            this._aspect = parameter.aspect;
-            this._fovy = parameter.fovy;
-            this._near = parameter.near;
-            this._far = parameter.far;
+            this._aspect = parameter.aspect || this._aspect;
+            this._fovy = parameter.fovy || this._fovy;
+            this._near = parameter.near || this._near;
+            this._far = parameter.far || this._far;
         }
 
         public compuseProjectionMatrix() {

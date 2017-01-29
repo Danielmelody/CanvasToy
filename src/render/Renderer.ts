@@ -30,7 +30,7 @@ namespace CanvasToy {
 
         public isAnimating: boolean = false;
 
-        public renderQueue: Function[] = [];
+        public renderQueue: Array<(deltaTime: number) => void> = [];
 
         public fbos: FrameBuffer[] = [];
 
@@ -114,8 +114,9 @@ namespace CanvasToy {
                     console.error("" + this.gl.getError());
                 }
 
-                this.renderQueue.push(() => {
+                this.renderQueue.push((deltaTime: number) => {
                     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
+                    scene.update(deltaTime);
                     this.gl.clearColor(
                         scene.clearColor[0],
                         scene.clearColor[1],
@@ -153,7 +154,8 @@ namespace CanvasToy {
                     }
                     break;
                 case RenderMode.Dynamic:
-                    this.renderQueue.push(() => {
+                    this.renderQueue.push((deltaTime: number) => {
+                        scene.update(deltaTime);
                         this.gl.clearColor(
                             scene.clearColor[0],
                             scene.clearColor[1],
@@ -332,7 +334,7 @@ namespace CanvasToy {
 
         private main = () => {
             for (const renderCommand of this.renderQueue) {
-                renderCommand();
+                renderCommand(this.frameRate);
             }
             if (this.stopped) {
                 return;

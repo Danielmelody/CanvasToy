@@ -5,6 +5,7 @@
           "outFile":"build/canvas-toy-test.js",
           "target": "es5",
           "allowJs": true,
+          "experimentalDecorators":true,
           "sourceMap": false
     },
     "include": [

@@ -165,18 +165,18 @@ declare namespace CanvasToy {
         readonly rotation: QuatArray;
         setRotation(_rotation: QuatArray): this;
         readonly localScaling: Vec3Array;
-        setLocalScaling(_localScaling: Vec3Array): void;
+        setLocalScaling(_localScaling: Vec3Array): this;
         readonly scaling: Vec3Array;
         setScaling(_scaling: Vec3Array): this;
-        setTransformFromParent(): void;
-        registUpdate(updateFunction: Function): void;
-        registStart(updateFunction: Function): void;
+        setTransformFromParent(): this;
+        registUpdate(updateFunction: Function): this;
+        registStart(updateFunction: Function): this;
         start(): void;
         update(dt: number): void;
         translate(delta: Vec3Array): void;
-        rotateX(angle: number): void;
-        rotateY(angle: number): void;
-        rotateZ(angle: number): void;
+        rotateX(angle: number): this;
+        rotateY(angle: number): this;
+        rotateZ(angle: number): this;
         handleUniformProperty(): void;
         protected genOtherMatrixs(): void;
         private composeFromLocalMatrix();
@@ -190,6 +190,8 @@ declare namespace CanvasToy {
         protected _projectionMatrix: Mat4Array;
         constructor();
         setProjectionMatrix(projectionMatrix: Mat4Array): this;
+        abstract compuseProjectionMatrix(): any;
+        abstract deCompuseProjectionMatrix(): any;
         abstract adaptTargetRadio(target: {
             width: number;
             height: number;
@@ -204,7 +206,7 @@ declare namespace CanvasToy {
         protected _top: number;
         protected _near: number;
         protected _far: number;
-        constructor(parameters: {
+        constructor(parameters?: {
             left?: number;
             right?: number;
             bottom?: number;
@@ -212,12 +214,15 @@ declare namespace CanvasToy {
             near?: number;
             far?: number;
         });
+        setLeft(left: number): void;
         readonly left: number;
         readonly right: number;
         readonly top: number;
         readonly bottom: number;
         readonly near: number;
         readonly far: number;
+        compuseProjectionMatrix(): void;
+        deCompuseProjectionMatrix(): void;
         genOtherMatrixs(): void;
         adaptTargetRadio(target: {
             width: number;
@@ -227,11 +232,22 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class PerspectiveCamera extends Camera {
-        aspect: number;
-        fovy: number;
-        near: number;
-        far: number;
-        constructor(aspect?: number, fovy?: number, near?: number, far?: number);
+        protected _aspect: number;
+        protected _fovy: number;
+        protected _near: number;
+        protected _far: number;
+        constructor(parameter?: {
+            aspect?: number;
+            fovy?: number;
+            near?: number;
+            far?: number;
+        });
+        compuseProjectionMatrix(): void;
+        readonly aspect: number;
+        readonly fovy: number;
+        readonly near: number;
+        readonly far: number;
+        deCompuseProjectionMatrix(): void;
         genOtherMatrixs(): void;
         adaptTargetRadio(target: {
             width: number;
@@ -249,18 +265,18 @@ declare namespace CanvasToy {
         };
         faces: Faces;
         constructor(gl: WebGLRenderingContext);
-        setAttribute(name: any, attribute: Attribute): void;
-        addVertex(vertex: any): void;
-        removeAttribute(name: string): void;
+        setAttribute(name: any, attribute: Attribute): this;
+        addVertex(vertex: any): this;
+        removeAttribute(name: string): this;
         getVertexByIndex(index: number): any;
         getTriangleByIndex(triangleIndex: number): any[];
-        generateFlatNormal(): void;
+        generateFlatNormal(): this;
     }
 }
 declare namespace CanvasToy {
     class Mesh extends Object3d {
-        readonly geometry: Geometry;
-        readonly materials: Material[];
+        geometry: Geometry;
+        materials: Material[];
         maps: Texture[];
         normalMatrix: Mat4Array;
         constructor(geometry: Geometry, materials: Material[]);
@@ -469,7 +485,7 @@ declare namespace CanvasToy {
         vertPrecision: string;
         fragPrecision: string;
         isAnimating: boolean;
-        renderQueue: Function[];
+        renderQueue: Array<(deltaTime: number) => void>;
         fbos: FrameBuffer[];
         scenes: Scene[];
         cameras: Camera[];
@@ -500,7 +516,6 @@ declare namespace CanvasToy {
         enableShadowMap: boolean;
         clearColor: number[];
         programSetUp: boolean;
-        constructor();
         update(dt: number): void;
         addObject(object: Object3d): this;
         removeObject(object: Object3d): this;

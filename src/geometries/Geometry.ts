@@ -25,26 +25,29 @@ namespace CanvasToy {
 
         public setAttribute(name, attribute: Attribute) {
             this.attributes[name] = attribute;
+            return this;
         }
 
         public addVertex(vertex: any) {
             for (const attributeName in this.attributes) {
                 if (this.attributes[attributeName] !== undefined) {
                     if (vertex[attributeName] === undefined) {
-                        return;
+                        return this;
                     }
                     if (vertex[attributeName].length !== this.attributes[attributeName].size) {
                         console.error("length " + attributeName + "wrong");
-                        return;
+                        return this;
                     }
                     this.attributes[attributeName].data
                         = this.attributes[attributeName].data.concat(vertex[attributeName]);
                 }
             }
+            return this;
         }
 
         public removeAttribute(name: string) {
             this.attributes[name] = undefined;
+            return this;
         }
 
         public getVertexByIndex(index: number) {
@@ -82,6 +85,7 @@ namespace CanvasToy {
                 ];
                 this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
             }
+            return this;
         }
     }
 }

@@ -19,10 +19,6 @@ namespace CanvasToy {
 
         public programSetUp: boolean = false;
 
-        constructor() {
-            window.setInterval(() => this.update(1000 / 60), 1000 / 60);
-        }
-
         public update(dt: number) {
             for (const object of this.objects) {
                 if (!object.parent) {

@@ -106,7 +106,7 @@ namespace CanvasToy {
                     });
                 }
                 const mesh = new Mesh(geometry, [new StandardMaterial(gl)]);
-                mesh.parent = container;
+                mesh.setParent(container);
             });
             return container;
         }

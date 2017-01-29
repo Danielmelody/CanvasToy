@@ -472,6 +472,7 @@ var CanvasToy;
                 this._scaling = vec3.clone(_localScaling);
             }
             this.applyToChildren();
+            return this;
         };
         Object.defineProperty(Object3d.prototype, "scaling", {
             get: function () {
@@ -500,12 +501,15 @@ var CanvasToy;
                 mat4.getRotation(this._rotation, this.matrix);
                 vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
             }
+            return this;
         };
         Object3d.prototype.registUpdate = function (updateFunction) {
-            this.updateEvents.push(Function);
+            this.updateEvents.push(updateFunction);
+            return this;
         };
         Object3d.prototype.registStart = function (updateFunction) {
             this.startEvents.push(updateFunction);
+            return this;
         };
         Object3d.prototype.start = function () {
             for (var _i = 0, _a = this.startEvents; _i < _a.length; _i++) {
@@ -528,13 +532,16 @@ var CanvasToy;
             this._localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
         };
         Object3d.prototype.rotateX = function (angle) {
-            this._localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
+            this.setLocalRotation(quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle));
+            return this;
         };
         Object3d.prototype.rotateY = function (angle) {
-            this._localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
+            this.setLocalRotation(quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle));
+            return this;
         };
         Object3d.prototype.rotateZ = function (angle) {
-            this._localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
+            this.setLocalRotation(quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle));
+            return this;
         };
         Object3d.prototype.handleUniformProperty = function () {
         };
@@ -600,6 +607,7 @@ var CanvasToy;
     var OrthoCamera = (function (_super) {
         __extends(OrthoCamera, _super);
         function OrthoCamera(parameters) {
+            if (parameters === void 0) { parameters = {}; }
             var _this = _super.call(this) || this;
             _this._left = -1;
             _this._right = 1;
@@ -607,10 +615,21 @@ var CanvasToy;
             _this._top = 1;
             _this._near = 0.001;
             _this._far = 1000;
-            _this._top = parameters.top;
+            _this._left = parameters.left || _this._left;
+            _this._right = parameters.right || _this._right;
+            _this._bottom = parameters.bottom || _this._bottom;
+            _this._top = parameters.top || _this._top;
+            _this._near = parameters.near || _this._near;
+            _this._far = parameters.far || _this._far;
             mat4.ortho(_this._projectionMatrix, _this._left, _this._right, _this._bottom, _this._top, _this._near, _this._far);
             return _this;
         }
+        OrthoCamera.prototype.setLeft = function (left) {
+            if (left !== this._left) {
+                this._left = left;
+                this.compuseProjectionMatrix();
+            }
+        };
         Object.defineProperty(OrthoCamera.prototype, "left", {
             get: function () {
                 return this._left;
@@ -653,15 +672,21 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
+        OrthoCamera.prototype.compuseProjectionMatrix = function () {
+            mat4.ortho(this._projectionMatrix, this._left, this._right, this._bottom, this._top, this._near, this._far);
+        };
+        OrthoCamera.prototype.deCompuseProjectionMatrix = function () {
+        };
         OrthoCamera.prototype.genOtherMatrixs = function () {
             _super.prototype.genOtherMatrixs.call(this);
             mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
         };
         OrthoCamera.prototype.adaptTargetRadio = function (target) {
-            this.left = -target.width / 2;
-            this.right = target.width / 2;
-            this.top = target.height / 2;
-            this.bottom = -target.height / 2;
+            this._left = -target.width / 2;
+            this._right = target.width / 2;
+            this._top = target.height / 2;
+            this._bottom = -target.height / 2;
+            this.compuseProjectionMatrix();
         };
         return OrthoCamera;
     }(CanvasToy.Camera));
@@ -671,24 +696,58 @@ var CanvasToy;
 (function (CanvasToy) {
     var PerspectiveCamera = (function (_super) {
         __extends(PerspectiveCamera, _super);
-        function PerspectiveCamera(aspect, fovy, near, far) {
-            if (aspect === void 0) { aspect = 1; }
-            if (fovy === void 0) { fovy = 45; }
-            if (near === void 0) { near = 0.01; }
-            if (far === void 0) { far = 10000; }
+        function PerspectiveCamera(parameter) {
+            if (parameter === void 0) { parameter = {}; }
             var _this = _super.call(this) || this;
-            _this.aspect = aspect;
-            _this.fovy = fovy;
-            _this.near = near;
-            _this.far = far;
+            _this._aspect = 1;
+            _this._fovy = 45;
+            _this._near = 0.01;
+            _this._far = 10000;
+            _this._aspect = parameter.aspect || _this._aspect;
+            _this._fovy = parameter.fovy || _this._fovy;
+            _this._near = parameter.near || _this._near;
+            _this._far = parameter.far || _this._far;
             return _this;
         }
+        PerspectiveCamera.prototype.compuseProjectionMatrix = function () {
+            mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
+        };
+        Object.defineProperty(PerspectiveCamera.prototype, "aspect", {
+            get: function () {
+                return this._aspect;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PerspectiveCamera.prototype, "fovy", {
+            get: function () {
+                return this._fovy;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PerspectiveCamera.prototype, "near", {
+            get: function () {
+                return this._near;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PerspectiveCamera.prototype, "far", {
+            get: function () {
+                return this._far;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        PerspectiveCamera.prototype.deCompuseProjectionMatrix = function () {
+        };
         PerspectiveCamera.prototype.genOtherMatrixs = function () {
             _super.prototype.genOtherMatrixs.call(this);
-            this.projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
+            this._projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
         };
         PerspectiveCamera.prototype.adaptTargetRadio = function (target) {
-            this.aspect = target.width / target.height;
+            this._aspect = target.width / target.height;
             this.genOtherMatrixs();
         };
         return PerspectiveCamera;
@@ -709,24 +768,27 @@ var CanvasToy;
         }
         Geometry.prototype.setAttribute = function (name, attribute) {
             this.attributes[name] = attribute;
+            return this;
         };
         Geometry.prototype.addVertex = function (vertex) {
             for (var attributeName in this.attributes) {
                 if (this.attributes[attributeName] !== undefined) {
                     if (vertex[attributeName] === undefined) {
-                        return;
+                        return this;
                     }
                     if (vertex[attributeName].length !== this.attributes[attributeName].size) {
                         console.error("length " + attributeName + "wrong");
-                        return;
+                        return this;
                     }
                     this.attributes[attributeName].data
                         = this.attributes[attributeName].data.concat(vertex[attributeName]);
                 }
             }
+            return this;
         };
         Geometry.prototype.removeAttribute = function (name) {
             this.attributes[name] = undefined;
+            return this;
         };
         Geometry.prototype.getVertexByIndex = function (index) {
             var vertex = {};
@@ -758,6 +820,7 @@ var CanvasToy;
                 ];
                 this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
             }
+            return this;
         };
         return Geometry;
     }());
@@ -1312,7 +1375,7 @@ var CanvasToy;
                     });
                 }
                 var mesh = new CanvasToy.Mesh(geometry, [new CanvasToy.StandardMaterial(gl)]);
-                mesh.parent = container;
+                mesh.setParent(container);
             });
             return container;
         };
@@ -1473,7 +1536,7 @@ var CanvasToy;
             this.main = function () {
                 for (var _i = 0, _a = _this.renderQueue; _i < _a.length; _i++) {
                     var renderCommand = _a[_i];
-                    renderCommand();
+                    renderCommand(_this.frameRate);
                 }
                 if (_this.stopped) {
                     return;
@@ -1523,8 +1586,9 @@ var CanvasToy;
                 if (this_1.gl.checkFramebufferStatus(this_1.gl.FRAMEBUFFER) !== this_1.gl.FRAMEBUFFER_COMPLETE) {
                     console.error("" + this_1.gl.getError());
                 }
-                this_1.renderQueue.push(function () {
+                this_1.renderQueue.push(function (deltaTime) {
                     _this.gl.bindFramebuffer(_this.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
+                    scene.update(deltaTime);
                     _this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
                     _this.gl.clear(_this.gl.DEPTH_BUFFER_BIT | _this.gl.COLOR_BUFFER_BIT);
                     for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
@@ -1559,7 +1623,8 @@ var CanvasToy;
                     }
                     break;
                 case RenderMode.Dynamic:
-                    this.renderQueue.push(function () {
+                    this.renderQueue.push(function (deltaTime) {
+                        scene.update(deltaTime);
                         _this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
                         for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                             var object = _a[_i];
@@ -1721,7 +1786,6 @@ var CanvasToy;
 (function (CanvasToy) {
     var Scene = (function () {
         function Scene() {
-            var _this = this;
             this.objects = [];
             this.lights = [];
             this.ambientLight = vec3.fromValues(0, 0, 0);
@@ -1729,7 +1793,6 @@ var CanvasToy;
             this.enableShadowMap = false;
             this.clearColor = [0, 0, 0, 0];
             this.programSetUp = false;
-            window.setInterval(function () { return _this.update(1000 / 60); }, 1000 / 60);
         }
         Scene.prototype.update = function (dt) {
             for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {

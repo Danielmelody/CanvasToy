@@ -28,7 +28,7 @@ examples.push(function (canvas) {
     var camera2 = new CanvasToy.PerspectiveCamera();
     scene.ambientLight = [0.2, 0.1, 0.1];
     var light = new CanvasToy.PointLight();
-    light.position = [100, 0, 100];
+    light.setPosition([100, 0, 100]);
     light.setColor([1, 1, 1]);
     scene.addLight(light);
     var woodImage = new Image();
@@ -75,13 +75,11 @@ examples.push(function (canvas) {
     image.src = "basic/images/chrome.png";
     cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
         .setFormat(renderer.gl.RGBA);
-    cameras[0].position = [0, 0, 5];
+    cameras[0].setPosition([0, 0, 5]);
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-    light.position = [100, 0, 100];
-    scenes[0].addLight(light);
-    scenes[0].addObject(cameras[0]);
-    scenes[0].addObject(cubes[0]);
+    light.setPosition([100, 0, 100]);
+    scenes[0].addLight(light).addObject(cameras[0]).addObject(cubes[0]);
     var fbo = renderer.createFrameBuffer();
     var rttTexture = fbo.attachments.color.targetTexture;
     cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: rttTexture })]));
@@ -90,11 +88,9 @@ examples.push(function (canvas) {
             cube.rotateY(0.01);
         });
     });
-    cameras[1].position = [0, 0, 5];
-    scenes[1].addLight(light);
+    cameras[1].setPosition([0, 0, 5]);
+    scenes[1].addLight(light).addObject(cameras[1]).addObject(cubes[1]);
     scenes[0].addLight(light);
-    scenes[1].addObject(cameras[1]);
-    scenes[1].addObject(cubes[1]);
     renderer.renderFBO(scenes[0], cameras[0]);
     renderer.render(scenes[1], cameras[1]);
 });
@@ -110,13 +106,11 @@ examples.push(function (canvas) {
     image.src = "basic/images/chrome.png";
     cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
         .setFormat(renderer.gl.RGBA);
-    cameras[0].position = [0, 0, 5];
+    cameras[0].setPosition([0, 0, 5]);
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-    light.position = [100, 0, 100];
-    scenes[0].addLight(light);
-    scenes[0].addObject(cameras[0]);
-    scenes[0].addObject(cubes[0]);
+    light.setPosition([100, 0, 100]);
+    scenes[0].addLight(light).addObject(cameras[0]).addObject(cubes[0]);
     var fbo = renderer.createFrameBuffer();
     fbo.attachments.depth
         .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
@@ -128,11 +122,9 @@ examples.push(function (canvas) {
             cube.rotateY(0.01);
         });
     });
-    cameras[1].position = [0, 0, 5];
-    scenes[1].addLight(light);
+    cameras[1].setPosition([0, 0, 5]);
+    scenes[1].addLight(light).addObject(cameras[1]).addObject(cubes[1]);
     scenes[0].addLight(light);
-    scenes[1].addObject(cameras[1]);
-    scenes[1].addObject(cubes[1]);
     renderer.renderFBO(scenes[0], cameras[0]);
     renderer.render(scenes[1], cameras[1]);
 });

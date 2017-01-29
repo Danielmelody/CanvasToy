@@ -5,9 +5,9 @@ namespace CanvasToy {
 
     export class Mesh extends Object3d {
 
-        public readonly geometry: Geometry;
+        public geometry: Geometry;
 
-        public readonly materials: Material[] = [];
+        public materials: Material[] = [];
 
         public maps: Texture[] = [];
 

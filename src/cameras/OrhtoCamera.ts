@@ -17,14 +17,14 @@ namespace CanvasToy {
             top?: number,
             near?: number,
             far?: number,
-        }) {
+        } = {}) {
             super();
-            this._left = parameters.left;
-            this._right = parameters.right;
-            this._bottom = parameters.bottom;
-            this._top = parameters.top;
-            this._near = parameters.near;
-            this._far = parameters.far;
+            this._left = parameters.left || this._left;
+            this._right = parameters.right || this._right;
+            this._bottom = parameters.bottom || this._bottom;
+            this._top = parameters.top || this._top;
+            this._near = parameters.near || this._near;
+            this._far = parameters.far || this._far;
             mat4.ortho(
                 this._projectionMatrix,
                 this._left,

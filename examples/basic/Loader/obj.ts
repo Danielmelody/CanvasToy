@@ -9,7 +9,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     const camera2 = new CanvasToy.PerspectiveCamera();
     scene.ambientLight = [0.2, 0.1, 0.1];
     const light = new CanvasToy.PointLight();
-    light.position = [100, 0, 100];
+    light.setPosition([100, 0, 100]);
     light.setColor([1, 1, 1]);
 
     scene.addLight(light);

@@ -206,6 +206,7 @@ namespace CanvasToy {
                 this._scaling = vec3.clone(_localScaling);
             }
             this.applyToChildren();
+            return this;
         }
 
         /**
@@ -244,6 +245,7 @@ namespace CanvasToy {
                 mat4.getRotation(this._rotation, this.matrix);
                 vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
             }
+            return this;
         }
 
         /**
@@ -251,7 +253,8 @@ namespace CanvasToy {
          * @param  {Function} updateFunction
          */
         public registUpdate(updateFunction: Function) {
-            this.updateEvents.push(Function);
+            this.updateEvents.push(updateFunction);
+            return this;
         }
 
         /**
@@ -260,6 +263,7 @@ namespace CanvasToy {
          */
         public registStart(updateFunction: Function) {
             this.startEvents.push(updateFunction);
+            return this;
         }
 
         /**
@@ -298,7 +302,8 @@ namespace CanvasToy {
          * @param  {number} angle angle (in radians) to rotate
          */
         public rotateX(angle: number) {
-            this._localRotation = quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle);
+            this.setLocalRotation(quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle));
+            return this;
         }
 
         /**
@@ -306,7 +311,8 @@ namespace CanvasToy {
          * @param  {number} angle angle (in radians) to rotate
          */
         public rotateY(angle: number) {
-            this._localRotation = quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle);
+            this.setLocalRotation(quat.rotateY(this.localRotation, quat.clone(this.localRotation), angle));
+            return this;
         }
 
         /**
@@ -314,7 +320,8 @@ namespace CanvasToy {
          * @param  {number} angle angle (in radians) to rotate
          */
         public rotateZ(angle: number) {
-            this._localRotation = quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle);
+            this.setLocalRotation(quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle));
+            return this;
         }
 
         public handleUniformProperty() {
