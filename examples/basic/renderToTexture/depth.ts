@@ -39,8 +39,9 @@ examples.push((canvas: HTMLCanvasElement) => {
             new CanvasToy.RectGeometry(renderer.gl),
             [depthMaterial]).setScaling([canvas.width / canvas.height, 1, 1]);
     cube.registUpdate(() => {
-        cube.rotateY(0.1);
+        cube.rotateY(0.02);
     });
+    cameras[0].setFar(4).setNear(1);
     cameras[1].setPosition([0, 0, 2]);
     scenes[1].addLight(light).addObject(cameras[1]).addObject(rect);
     scenes[0].addLight(light);

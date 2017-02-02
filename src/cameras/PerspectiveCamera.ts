@@ -46,6 +46,38 @@ namespace CanvasToy {
             return this._far;
         }
 
+        public setAspect(aspect: number) {
+            if (aspect !== this._aspect) {
+                this.compuseProjectionMatrix();
+                this._aspect = aspect;
+            }
+            return this;
+        }
+
+        public setFovy(fovy: number) {
+            if (fovy !== this._fovy) {
+                this.compuseProjectionMatrix();
+                this._fovy = fovy;
+            }
+            return this;
+        }
+
+        public setNear(near: number) {
+            if (near !== this._near) {
+                this.compuseProjectionMatrix();
+                this._near = near;
+            }
+            return this;
+        }
+
+        public setFar(far: number) {
+            if (far !== this._far) {
+                this.compuseProjectionMatrix();
+                this._far = far;
+            }
+            return this;
+        }
+
         public deCompuseProjectionMatrix() {
             // TODO: decompuse perspective camera
         }
