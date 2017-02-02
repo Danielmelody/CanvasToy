@@ -224,8 +224,9 @@ namespace CanvasToy {
         public setScaling(_scaling: Vec3Array) {
             console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
             this._scaling = _scaling;
+            this.composeFromGlobalMatrix();
             if (!!this._parent) {
-                vec3.div(this.localScaling, this.scaling, this._parent.scaling);
+                vec3.div(this._localScaling, this.scaling, this._parent.scaling);
             } else {
                 this._localScaling = vec3.clone(_scaling);
             }
@@ -294,7 +295,8 @@ namespace CanvasToy {
          */
         public translate(delta: Vec3Array) {
             console.assert(delta instanceof Array && delta.length === 3, "invalid delta translate");
-            this._localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
+            this.setPosition(vec3.add(this.localPosition, vec3.clone(this.localPosition), delta));
+            return this;
         }
 
         /**

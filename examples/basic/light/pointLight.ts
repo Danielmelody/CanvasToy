@@ -13,16 +13,15 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     const cube = new CanvasToy.Mesh(
         new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
-            color: vec3.fromValues(1, 1, 1),
+            specular: [0.1, 0.1, 0.1],
             mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
         })]);
     cube.translate([0, 0, -6]);
-    scene.addObject(cube);
-    scene.addObject(camera);
+    scene.addObject(cube).addObject(camera);
 
     scene.ambientLight = [0.1, 0.1, 0.1];
-    const light = new CanvasToy.PointLight();
-    light.position[2] = 10;
+    const light = new CanvasToy.PointLight().setPosition([100, 0, 100]);
+
     scene.addLight(light);
 
     cube.registUpdate(() => {

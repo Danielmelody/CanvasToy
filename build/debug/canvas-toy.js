@@ -484,8 +484,9 @@ var CanvasToy;
         Object3d.prototype.setScaling = function (_scaling) {
             console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
             this._scaling = _scaling;
+            this.composeFromGlobalMatrix();
             if (!!this._parent) {
-                vec3.div(this.localScaling, this.scaling, this._parent.scaling);
+                vec3.div(this._localScaling, this.scaling, this._parent.scaling);
             }
             else {
                 this._localScaling = vec3.clone(_scaling);
@@ -529,7 +530,8 @@ var CanvasToy;
         };
         Object3d.prototype.translate = function (delta) {
             console.assert(delta instanceof Array && delta.length === 3, "invalid delta translate");
-            this._localPosition = vec3.add(this.localPosition, vec3.clone(this.localPosition), delta);
+            this.setPosition(vec3.add(this.localPosition, vec3.clone(this.localPosition), delta));
+            return this;
         };
         Object3d.prototype.rotateX = function (angle) {
             this.setLocalRotation(quat.rotateX(this.localRotation, quat.clone(this.localRotation), angle));
@@ -856,6 +858,8 @@ var CanvasToy;
     CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
     CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
     CanvasToy.env_map_vert = "";
+    CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nfloat LinearizeDepth(float depth)\n{\n    float z = depth * 2.0 - 1.0; // Back to NDC\n    return (2.0 * cameraNear * cameraFar) / (cameraFar + cameraNear - z * (cameraFar - cameraNear));\n}\n\nvoid main () {\n    gl_FragColor = vec4(vec3(LinearizeDepth(texture2D(uMainTexture, vMainUV).r) / cameraFar), 1.0);\n}\n";
+    CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient + materialAmbient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
     CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\n\n\nuniform vec3 color;\nuniform vec3 materialSpec;\nuniform vec3 materialDiff;\nuniform vec3 materialAmbient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#ifdef USE_COLOR\n    gl_FragColor = vec4(color, 1.0);\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            4.0,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
@@ -1206,7 +1210,7 @@ var CanvasToy;
         });
         Object.defineProperty(Light.prototype, "idensity", {
             get: function () {
-                return this.idensity;
+                return this._idensity;
             },
             enumerable: true,
             configurable: true
@@ -1416,7 +1420,6 @@ var CanvasToy;
     var Attachment = (function () {
         function Attachment(frameBuffer, attachmentCode) {
             this._innerFormatForBuffer = -1;
-            this._innerFormatForTexture = -1;
             this._isAble = true;
             this.frameBuffer = frameBuffer;
             this.attachmentCode = attachmentCode;
@@ -1424,13 +1427,6 @@ var CanvasToy;
         Object.defineProperty(Attachment.prototype, "innerFormatForBuffer", {
             get: function () {
                 return this._innerFormatForBuffer;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Attachment.prototype, "innerFormatForTexture", {
-            get: function () {
-                return this._innerFormatForTexture;
             },
             enumerable: true,
             configurable: true
@@ -1461,10 +1457,6 @@ var CanvasToy;
             this._innerFormatForBuffer = innerFormatForBuffer;
             return this;
         };
-        Attachment.prototype.setInnerFormatForTexture = function (innerFormatForTexture) {
-            this._innerFormatForTexture = innerFormatForTexture;
-            return this;
-        };
         Attachment.prototype.setType = function (gl, type) {
             this._type = type;
             if (type === AttachmentType.Texture) {
@@ -1493,14 +1485,11 @@ var CanvasToy;
             };
             this.glFramebuffer = gl.createFramebuffer();
             this.attachments.color.setType(gl, AttachmentType.Texture)
-                .setInnerFormatForBuffer(gl.RGBA4)
-                .setInnerFormatForTexture(gl.RGBA);
+                .setInnerFormatForBuffer(gl.RGBA4);
             this.attachments.depth.setType(gl, AttachmentType.RenderBuffer)
-                .setInnerFormatForBuffer(gl.DEPTH_COMPONENT16)
-                .setInnerFormatForTexture(gl.DEPTH_COMPONENT);
+                .setInnerFormatForBuffer(gl.DEPTH_COMPONENT16);
             this.attachments.stencil.setType(gl, AttachmentType.RenderBuffer)
                 .setInnerFormatForBuffer(gl.STENCIL_INDEX8)
-                .setInnerFormatForTexture(gl.STENCIL_INDEX)
                 .disable();
         }
         return FrameBuffer;
@@ -1519,7 +1508,6 @@ var CanvasToy;
             var _this = this;
             this.canvas = null;
             this.gl = null;
-            this.ext = null;
             this.renderMode = RenderMode.Dynamic;
             this.preloadRes = [];
             this.usedTextureNum = 0;
@@ -1545,7 +1533,10 @@ var CanvasToy;
             };
             this.canvas = canvas;
             this.gl = CanvasToy.initWebwebglContext(canvas);
-            this.ext = this.gl.getExtension("WEBGL_depth_texture");
+            this.ext = {
+                depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
+                draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
+            };
             this.initMatrix();
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
@@ -1578,7 +1569,7 @@ var CanvasToy;
                     switch (attachment.type) {
                         case CanvasToy.AttachmentType.Texture:
                             this_1.gl.bindTexture(this_1.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
-                            this_1.gl.texImage2D(this_1.gl.TEXTURE_2D, 0, attachment.innerFormatForTexture, this_1.canvas.width, this_1.canvas.height, 0, attachment.innerFormatForTexture, attachment.targetTexture.type, null);
+                            this_1.gl.texImage2D(this_1.gl.TEXTURE_2D, 0, attachment.targetTexture.format, this_1.canvas.width, this_1.canvas.height, 0, attachment.targetTexture.format, attachment.targetTexture.type, null);
                             this_1.gl.framebufferTexture2D(this_1.gl.FRAMEBUFFER, attachment.attachmentCode(this_1.gl), this_1.gl.TEXTURE_2D, attachment.targetTexture.glTexture, 0);
                             this_1.gl.bindTexture(this_1.gl.TEXTURE_2D, null);
                             break;
@@ -1688,7 +1679,7 @@ var CanvasToy;
                     }
                 }
                 if (scene.openLight) {
-                    this.setUplights(scene, material, mesh, camera);
+                    this.setUpLights(scene, material, mesh, camera);
                 }
             }
         };
@@ -1725,7 +1716,7 @@ var CanvasToy;
             texture.setUpTextureData(this.gl);
             program.addUniform(sampler, { type: CanvasToy.DataType.int, updator: function () { return texture.unit; } });
         };
-        Renderer.prototype.setUplights = function (scene, material, mesh, camera) {
+        Renderer.prototype.setUpLights = function (scene, material, mesh, camera) {
             var _loop_2 = function (index) {
                 var light = scene.lights[index];
                 console.assert(light.uniforms !== undefined);
@@ -1843,6 +1834,7 @@ var CanvasToy;
         InterplotationMethod[InterplotationMethod["Flat"] = 0] = "Flat";
         InterplotationMethod[InterplotationMethod["Gouraud"] = 1] = "Gouraud";
         InterplotationMethod[InterplotationMethod["Phong"] = 2] = "Phong";
+        InterplotationMethod[InterplotationMethod["DepthPhong"] = 3] = "DepthPhong";
     })(InterplotationMethod = CanvasToy.InterplotationMethod || (CanvasToy.InterplotationMethod = {}));
     var LightingMode;
     (function (LightingMode) {
@@ -1863,20 +1855,22 @@ var CanvasToy;
             this._lightingModeSource = CanvasToy.calculators__blinn_phong_glsl;
         }
         StandardShaderBuilder.prototype.setInterplotationMethod = function (method) {
-            var _interplotationVert = "";
-            var _interplotationFrag = "";
-            switch (this._interplotationMethod) {
+            switch (method) {
                 case (InterplotationMethod.Flat):
-                    _interplotationVert = CanvasToy.interploters__gouraud_vert;
-                    _interplotationFrag = CanvasToy.interploters__gouraud_frag;
+                    this._interplotationVert = CanvasToy.interploters__gouraud_vert;
+                    this._interplotationFrag = CanvasToy.interploters__gouraud_frag;
                     break;
                 case (InterplotationMethod.Gouraud):
-                    _interplotationVert = CanvasToy.interploters__gouraud_vert;
-                    _interplotationFrag = CanvasToy.interploters__gouraud_frag;
+                    this._interplotationVert = CanvasToy.interploters__gouraud_vert;
+                    this._interplotationFrag = CanvasToy.interploters__gouraud_frag;
                     break;
                 case (InterplotationMethod.Phong):
-                    _interplotationVert = CanvasToy.interploters__phong_vert;
-                    _interplotationFrag = CanvasToy.interploters__phong_frag;
+                    this._interplotationVert = CanvasToy.interploters__phong_vert;
+                    this._interplotationFrag = CanvasToy.interploters__phong_frag;
+                    break;
+                case (InterplotationMethod.DepthPhong):
+                    this._interplotationVert = CanvasToy.interploters__depth_phong_vert;
+                    this._interplotationFrag = CanvasToy.interploters__depth_phong_frag;
                     break;
                 default: break;
             }

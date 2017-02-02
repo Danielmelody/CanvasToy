@@ -14,7 +14,10 @@ namespace CanvasToy {
 
         public readonly gl: WebGLRenderingContext = null;
 
-        public readonly ext = null;
+        public readonly ext: {
+            depth_texture: WEBGL_depth_texture,
+            draw_buffer: WebGLDrawBuffers,
+        };
 
         public renderMode: RenderMode = RenderMode.Dynamic;
 
@@ -45,7 +48,10 @@ namespace CanvasToy {
         constructor(canvas: HTMLCanvasElement) {
             this.canvas = canvas;
             this.gl = initWebwebglContext(canvas);
-            this.ext = this.gl.getExtension("WEBGL_depth_texture");
+            this.ext = {
+                depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
+                draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
+            };
             this.initMatrix();
             this.gl.clearDepth(1.0);
             this.gl.enable(this.gl.DEPTH_TEST);
@@ -84,11 +90,11 @@ namespace CanvasToy {
                             this.gl.bindTexture(this.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
                             this.gl.texImage2D(this.gl.TEXTURE_2D,
                                 0,
-                                attachment.innerFormatForTexture,
+                                attachment.targetTexture.format,
                                 this.canvas.width,
                                 this.canvas.height,
                                 0,
-                                attachment.innerFormatForTexture,
+                                attachment.targetTexture.format,
                                 attachment.targetTexture.type,
                                 null,
                             );
@@ -235,7 +241,7 @@ namespace CanvasToy {
                 }
 
                 if (scene.openLight) {
-                    this.setUplights(scene, material, mesh, camera);
+                    this.setUpLights(scene, material, mesh, camera);
                 }
             }
         }
@@ -284,7 +290,7 @@ namespace CanvasToy {
             program.addUniform(sampler, { type: DataType.int, updator: () => { return texture.unit; } });
         }
 
-        public setUplights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
+        public setUpLights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
             for (const index in scene.lights) {
                 const light: any = scene.lights[index];
 

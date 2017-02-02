@@ -22,7 +22,7 @@ function read() {
     var content = fs.readFileSync(srcs[i], 'utf-8');
     content = content.split('\n');
     content = content.join('\\n');
-    var out = 'export var ' + varName + ' = "' + content + '"';
+    var out = 'export const ' + varName + ' = "' + content + '"';
     results.push(out);
   }
   results.push('}');

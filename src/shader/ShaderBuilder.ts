@@ -9,6 +9,7 @@ namespace CanvasToy {
         Flat,
         Gouraud,
         Phong,
+        DepthPhong,
     }
 
     export enum LightingMode {
@@ -32,20 +33,22 @@ namespace CanvasToy {
         private _lightingModeSource: string = calculators__blinn_phong_glsl;
 
         public setInterplotationMethod(method: InterplotationMethod) {
-            let _interplotationVert: string = "";
-            let _interplotationFrag: string = "";
-            switch (this._interplotationMethod) {
+            switch (method) {
                 case (InterplotationMethod.Flat):
-                    _interplotationVert = interploters__gouraud_vert;
-                    _interplotationFrag = interploters__gouraud_frag;
+                    this._interplotationVert = interploters__gouraud_vert;
+                    this._interplotationFrag = interploters__gouraud_frag;
                     break;
                 case (InterplotationMethod.Gouraud):
-                    _interplotationVert = interploters__gouraud_vert;
-                    _interplotationFrag = interploters__gouraud_frag;
+                    this._interplotationVert = interploters__gouraud_vert;
+                    this._interplotationFrag = interploters__gouraud_frag;
                     break;
                 case (InterplotationMethod.Phong):
-                    _interplotationVert = interploters__phong_vert;
-                    _interplotationFrag = interploters__phong_frag;
+                    this._interplotationVert = interploters__phong_vert;
+                    this._interplotationFrag = interploters__phong_frag;
+                    break;
+                case (InterplotationMethod.DepthPhong):
+                    this._interplotationVert = interploters__depth_phong_vert;
+                    this._interplotationFrag = interploters__depth_phong_frag;
                     break;
                 default: break;
             }
@@ -65,7 +68,7 @@ namespace CanvasToy {
             return this;
         }
 
-        public build(gl: WebGLRenderingContext) {
+        public build(gl: WebGLRenderingContext): Program {
             return new Program(gl, {
                 vertexShader:
                 this._definitions.join("\n") +

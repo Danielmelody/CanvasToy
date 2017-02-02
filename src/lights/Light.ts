@@ -37,7 +37,7 @@ namespace CanvasToy {
         }
 
         public get idensity() {
-            return this.idensity;
+            return this._idensity;
         }
 
     }

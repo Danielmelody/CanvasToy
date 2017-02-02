@@ -15,7 +15,6 @@ namespace CanvasToy {
         public readonly attachmentCode: (gl) => number;
 
         private _innerFormatForBuffer: number = -1;
-        private _innerFormatForTexture: number = -1;
         private _type: AttachmentType;
         private _isAble = true;
 
@@ -26,10 +25,6 @@ namespace CanvasToy {
 
         public get innerFormatForBuffer() {
             return this._innerFormatForBuffer;
-        }
-
-        public get innerFormatForTexture() {
-            return this._innerFormatForTexture;
         }
 
         public get type() {
@@ -52,11 +47,6 @@ namespace CanvasToy {
 
         public setInnerFormatForBuffer(innerFormatForBuffer: number) {
             this._innerFormatForBuffer = innerFormatForBuffer;
-            return this;
-        }
-
-        public setInnerFormatForTexture(innerFormatForTexture: number) {
-            this._innerFormatForTexture = innerFormatForTexture;
             return this;
         }
 
@@ -90,14 +80,11 @@ namespace CanvasToy {
         constructor(gl: WebGLRenderingContext) {
             this.glFramebuffer = gl.createFramebuffer();
             this.attachments.color.setType(gl, AttachmentType.Texture)
-                .setInnerFormatForBuffer(gl.RGBA4)
-                .setInnerFormatForTexture(gl.RGBA);
+                .setInnerFormatForBuffer(gl.RGBA4);
             this.attachments.depth.setType(gl, AttachmentType.RenderBuffer)
-                .setInnerFormatForBuffer(gl.DEPTH_COMPONENT16)
-                .setInnerFormatForTexture(gl.DEPTH_COMPONENT);
+                .setInnerFormatForBuffer(gl.DEPTH_COMPONENT16);
             this.attachments.stencil.setType(gl, AttachmentType.RenderBuffer)
                 .setInnerFormatForBuffer(gl.STENCIL_INDEX8)
-                .setInnerFormatForTexture(gl.STENCIL_INDEX)
                 .disable();
         }
     }
