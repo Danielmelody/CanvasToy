@@ -464,9 +464,6 @@ declare namespace CanvasToy {
         setType(gl: WebGLRenderingContext, type: AttachmentType): this;
         toTexture(gl: WebGLRenderingContext): Texture;
     }
-    class DrawBuffer {
-        constructor();
-    }
     class FrameBuffer {
         glFramebuffer: WebGLFramebuffer;
         attachments: {
@@ -474,13 +471,23 @@ declare namespace CanvasToy {
             depth: Attachment;
             stencil: Attachment;
         };
-        drawBuffers: {
-            position: DrawBuffer;
-            normal: DrawBuffer;
-            color: DrawBuffer;
-            depth: DrawBuffer;
-        };
         constructor(gl: WebGLRenderingContext);
+    }
+}
+declare namespace CanvasToy {
+    class GeometryBuffer {
+        positionTexture: Texture;
+        normalTexture: Texture;
+        colorTexture: Texture;
+        depthTexture: Texture;
+        constructor(gl: WebGLRenderingContext);
+        depth(gl: WebGLRenderingContext): void;
+    }
+}
+declare namespace CanvasToy {
+    class DeferredProcessor {
+        geometryBuffer: GeometryBuffer;
+        constructor(gl: WebGLRenderingContext, scene: Scene);
     }
 }
 declare namespace CanvasToy {

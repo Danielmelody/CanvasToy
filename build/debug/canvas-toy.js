@@ -1506,24 +1506,12 @@ var CanvasToy;
         return Attachment;
     }());
     CanvasToy.Attachment = Attachment;
-    var DrawBuffer = (function () {
-        function DrawBuffer() {
-        }
-        return DrawBuffer;
-    }());
-    CanvasToy.DrawBuffer = DrawBuffer;
     var FrameBuffer = (function () {
         function FrameBuffer(gl) {
             this.attachments = {
                 color: new Attachment(this, function (gl) { return gl.COLOR_ATTACHMENT0; }),
                 depth: new Attachment(this, function (gl) { return gl.DEPTH_ATTACHMENT; }),
                 stencil: new Attachment(this, function (gl) { return gl.STENCIL_ATTACHMENT; }),
-            };
-            this.drawBuffers = {
-                position: new DrawBuffer(),
-                normal: new DrawBuffer(),
-                color: new DrawBuffer(),
-                depth: new DrawBuffer(),
             };
             this.glFramebuffer = gl.createFramebuffer();
             this.attachments.color.setType(gl, AttachmentType.Texture)
@@ -1537,6 +1525,31 @@ var CanvasToy;
         return FrameBuffer;
     }());
     CanvasToy.FrameBuffer = FrameBuffer;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var GeometryBuffer = (function () {
+        function GeometryBuffer(gl) {
+            this.positionTexture = new CanvasToy.Texture(gl);
+            this.normalTexture = new CanvasToy.Texture(gl);
+            this.colorTexture = new CanvasToy.Texture(gl);
+        }
+        GeometryBuffer.prototype.depth = function (gl) {
+            this.depthTexture = new CanvasToy.Texture(gl);
+        };
+        return GeometryBuffer;
+    }());
+    CanvasToy.GeometryBuffer = GeometryBuffer;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var DeferredProcessor = (function () {
+        function DeferredProcessor(gl, scene) {
+            this.geometryBuffer = new CanvasToy.GeometryBuffer(gl);
+        }
+        return DeferredProcessor;
+    }());
+    CanvasToy.DeferredProcessor = DeferredProcessor;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1825,11 +1838,6 @@ var CanvasToy;
         function ForwardProcessor() {
         }
         return ForwardProcessor;
-    }());
-    var DeferredProcessor = (function () {
-        function DeferredProcessor() {
-        }
-        return DeferredProcessor;
     }());
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
