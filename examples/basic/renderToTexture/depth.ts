@@ -22,6 +22,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     scenes[0].addLight(light).addObject(cameras[0]).addObject(cube);
 
     const fbo = renderer.createFrameBuffer();
+    fbo.attachments.color.disable();
     fbo.attachments.depth
         .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
         .targetTexture
@@ -41,7 +42,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     cube.registUpdate(() => {
         cube.rotateY(0.02);
     });
-    cameras[0].setFar(4).setNear(1);
+    cameras[0].setNear(1);
     cameras[1].setPosition([0, 0, 2]);
     scenes[1].addLight(light).addObject(cameras[1]).addObject(rect);
     scenes[0].addLight(light);

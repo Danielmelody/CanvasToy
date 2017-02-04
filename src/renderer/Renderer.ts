@@ -1,5 +1,6 @@
 /// <reference path="../textures/Texture.ts"/>
 /// <reference path="../materials/Material.ts"/>
+/// <reference path="./deferred/GBuffer.ts"/>
 
 namespace CanvasToy {
 
@@ -361,4 +362,8 @@ namespace CanvasToy {
             // this.glMatrix.setMatrixArrayType(Float32Array);
         }
     }
+
+    class ForwardProcessor {
+    }
+
 }

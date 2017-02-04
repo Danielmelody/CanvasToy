@@ -1,5 +1,5 @@
 /// <reference path="../CanvasToy.ts"/>
-/// <reference path="../render/Program.ts"/>
+/// <reference path="../shader/Program.ts"/>
 /// <reference path="../shader/shaders.ts"/>
 /// <reference path="../textures/Texture.ts"/>
 

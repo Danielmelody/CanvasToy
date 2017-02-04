@@ -888,6 +888,8 @@ var CanvasToy;
     CanvasToy.env_map_vert = "";
     CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
+    CanvasToy.interploters__g_buffer_frag = "";
+    CanvasToy.interploters__g_buffer_vert = "";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient + materialAmbient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
     CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\n\n\nuniform vec3 color;\nuniform vec3 materialSpec;\nuniform vec3 materialDiff;\nuniform vec3 materialAmbient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#ifdef USE_COLOR\n    gl_FragColor = vec4(color, 1.0);\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            4.0,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
@@ -1504,12 +1506,24 @@ var CanvasToy;
         return Attachment;
     }());
     CanvasToy.Attachment = Attachment;
+    var DrawBuffer = (function () {
+        function DrawBuffer() {
+        }
+        return DrawBuffer;
+    }());
+    CanvasToy.DrawBuffer = DrawBuffer;
     var FrameBuffer = (function () {
         function FrameBuffer(gl) {
             this.attachments = {
                 color: new Attachment(this, function (gl) { return gl.COLOR_ATTACHMENT0; }),
                 depth: new Attachment(this, function (gl) { return gl.DEPTH_ATTACHMENT; }),
                 stencil: new Attachment(this, function (gl) { return gl.STENCIL_ATTACHMENT; }),
+            };
+            this.drawBuffers = {
+                position: new DrawBuffer(),
+                normal: new DrawBuffer(),
+                color: new DrawBuffer(),
+                depth: new DrawBuffer(),
             };
             this.glFramebuffer = gl.createFramebuffer();
             this.attachments.color.setType(gl, AttachmentType.Texture)
@@ -1807,6 +1821,16 @@ var CanvasToy;
         return Renderer;
     }());
     CanvasToy.Renderer = Renderer;
+    var ForwardProcessor = (function () {
+        function ForwardProcessor() {
+        }
+        return ForwardProcessor;
+    }());
+    var DeferredProcessor = (function () {
+        function DeferredProcessor() {
+        }
+        return DeferredProcessor;
+    }());
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {

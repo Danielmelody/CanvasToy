@@ -147,6 +147,7 @@ examples.push(function (canvas) {
     light.setPosition([100, 0, 100]);
     scenes[0].addLight(light).addObject(cameras[0]).addObject(cube);
     var fbo = renderer.createFrameBuffer();
+    fbo.attachments.color.disable();
     fbo.attachments.depth
         .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
         .targetTexture
@@ -161,7 +162,7 @@ examples.push(function (canvas) {
     cube.registUpdate(function () {
         cube.rotateY(0.02);
     });
-    cameras[0].setFar(4).setNear(1);
+    cameras[0].setNear(1);
     cameras[1].setPosition([0, 0, 2]);
     scenes[1].addLight(light).addObject(cameras[1]).addObject(rect);
     scenes[0].addLight(light);
