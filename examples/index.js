@@ -178,3 +178,22 @@ examples.push(function (canvas) {
     });
     return renderer;
 });
+examples.push(function (canvas) {
+    var renderer = new CanvasToy.Renderer(canvas);
+    var scene = new CanvasToy.Scene();
+    scene.ambientLight = vec3.fromValues(0.2, 0.1, 0.1);
+    var camera = new CanvasToy.PerspectiveCamera().setPosition([0, 0, 1]);
+    var light = new CanvasToy.PointLight();
+    light.setIdensity(1)
+        .setPosition([100, 0, 100]);
+    var image1 = new Image();
+    image1.src = "../images/sea.jpg";
+    var image2 = new Image();
+    image2.src = "../images/chrome.jpg";
+    var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: new CanvasToy.Texture2D(renderer.gl, image1) })]);
+    cube.translate([0, 0, -10]);
+    scene.addLight(light);
+    scene.addObject(camera);
+    scene.addObject(cube);
+    return renderer;
+});

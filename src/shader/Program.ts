@@ -100,7 +100,7 @@ namespace CanvasToy {
         public make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material) {
             this.prefix = [
                 material.mainTexture ? "#define USE_TEXTURE " : "",
-                material.color ? "#define USE_COLOR " : "",
+                material.ambient ? "#define USE_COLOR " : "",
                 scene.openLight ? "#define OPEN_LIGHT \n#define LIGHT_NUM "
                     + scene.lights.length : "",
             ];
@@ -299,9 +299,9 @@ namespace CanvasToy {
                         );
                     },
                 },
-                color: !material.color ? undefined : {
+                ambient: !material.ambient ? undefined : {
                     type: DataType.vec3, updator: () => {
-                        return material.color;
+                        return material.ambient;
                     },
                 },
                 materialDiff: !material.diffuse ? undefined : {
@@ -313,10 +313,6 @@ namespace CanvasToy {
                     type: DataType.vec3, updator: () => {
                         return material.specular;
                     },
-                },
-                ambient: !scene.openLight ? undefined : {
-                    type: DataType.vec3,
-                    updator: () => { return scene.ambientLight; },
                 },
                 normalMatrix: !scene.openLight ? undefined : {
                     type: DataType.mat4,

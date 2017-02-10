@@ -1,14 +1,14 @@
-/// <reference path="../Object3d.ts"/>
-/// <reference path="../materials/Material.ts"/>
-/// <reference path="../geometries/Geometry.ts"/>
-/// <reference path="../Mesh.ts"/>
+/// <reference path="../../Object3d.ts"/>
+/// <reference path="../../materials/Material.ts"/>
+/// <reference path="../../geometries/Geometry.ts"/>
+/// <reference path="../../Mesh.ts"/>
 
 namespace CanvasToy {
 
     export class OBJLoader {
 
         public static load(gl: WebGLRenderingContext, url: string, onload: (meshes: Object3d) => void) {
-            OBJLoader.fetch(url, (content: string) => {
+            fetchRes(url, (content: string) => {
                 // remove comment
                 content = content.replace(OBJLoader.commentPattern, "");
                 const positionlines: string[] = content.match(OBJLoader.vertexPattern);
@@ -24,7 +24,6 @@ namespace CanvasToy {
         }
 
         protected static commentPattern = /#.*/mg;
-        protected static numberPattern = /[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/mg;
         protected static faceSplitVertPattern = /([0-9]|\/|\-)+/g;
         protected static facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
         protected static objectSplitPattern = /[o|g]\s+.+/mg;
@@ -34,19 +33,6 @@ namespace CanvasToy {
         protected static normalPattern = /vn\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
         protected static indexPattern = /f\s+([-+]?[0-9]*\.?[0-9]+ ?|\/)+/mg;
 
-        protected static fetch(url: string, onload: (content: string) => void) {
-            const request = new XMLHttpRequest();
-            request.onreadystatechange = () => {
-                if (request.readyState === 4 && request.status === 200) {
-                    if (onload) {
-                        onload(request.responseText);
-                    }
-                }
-            };
-            request.open("GET", url);
-            request.send();
-        }
-
         protected static praiseAttibuteLines(lines) {
             const result: number[][] = [];
             if (lines === null) {
@@ -54,7 +40,7 @@ namespace CanvasToy {
             }
             lines.forEach((expression: string) => {
                 const data: number[] = [];
-                expression.match(OBJLoader.numberPattern).forEach(
+                expression.match(patterns.num).forEach(
                     (floatNum) => {
                         if (expression !== "") {
                             data.push(parseFloat(floatNum));

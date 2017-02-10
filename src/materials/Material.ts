@@ -26,7 +26,6 @@ namespace CanvasToy {
 
         public program: Program;
 
-        public color: Vec3Array;
         public mainTexture: Texture;
 
         public ambient: Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
@@ -35,6 +34,7 @@ namespace CanvasToy {
         public diffuse: Vec3Array = vec3.fromValues(0.8, 0.8, 0.8);
         public diffuseMap: Texture;
 
+        public specularExponent: number = 1;
         public specular: Vec3Array = vec3.fromValues(1, 1, 1);
         public specularMap: Texture;
 

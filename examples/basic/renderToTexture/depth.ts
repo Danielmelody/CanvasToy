@@ -9,7 +9,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     const cameras = Array(2, 0).map(() => new CanvasToy.PerspectiveCamera());
     const light = new CanvasToy.PointLight();
     const cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl),
-            [new CanvasToy.StandardMaterial(renderer.gl)]).rotateY(2).translate([0, 0, -3]);
+        [new CanvasToy.StandardMaterial(renderer.gl)]).rotateY(2).translate([0, 0, -3]);
 
     const image = new Image();
     image.src = "basic/images/chrome.png";
@@ -26,19 +26,19 @@ examples.push((canvas: HTMLCanvasElement) => {
     fbo.attachments.depth
         .setType(renderer.gl, CanvasToy.AttachmentType.Texture)
         .targetTexture
-            .setType(renderer.gl.UNSIGNED_SHORT)
-            .setFormat(renderer.gl.DEPTH_COMPONENT);
+        .setType(renderer.gl.UNSIGNED_SHORT)
+        .setFormat(renderer.gl.DEPTH_COMPONENT);
 
     const rttTexture = fbo.attachments.depth.targetTexture;
 
     const depthMaterial = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: rttTexture });
     depthMaterial.program = new CanvasToy.StandardShaderBuilder()
-    .setInterplotationMethod(CanvasToy.InterplotationMethod.DepthPhong)
-    .build(renderer.gl);
+        .setInterplotationMethod(CanvasToy.InterplotationMethod.DepthPhong)
+        .build(renderer.gl);
 
     const rect = new CanvasToy.Mesh(
-            new CanvasToy.RectGeometry(renderer.gl),
-            [depthMaterial]).setScaling([canvas.width / canvas.height, 1, 1]);
+        new CanvasToy.RectGeometry(renderer.gl),
+        [depthMaterial]).setScaling([canvas.width / canvas.height, 1, 1]);
     cube.registUpdate(() => {
         cube.rotateY(0.02);
     });

@@ -22,30 +22,6 @@ namespace Testing {
                     expect(str.match(pattern)).toBe(null);
                 });
             });
-            describe("numberPattern", () => {
-                beforeEach(() => {
-                    pattern = OBJLoaderIm.numberPattern;
-                });
-                it("should match integers", () => {
-                    str = "5";
-                    expect(str.match(pattern)[0]).toBe("5");
-                });
-                it("should match anti-integers", () => {
-                    str = "-5";
-                    expect(str.match(pattern)[0]).toBe("-5");
-                });
-                it("should match floats", () => {
-                    str = "-5.0";
-                    expect(str.match(pattern)[0]).toBe("-5.0");
-                });
-                it("should match only numbers", () => {
-                    str = "f-5.0 78/0.7";
-                    let group = str.match(pattern);
-                    expect(group[0]).toBe("-5.0");
-                    expect(group[1]).toBe("78");
-                    expect(group[2]).toBe("0.7");
-                });
-            });
             describe("faceSplitVertPattern", () => {
                 beforeEach(() => {
                     pattern = OBJLoaderIm.faceSplitVertPattern;
