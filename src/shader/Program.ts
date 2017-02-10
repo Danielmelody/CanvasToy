@@ -314,6 +314,11 @@ namespace CanvasToy {
                         return material.specular;
                     },
                 },
+                materialSpecExp: !material.specularExponent ? undefined : {
+                    type: DataType.float, updator: () => {
+                        return material.specularExponent;
+                    },
+                },
                 normalMatrix: !scene.openLight ? undefined : {
                     type: DataType.mat4,
                     updator: () => { return new Float32Array(mesh.normalMatrix); },

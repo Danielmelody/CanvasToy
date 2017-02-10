@@ -1,5 +1,6 @@
 uniform vec3 ambient;
 uniform vec3 materialSpec;
+uniform float materialSpecExp;
 uniform vec3 materialDiff;
 
 #ifdef OPEN_LIGHT
@@ -33,7 +34,7 @@ void main () {
             eyePos,
             materialSpec * lights[index].color,
             materialDiff * lights[index].color,
-            4.0,
+            materialSpecExp,
             lights[index].idensity
         );
     }
