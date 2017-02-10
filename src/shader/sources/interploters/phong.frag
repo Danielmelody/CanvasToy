@@ -1,8 +1,6 @@
 uniform vec3 ambient;
-
 uniform vec3 materialSpec;
 uniform vec3 materialDiff;
-uniform vec3 materialAmbient;
 
 #ifdef OPEN_LIGHT
 uniform vec4 eyePos;
@@ -20,9 +18,6 @@ uniform SpotLight spotLights[LIGHT_NUM];
 
 void main () {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-#ifdef USE_COLOR
-    gl_FragColor = vec4(materialAmbient, 1.0);
-#endif
 
 #ifdef USE_TEXTURE
     gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);

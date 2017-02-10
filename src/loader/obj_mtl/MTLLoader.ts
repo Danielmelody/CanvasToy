@@ -5,40 +5,59 @@
 
 namespace CanvasToy {
     export class MTLLoader {
-        public static load(gl: WebGLRenderingContext, url: string, onload: (materials: any) => void) {
+        public static load(gl: WebGLRenderingContext, baseurl: string, onload: (materials: any) => void) {
             const materials = {};
-            let currentMaterial = null;
-            fetchRes(url, (content: string) => {
-                content.split("\n").forEach((line) => {
-                    currentMaterial = MTLLoader.handleSingleLine(gl, line, materials, currentMaterial);
-                });
+            let currentMaterial: StandardMaterial = null;
+            fetchRes(baseurl, (content: string) => {
+                const textureLines: string[] = content.match(MTLLoader.mapPattern);
+                const texturePromises = [];
+                const urlMaps = {};
+                const mapPerLine = new RegExp(MTLLoader.mapPattern);
+                for (const line of textureLines) {
+                    const url = line.match(MTLLoader.mapSinglePattern)[2];
+                    urlMaps[url] = null;
+                    texturePromises.push(MTLLoader.fetchTexture(url).then((image) => {
+                        urlMaps[url] = image;
+                    }));
+                }
+                return Promise.all(texturePromises)
+                    .then(() => {
+                        content.split("\n").forEach((line) => {
+                            currentMaterial = MTLLoader.handleSingleLine(gl, line, materials, urlMaps, currentMaterial);
+                        });
+                    });
             });
         }
 
         protected static removeCommentPattern = /#.*/mg;
-        protected static newmtlPattern = /newmtl\s(.+)/mg;
-        protected static ambientPattern = /Ka\s(.+)/mg;
-        protected static diffusePattern = /Kd\s(.+)/mg;
-        protected static specularePattern = /Ks\s(.+)/mg;
-        protected static specularExponentPattern = /Ns\s(.+)/mg;
-        protected static trancparencyPattern = /(Tr|d)\s(.+)/mg;
+        protected static newmtlPattern = /newmtl\s(.+)/m;
+        protected static ambientPattern = /Ka\s(.+)/m;
+        protected static diffusePattern = /Kd\s(.+)/m;
+        protected static specularePattern = /Ks\s(.+)/m;
+        protected static specularExponentPattern = /Ns\s(.+)/m;
+        protected static trancparencyPattern = /(Tr|d)\s(.+)/m;
 
-        protected static ambientMapPattern = /map_Ka\s(.+)/mg;
-        protected static diffuseMapPattern = /map_Kd\s(.+)/mg;
-        protected static speculareMapPattern = /map_Ks\s(.+)/mg;
-        protected static specularExponentMapPattern = /map_Ns\s(.+)/mg;
-        protected static trancparencyMapPattern = /(map_Tr|map_d)\s(.+)/mg;
+        protected static mapPattern = /(map_[\^\s]+|bump|disp|decal)\s.+/mg;
+        protected static mapSinglePattern = /(map_[\^\s]+|bump|disp|decal)\s([\^\s]+)/m;
 
-        protected static bumpPattern = /(map_bump|bump)\s(.+)/mg;
-        protected static dispPattern = /disp\s(.+)/mg;
-        protected static decalPattern = /decal\s(.+)/mg;
-
-        protected static mapPattern = /(map_|bump|disp|decal).+/mg;
+        private static fetchTexture(url: string) {
+            return new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => {
+                    resolve(image);
+                };
+                image.onerror = () => {
+                    reject(new Error("No such image file " + url));
+                };
+                image.src = url;
+            });
+        }
 
         private static handleSingleLine(
             gl: WebGLRenderingContext,
             line: string,
             materials: any,
+            urlMaps: any,
             currentMaterial: StandardMaterial,
         ) {
             if (line.length === 0) {
@@ -48,9 +67,7 @@ namespace CanvasToy {
             if (matches.length > 0) {
                 line = matches[0];
                 const firstVar = line.match(/([^\s]+)/g)[0];
-
-                // TODO: load Texture with generator
-                switch(firstVar) {
+                switch (firstVar) {
                     case "newmtl":
                         const mtlName = line.match(MTLLoader.newmtlPattern)[0];
                         materials[mtlName] = new StandardMaterial(gl);
@@ -66,20 +83,46 @@ namespace CanvasToy {
                         break;
                     case "Ds":
                         currentMaterial.specularExponent =
-                        MTLLoader.getNumber(MTLLoader.specularExponentMapPattern, line);
+                            MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
+                        break;
+                    case "map_Ka":
+                        currentMaterial.mainTexture = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                        break;
+                    case "map_Ka":
+                        currentMaterial.alphaMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                        break;
+                    case "map_Kd":
+                        currentMaterial.mainTexture = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                        break;
+                    case "map_bump":
+                        currentMaterial.bumpMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                        break;
+                    case "bump":
+                        currentMaterial.bumpMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                        break;
+                    case "disp":
+                        currentMaterial.displamentMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                        break;
+                    case "decal":
+                        currentMaterial.stencilMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
                         break;
                     default: break;
                 }
             }
+            return currentMaterial;
+        }
+
+        private static getImageUrl(line) {
+            return line.match(MTLLoader.mapSinglePattern)[2];
         }
 
         private static getVector(pattern: RegExp, line: string) {
             const matches = line.match(pattern);
             const vector = [];
             if (matches.length > 0) {
-                matches[0].match(patterns.num).forEach((numStr) => {
+                matches[1].match(patterns.num).forEach((numStr) => {
                     if (numStr !== "") {
-                         vector.push(parseFloat(numStr));
+                        vector.push(parseFloat(numStr));
                     }
                 });
             }
@@ -89,7 +132,7 @@ namespace CanvasToy {
         private static getNumber(pattern: RegExp, line: string) {
             const matches = line.match(pattern);
             if (matches.length > 0) {
-                return parseFloat(matches[0].match(patterns.num)[0]);
+                return parseFloat(matches[1].match(patterns.num)[0]);
             }
             return 0;
         }
