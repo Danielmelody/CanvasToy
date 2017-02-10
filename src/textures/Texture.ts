@@ -12,7 +12,6 @@ namespace CanvasToy {
         public dataCompleted: boolean = false;
         public isReadyToUpdate: boolean = false;
 
-        private _unit: number;
         private _image: HTMLImageElement;
         private _target: number;
         private _format: number;
@@ -35,10 +34,6 @@ namespace CanvasToy {
                 .setType(gl.UNSIGNED_BYTE);
             this.glTexture = gl.createTexture();
             this._image = image;
-        }
-
-        public get unit() {
-            return this._unit;
         }
 
         public get image() {
@@ -71,11 +66,6 @@ namespace CanvasToy {
 
         public get type() {
             return this._type;
-        }
-
-        public setUnit(_unit: number) {
-            this._unit = _unit;
-            return this;
         }
 
         public setImage(_image: HTMLImageElement) {

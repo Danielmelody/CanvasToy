@@ -26,7 +26,9 @@ namespace CanvasToy {
 
         public program: Program;
 
-        public color: Vec3Array;
+        public color: Vec3Array = vec3.fromValues(1, 1, 1);
+
+        @loadTexture
         public mainTexture: Texture;
 
         public ambient: Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);

@@ -178,3 +178,7 @@ examples.push(function (canvas) {
     });
     return renderer;
 });
+examples.push(function (canvas) {
+    var renderer = new CanvasToy.Renderer(canvas);
+    return renderer;
+});

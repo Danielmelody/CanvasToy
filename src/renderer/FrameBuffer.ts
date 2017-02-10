@@ -12,7 +12,7 @@ namespace CanvasToy {
         public readonly frameBuffer: FrameBuffer;
         public glRenderBuffer: WebGLRenderbuffer;
         public targetTexture: Texture;
-        public readonly attachmentCode: (gl: WebGLRenderingContext) => number;
+        public readonly attachmentCode: (gl: WebGLRenderingContext | WebGLDrawBuffers) => number;
 
         private _innerFormatForBuffer: number = -1;
         private _type: AttachmentType;
@@ -20,7 +20,7 @@ namespace CanvasToy {
 
         constructor(
             frameBuffer: FrameBuffer,
-            attachmentCode: (gl: WebGLRenderingContext) => number,
+            attachmentCode: (gl: WebGLRenderingContext | WebGLDrawBuffers) => number,
         ) {
             this.frameBuffer = frameBuffer;
             this.attachmentCode = attachmentCode;
@@ -75,10 +75,12 @@ namespace CanvasToy {
         public glFramebuffer: WebGLFramebuffer;
 
         public attachments = {
-            color: new Attachment(this, (gl) => gl.COLOR_ATTACHMENT0),
-            depth: new Attachment(this, (gl) => gl.DEPTH_ATTACHMENT),
-            stencil: new Attachment(this, (gl) => gl.STENCIL_ATTACHMENT),
+            color: new Attachment(this, (gl: WebGLRenderingContext) => gl.COLOR_ATTACHMENT0),
+            depth: new Attachment(this, (gl: WebGLRenderingContext) => gl.DEPTH_ATTACHMENT),
+            stencil: new Attachment(this, (gl: WebGLRenderingContext) => gl.STENCIL_ATTACHMENT),
         };
+
+        public extras: Attachment[] = [];
 
         constructor(gl: WebGLRenderingContext) {
             this.glFramebuffer = gl.createFramebuffer();

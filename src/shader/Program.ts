@@ -7,8 +7,8 @@ namespace CanvasToy {
         fragmentShader?: string;
     }
 
-    export interface IProgramcomponentBuilder {
-        faces?: Faces;
+    export interface IProgramPass {
+        faces?: (mesh: Mesh) => Faces;
         uniforms?: any;
         attributes?: any;
         textures?: any;
@@ -27,7 +27,7 @@ namespace CanvasToy {
     export interface IUniform {
         name?: string;
         type: DataType;
-        updator: (object?: Object3d, camera?: Camera) => any;
+        updator: (object?: Object3d, camera?: Camera, material?: Material) => any;
     }
 
     export class Attribute {
@@ -55,9 +55,9 @@ namespace CanvasToy {
         }
     }
 
-    export class Program implements IProgramcomponentBuilder {
+    export class Program implements IProgramPass {
         public gl: WebGLRenderingContext;
-        public faces: Faces;
+        public faces: (mesh: Mesh) => Faces;
         public enableDepthTest: boolean = true;
         public enableStencilTest: boolean = true;
         public uniforms = {};
@@ -65,24 +65,22 @@ namespace CanvasToy {
         public attributeLocations = {};
         public attribute0: string;
         public webGlProgram: WebGLProgram;
-        public textures: Texture[] = [];
+        public textures: Array<(mesh: Mesh, camera: Camera, material) => Texture> = [];
         public vertexPrecision: string = "highp";
         public fragmentPrecision: string = "mediump";
         public prefix: string[] = [];
 
-        private componentBuilder:
-        (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => IProgramcomponentBuilder;
+        private passFunctions: IProgramPass;
 
         private source: IProgramSource;
 
         constructor(
             gl: WebGLRenderingContext,
             source: IProgramSource,
-            componentBuilder:
-                (mesh: Mesh, scene: Scene, camera: Camera, materiel: Material) => IProgramcomponentBuilder) {
+            passFunctions: IProgramPass) {
             this.gl = gl;
             this.source = source;
-            this.componentBuilder = componentBuilder;
+            this.passFunctions = passFunctions;
         }
 
         public drawMode = (gl: WebGLRenderingContext) => { return gl.STATIC_DRAW; };
@@ -97,19 +95,19 @@ namespace CanvasToy {
             return this;
         }
 
-        public make(gl: WebGLRenderingContext, mesh: Mesh, scene: Scene, camera: Camera, material: Material) {
+        public make(gl: WebGLRenderingContext, scene: Scene) {
             this.prefix = [
-                material.mainTexture ? "#define USE_TEXTURE " : "",
-                material.color ? "#define USE_COLOR " : "",
-                scene.openLight ? "#define OPEN_LIGHT \n#define LIGHT_NUM "
-                    + scene.lights.length : "",
+                "#define USE_TEXTURE ",
+                "#define USE_COLOR ",
+                "#define OPEN_LIGHT \n#define LIGHT_NUM "
+                + scene.lights.length + "",
             ];
             this.webGlProgram = createEntileShader(gl,
                 "precision " + this.vertexPrecision + " float;\n" + this.prefix.join("\n") + "\n"
                 + this.source.vertexShader,
                 "precision " + this.fragmentPrecision + " float;\n" + this.prefix.join("\n") + "\n"
                 + this.source.fragmentShader);
-            const componets = this.componentBuilder(mesh, scene, camera, material);
+            const componets = this.passFunctions;
             this.faces = (componets.faces === undefined ? this.faces : componets.faces);
             for (const nameInShader in componets.uniforms) {
                 if (componets.uniforms[nameInShader] !== undefined) {
@@ -117,27 +115,33 @@ namespace CanvasToy {
                 }
             }
             for (const sampler in componets.textures) {
-                this.textures[sampler] = componets.textures[sampler];
+                this.addTexture(sampler, componets.textures[sampler]);
             }
             for (const nameInShader in componets.attributes) {
                 this.addAttribute(nameInShader, componets.attributes[nameInShader]);
             }
-            this.checkState();
+            // this.checkState(mesh);
             return this;
         }
 
         public pass(mesh: Mesh, camera: Camera, materiel: Material) {
             for (const uniformName in this.uniforms) {
                 if (this.uniforms[uniformName] !== undefined) {
-                    this.uniforms[uniformName](mesh, camera);
+                    this.uniforms[uniformName](mesh, camera, materiel);
                 }
             }
+            for (let unit = 0; unit < this.textures.length; ++unit) {
+                const texture = this.textures[unit](mesh, camera, materiel);
+                this.gl.activeTexture(this.gl.TEXTURE0 + unit);
+                this.gl.bindTexture(texture.target, texture.glTexture);
+            }
             for (const attributeName in this.attributes) {
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.attributes[attributeName].buffer);
+                const attribute = this.attributes[attributeName](mesh, camera, materiel);
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
                 this.gl.vertexAttribPointer(
                     this.attributeLocations[attributeName],
-                    this.attributes[attributeName].size,
-                    this.attributes[attributeName].type,
+                    attribute.size,
+                    attribute.type,
                     false,
                     0,
                     0);
@@ -145,18 +149,19 @@ namespace CanvasToy {
             return this;
         }
 
-        public checkState() {
+        public checkState(mesh: Mesh) {
             let maxIndex = 0;
-            for (const index of this.faces.data) {
+            for (const index of this.faces(mesh).data) {
                 maxIndex = Math.max(maxIndex, index);
             }
             for (const attributeName in this.attributes) {
-                console.assert(this.attributes[attributeName].size <= 4 && this.attributes[attributeName].size >= 1,
+                console.assert(this.attributes[attributeName](mesh).size <= 4
+                    && this.attributes[attributeName](mesh).size >= 1,
                     attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
-                console.assert((maxIndex + 1) * this.attributes[attributeName].stride <=
-                    this.attributes[attributeName].data.length,
-                    attributeName + " length error, now:" + this.attributes[attributeName].data.length
-                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
+                console.assert((maxIndex + 1) * this.attributes[attributeName](mesh).stride <=
+                    this.attributes[attributeName](mesh).data.length,
+                    attributeName + " length error, now:" + this.attributes[attributeName](mesh).data.length
+                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName](mesh).stride);
             }
             return this;
         }
@@ -172,48 +177,55 @@ namespace CanvasToy {
             return this;
         }
 
+        public addTexture(sampler: string, textureGetter: (mesh, camera, material) => Texture) {
+            const unit = this.textures.length;
+            this.addUniform(sampler, { type: DataType.int, updator: () => unit });
+
+            this.textures.push(textureGetter);
+        }
+
         public addUniform(nameInShader, uniform: IUniform) {
             this.gl.useProgram(this.webGlProgram);
             const location = this.getUniformLocation(nameInShader);
             switch (uniform.type) {
                 case DataType.float:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        this.gl.uniform1f(location, uniform.updator(mesh, camera));
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        this.gl.uniform1f(location, uniform.updator(mesh, camera, material));
                     };
                     break;
                 case DataType.int:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        this.gl.uniform1i(location, uniform.updator(mesh, camera));
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        this.gl.uniform1i(location, uniform.updator(mesh, camera, material));
                     };
                     break;
                 case DataType.vec2:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        const value = uniform.updator(mesh, camera);
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        const value = uniform.updator(mesh, camera, material);
                         this.gl.uniform2f(location, value[0], value[1]);
                     };
                     break;
                 case DataType.vec3:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        const value = uniform.updator(mesh, camera);
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        const value = uniform.updator(mesh, camera, material);
                         this.gl.uniform3f(location, value[0], value[1], value[2]);
                     };
                     break;
                 case DataType.vec4:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        const value = uniform.updator(mesh, camera);
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        const value = uniform.updator(mesh, camera, material);
                         this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
                     };
                     break;
                 case DataType.mat2:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        this.gl.uniformMatrix2fv(location, false, uniform.updator(mesh, camera));
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        this.gl.uniformMatrix2fv(location, false, uniform.updator(mesh, camera, material));
                     };
                 case DataType.mat3:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        this.gl.uniformMatrix3fv(location, false, uniform.updator(mesh, camera));
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        this.gl.uniformMatrix3fv(location, false, uniform.updator(mesh, camera, material));
                     }; case DataType.mat4:
-                    this.uniforms[nameInShader] = (mesh?, camera?) => {
-                        this.gl.uniformMatrix4fv(location, false, uniform.updator(mesh, camera));
+                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
+                        this.gl.uniformMatrix4fv(location, false, uniform.updator(mesh, camera, material));
                     };
                     break;
                 default: break;
@@ -226,10 +238,12 @@ namespace CanvasToy {
             return this;
         }
 
-        public addAttribute(nameInShader: string, attribute: Attribute) {
+        public addAttribute(
+            nameInShader: string,
+            attributeFun: (mesh?: Mesh, camera?: Camera, material?: Material) => Attribute) {
             const location = this.getAttribLocation(nameInShader);
             if (location !== null && location !== -1) {
-                this.attributes[nameInShader] = attribute;
+                this.attributes[nameInShader] = attributeFun;
                 this.attributeLocations[nameInShader] = location;
                 this.gl.enableVertexAttribArray(location);
             }
@@ -249,7 +263,7 @@ namespace CanvasToy {
             return result;
         }
 
-        private addPassProcesser(parameter: IProgramcomponentBuilder) {
+        private addPassProcesser(parameter: IProgramPass) {
             this.faces = (parameter.faces === undefined ? this.faces : parameter.faces);
             for (const nameInShader in parameter.uniforms) {
                 if (parameter.uniforms[nameInShader] !== undefined) {
@@ -262,7 +276,7 @@ namespace CanvasToy {
             for (const nameInShader in parameter.attributes) {
                 this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
             }
-            this.checkState();
+            // this.checkState(mesh);
             return this;
         }
 
@@ -280,65 +294,63 @@ namespace CanvasToy {
         }
     }
 
-    export const defaultProgramPass = (mesh: Mesh, scene: Scene, camera: Camera, material: Material) => {
-        return {
-            faces: mesh.geometry.faces,
-            textures: {
-                uMainTexture: material.mainTexture,
-            },
-            uniforms: {
-                modelViewProjectionMatrix: {
-                    type: DataType.mat4,
-                    updator: (mesh: Mesh, camera: Camera) => {
-                        return mat4.multiply(
-                            mat4.create(),
-                            camera.projectionMatrix,
-                            mat4.multiply(mat4.create(),
-                                camera.objectToWorldMatrix,
-                                mesh.matrix),
-                        );
-                    },
-                },
-                color: !material.color ? undefined : {
-                    type: DataType.vec3, updator: () => {
-                        return material.color;
-                    },
-                },
-                materialDiff: !material.diffuse ? undefined : {
-                    type: DataType.vec3, updator: () => {
-                        return material.diffuse;
-                    },
-                },
-                materialSpec: !material.specular ? undefined : {
-                    type: DataType.vec3, updator: () => {
-                        return material.specular;
-                    },
-                },
-                ambient: !scene.openLight ? undefined : {
-                    type: DataType.vec3,
-                    updator: () => { return scene.ambientLight; },
-                },
-                normalMatrix: !scene.openLight ? undefined : {
-                    type: DataType.mat4,
-                    updator: () => { return new Float32Array(mesh.normalMatrix); },
-                },
-                eyePos: !scene.openLight ? undefined : {
-                    type: DataType.vec4,
-                    updator: (object3d: Object3d, camera: Camera) => {
-                        return vec4.fromValues(
-                            camera.position[0],
-                            camera.position[1],
-                            camera.position[2],
-                            1,
-                        );
-                    },
+    export const defaultProgramPass = {
+        faces: (mesh) => mesh.geometry.faces,
+        textures: {
+            uMainTexture: (mesh, camera, material) => material.mainTexture,
+        },
+        uniforms: {
+            modelViewProjectionMatrix: {
+                type: DataType.mat4,
+                updator: (mesh: Mesh, camera: Camera) => {
+                    return mat4.multiply(
+                        mat4.create(),
+                        camera.projectionMatrix,
+                        mat4.multiply(mat4.create(),
+                            camera.objectToWorldMatrix,
+                            mesh.matrix),
+                    );
                 },
             },
-            attributes: {
-                position: mesh.geometry.attributes.position,
-                aMainUV: !material.mainTexture ? undefined : mesh.geometry.attributes.uv,
-                aNormal: mesh.geometry.attributes.normal,
+            color: {
+                type: DataType.vec3, updator: (mesh, camera, material) => {
+                    return material.color;
+                },
             },
-        };
+            materialDiff: {
+                type: DataType.vec3, updator: (mesh, camera, material) => {
+                    return material.diffuse;
+                },
+            },
+            materialSpec: {
+                type: DataType.vec3, updator: (mesh, camera, material) => {
+                    return material.specular;
+                },
+            },
+            ambient: {
+                type: DataType.vec3,
+                updator: (mesh) => { return mesh.scene.ambientLight; },
+            },
+            normalMatrix: {
+                type: DataType.mat4,
+                updator: (mesh) => { return new Float32Array(mesh.normalMatrix); },
+            },
+            eyePos: {
+                type: DataType.vec4,
+                updator: (object3d: Object3d, camera: Camera) => {
+                    return vec4.fromValues(
+                        camera.position[0],
+                        camera.position[1],
+                        camera.position[2],
+                        1,
+                    );
+                },
+            },
+        },
+        attributes: {
+            position: (mesh) => mesh.geometry.attributes.position,
+            aMainUV: (mesh) => mesh.geometry.attributes.uv,
+            aNormal: (mesh) => mesh.geometry.attributes.normal,
+        },
     };
-}
+};

@@ -20,4 +20,17 @@ namespace CanvasToy {
             });
         };
     }
+
+    export function loadTexture<Material>(proto, key) {
+        if (!proto.hasOwnProperty("textures")) {
+            Object.defineProperty(proto, "textures", {
+                enumerable: true,
+                configurable: false,
+                writable: false,
+                value: new Array<(obj) => Texture>(),
+            });
+        }
+        const textures = proto.textures;
+        textures.push((obj) => obj[key]);
+    }
 }
