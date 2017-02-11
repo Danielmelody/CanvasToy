@@ -4,6 +4,7 @@
         "target": "es5",
         "allowJs": false,
         "outFile": "index.js",
+        "lib":["es5", "es2015.promise", "dom"],
         "experimentalDecorators": true
     },
     "include":[

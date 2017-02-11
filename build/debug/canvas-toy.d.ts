@@ -429,7 +429,7 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class MTLLoader {
-        static load(gl: WebGLRenderingContext, baseurl: string, onload: (materials: any) => void): void;
+        static load(gl: WebGLRenderingContext, baseurl: string): Promise<{}>;
         protected static removeCommentPattern: RegExp;
         protected static newmtlPattern: RegExp;
         protected static ambientPattern: RegExp;
@@ -448,22 +448,26 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class OBJLoader {
-        static load(gl: WebGLRenderingContext, url: string, onload: (meshes: Object3d) => void): void;
+        static load(gl: WebGLRenderingContext, url: string): Promise<Object3d>;
         protected static commentPattern: RegExp;
         protected static faceSplitVertPattern: RegExp;
         protected static facePerVertPattern: RegExp;
         protected static objectSplitPattern: RegExp;
+        protected static mtlLibPattern: RegExp;
+        protected static useMTLPattern: RegExp;
+        protected static mtlLibSinglePattern: RegExp;
+        protected static useMTLSinglePattern: RegExp;
         protected static vertexPattern: RegExp;
         protected static uvPattern: RegExp;
         protected static normalPattern: RegExp;
         protected static indexPattern: RegExp;
         protected static praiseAttibuteLines(lines: any): number[][];
         protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void): void;
-        protected static buildUpMeshes(gl: WebGLRenderingContext, content: string, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
+        protected static buildUpMeshes(gl: WebGLRenderingContext, content: string, materials: any, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
     }
 }
 declare namespace CanvasToy {
-    function fetchRes(url: string, onload: (content: string) => void): void;
+    function fetchRes(url: string): Promise<{}>;
 }
 declare namespace CanvasToy {
     enum AttachmentType {

@@ -1359,30 +1359,35 @@ var CanvasToy;
     var MTLLoader = (function () {
         function MTLLoader() {
         }
-        MTLLoader.load = function (gl, baseurl, onload) {
+        MTLLoader.load = function (gl, baseurl) {
             var materials = {};
             var currentMaterial = null;
-            CanvasToy.fetchRes(baseurl, function (content) {
+            var home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
+            return CanvasToy.fetchRes(baseurl).then(function (content) {
+                content = content.replace(MTLLoader.removeCommentPattern, "");
                 var textureLines = content.match(MTLLoader.mapPattern);
                 var texturePromises = [];
                 var urlMaps = {};
                 var mapPerLine = new RegExp(MTLLoader.mapPattern);
-                var _loop_1 = function (line) {
-                    var url = line.match(MTLLoader.mapSinglePattern)[2];
-                    urlMaps[url] = null;
-                    texturePromises.push(MTLLoader.fetchTexture(url).then(function (image) {
-                        urlMaps[url] = image;
-                    }));
-                };
-                for (var _i = 0, textureLines_1 = textureLines; _i < textureLines_1.length; _i++) {
-                    var line = textureLines_1[_i];
-                    _loop_1(line);
+                if (!!textureLines) {
+                    var _loop_1 = function (line) {
+                        var url = line.match(MTLLoader.mapSinglePattern)[2];
+                        urlMaps[url] = null;
+                        texturePromises.push(MTLLoader.fetchTexture(home + url).then(function (image) {
+                            urlMaps[url] = image;
+                        }));
+                    };
+                    for (var _i = 0, textureLines_1 = textureLines; _i < textureLines_1.length; _i++) {
+                        var line = textureLines_1[_i];
+                        _loop_1(line);
+                    }
                 }
                 return Promise.all(texturePromises)
-                    .then(function () {
+                    .then(function (test) {
                     content.split("\n").forEach(function (line) {
                         currentMaterial = MTLLoader.handleSingleLine(gl, line, materials, urlMaps, currentMaterial);
                     });
+                    return Promise.resolve(materials);
                 });
             });
         };
@@ -1402,56 +1407,54 @@ var CanvasToy;
             if (line.length === 0) {
                 return;
             }
-            var matches = line.match(MTLLoader.removeCommentPattern);
-            if (matches.length > 0) {
-                line = matches[0];
-                var firstVar = line.match(/([^\s]+)/g)[0];
-                switch (firstVar) {
-                    case "newmtl":
-                        var mtlName = line.match(MTLLoader.newmtlPattern)[0];
-                        materials[mtlName] = new CanvasToy.StandardMaterial(gl);
-                        break;
-                    case "Ka":
-                        currentMaterial.ambient = MTLLoader.getVector(MTLLoader.ambientPattern, line);
-                        break;
-                    case "Kd":
-                        currentMaterial.diffuse = MTLLoader.getVector(MTLLoader.diffusePattern, line);
-                        break;
-                    case "Ks":
-                        currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
-                        break;
-                    case "Ds":
-                        currentMaterial.specularExponent =
-                            MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
-                        break;
-                    case "map_Ka":
-                        currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
-                        break;
-                    case "map_Ka":
-                        currentMaterial.alphaMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
-                        break;
-                    case "map_Kd":
-                        currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
-                        break;
-                    case "map_bump":
-                        currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
-                        break;
-                    case "bump":
-                        currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
-                        break;
-                    case "disp":
-                        currentMaterial.displamentMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
-                        break;
-                    case "decal":
-                        currentMaterial.stencilMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
-                        break;
-                    default: break;
-                }
+            var firstVar = line.match(/([^\s]+)/g)[0];
+            switch (firstVar) {
+                case "newmtl":
+                    var mtlName = line.match(MTLLoader.newmtlPattern)[1];
+                    materials[mtlName] = new CanvasToy.StandardMaterial(gl);
+                    return materials[mtlName];
+                case "Ka":
+                    currentMaterial.ambient = MTLLoader.getVector(MTLLoader.ambientPattern, line);
+                    break;
+                case "Kd":
+                    currentMaterial.diffuse = MTLLoader.getVector(MTLLoader.diffusePattern, line);
+                    break;
+                case "Ks":
+                    currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
+                    break;
+                case "Ds":
+                    currentMaterial.specularExponent =
+                        MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
+                    break;
+                case "map_Ka":
+                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "map_Ka":
+                    currentMaterial.alphaMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "map_Kd":
+                    var image = urlMaps[MTLLoader.getImageUrl(line)];
+                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "map_bump":
+                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "bump":
+                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "disp":
+                    currentMaterial.displamentMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "decal":
+                    currentMaterial.stencilMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                default: break;
             }
             return currentMaterial;
         };
         MTLLoader.getImageUrl = function (line) {
-            return line.match(MTLLoader.mapSinglePattern)[2];
+            var matches = line.match(MTLLoader.mapSinglePattern);
+            return matches[2];
         };
         MTLLoader.getVector = function (pattern, line) {
             var matches = line.match(pattern);
@@ -1481,8 +1484,8 @@ var CanvasToy;
     MTLLoader.specularePattern = /Ks\s(.+)/m;
     MTLLoader.specularExponentPattern = /Ns\s(.+)/m;
     MTLLoader.trancparencyPattern = /(Tr|d)\s(.+)/m;
-    MTLLoader.mapPattern = /(map_[\^\s]+|bump|disp|decal)\s.+/mg;
-    MTLLoader.mapSinglePattern = /(map_[\^\s]+|bump|disp|decal)\s([\^\s]+)/m;
+    MTLLoader.mapPattern = /(map_[^\s]+|bump|disp|decal)\s.+/mg;
+    MTLLoader.mapSinglePattern = /(map_[^\s]+|bump|disp|decal)\s([^\s]+)/m;
     CanvasToy.MTLLoader = MTLLoader;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1490,17 +1493,32 @@ var CanvasToy;
     var OBJLoader = (function () {
         function OBJLoader() {
         }
-        OBJLoader.load = function (gl, url, onload) {
-            CanvasToy.fetchRes(url, function (content) {
+        OBJLoader.load = function (gl, url) {
+            return CanvasToy.fetchRes(url).then(function (content) {
                 content = content.replace(OBJLoader.commentPattern, "");
-                var positionlines = content.match(OBJLoader.vertexPattern);
-                var uvlines = content.match(OBJLoader.uvPattern);
-                var normallines = content.match(OBJLoader.normalPattern);
-                var unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
-                var unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
-                var unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
-                var container = OBJLoader.buildUpMeshes(gl, content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
-                onload(container);
+                var home = url.substr(0, url.lastIndexOf("/") + 1);
+                var materialLibs = content.match(OBJLoader.mtlLibPattern);
+                var materialsMixin = {};
+                var promises = [];
+                for (var _i = 0, materialLibs_1 = materialLibs; _i < materialLibs_1.length; _i++) {
+                    var mtlLib = materialLibs_1[_i];
+                    var mtlurl = home + mtlLib.match(OBJLoader.mtlLibSinglePattern)[1];
+                    promises.push(CanvasToy.MTLLoader.load(gl, mtlurl));
+                }
+                return Promise.all(promises).then(function (materialLibs) {
+                    for (var _i = 0, materialLibs_2 = materialLibs; _i < materialLibs_2.length; _i++) {
+                        var materials = materialLibs_2[_i];
+                        CanvasToy.mixin(materialsMixin, materials);
+                    }
+                    var positionlines = content.match(OBJLoader.vertexPattern);
+                    var uvlines = content.match(OBJLoader.uvPattern);
+                    var normallines = content.match(OBJLoader.normalPattern);
+                    var unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
+                    var unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
+                    var unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
+                    var container = OBJLoader.buildUpMeshes(gl, content, materialsMixin, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                    return Promise.resolve(container);
+                });
             });
         };
         OBJLoader.praiseAttibuteLines = function (lines) {
@@ -1525,7 +1543,7 @@ var CanvasToy;
                 forEachFace(triangleFace);
             }
         };
-        OBJLoader.buildUpMeshes = function (gl, content, unIndexedPositions, unIndexedUVs, unIndexedNormals) {
+        OBJLoader.buildUpMeshes = function (gl, content, materials, unIndexedPositions, unIndexedUVs, unIndexedNormals) {
             var container = new CanvasToy.Object3d();
             var objects = content.split(OBJLoader.objectSplitPattern);
             objects.splice(0, 1);
@@ -1550,7 +1568,17 @@ var CanvasToy;
                         });
                     });
                 }
-                var mesh = new CanvasToy.Mesh(geometry, [new CanvasToy.StandardMaterial(gl)]);
+                var meshMaterials = [];
+                var mtls = objectContent.match(OBJLoader.useMTLPattern);
+                if (!!mtls) {
+                    mtls.forEach(function (useMTLLine) {
+                        meshMaterials.push(materials[useMTLLine.match(OBJLoader.useMTLSinglePattern)[1]]);
+                    });
+                }
+                else {
+                    meshMaterials.push(new CanvasToy.StandardMaterial(gl));
+                }
+                var mesh = new CanvasToy.Mesh(geometry, meshMaterials);
                 mesh.setParent(container);
             });
             return container;
@@ -1561,6 +1589,10 @@ var CanvasToy;
     OBJLoader.faceSplitVertPattern = /([0-9]|\/|\-)+/g;
     OBJLoader.facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
     OBJLoader.objectSplitPattern = /[o|g]\s+.+/mg;
+    OBJLoader.mtlLibPattern = /mtllib\s([^\s]+)/mg;
+    OBJLoader.useMTLPattern = /usemtl\s([^\s]+)/mg;
+    OBJLoader.mtlLibSinglePattern = /mtllib\s([^\s]+)/;
+    OBJLoader.useMTLSinglePattern = /usemtl\s([^\s]+)/;
     OBJLoader.vertexPattern = /v\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
     OBJLoader.uvPattern = /vt\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
     OBJLoader.normalPattern = /vn\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
@@ -1569,17 +1601,17 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    function fetchRes(url, onload) {
-        var request = new XMLHttpRequest();
-        request.onreadystatechange = function () {
-            if (request.readyState === 4 && request.status === 200) {
-                if (onload) {
-                    onload(request.responseText);
+    function fetchRes(url) {
+        return new Promise(function (resolve, reject) {
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function () {
+                if (request.readyState === 4 && request.status === 200) {
+                    resolve(request.responseText);
                 }
-            }
-        };
-        request.open("GET", url);
-        request.send();
+            };
+            request.open("GET", url);
+            request.send();
+        });
     }
     CanvasToy.fetchRes = fetchRes;
 })(CanvasToy || (CanvasToy = {}));
