@@ -1,51 +1,56 @@
-/// <reference path="../Object3d.ts"/>
-/// <reference path="../materials/Material.ts"/>
-/// <reference path="../geometries/Geometry.ts"/>
-/// <reference path="../Mesh.ts"/>
+/// <reference path="../../Object3d.ts"/>
+/// <reference path="../../materials/Material.ts"/>
+/// <reference path="../../geometries/Geometry.ts"/>
+/// <reference path="../../Mesh.ts"/>
 
 namespace CanvasToy {
 
     export class OBJLoader {
 
-        public static load(gl: WebGLRenderingContext, url: string, onload: (meshes: Object3d) => void) {
-            OBJLoader.fetch(url, (content: string) => {
-                // remove comment
+        public static load(gl: WebGLRenderingContext, url: string): Promise<Object3d> {
+            return fetchRes(url).then((content: string) => {
+                // remove comment of .obj file
                 content = content.replace(OBJLoader.commentPattern, "");
-                const positionlines: string[] = content.match(OBJLoader.vertexPattern);
-                const uvlines: string[] = content.match(OBJLoader.uvPattern);
-                const normallines: string[] = content.match(OBJLoader.normalPattern);
-                const unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
-                const unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
-                const unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
-                const container = OBJLoader.buildUpMeshes(
-                    gl, content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
-                onload(container);
+
+                const home = url.substr(0, url.lastIndexOf("/") + 1);
+
+                const materialLibs: string[] = content.match(OBJLoader.mtlLibPattern);
+                const materialsMixin = {};
+                const promises = [];
+
+                for (const mtlLib of materialLibs) {
+                    const mtlurl = home + mtlLib.match(OBJLoader.mtlLibSinglePattern)[1];
+                    promises.push(MTLLoader.load(gl, mtlurl));
+                }
+                return Promise.all(promises).then((materialLibs) => {
+                    for (const materials of materialLibs) {
+                        mixin(materialsMixin, materials);
+                    }
+                    const positionlines: string[] = content.match(OBJLoader.vertexPattern);
+                    const uvlines: string[] = content.match(OBJLoader.uvPattern);
+                    const normallines: string[] = content.match(OBJLoader.normalPattern);
+                    const unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
+                    const unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
+                    const unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
+                    const container = OBJLoader.buildUpMeshes(
+                        gl, content, materialsMixin, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                    return Promise.resolve(container);
+                });
             });
         }
 
         protected static commentPattern = /#.*/mg;
-        protected static numberPattern = /[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/mg;
         protected static faceSplitVertPattern = /([0-9]|\/|\-)+/g;
         protected static facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
         protected static objectSplitPattern = /[o|g]\s+.+/mg;
-        // protected static materialPattern = /usemtl\s.+/;
+        protected static mtlLibPattern = /mtllib\s([^\s]+)/mg;
+        protected static useMTLPattern = /usemtl\s([^\s]+)/mg;
+        protected static mtlLibSinglePattern = /mtllib\s([^\s]+)/;
+        protected static useMTLSinglePattern = /usemtl\s([^\s]+)/;
         protected static vertexPattern = /v\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
         protected static uvPattern = /vt\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
         protected static normalPattern = /vn\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
         protected static indexPattern = /f\s+([-+]?[0-9]*\.?[0-9]+ ?|\/)+/mg;
-
-        protected static fetch(url: string, onload: (content: string) => void) {
-            const request = new XMLHttpRequest();
-            request.onreadystatechange = () => {
-                if (request.readyState === 4 && request.status === 200) {
-                    if (onload) {
-                        onload(request.responseText);
-                    }
-                }
-            };
-            request.open("GET", url);
-            request.send();
-        }
 
         protected static praiseAttibuteLines(lines) {
             const result: number[][] = [];
@@ -54,7 +59,7 @@ namespace CanvasToy {
             }
             lines.forEach((expression: string) => {
                 const data: number[] = [];
-                expression.match(OBJLoader.numberPattern).forEach(
+                expression.match(patterns.num).forEach(
                     (floatNum) => {
                         if (expression !== "") {
                             data.push(parseFloat(floatNum));
@@ -76,6 +81,7 @@ namespace CanvasToy {
         protected static buildUpMeshes(
             gl: WebGLRenderingContext,
             content: string,
+            materials: any,
             unIndexedPositions: number[][],
             unIndexedUVs: number[][],
             unIndexedNormals: number[][],
@@ -100,12 +106,20 @@ namespace CanvasToy {
                                     unIndexedUVs[parseInt(match[2], 0) - 1][1]],
                                     normal: unIndexedNormals[parseInt(match[3], 0) - 1],
                                 });
-
                             });
                         });
                     });
                 }
-                const mesh = new Mesh(geometry, [new StandardMaterial(gl)]);
+                const meshMaterials = [];
+                const mtls = objectContent.match(OBJLoader.useMTLPattern);
+                if (!!mtls) {
+                    mtls.forEach((useMTLLine) => {
+                        meshMaterials.push(materials[useMTLLine.match(OBJLoader.useMTLSinglePattern)[1]]);
+                    });
+                } else {
+                    meshMaterials.push(new StandardMaterial(gl));
+                }
+                const mesh = new Mesh(geometry, meshMaterials);
                 mesh.setParent(container);
             });
             return container;

@@ -6,7 +6,7 @@ void main() {
     textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));
 #endif
 #ifdef OPEN_LIGHT
-    totalLighting = ambient + materialAmbient;
+    totalLighting = ambient;
     vec3 normal = normalize(vNormal);
     gl_FragColor = vec4(totalLighting, 1.0);
 #else

@@ -312,11 +312,6 @@ namespace CanvasToy {
                     );
                 },
             },
-            color: {
-                type: DataType.vec3, updator: (mesh, camera, material) => {
-                    return material.color;
-                },
-            },
             materialDiff: {
                 type: DataType.vec3, updator: (mesh, camera, material) => {
                     return material.diffuse;
@@ -325,6 +320,11 @@ namespace CanvasToy {
             materialSpec: {
                 type: DataType.vec3, updator: (mesh, camera, material) => {
                     return material.specular;
+                },
+            },
+            materialSpecExp: {
+                type: DataType.float, updator: (mesh, camera, material) => {
+                    return material.specularExponent;
                 },
             },
             ambient: {

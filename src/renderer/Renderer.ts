@@ -202,21 +202,21 @@ namespace CanvasToy {
             //     this.gl.bindTexture(texture.target, texture.glTexture);
             //     return;
             // }
-                if (!texture.image) {
-                    this.configTexture(texture);
-                    return;
+            if (!texture.image) {
+                this.configTexture(texture);
+                return;
+            }
+            const lastOnload = texture.image.onload;
+            if (texture.image.complete) {
+                this.configTexture(texture);
+                return;
+            }
+            texture.image.onload = (et: Event) => {
+                if (lastOnload) {
+                    lastOnload.apply(texture.image, et);
                 }
-                const lastOnload = texture.image.onload;
-                if (texture.image.complete) {
-                    this.configTexture(texture);
-                    return;
-                }
-                texture.image.onload = (et: Event) => {
-                    if (lastOnload) {
-                        lastOnload.apply(texture.image, et);
-                    }
-                    this.configTexture(texture);
-                };
+                this.configTexture(texture);
+            };
         }
 
         public configTexture(texture: Texture) {

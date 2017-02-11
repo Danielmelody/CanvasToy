@@ -26,26 +26,25 @@ namespace CanvasToy {
 
         public program: Program;
 
-        public color: Vec3Array = vec3.fromValues(1, 1, 1);
-
         @loadTexture
         public mainTexture: Texture;
 
         public ambient: Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
-        public ambientMap: Texture;
 
         public diffuse: Vec3Array = vec3.fromValues(0.8, 0.8, 0.8);
-        public diffuseMap: Texture;
 
         public specular: Vec3Array = vec3.fromValues(1, 1, 1);
+        public specularExponent: number = 1;
         public specularMap: Texture;
 
-        public opacity: Vec3Array = vec3.fromValues(0, 0, 0);
-        public opacityMap: Texture;
+        public transparency: number = 0;
+        public alphaMap: Texture;
 
         public bumpMap: Texture;
 
-        public normalMap: Texture;
+        public displamentMap: Texture;
+
+        public stencilMap: Texture;
 
         public reflactivity: number;
 

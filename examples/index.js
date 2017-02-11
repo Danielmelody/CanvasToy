@@ -32,32 +32,20 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    var camera2 = new CanvasToy.PerspectiveCamera();
     scene.ambientLight = [0.2, 0.1, 0.1];
     var light = new CanvasToy.PointLight();
     light.setPosition([100, 0, 100]).setColor([1, 1, 1]);
     scene.addLight(light);
-    var woodImage = new Image();
-    woodImage.src = "basic/images/wood.jpg";
-    var wood = new CanvasToy.StandardMaterial(renderer.gl, {
-        mainTexture: new CanvasToy.Texture2D(renderer.gl, woodImage)
-            .setFormat(renderer.gl.RGB)
-            .setWrapS(renderer.gl.REPEAT)
-            .setWrapT(renderer.gl.REPEAT),
-        specular: [0.1, 0.1, 0.1],
+    var test = new Promise(function (resolve, reject) {
+        resolve(100);
+    }).then(function (num) {
+        console.log("promise resolve " + num);
     });
-    CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot.obj", function (object) {
+    CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot/teapot.obj")
+        .then(function (object) {
         scene.addObject(object);
         scene.addObject(camera);
-        scene.addObject(camera2);
         camera.translate([0, -8, 0]);
-        camera2.translate([0, -8, 0]);
-        camera2.rotateZ(Math.PI);
-        for (var _i = 0, _a = object.children; _i < _a.length; _i++) {
-            var childObj = _a[_i];
-            var child = childObj;
-            child.materials = [wood];
-        }
         object.translate([0, -10, -40]);
         var time = 0;
         object.rotateY(Math.PI / 2);

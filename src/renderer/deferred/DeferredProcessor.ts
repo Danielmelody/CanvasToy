@@ -1,4 +1,3 @@
-/// <reference path="../FrameBuffer"/>
 /// <reference path="../../Scene.ts"/>
 /// <reference path="../../cameras/Camera.ts"/>
 /// <reference path="../../Mesh.ts"/>
@@ -42,6 +41,5 @@ namespace CanvasToy {
                 }
             }
         }
-
     }
 }

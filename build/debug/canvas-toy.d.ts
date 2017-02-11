@@ -103,15 +103,15 @@ declare namespace CanvasToy {
                 type: DataType;
                 updator: (mesh: Mesh, camera: Camera) => GLM.IArray;
             };
-            color: {
-                type: DataType;
-                updator: (mesh: any, camera: any, material: any) => any;
-            };
             materialDiff: {
                 type: DataType;
                 updator: (mesh: any, camera: any, material: any) => any;
             };
             materialSpec: {
+                type: DataType;
+                updator: (mesh: any, camera: any, material: any) => any;
+            };
+            materialSpecExp: {
                 type: DataType;
                 updator: (mesh: any, camera: any, material: any) => any;
             };
@@ -299,9 +299,9 @@ declare module CanvasToy {
     const interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef USE_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     const interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     const interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
-    const interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient + materialAmbient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
+    const interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     const interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    const interploters__phong_frag = "uniform vec3 ambient;\n\n\nuniform vec3 color;\nuniform vec3 materialSpec;\nuniform vec3 materialDiff;\nuniform vec3 materialAmbient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#ifdef USE_COLOR\n    gl_FragColor = vec4(color, 1.0);\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            4.0,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
+    const interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
     const interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef USE_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
 }
 declare function builder(_thisArg: any): any;
@@ -356,18 +356,17 @@ declare namespace CanvasToy {
     }
     abstract class Material implements IMaterial {
         program: Program;
-        color: Vec3Array;
         mainTexture: Texture;
         ambient: Vec3Array;
-        ambientMap: Texture;
         diffuse: Vec3Array;
-        diffuseMap: Texture;
         specular: Vec3Array;
+        specularExponent: number;
         specularMap: Texture;
-        opacity: Vec3Array;
-        opacityMap: Texture;
+        transparency: number;
+        alphaMap: Texture;
         bumpMap: Texture;
-        normalMap: Texture;
+        displamentMap: Texture;
+        stencilMap: Texture;
         reflactivity: number;
         constructor(gl: WebGLRenderingContext, paramter?: IMaterial);
     }
@@ -418,26 +417,78 @@ declare namespace CanvasToy {
 declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
-    class OBJLoader {
-        static load(gl: WebGLRenderingContext, url: string, onload: (meshes: Object3d) => void): void;
-        protected static commentPattern: RegExp;
-        protected static numberPattern: RegExp;
-        protected static faceSplitVertPattern: RegExp;
-        protected static facePerVertPattern: RegExp;
-        protected static objectSplitPattern: RegExp;
-        protected static vertexPattern: RegExp;
-        protected static uvPattern: RegExp;
-        protected static normalPattern: RegExp;
-        protected static indexPattern: RegExp;
-        protected static fetch(url: string, onload: (content: string) => void): void;
-        protected static praiseAttibuteLines(lines: any): number[][];
-        protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void): void;
-        protected static buildUpMeshes(gl: WebGLRenderingContext, content: string, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
+    namespace patterns {
+        const num: RegExp;
     }
 }
 declare namespace CanvasToy {
     class StandardMaterial extends Material {
         constructor(gl: WebGLRenderingContext, paramter?: IMaterial);
+    }
+}
+declare namespace CanvasToy {
+    class MTLLoader {
+        static load(gl: WebGLRenderingContext, baseurl: string): Promise<{}>;
+        protected static removeCommentPattern: RegExp;
+        protected static newmtlPattern: RegExp;
+        protected static ambientPattern: RegExp;
+        protected static diffusePattern: RegExp;
+        protected static specularePattern: RegExp;
+        protected static specularExponentPattern: RegExp;
+        protected static trancparencyPattern: RegExp;
+        protected static mapPattern: RegExp;
+        protected static mapSinglePattern: RegExp;
+        private static fetchTexture(url);
+        private static handleSingleLine(gl, line, materials, urlMaps, currentMaterial);
+        private static getImageUrl(line);
+        private static getVector(pattern, line);
+        private static getNumber(pattern, line);
+    }
+}
+declare namespace CanvasToy {
+    class OBJLoader {
+        static load(gl: WebGLRenderingContext, url: string): Promise<Object3d>;
+        protected static commentPattern: RegExp;
+        protected static faceSplitVertPattern: RegExp;
+        protected static facePerVertPattern: RegExp;
+        protected static objectSplitPattern: RegExp;
+        protected static mtlLibPattern: RegExp;
+        protected static useMTLPattern: RegExp;
+        protected static mtlLibSinglePattern: RegExp;
+        protected static useMTLSinglePattern: RegExp;
+        protected static vertexPattern: RegExp;
+        protected static uvPattern: RegExp;
+        protected static normalPattern: RegExp;
+        protected static indexPattern: RegExp;
+        protected static praiseAttibuteLines(lines: any): number[][];
+        protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void): void;
+        protected static buildUpMeshes(gl: WebGLRenderingContext, content: string, materials: any, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
+    }
+}
+declare namespace CanvasToy {
+    function fetchRes(url: string): Promise<{}>;
+}
+declare namespace CanvasToy {
+    class Scene {
+        objects: Object3d[];
+        lights: Light[];
+        ambientLight: Vec3Array;
+        openLight: boolean;
+        enableShadowMap: boolean;
+        clearColor: number[];
+        programSetUp: boolean;
+        update(dt: number): void;
+        addObject(object: Object3d): this;
+        removeObject(object: Object3d): this;
+        addLight(light: Light): this;
+    }
+}
+declare namespace CanvasToy {
+    class DeferredProcessor implements IProcessor {
+        readonly gBuffer: FrameBuffer;
+        readonly geometryPass: Program;
+        constructor(gl: WebGLRenderingContext, scene: Scene);
+        process(scene: Scene, camera: Camera, materials: IMaterial[]): void;
     }
 }
 declare namespace CanvasToy {
@@ -475,26 +526,13 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
-    class Scene {
-        objects: Object3d[];
-        lights: Light[];
-        ambientLight: Vec3Array;
-        openLight: boolean;
-        enableShadowMap: boolean;
-        clearColor: number[];
-        programSetUp: boolean;
-        update(dt: number): void;
-        addObject(object: Object3d): this;
-        removeObject(object: Object3d): this;
-        addLight(light: Light): this;
-    }
-}
-declare namespace CanvasToy {
-    class DeferredProcessor implements IProcessor {
-        readonly gBuffer: FrameBuffer;
-        readonly geometryPass: Program;
-        constructor(gl: WebGLRenderingContext, scene: Scene);
-        process(scene: Scene, camera: Camera, materials: IMaterial[]): void;
+    class GeometryBuffer {
+        positionTexture: Texture;
+        normalTexture: Texture;
+        colorTexture: Texture;
+        depthTexture: Texture;
+        constructor(gl: WebGLRenderingContext);
+        depth(gl: WebGLRenderingContext): void;
     }
 }
 declare namespace CanvasToy {

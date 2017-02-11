@@ -311,11 +311,6 @@ var CanvasToy;
                     return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.objectToWorldMatrix, mesh.matrix));
                 },
             },
-            color: {
-                type: CanvasToy.DataType.vec3, updator: function (mesh, camera, material) {
-                    return material.color;
-                },
-            },
             materialDiff: {
                 type: CanvasToy.DataType.vec3, updator: function (mesh, camera, material) {
                     return material.diffuse;
@@ -324,6 +319,11 @@ var CanvasToy;
             materialSpec: {
                 type: CanvasToy.DataType.vec3, updator: function (mesh, camera, material) {
                     return material.specular;
+                },
+            },
+            materialSpecExp: {
+                type: CanvasToy.DataType.float, updator: function (mesh, camera, material) {
+                    return material.specularExponent;
                 },
             },
             ambient: {
@@ -912,9 +912,9 @@ var CanvasToy;
     CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef USE_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
-    CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient + materialAmbient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
+    CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\n\n\nuniform vec3 color;\nuniform vec3 materialSpec;\nuniform vec3 materialDiff;\nuniform vec3 materialAmbient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#ifdef USE_COLOR\n    gl_FragColor = vec4(color, 1.0);\n#endif\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            4.0,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
+    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
     CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef USE_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
 })(CanvasToy || (CanvasToy = {}));
 function builder(_thisArg) {
@@ -1046,11 +1046,11 @@ var CanvasToy;
     var Material = (function () {
         function Material(gl, paramter) {
             if (paramter === void 0) { paramter = {}; }
-            this.color = vec3.fromValues(1, 1, 1);
             this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
             this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
             this.specular = vec3.fromValues(1, 1, 1);
-            this.opacity = vec3.fromValues(0, 0, 0);
+            this.specularExponent = 1;
+            this.transparency = 0;
             if (!!paramter) {
                 for (var name_1 in paramter) {
                     this[name_1] = paramter[name_1];
@@ -1348,33 +1348,191 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var patterns;
+    (function (patterns) {
+        patterns.num = /[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/mg;
+    })(patterns = CanvasToy.patterns || (CanvasToy.patterns = {}));
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var StandardMaterial = (function (_super) {
+        __extends(StandardMaterial, _super);
+        function StandardMaterial(gl, paramter) {
+            if (paramter === void 0) { paramter = {}; }
+            var _this = _super.call(this, gl, paramter) || this;
+            _this.program = new CanvasToy.StandardShaderBuilder().build(gl);
+            return _this;
+        }
+        return StandardMaterial;
+    }(CanvasToy.Material));
+    CanvasToy.StandardMaterial = StandardMaterial;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var MTLLoader = (function () {
+        function MTLLoader() {
+        }
+        MTLLoader.load = function (gl, baseurl) {
+            var materials = {};
+            var currentMaterial = null;
+            var home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
+            return CanvasToy.fetchRes(baseurl).then(function (content) {
+                content = content.replace(MTLLoader.removeCommentPattern, "");
+                var textureLines = content.match(MTLLoader.mapPattern);
+                var texturePromises = [];
+                var urlMaps = {};
+                var mapPerLine = new RegExp(MTLLoader.mapPattern);
+                if (!!textureLines) {
+                    var _loop_1 = function (line) {
+                        var url = line.match(MTLLoader.mapSinglePattern)[2];
+                        urlMaps[url] = null;
+                        texturePromises.push(MTLLoader.fetchTexture(home + url).then(function (image) {
+                            urlMaps[url] = image;
+                        }));
+                    };
+                    for (var _i = 0, textureLines_1 = textureLines; _i < textureLines_1.length; _i++) {
+                        var line = textureLines_1[_i];
+                        _loop_1(line);
+                    }
+                }
+                return Promise.all(texturePromises)
+                    .then(function (test) {
+                    content.split("\n").forEach(function (line) {
+                        currentMaterial = MTLLoader.handleSingleLine(gl, line, materials, urlMaps, currentMaterial);
+                    });
+                    return Promise.resolve(materials);
+                });
+            });
+        };
+        MTLLoader.fetchTexture = function (url) {
+            return new Promise(function (resolve, reject) {
+                var image = new Image();
+                image.onload = function () {
+                    resolve(image);
+                };
+                image.onerror = function () {
+                    reject(new Error("No such image file " + url));
+                };
+                image.src = url;
+            });
+        };
+        MTLLoader.handleSingleLine = function (gl, line, materials, urlMaps, currentMaterial) {
+            if (line.length === 0) {
+                return;
+            }
+            var firstVar = line.match(/([^\s]+)/g)[0];
+            switch (firstVar) {
+                case "newmtl":
+                    var mtlName = line.match(MTLLoader.newmtlPattern)[1];
+                    materials[mtlName] = new CanvasToy.StandardMaterial(gl);
+                    return materials[mtlName];
+                case "Ka":
+                    currentMaterial.ambient = MTLLoader.getVector(MTLLoader.ambientPattern, line);
+                    break;
+                case "Kd":
+                    currentMaterial.diffuse = MTLLoader.getVector(MTLLoader.diffusePattern, line);
+                    break;
+                case "Ks":
+                    currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
+                    break;
+                case "Ds":
+                    currentMaterial.specularExponent =
+                        MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
+                    break;
+                case "map_Ka":
+                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "map_Ka":
+                    currentMaterial.alphaMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "map_Kd":
+                    var image = urlMaps[MTLLoader.getImageUrl(line)];
+                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "map_bump":
+                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "bump":
+                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "disp":
+                    currentMaterial.displamentMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                case "decal":
+                    currentMaterial.stencilMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    break;
+                default: break;
+            }
+            return currentMaterial;
+        };
+        MTLLoader.getImageUrl = function (line) {
+            var matches = line.match(MTLLoader.mapSinglePattern);
+            return matches[2];
+        };
+        MTLLoader.getVector = function (pattern, line) {
+            var matches = line.match(pattern);
+            var vector = [];
+            if (matches.length > 0) {
+                matches[1].match(CanvasToy.patterns.num).forEach(function (numStr) {
+                    if (numStr !== "") {
+                        vector.push(parseFloat(numStr));
+                    }
+                });
+            }
+            return vector;
+        };
+        MTLLoader.getNumber = function (pattern, line) {
+            var matches = line.match(pattern);
+            if (matches.length > 0) {
+                return parseFloat(matches[1].match(CanvasToy.patterns.num)[0]);
+            }
+            return 0;
+        };
+        return MTLLoader;
+    }());
+    MTLLoader.removeCommentPattern = /#.*/mg;
+    MTLLoader.newmtlPattern = /newmtl\s(.+)/m;
+    MTLLoader.ambientPattern = /Ka\s(.+)/m;
+    MTLLoader.diffusePattern = /Kd\s(.+)/m;
+    MTLLoader.specularePattern = /Ks\s(.+)/m;
+    MTLLoader.specularExponentPattern = /Ns\s(.+)/m;
+    MTLLoader.trancparencyPattern = /(Tr|d)\s(.+)/m;
+    MTLLoader.mapPattern = /(map_[^\s]+|bump|disp|decal)\s.+/mg;
+    MTLLoader.mapSinglePattern = /(map_[^\s]+|bump|disp|decal)\s([^\s]+)/m;
+    CanvasToy.MTLLoader = MTLLoader;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var OBJLoader = (function () {
         function OBJLoader() {
         }
-        OBJLoader.load = function (gl, url, onload) {
-            OBJLoader.fetch(url, function (content) {
+        OBJLoader.load = function (gl, url) {
+            return CanvasToy.fetchRes(url).then(function (content) {
                 content = content.replace(OBJLoader.commentPattern, "");
-                var positionlines = content.match(OBJLoader.vertexPattern);
-                var uvlines = content.match(OBJLoader.uvPattern);
-                var normallines = content.match(OBJLoader.normalPattern);
-                var unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
-                var unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
-                var unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
-                var container = OBJLoader.buildUpMeshes(gl, content, unIndexedPositions, unIndexedUVs, unIndexedNormals);
-                onload(container);
-            });
-        };
-        OBJLoader.fetch = function (url, onload) {
-            var request = new XMLHttpRequest();
-            request.onreadystatechange = function () {
-                if (request.readyState === 4 && request.status === 200) {
-                    if (onload) {
-                        onload(request.responseText);
-                    }
+                var home = url.substr(0, url.lastIndexOf("/") + 1);
+                var materialLibs = content.match(OBJLoader.mtlLibPattern);
+                var materialsMixin = {};
+                var promises = [];
+                for (var _i = 0, materialLibs_1 = materialLibs; _i < materialLibs_1.length; _i++) {
+                    var mtlLib = materialLibs_1[_i];
+                    var mtlurl = home + mtlLib.match(OBJLoader.mtlLibSinglePattern)[1];
+                    promises.push(CanvasToy.MTLLoader.load(gl, mtlurl));
                 }
-            };
-            request.open("GET", url);
-            request.send();
+                return Promise.all(promises).then(function (materialLibs) {
+                    for (var _i = 0, materialLibs_2 = materialLibs; _i < materialLibs_2.length; _i++) {
+                        var materials = materialLibs_2[_i];
+                        CanvasToy.mixin(materialsMixin, materials);
+                    }
+                    var positionlines = content.match(OBJLoader.vertexPattern);
+                    var uvlines = content.match(OBJLoader.uvPattern);
+                    var normallines = content.match(OBJLoader.normalPattern);
+                    var unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
+                    var unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
+                    var unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
+                    var container = OBJLoader.buildUpMeshes(gl, content, materialsMixin, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                    return Promise.resolve(container);
+                });
+            });
         };
         OBJLoader.praiseAttibuteLines = function (lines) {
             var result = [];
@@ -1383,7 +1541,7 @@ var CanvasToy;
             }
             lines.forEach(function (expression) {
                 var data = [];
-                expression.match(OBJLoader.numberPattern).forEach(function (floatNum) {
+                expression.match(CanvasToy.patterns.num).forEach(function (floatNum) {
                     if (expression !== "") {
                         data.push(parseFloat(floatNum));
                     }
@@ -1398,7 +1556,7 @@ var CanvasToy;
                 forEachFace(triangleFace);
             }
         };
-        OBJLoader.buildUpMeshes = function (gl, content, unIndexedPositions, unIndexedUVs, unIndexedNormals) {
+        OBJLoader.buildUpMeshes = function (gl, content, materials, unIndexedPositions, unIndexedUVs, unIndexedNormals) {
             var container = new CanvasToy.Object3d();
             var objects = content.split(OBJLoader.objectSplitPattern);
             objects.splice(0, 1);
@@ -1423,7 +1581,17 @@ var CanvasToy;
                         });
                     });
                 }
-                var mesh = new CanvasToy.Mesh(geometry, [new CanvasToy.StandardMaterial(gl)]);
+                var meshMaterials = [];
+                var mtls = objectContent.match(OBJLoader.useMTLPattern);
+                if (!!mtls) {
+                    mtls.forEach(function (useMTLLine) {
+                        meshMaterials.push(materials[useMTLLine.match(OBJLoader.useMTLSinglePattern)[1]]);
+                    });
+                }
+                else {
+                    meshMaterials.push(new CanvasToy.StandardMaterial(gl));
+                }
+                var mesh = new CanvasToy.Mesh(geometry, meshMaterials);
                 mesh.setParent(container);
             });
             return container;
@@ -1431,10 +1599,13 @@ var CanvasToy;
         return OBJLoader;
     }());
     OBJLoader.commentPattern = /#.*/mg;
-    OBJLoader.numberPattern = /[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/mg;
     OBJLoader.faceSplitVertPattern = /([0-9]|\/|\-)+/g;
     OBJLoader.facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
     OBJLoader.objectSplitPattern = /[o|g]\s+.+/mg;
+    OBJLoader.mtlLibPattern = /mtllib\s([^\s]+)/mg;
+    OBJLoader.useMTLPattern = /usemtl\s([^\s]+)/mg;
+    OBJLoader.mtlLibSinglePattern = /mtllib\s([^\s]+)/;
+    OBJLoader.useMTLSinglePattern = /usemtl\s([^\s]+)/;
     OBJLoader.vertexPattern = /v\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
     OBJLoader.uvPattern = /vt\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
     OBJLoader.normalPattern = /vn\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
@@ -1443,17 +1614,99 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var StandardMaterial = (function (_super) {
-        __extends(StandardMaterial, _super);
-        function StandardMaterial(gl, paramter) {
-            if (paramter === void 0) { paramter = {}; }
-            var _this = _super.call(this, gl, paramter) || this;
-            _this.program = new CanvasToy.StandardShaderBuilder().build(gl);
-            return _this;
+    function fetchRes(url) {
+        return new Promise(function (resolve, reject) {
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function () {
+                if (request.readyState === 4 && request.status === 200) {
+                    resolve(request.responseText);
+                }
+            };
+            request.open("GET", url);
+            request.send();
+        });
+    }
+    CanvasToy.fetchRes = fetchRes;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Scene = (function () {
+        function Scene() {
+            this.objects = [];
+            this.lights = [];
+            this.ambientLight = vec3.fromValues(0, 0, 0);
+            this.openLight = false;
+            this.enableShadowMap = false;
+            this.clearColor = [0, 0, 0, 0];
+            this.programSetUp = false;
         }
-        return StandardMaterial;
-    }(CanvasToy.Material));
-    CanvasToy.StandardMaterial = StandardMaterial;
+        Scene.prototype.update = function (dt) {
+            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                if (!object.parent) {
+                    object.update(dt);
+                }
+            }
+        };
+        Scene.prototype.addObject = function (object) {
+            var _this = this;
+            this.objects.push(object);
+            object.scene = this;
+            object.children.forEach(function (child) {
+                _this.addObject(child);
+            });
+            return this;
+        };
+        Scene.prototype.removeObject = function (object) {
+            var _this = this;
+            object.children.forEach(function (child) {
+                _this.removeObject(child);
+            });
+            this.objects.splice(this.objects.indexOf(object));
+            return this;
+        };
+        Scene.prototype.addLight = function (light) {
+            this.openLight = true;
+            this.lights.push(light);
+            light.scene = this;
+            return this;
+        };
+        return Scene;
+    }());
+    CanvasToy.Scene = Scene;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var DeferredProcessor = (function () {
+        function DeferredProcessor(gl, scene) {
+            this.gBuffer = new CanvasToy.FrameBuffer(gl);
+            this.gBuffer.attachments.color.disable();
+            this.gBuffer.extras.push(new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; }));
+            this.geometryPass = new CanvasToy.Program(gl, {
+                vertexShader: CanvasToy.interploters__deferred__geometry_vert,
+                fragmentShader: CanvasToy.interploters__deferred__geometry_frag,
+            }, CanvasToy.defaultProgramPass);
+            this.geometryPass.deleteUniform("materialDiff")
+                .deleteUniform("materialSpec")
+                .deleteUniform("materialAmbient")
+                .deleteUniform("color");
+            this.geometryPass.make(gl, scene);
+        }
+        DeferredProcessor.prototype.process = function (scene, camera, materials) {
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                if (object instanceof CanvasToy.Mesh) {
+                    var mesh = object;
+                    for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
+                        var material = _c[_b];
+                        this.geometryPass.pass(mesh, camera, material);
+                    }
+                }
+            }
+        };
+        return DeferredProcessor;
+    }());
+    CanvasToy.DeferredProcessor = DeferredProcessor;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1544,83 +1797,18 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var Scene = (function () {
-        function Scene() {
-            this.objects = [];
-            this.lights = [];
-            this.ambientLight = vec3.fromValues(0, 0, 0);
-            this.openLight = false;
-            this.enableShadowMap = false;
-            this.clearColor = [0, 0, 0, 0];
-            this.programSetUp = false;
+    var GeometryBuffer = (function () {
+        function GeometryBuffer(gl) {
+            this.positionTexture = new CanvasToy.Texture(gl);
+            this.normalTexture = new CanvasToy.Texture(gl);
+            this.colorTexture = new CanvasToy.Texture(gl);
         }
-        Scene.prototype.update = function (dt) {
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                if (!object.parent) {
-                    object.update(dt);
-                }
-            }
+        GeometryBuffer.prototype.depth = function (gl) {
+            this.depthTexture = new CanvasToy.Texture(gl);
         };
-        Scene.prototype.addObject = function (object) {
-            var _this = this;
-            this.objects.push(object);
-            object.scene = this;
-            object.children.forEach(function (child) {
-                _this.addObject(child);
-            });
-            return this;
-        };
-        Scene.prototype.removeObject = function (object) {
-            var _this = this;
-            object.children.forEach(function (child) {
-                _this.removeObject(child);
-            });
-            this.objects.splice(this.objects.indexOf(object));
-            return this;
-        };
-        Scene.prototype.addLight = function (light) {
-            this.openLight = true;
-            this.lights.push(light);
-            light.scene = this;
-            return this;
-        };
-        return Scene;
+        return GeometryBuffer;
     }());
-    CanvasToy.Scene = Scene;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var DeferredProcessor = (function () {
-        function DeferredProcessor(gl, scene) {
-            this.gBuffer = new CanvasToy.FrameBuffer(gl);
-            this.gBuffer.attachments.color.disable();
-            this.gBuffer.extras.push(new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; }));
-            this.geometryPass = new CanvasToy.Program(gl, {
-                vertexShader: CanvasToy.interploters__deferred__geometry_vert,
-                fragmentShader: CanvasToy.interploters__deferred__geometry_frag,
-            }, CanvasToy.defaultProgramPass);
-            this.geometryPass.deleteUniform("materialDiff")
-                .deleteUniform("materialSpec")
-                .deleteUniform("materialAmbient")
-                .deleteUniform("color");
-            this.geometryPass.make(gl, scene);
-        }
-        DeferredProcessor.prototype.process = function (scene, camera, materials) {
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                if (object instanceof CanvasToy.Mesh) {
-                    var mesh = object;
-                    for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
-                        var material = _c[_b];
-                        this.geometryPass.pass(mesh, camera, material);
-                    }
-                }
-            }
-        };
-        return DeferredProcessor;
-    }());
-    CanvasToy.DeferredProcessor = DeferredProcessor;
+    CanvasToy.GeometryBuffer = GeometryBuffer;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1668,10 +1856,10 @@ var CanvasToy;
             }
         };
         ForwardProcessor.prototype.setUpLights = function (scene, material, mesh, camera) {
-            var _loop_1 = function (index) {
+            var _loop_2 = function (index) {
                 var light = scene.lights[index];
                 console.assert(light.uniforms !== undefined);
-                var _loop_2 = function (uniformProperty) {
+                var _loop_3 = function (uniformProperty) {
                     material.program.addUniform("lights[" + index + "]." + uniformProperty.name, {
                         type: uniformProperty.type,
                         updator: function () {
@@ -1681,11 +1869,11 @@ var CanvasToy;
                 };
                 for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
                     var uniformProperty = _a[_i];
-                    _loop_2(uniformProperty);
+                    _loop_3(uniformProperty);
                 }
             };
             for (var index in scene.lights) {
-                _loop_1(index);
+                _loop_2(index);
             }
         };
         ForwardProcessor.prototype.makeMeshPrograms = function (scene, mesh, camera) {
