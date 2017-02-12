@@ -8,13 +8,10 @@ examples.push((canvas: HTMLCanvasElement) => {
     const scene = new CanvasToy.Scene();
     const camera = new CanvasToy.PerspectiveCamera();
 
-    const image = new Image();
-    image.src = "basic/images/chrome.png";
-
     const cube = new CanvasToy.Mesh(
         new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             specular: [0.1, 0.1, 0.1],
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
+            mainTexture: new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png"),
         })]);
     cube.translate([0, 0, -6]);
     scene.addObject(cube).addObject(camera);

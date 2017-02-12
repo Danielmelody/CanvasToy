@@ -21,16 +21,22 @@ namespace CanvasToy {
         };
     }
 
-    export function loadTexture<Material>(proto, key) {
-        if (!proto.hasOwnProperty("textures")) {
-            Object.defineProperty(proto, "textures", {
+    export function readyRequire<IAsyncResource>(proto, key) {
+        if (!proto.hasOwnProperty("asyncResources")) {
+            Object.defineProperty(proto, "asyncResources", {
                 enumerable: true,
                 configurable: false,
                 writable: false,
-                value: new Array<(obj) => Texture>(),
+                value: [],
             });
         }
-        const textures = proto.textures;
-        textures.push((obj) => obj[key]);
+        const asyncResources = proto.asyncResources;
+        asyncResources.push((obj) => {
+            const resources = obj[key];
+            if (!!obj[key]) {
+                return obj[key].asyncFinished();
+            }
+            return undefined;
+        });
     }
 }

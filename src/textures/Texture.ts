@@ -6,13 +6,12 @@ function builder(_thisArg: any) {
 }
 
 namespace CanvasToy {
-    export class Texture {
+    export class Texture implements IAsyncResource {
 
         public readonly glTexture: WebGLTexture;
-        public dataCompleted: boolean = false;
         public isReadyToUpdate: boolean = false;
 
-        private _image: HTMLImageElement;
+        private readonly _image: HTMLImageElement;
         private _target: number;
         private _format: number;
         private _wrapS: number;
@@ -23,7 +22,7 @@ namespace CanvasToy {
 
         constructor(
             gl: WebGLRenderingContext,
-            image?: HTMLImageElement,
+            url?: string,
         ) {
             this.setTarget(gl.TEXTURE_2D)
                 .setFormat(gl.RGB)
@@ -33,7 +32,10 @@ namespace CanvasToy {
                 .setMinFilter(gl.NEAREST)
                 .setType(gl.UNSIGNED_BYTE);
             this.glTexture = gl.createTexture();
-            this._image = image;
+            if (!!url) {
+                this._image = new Image();
+                this._image.src = url;
+            }
         }
 
         public get image() {
@@ -66,11 +68,6 @@ namespace CanvasToy {
 
         public get type() {
             return this._type;
-        }
-
-        public setImage(_image: HTMLImageElement) {
-            this._image = _image;
-            return this;
         }
 
         public setTarget(_target: number) {
@@ -108,12 +105,18 @@ namespace CanvasToy {
             return this;
         }
 
-        public setUpTextureData(gl: WebGLRenderingContext) {
-            if (this.dataCompleted) {
-                return false;
-            }
-            this.dataCompleted = true;
-            return true;
+        public asyncFinished() {
+            const image = this._image;
+            return new Promise((resolve, reject) => {
+                if (!image) {
+                    resolve(this);
+                } else {
+                    image.onload = () => resolve(this);
+                    image.onerror = () => reject(this);
+                }
+            });
         }
+
+        public setUpTextureData(gl: WebGLRenderingContext) {}
     }
 }

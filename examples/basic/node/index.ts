@@ -7,10 +7,7 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     const node = new CanvasToy.Object3d();
 
-    const image = new Image();
-
-    image.src = "basic/images/chrome.png";
-    const mainTexture = new CanvasToy.Texture2D(renderer.gl, image);
+    const mainTexture = new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png");
 
     const material = new CanvasToy.StandardMaterial(renderer.gl, {
         mainTexture,

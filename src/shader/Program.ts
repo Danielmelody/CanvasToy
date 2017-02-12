@@ -132,8 +132,10 @@ namespace CanvasToy {
             }
             for (let unit = 0; unit < this.textures.length; ++unit) {
                 const texture = this.textures[unit](mesh, camera, materiel);
-                this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                this.gl.bindTexture(texture.target, texture.glTexture);
+                if (!!texture) {
+                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
+                    this.gl.bindTexture(texture.target, texture.glTexture);
+                }
             }
             for (const attributeName in this.attributes) {
                 const attribute = this.attributes[attributeName](mesh, camera, materiel);

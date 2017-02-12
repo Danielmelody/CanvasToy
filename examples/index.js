@@ -11,11 +11,9 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    var image = new Image();
-    image.src = "basic/images/chrome.png";
     var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             specular: [0.1, 0.1, 0.1],
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, image),
+            mainTexture: new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png"),
         })]);
     cube.translate([0, 0, -6]);
     scene.addObject(cube).addObject(camera);
@@ -63,9 +61,7 @@ examples.push(function (canvas) {
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
     var node = new CanvasToy.Object3d();
-    var image = new Image();
-    image.src = "basic/images/chrome.png";
-    var mainTexture = new CanvasToy.Texture2D(renderer.gl, image);
+    var mainTexture = new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png");
     var material = new CanvasToy.StandardMaterial(renderer.gl, {
         mainTexture: mainTexture,
         specular: [1, 1, 1],
@@ -95,9 +91,7 @@ examples.push(function (canvas) {
     var cubes = [
         new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl)]),
     ];
-    var image = new Image();
-    image.src = "basic/images/chrome.png";
-    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
+    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png")
         .setFormat(renderer.gl.RGBA);
     cameras[0].setPosition([0, 0, 5]);
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
@@ -127,8 +121,7 @@ examples.push(function (canvas) {
     var light = new CanvasToy.PointLight();
     var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl)]).rotateY(2).translate([0, 0, -3]);
     var image = new Image();
-    image.src = "basic/images/chrome.png";
-    cube.materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
+    cube.materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png")
         .setFormat(renderer.gl.RGBA);
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);

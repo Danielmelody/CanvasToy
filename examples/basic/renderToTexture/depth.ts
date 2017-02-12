@@ -12,8 +12,7 @@ examples.push((canvas: HTMLCanvasElement) => {
         [new CanvasToy.StandardMaterial(renderer.gl)]).rotateY(2).translate([0, 0, -3]);
 
     const image = new Image();
-    image.src = "basic/images/chrome.png";
-    cube.materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, image)
+    cube.materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png")
         .setFormat(renderer.gl.RGBA);
 
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
