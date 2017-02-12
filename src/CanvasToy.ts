@@ -20,4 +20,6 @@ namespace CanvasToy {
         mat3,
         mat4,
     }
+
+    export const resourcesCache = {};
 }

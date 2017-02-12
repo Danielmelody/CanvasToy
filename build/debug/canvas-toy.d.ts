@@ -18,10 +18,11 @@ declare namespace CanvasToy {
         mat3 = 6,
         mat4 = 7,
     }
+    const resourcesCache: {};
 }
 declare namespace CanvasToy {
     function uniform<DecoratorClass>(name: string, type: DataType, updator?: (obj, camera) => {}): (proto: any, key: any) => void;
-    function loadTexture<Material>(proto: any, key: any): void;
+    function readyRequire<IAsyncResource>(proto: any, key: any): void;
 }
 declare namespace CanvasToy {
     interface IProgramSource {
@@ -306,11 +307,10 @@ declare module CanvasToy {
 }
 declare function builder(_thisArg: any): any;
 declare namespace CanvasToy {
-    class Texture {
+    class Texture implements IAsyncResource {
         readonly glTexture: WebGLTexture;
-        dataCompleted: boolean;
         isReadyToUpdate: boolean;
-        private _image;
+        private readonly _image;
         private _target;
         private _format;
         private _wrapS;
@@ -318,7 +318,7 @@ declare namespace CanvasToy {
         private _magFilter;
         private _minFilter;
         private _type;
-        constructor(gl: WebGLRenderingContext, image?: HTMLImageElement);
+        constructor(gl: WebGLRenderingContext, url?: string);
         readonly image: HTMLImageElement;
         readonly target: number;
         readonly format: number;
@@ -327,7 +327,6 @@ declare namespace CanvasToy {
         readonly magFilter: number;
         readonly minFilter: number;
         readonly type: number;
-        setImage(_image: HTMLImageElement): this;
         setTarget(_target: number): this;
         setFormat(_format: number): this;
         setWrapS(_wrapS: number): this;
@@ -335,7 +334,8 @@ declare namespace CanvasToy {
         setMagFilter(_magFilter: number): this;
         setMinFilter(_minFilter: number): this;
         setType(_type: number): this;
-        setUpTextureData(gl: WebGLRenderingContext): boolean;
+        asyncFinished(): Promise<{}>;
+        setUpTextureData(gl: WebGLRenderingContext): void;
     }
 }
 declare namespace CanvasToy {
@@ -387,6 +387,11 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
+}
+declare namespace CanvasToy {
+    interface IAsyncResource {
+        asyncFinished(): Promise<any>;
+    }
 }
 declare namespace CanvasToy {
     abstract class Light extends Object3d {
@@ -576,8 +581,8 @@ declare namespace CanvasToy {
         start(): void;
         createFrameBuffer(): FrameBuffer;
         renderFBO(scene: Scene, camera: Camera): void;
+        handleResource(scene: Scene): Promise<any[]>;
         render(scene: Scene, camera: Camera): void;
-        loadTexture(texture: Texture): void;
         configTexture(texture: Texture): void;
         private renderLight(light, scene);
         private main;
@@ -625,8 +630,8 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class Texture2D extends Texture {
-        constructor(gl: WebGLRenderingContext, image: HTMLImageElement);
-        setUpTextureData(gl: WebGLRenderingContext): boolean;
+        constructor(gl: WebGLRenderingContext, url?: string);
+        setUpTextureData(gl: WebGLRenderingContext): void;
     }
 }
 declare namespace CanvasToy {

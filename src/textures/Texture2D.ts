@@ -4,19 +4,17 @@ namespace CanvasToy {
     export class Texture2D extends Texture {
         constructor(
             gl: WebGLRenderingContext,
-            image: HTMLImageElement,
+            url?: string,
         ) {
             super(
                 gl,
-                image,
+                url,
             );
         }
 
         public setUpTextureData(gl: WebGLRenderingContext) {
-            if (super.setUpTextureData(gl)) {
-                gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
-            }
-            return true;
+            super.setUpTextureData(gl);
+            gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
         }
     }
 }

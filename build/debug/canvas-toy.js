@@ -23,6 +23,7 @@ var CanvasToy;
         DataType[DataType["mat3"] = 6] = "mat3";
         DataType[DataType["mat4"] = 7] = "mat4";
     })(DataType = CanvasToy.DataType || (CanvasToy.DataType = {}));
+    CanvasToy.resourcesCache = {};
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -47,19 +48,25 @@ var CanvasToy;
         };
     }
     CanvasToy.uniform = uniform;
-    function loadTexture(proto, key) {
-        if (!proto.hasOwnProperty("textures")) {
-            Object.defineProperty(proto, "textures", {
+    function readyRequire(proto, key) {
+        if (!proto.hasOwnProperty("asyncResources")) {
+            Object.defineProperty(proto, "asyncResources", {
                 enumerable: true,
                 configurable: false,
                 writable: false,
-                value: new Array(),
+                value: [],
             });
         }
-        var textures = proto.textures;
-        textures.push(function (obj) { return obj[key]; });
+        var asyncResources = proto.asyncResources;
+        asyncResources.push(function (obj) {
+            var resources = obj[key];
+            if (!!obj[key]) {
+                return obj[key].asyncFinished();
+            }
+            return undefined;
+        });
     }
-    CanvasToy.loadTexture = loadTexture;
+    CanvasToy.readyRequire = readyRequire;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -155,8 +162,10 @@ var CanvasToy;
             }
             for (var unit = 0; unit < this.textures.length; ++unit) {
                 var texture = this.textures[unit](mesh, camera, materiel);
-                this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                this.gl.bindTexture(texture.target, texture.glTexture);
+                if (!!texture) {
+                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
+                    this.gl.bindTexture(texture.target, texture.glTexture);
+                }
             }
             for (var attributeName in this.attributes) {
                 var attribute = this.attributes[attributeName](mesh, camera, materiel);
@@ -923,8 +932,7 @@ function builder(_thisArg) {
 var CanvasToy;
 (function (CanvasToy) {
     var Texture = (function () {
-        function Texture(gl, image) {
-            this.dataCompleted = false;
+        function Texture(gl, url) {
             this.isReadyToUpdate = false;
             this.setTarget(gl.TEXTURE_2D)
                 .setFormat(gl.RGB)
@@ -934,7 +942,10 @@ var CanvasToy;
                 .setMinFilter(gl.NEAREST)
                 .setType(gl.UNSIGNED_BYTE);
             this.glTexture = gl.createTexture();
-            this._image = image;
+            if (!!url) {
+                this._image = new Image();
+                this._image.src = url;
+            }
         }
         Object.defineProperty(Texture.prototype, "image", {
             get: function () {
@@ -992,10 +1003,6 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Texture.prototype.setImage = function (_image) {
-            this._image = _image;
-            return this;
-        };
         Texture.prototype.setTarget = function (_target) {
             this._target = _target;
             return this;
@@ -1024,13 +1031,20 @@ var CanvasToy;
             this._type = _type;
             return this;
         };
-        Texture.prototype.setUpTextureData = function (gl) {
-            if (this.dataCompleted) {
-                return false;
-            }
-            this.dataCompleted = true;
-            return true;
+        Texture.prototype.asyncFinished = function () {
+            var _this = this;
+            var image = this._image;
+            return new Promise(function (resolve, reject) {
+                if (!image) {
+                    resolve(_this);
+                }
+                else {
+                    image.onload = function () { return resolve(_this); };
+                    image.onerror = function () { return reject(_this); };
+                }
+            });
         };
+        Texture.prototype.setUpTextureData = function (gl) { };
         return Texture;
     }());
     CanvasToy.Texture = Texture;
@@ -1060,8 +1074,23 @@ var CanvasToy;
         return Material;
     }());
     __decorate([
-        CanvasToy.loadTexture
+        CanvasToy.readyRequire
     ], Material.prototype, "mainTexture", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], Material.prototype, "specularMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], Material.prototype, "alphaMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], Material.prototype, "bumpMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], Material.prototype, "displamentMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], Material.prototype, "stencilMap", void 0);
     CanvasToy.Material = Material;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1968,6 +1997,29 @@ var CanvasToy;
         };
         Renderer.prototype.renderFBO = function (scene, camera) {
         };
+        Renderer.prototype.handleResource = function (scene) {
+            var _this = this;
+            var promises = [];
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                if (object instanceof CanvasToy.Mesh) {
+                    for (var _b = 0, _c = object.materials; _b < _c.length; _b++) {
+                        var material = _c[_b];
+                        var _material = material;
+                        for (var _d = 0, _e = _material.asyncResources; _d < _e.length; _d++) {
+                            var textureGetter = _e[_d];
+                            var promise = textureGetter(_material);
+                            if (!!promise) {
+                                promises.push(promise.then(function (texture) {
+                                    _this.configTexture(texture);
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+            return Promise.all(promises);
+        };
         Renderer.prototype.render = function (scene, camera) {
             var _this = this;
             camera.adaptTargetRadio(this.canvas);
@@ -1975,6 +2027,7 @@ var CanvasToy;
                 return;
             }
             this.scenes.push(scene);
+            this.handleResource(scene);
             var materials = [];
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var obj = _a[_i];
@@ -1989,37 +2042,12 @@ var CanvasToy;
                 }
             }
             var processor = new CanvasToy.ForwardProcessor(this.gl, scene, camera);
-            for (var _d = 0, materials_1 = materials; _d < materials_1.length; _d++) {
-                var material = materials_1[_d];
-                for (var _e = 0, _f = material.textures; _e < _f.length; _e++) {
-                    var textureGetter = _f[_e];
-                    this.loadTexture(textureGetter(material));
-                }
-            }
             scene.programSetUp = true;
             this.renderQueue.push(function (deltaTime) {
                 scene.update(deltaTime);
                 _this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
                 processor.process(scene, camera, materials);
             });
-        };
-        Renderer.prototype.loadTexture = function (texture) {
-            var _this = this;
-            if (!texture.image) {
-                this.configTexture(texture);
-                return;
-            }
-            var lastOnload = texture.image.onload;
-            if (texture.image.complete) {
-                this.configTexture(texture);
-                return;
-            }
-            texture.image.onload = function (et) {
-                if (lastOnload) {
-                    lastOnload.apply(texture.image, et);
-                }
-                _this.configTexture(texture);
-            };
         };
         Renderer.prototype.configTexture = function (texture) {
             this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
@@ -2159,14 +2187,12 @@ var CanvasToy;
 (function (CanvasToy) {
     var Texture2D = (function (_super) {
         __extends(Texture2D, _super);
-        function Texture2D(gl, image) {
-            return _super.call(this, gl, image) || this;
+        function Texture2D(gl, url) {
+            return _super.call(this, gl, url) || this;
         }
         Texture2D.prototype.setUpTextureData = function (gl) {
-            if (_super.prototype.setUpTextureData.call(this, gl)) {
-                gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
-            }
-            return true;
+            _super.prototype.setUpTextureData.call(this, gl);
+            gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
         };
         return Texture2D;
     }(CanvasToy.Texture));

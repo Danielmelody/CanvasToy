@@ -150,12 +150,34 @@ namespace CanvasToy {
             // }
         }
 
+        public handleResource(scene: Scene) {
+            const promises = [];
+            for (const object of scene.objects) {
+                if (object instanceof Mesh) {
+                    for (const material of (object as Mesh).materials) {
+                        const _material: any = material;
+                        for (const textureGetter of _material.asyncResources) {
+                            const promise = textureGetter(_material);
+                            if (!!promise) {
+                                promises.push(promise.then((texture) => {
+                                    this.configTexture(texture);
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+            return Promise.all(promises);
+        }
+
         public render(scene: Scene, camera: Camera) {
             camera.adaptTargetRadio(this.canvas);
             if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
             }
             this.scenes.push(scene);
+
+            this.handleResource(scene);
 
             const materials = [];
 
@@ -173,12 +195,6 @@ namespace CanvasToy {
             // TODO: Dynamic processor strategy
             const processor = new ForwardProcessor(this.gl, scene, camera);
 
-            for (const material of materials) {
-                for (const textureGetter of material.textures) {
-                    this.loadTexture(textureGetter(material));
-                }
-            }
-
             scene.programSetUp = true;
             this.renderQueue.push((deltaTime: number) => {
                 scene.update(deltaTime);
@@ -190,33 +206,6 @@ namespace CanvasToy {
                 );
                 processor.process(scene, camera, materials);
             });
-        }
-
-        public loadTexture(texture: Texture) {
-            // if (texture instanceof RenderTargetTexture) {
-            //     texture.unit = this.usedTextureNum;
-            //     this.usedTextureNum++;
-            //     program.textures.push(texture);
-            //     this.gl.useProgram(program.webGlProgram);
-            //     this.gl.activeTexture(this.gl.TEXTURE0 + texture.unit);
-            //     this.gl.bindTexture(texture.target, texture.glTexture);
-            //     return;
-            // }
-            if (!texture.image) {
-                this.configTexture(texture);
-                return;
-            }
-            const lastOnload = texture.image.onload;
-            if (texture.image.complete) {
-                this.configTexture(texture);
-                return;
-            }
-            texture.image.onload = (et: Event) => {
-                if (lastOnload) {
-                    lastOnload.apply(texture.image, et);
-                }
-                this.configTexture(texture);
-            };
         }
 
         public configTexture(texture: Texture) {
