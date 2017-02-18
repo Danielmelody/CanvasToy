@@ -9,7 +9,7 @@ varying vec3 vNormal;
 varying vec4 vPosition;
 #endif
 
-#ifdef USE_TEXTURE
+#ifdef _MAIN_TEXTURE
 uniform sampler2D uMainTexture;
 varying vec2 vMainUV;
 #endif
@@ -18,10 +18,10 @@ uniform Light lights[LIGHT_NUM];
 uniform SpotLight spotLights[LIGHT_NUM];
 
 void main () {
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-
-#ifdef USE_TEXTURE
-    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);
+#ifdef _MAIN_TEXTURE
+    gl_FragColor = texture2D(uMainTexture, vMainUV);
+#else
+    gl_FragColor = vec4(1.0);
 #endif
 #ifdef OPEN_LIGHT
     vec3 normal = normalize(vNormal);

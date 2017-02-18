@@ -117,6 +117,6 @@ namespace CanvasToy {
             });
         }
 
-        public setUpTextureData(gl: WebGLRenderingContext) {}
+        public setUpTextureData(gl: WebGLRenderingContext) { }
     }
 }

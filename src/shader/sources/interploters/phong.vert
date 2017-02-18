@@ -1,7 +1,7 @@
 attribute vec3 position;
 uniform mat4 modelViewProjectionMatrix;
 
-#ifdef USE_TEXTURE
+#ifdef _MAIN_TEXTURE
 attribute vec2 aMainUV;
 varying vec2 vMainUV;
 #endif
@@ -20,7 +20,7 @@ void main (){
     vPosition = gl_Position;
 #endif
 
-#ifdef USE_TEXTURE
+#ifdef _MAIN_TEXTURE
     vMainUV = aMainUV;
 #endif
 }

@@ -38,6 +38,12 @@ namespace CanvasToy {
                     } else {
                         this.gl.disable(this.gl.STENCIL_TEST);
                     }
+                    if (material.dirty) {
+                        program.resetMaterialDefines(material);
+                        program.make(mesh.scene);
+                        this.setUpLights(mesh.scene, material, mesh, camera);
+                        material.dirty = false;
+                    }
                     this.gl.useProgram(program.webGlProgram);
                     program.pass(mesh, camera, material);
                     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
@@ -92,7 +98,7 @@ namespace CanvasToy {
                     return;
                 }
 
-                material.program.make(this.gl, scene);
+                material.program.make(scene);
 
                 if (scene.openLight) {
                     this.setUpLights(scene, material, mesh, camera);

@@ -15,7 +15,7 @@ void main (){
     }
     vLightColor = totalLighting;
 #endif
-#ifdef USE_TEXTURE
+#ifdef _MAIN_TEXTURE
     vTextureCoord = aTextureCoord;
 #endif
 }

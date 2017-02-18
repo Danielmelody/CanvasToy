@@ -28,7 +28,7 @@ namespace CanvasToy {
                 .deleteUniform("materialSpec")
                 .deleteUniform("materialAmbient")
                 .deleteUniform("color");
-            this.geometryPass.make(gl, scene);
+            this.geometryPass.make(scene);
         }
 
         public process(scene: Scene, camera: Camera, materials: IMaterial[]) {
