@@ -2,9 +2,7 @@ attribute vec3 position;
 uniform mat4 modelViewProjectionMatrix;
 
 void main() {
-#ifdef USE_TEXTURE
-    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));
-#endif
+    textureColor = colorOrMainTexture(vMainUV);
 #ifdef OPEN_LIGHT
     totalLighting = ambient;
     vec3 normal = normalize(vNormal);
@@ -14,7 +12,7 @@ void main() {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 #endif
 #endif
-#ifdef USE_TEXTURE
+#ifdef _MAIN_TEXTURE
     gl_FragColor = gl_FragColor * textureColor;
 #endif
 #ifdef USE_COLOR

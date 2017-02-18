@@ -12,7 +12,7 @@ namespace CanvasToy {
         uniforms?: any;
         attributes?: any;
         textures?: any;
-        prefix?: string[];
+        prefix?: any;
     }
 
     export class Faces {
@@ -61,14 +61,21 @@ namespace CanvasToy {
         public enableDepthTest: boolean = true;
         public enableStencilTest: boolean = true;
         public uniforms = {};
+        public uniformLocationCache = {};
         public attributes = {};
         public attributeLocations = {};
         public attribute0: string;
         public webGlProgram: WebGLProgram;
-        public textures: Array<(mesh: Mesh, camera: Camera, material) => Texture> = [];
+        public textures: Array<{
+            sampler: string,
+            getter: (mesh: Mesh, camera: Camera, material) => Texture,
+            location: WebGLUniformLocation,
+        }> = [];
         public vertexPrecision: string = "highp";
         public fragmentPrecision: string = "mediump";
-        public prefix: string[] = [];
+        public prefix = {};
+
+        public definesFromMaterial: string[] = [];
 
         private passFunctions: IProgramPass;
 
@@ -95,20 +102,32 @@ namespace CanvasToy {
             return this;
         }
 
-        public make(gl: WebGLRenderingContext, scene: Scene) {
-            this.prefix = [
-                "#define USE_TEXTURE ",
-                "#define USE_COLOR ",
-                "#define OPEN_LIGHT \n#define LIGHT_NUM "
-                + scene.lights.length + "",
-            ];
-            this.webGlProgram = createEntileShader(gl,
-                "precision " + this.vertexPrecision + " float;\n" + this.prefix.join("\n") + "\n"
+        public resetMaterialDefines(materiel: Material) {
+            const _material: any = materiel;
+            for (const subdefines in _material.defines) {
+                for (const define of _material.defines[subdefines](materiel)) {
+                    this.definesFromMaterial.push(define);
+                }
+            }
+        }
+
+        public make(scene: Scene) {
+            const defines = ["#define OPEN_LIGHT", "#define LIGHT_NUM " + scene.lights.length];
+            for (const define of this.definesFromMaterial) {
+                defines.push("#define " + define);
+                console.log("#define " + define);
+            }
+            this.webGlProgram = createEntileShader(
+                this.gl,
+                "precision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
                 + this.source.vertexShader,
-                "precision " + this.fragmentPrecision + " float;\n" + this.prefix.join("\n") + "\n"
+                "precision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
                 + this.source.fragmentShader);
+
             const componets = this.passFunctions;
             this.faces = (componets.faces === undefined ? this.faces : componets.faces);
+            this.uniforms = {};
+            this.textures = [];
             for (const nameInShader in componets.uniforms) {
                 if (componets.uniforms[nameInShader] !== undefined) {
                     this.addUniform(nameInShader, componets.uniforms[nameInShader]);
@@ -125,16 +144,18 @@ namespace CanvasToy {
         }
 
         public pass(mesh: Mesh, camera: Camera, materiel: Material) {
+            this.gl.useProgram(this.webGlProgram);
             for (const uniformName in this.uniforms) {
                 if (this.uniforms[uniformName] !== undefined) {
                     this.uniforms[uniformName](mesh, camera, materiel);
                 }
             }
             for (let unit = 0; unit < this.textures.length; ++unit) {
-                const texture = this.textures[unit](mesh, camera, materiel);
+                const texture = this.textures[unit].getter(mesh, camera, materiel);
                 if (!!texture) {
                     this.gl.activeTexture(this.gl.TEXTURE0 + unit);
                     this.gl.bindTexture(texture.target, texture.glTexture);
+                    this.gl.uniform1i(this.textures[unit].location, unit);
                 }
             }
             for (const attributeName in this.attributes) {
@@ -179,16 +200,18 @@ namespace CanvasToy {
             return this;
         }
 
-        public addTexture(sampler: string, textureGetter: (mesh, camera, material) => Texture) {
+        public addTexture(sampler: string, getter: (mesh, camera, material) => Texture) {
             const unit = this.textures.length;
             this.addUniform(sampler, { type: DataType.int, updator: () => unit });
-
-            this.textures.push(textureGetter);
+            this.textures.push({sampler, getter, location : this.gl.getUniformLocation(this.webGlProgram, sampler)});
         }
 
         public addUniform(nameInShader, uniform: IUniform) {
             this.gl.useProgram(this.webGlProgram);
             const location = this.getUniformLocation(nameInShader);
+            if (location == null) {
+                return this;
+            }
             switch (uniform.type) {
                 case DataType.float:
                     this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
@@ -259,7 +282,7 @@ namespace CanvasToy {
             }
             const result = this.gl.getUniformLocation(this.webGlProgram, name);
             if (result === null) {
-                console.warn("uniform " + name + " not found!");
+                console.log("uniform " + name + " not found!");
                 return null;
             }
             return result;

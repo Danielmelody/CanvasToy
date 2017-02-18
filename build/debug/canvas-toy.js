@@ -48,6 +48,30 @@ var CanvasToy;
         };
     }
     CanvasToy.uniform = uniform;
+    function asDefine() {
+        var defineNames = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            defineNames[_i] = arguments[_i];
+        }
+        return function (proto, key) {
+            if (!proto.hasOwnProperty("defines")) {
+                Object.defineProperty(proto, "defines", {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: {},
+                });
+            }
+            var defines = proto.defines;
+            defines[key] = function (obj) {
+                if (!!obj[key]) {
+                    return defineNames;
+                }
+                return [];
+            };
+        };
+    }
+    CanvasToy.asDefine = asDefine;
     function readyRequire(proto, key) {
         if (!proto.hasOwnProperty("asyncResources")) {
             Object.defineProperty(proto, "asyncResources", {
@@ -110,12 +134,14 @@ var CanvasToy;
             this.enableDepthTest = true;
             this.enableStencilTest = true;
             this.uniforms = {};
+            this.uniformLocationCache = {};
             this.attributes = {};
             this.attributeLocations = {};
             this.textures = [];
             this.vertexPrecision = "highp";
             this.fragmentPrecision = "mediump";
-            this.prefix = [];
+            this.prefix = {};
+            this.definesFromMaterial = [];
             this.drawMode = function (gl) { return gl.STATIC_DRAW; };
             this.gl = gl;
             this.source = source;
@@ -129,18 +155,29 @@ var CanvasToy;
             this.source.vertexShader = vertexShader;
             return this;
         };
-        Program.prototype.make = function (gl, scene) {
-            this.prefix = [
-                "#define USE_TEXTURE ",
-                "#define USE_COLOR ",
-                "#define OPEN_LIGHT \n#define LIGHT_NUM "
-                    + scene.lights.length + "",
-            ];
-            this.webGlProgram = CanvasToy.createEntileShader(gl, "precision " + this.vertexPrecision + " float;\n" + this.prefix.join("\n") + "\n"
-                + this.source.vertexShader, "precision " + this.fragmentPrecision + " float;\n" + this.prefix.join("\n") + "\n"
+        Program.prototype.resetMaterialDefines = function (materiel) {
+            var _material = materiel;
+            for (var subdefines in _material.defines) {
+                for (var _i = 0, _a = _material.defines[subdefines](materiel); _i < _a.length; _i++) {
+                    var define = _a[_i];
+                    this.definesFromMaterial.push(define);
+                }
+            }
+        };
+        Program.prototype.make = function (scene) {
+            var defines = ["#define OPEN_LIGHT", "#define LIGHT_NUM " + scene.lights.length];
+            for (var _i = 0, _a = this.definesFromMaterial; _i < _a.length; _i++) {
+                var define = _a[_i];
+                defines.push("#define " + define);
+                console.log("#define " + define);
+            }
+            this.webGlProgram = CanvasToy.createEntileShader(this.gl, "precision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
+                + this.source.vertexShader, "precision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
                 + this.source.fragmentShader);
             var componets = this.passFunctions;
             this.faces = (componets.faces === undefined ? this.faces : componets.faces);
+            this.uniforms = {};
+            this.textures = [];
             for (var nameInShader in componets.uniforms) {
                 if (componets.uniforms[nameInShader] !== undefined) {
                     this.addUniform(nameInShader, componets.uniforms[nameInShader]);
@@ -155,16 +192,18 @@ var CanvasToy;
             return this;
         };
         Program.prototype.pass = function (mesh, camera, materiel) {
+            this.gl.useProgram(this.webGlProgram);
             for (var uniformName in this.uniforms) {
                 if (this.uniforms[uniformName] !== undefined) {
                     this.uniforms[uniformName](mesh, camera, materiel);
                 }
             }
             for (var unit = 0; unit < this.textures.length; ++unit) {
-                var texture = this.textures[unit](mesh, camera, materiel);
+                var texture = this.textures[unit].getter(mesh, camera, materiel);
                 if (!!texture) {
                     this.gl.activeTexture(this.gl.TEXTURE0 + unit);
                     this.gl.bindTexture(texture.target, texture.glTexture);
+                    this.gl.uniform1i(this.textures[unit].location, unit);
                 }
             }
             for (var attributeName in this.attributes) {
@@ -198,15 +237,18 @@ var CanvasToy;
             this.uniforms[nameInShader] = undefined;
             return this;
         };
-        Program.prototype.addTexture = function (sampler, textureGetter) {
+        Program.prototype.addTexture = function (sampler, getter) {
             var unit = this.textures.length;
             this.addUniform(sampler, { type: CanvasToy.DataType.int, updator: function () { return unit; } });
-            this.textures.push(textureGetter);
+            this.textures.push({ sampler: sampler, getter: getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
         };
         Program.prototype.addUniform = function (nameInShader, uniform) {
             var _this = this;
             this.gl.useProgram(this.webGlProgram);
             var location = this.getUniformLocation(nameInShader);
+            if (location == null) {
+                return this;
+            }
             switch (uniform.type) {
                 case CanvasToy.DataType.float:
                     this.uniforms[nameInShader] = function (mesh, camera, material) {
@@ -273,7 +315,7 @@ var CanvasToy;
             }
             var result = this.gl.getUniformLocation(this.webGlProgram, name);
             if (result === null) {
-                console.warn("uniform " + name + " not found!");
+                console.log("uniform " + name + " not found!");
                 return null;
             }
             return result;
@@ -917,14 +959,14 @@ var CanvasToy;
     CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
     CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
     CanvasToy.env_map_vert = "";
-    CanvasToy.interploters__deferred__geometry_frag = "#extension GL_EXT_draw_buffers : require\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nvoid main () {\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    //normal, position, depth, color\n    gl_FragData[0] = vec4(vec3(vDepth), 1.0);\n    gl_FragData[1] = vec4(normalize(vNormal.xyz), 1.0);\n    gl_FragData[2] = vPosition;\n    gl_FragData[3] = vec4(texture2D(uMainTexture, vMainUV).xyz, 1.0);\n#endif\n}\n";
-    CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef USE_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__deferred__geometry_frag = "#extension GL_EXT_draw_buffers : require\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    //normal, position, depth, color\n    gl_FragData[0] = vec4(vec3(vDepth), 1.0);\n    gl_FragData[1] = vec4(normalize(vNormal.xyz), 1.0);\n    gl_FragData[2] = vPosition;\n    gl_FragData[3] = vec4(texture2D(uMainTexture, vMainUV).xyz, 1.0);\n#endif\n}\n";
+    CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
-    CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n#ifdef USE_TEXTURE\n    textureColor = texture2D(uTextureSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n#endif\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
-    CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef USE_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef USE_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n\n#ifdef USE_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
-    CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef USE_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef USE_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
+    CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
+    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
+    CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
 })(CanvasToy || (CanvasToy = {}));
 function builder(_thisArg) {
     return _thisArg;
@@ -1060,6 +1102,7 @@ var CanvasToy;
     var Material = (function () {
         function Material(gl, paramter) {
             if (paramter === void 0) { paramter = {}; }
+            this.dirty = true;
             this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
             this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
             this.specular = vec3.fromValues(1, 1, 1);
@@ -1074,6 +1117,7 @@ var CanvasToy;
         return Material;
     }());
     __decorate([
+        CanvasToy.asDefine("_MAIN_TEXTURE"),
         CanvasToy.readyRequire
     ], Material.prototype, "mainTexture", void 0);
     __decorate([
@@ -1406,31 +1450,10 @@ var CanvasToy;
             var currentMaterial = null;
             var home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
             return CanvasToy.fetchRes(baseurl).then(function (content) {
-                content = content.replace(MTLLoader.removeCommentPattern, "");
-                var textureLines = content.match(MTLLoader.mapPattern);
-                var texturePromises = [];
-                var urlMaps = {};
-                var mapPerLine = new RegExp(MTLLoader.mapPattern);
-                if (!!textureLines) {
-                    var _loop_1 = function (line) {
-                        var url = line.match(MTLLoader.mapSinglePattern)[2];
-                        urlMaps[url] = null;
-                        texturePromises.push(MTLLoader.fetchTexture(home + url).then(function (image) {
-                            urlMaps[url] = image;
-                        }));
-                    };
-                    for (var _i = 0, textureLines_1 = textureLines; _i < textureLines_1.length; _i++) {
-                        var line = textureLines_1[_i];
-                        _loop_1(line);
-                    }
-                }
-                return Promise.all(texturePromises)
-                    .then(function (test) {
-                    content.split("\n").forEach(function (line) {
-                        currentMaterial = MTLLoader.handleSingleLine(gl, line, materials, urlMaps, currentMaterial);
-                    });
-                    return Promise.resolve(materials);
+                content.split("\n").forEach(function (line) {
+                    currentMaterial = MTLLoader.handleSingleLine(gl, home, line, materials, currentMaterial);
                 });
+                return Promise.resolve(materials);
             });
         };
         MTLLoader.fetchTexture = function (url) {
@@ -1445,7 +1468,7 @@ var CanvasToy;
                 image.src = url;
             });
         };
-        MTLLoader.handleSingleLine = function (gl, line, materials, urlMaps, currentMaterial) {
+        MTLLoader.handleSingleLine = function (gl, home, line, materials, currentMaterial) {
             if (line.length === 0) {
                 return;
             }
@@ -1469,26 +1492,25 @@ var CanvasToy;
                         MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
                     break;
                 case "map_Ka":
-                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "map_Ka":
-                    currentMaterial.alphaMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.alphaMap = new CanvasToy.Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "map_Kd":
-                    var image = urlMaps[MTLLoader.getImageUrl(line)];
-                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.mainTexture = new CanvasToy.Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "map_bump":
-                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "bump":
-                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.bumpMap = new CanvasToy.Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "disp":
-                    currentMaterial.displamentMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.displamentMap = new CanvasToy.Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "decal":
-                    currentMaterial.stencilMap = new CanvasToy.Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.stencilMap = new CanvasToy.Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 default: break;
             }
@@ -1719,7 +1741,7 @@ var CanvasToy;
                 .deleteUniform("materialSpec")
                 .deleteUniform("materialAmbient")
                 .deleteUniform("color");
-            this.geometryPass.make(gl, scene);
+            this.geometryPass.make(scene);
         }
         DeferredProcessor.prototype.process = function (scene, camera, materials) {
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
@@ -1877,6 +1899,12 @@ var CanvasToy;
                     else {
                         this.gl.disable(this.gl.STENCIL_TEST);
                     }
+                    if (material.dirty) {
+                        program.resetMaterialDefines(material);
+                        program.make(mesh.scene);
+                        this.setUpLights(mesh.scene, material, mesh, camera);
+                        material.dirty = false;
+                    }
                     this.gl.useProgram(program.webGlProgram);
                     program.pass(mesh, camera, material);
                     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
@@ -1885,10 +1913,10 @@ var CanvasToy;
             }
         };
         ForwardProcessor.prototype.setUpLights = function (scene, material, mesh, camera) {
-            var _loop_2 = function (index) {
+            var _loop_1 = function (index) {
                 var light = scene.lights[index];
                 console.assert(light.uniforms !== undefined);
-                var _loop_3 = function (uniformProperty) {
+                var _loop_2 = function (uniformProperty) {
                     material.program.addUniform("lights[" + index + "]." + uniformProperty.name, {
                         type: uniformProperty.type,
                         updator: function () {
@@ -1898,11 +1926,11 @@ var CanvasToy;
                 };
                 for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
                     var uniformProperty = _a[_i];
-                    _loop_3(uniformProperty);
+                    _loop_2(uniformProperty);
                 }
             };
             for (var index in scene.lights) {
-                _loop_2(index);
+                _loop_1(index);
             }
         };
         ForwardProcessor.prototype.makeMeshPrograms = function (scene, mesh, camera) {
@@ -1927,7 +1955,7 @@ var CanvasToy;
                     console.error("Camera has not been added in Scene. Rendering stopped");
                     return;
                 }
-                material.program.make(this.gl, scene);
+                material.program.make(scene);
                 if (scene.openLight) {
                     this.setUpLights(scene, material, mesh, camera);
                 }

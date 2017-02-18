@@ -24,8 +24,11 @@ namespace CanvasToy {
 
     export abstract class Material implements IMaterial {
 
+        public dirty = true;
+
         public program: Program;
 
+        @asDefine("_MAIN_TEXTURE")
         @readyRequire
         public mainTexture: Texture;
 

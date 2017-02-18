@@ -7,14 +7,19 @@ varying vec4 vPosition;
 varying vec4 vDepth;
 #endif
 
-#ifdef USE_TEXTURE
+#ifdef _MAIN_TEXTURE
 uniform sampler2D uMainTexture;
 varying vec2 vMainUV;
 #endif
 
+#ifdef _NORMAL_TEXTURE
+uniform sampler2D uNormalTexture;
+varying vec2 vNormalUV;
+#endif
+
 void main () {
 
-#ifdef USE_TEXTURE
+#ifdef _MAIN_TEXTURE
     gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);
 #endif
 #ifdef OPEN_LIGHT

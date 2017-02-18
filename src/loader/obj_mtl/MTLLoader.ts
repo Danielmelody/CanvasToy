@@ -11,27 +11,25 @@ namespace CanvasToy {
             const home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
             return fetchRes(baseurl).then((content: string) => {
                 // remove comment of .obj file
-                content = content.replace(MTLLoader.removeCommentPattern, "");
-                const textureLines: string[] = content.match(MTLLoader.mapPattern);
-                const texturePromises = [];
-                const urlMaps = {};
-                const mapPerLine = new RegExp(MTLLoader.mapPattern);
-                if (!!textureLines) {
-                    for (const line of textureLines) {
-                        const url = line.match(MTLLoader.mapSinglePattern)[2];
-                        urlMaps[url] = null;
-                        texturePromises.push(MTLLoader.fetchTexture(home + url).then((image) => {
-                            urlMaps[url] = image;
-                        }));
-                    }
-                }
-                return Promise.all(texturePromises)
-                    .then((test) => {
-                        content.split("\n").forEach((line) => {
-                            currentMaterial = MTLLoader.handleSingleLine(gl, line, materials, urlMaps, currentMaterial);
-                        });
-                        return Promise.resolve(materials);
-                    });
+                // content = content.replace(MTLLoader.removeCommentPattern, "");
+                // const textureLines: string[] = content.match(MTLLoader.mapPattern);
+                // const texturePromises = [];
+                // const mapPerLine = new RegExp(MTLLoader.mapPattern);
+                // if (!!textureLines) {
+                //     for (const line of textureLines) {
+                //         const url = line.match(MTLLoader.mapSinglePattern)[2];
+                //         texturePromises.push(MTLLoader.fetchTexture(home + url).then((image) => {
+                //             url] = image;
+                //         }));
+                //     }
+                // }
+                // return Promise.all(texturePromises)
+                //     .then((test) => {
+                content.split("\n").forEach((line) => {
+                    currentMaterial = MTLLoader.handleSingleLine(gl, home, line, materials, currentMaterial);
+                });
+                return Promise.resolve(materials);
+                // });
             });
         }
 
@@ -61,9 +59,9 @@ namespace CanvasToy {
 
         private static handleSingleLine(
             gl: WebGLRenderingContext,
+            home: string,
             line: string,
             materials: any,
-            urlMaps: any,
             currentMaterial: StandardMaterial,
         ) {
             if (line.length === 0) {
@@ -89,26 +87,25 @@ namespace CanvasToy {
                         MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
                     break;
                 case "map_Ka":
-                    currentMaterial.mainTexture = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.mainTexture = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "map_Ka":
-                    currentMaterial.alphaMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.alphaMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "map_Kd":
-                    const image = urlMaps[MTLLoader.getImageUrl(line)];
-                    currentMaterial.mainTexture = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.mainTexture = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "map_bump":
-                    currentMaterial.bumpMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.bumpMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "bump":
-                    currentMaterial.bumpMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.bumpMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "disp":
-                    currentMaterial.displamentMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.displamentMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 case "decal":
-                    currentMaterial.stencilMap = new Texture2D(gl, urlMaps[MTLLoader.getImageUrl(line)]);
+                    currentMaterial.stencilMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
                     break;
                 default: break;
             }

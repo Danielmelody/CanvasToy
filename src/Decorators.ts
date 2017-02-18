@@ -21,6 +21,26 @@ namespace CanvasToy {
         };
     }
 
+    export function asDefine(...defineNames: string[]) {
+        return (proto, key) => {
+            if (!proto.hasOwnProperty("defines")) {
+                Object.defineProperty(proto, "defines", {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: {},
+                });
+            }
+            const defines = proto.defines;
+            defines[key] = (obj) => {
+                if (!!obj[key]) {
+                    return defineNames;
+                }
+                return [];
+            };
+        };
+    }
+
     export function readyRequire<IAsyncResource>(proto, key) {
         if (!proto.hasOwnProperty("asyncResources")) {
             Object.defineProperty(proto, "asyncResources", {
