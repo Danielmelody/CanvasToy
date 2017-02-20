@@ -11,7 +11,7 @@ namespace CanvasToy {
         public readonly glTexture: WebGLTexture;
         public isReadyToUpdate: boolean = false;
 
-        private readonly _image: HTMLImageElement;
+        protected readonly _image: HTMLImageElement;
         private _target: number;
         private _format: number;
         private _wrapS: number;

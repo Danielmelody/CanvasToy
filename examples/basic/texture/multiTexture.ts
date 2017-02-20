@@ -11,10 +11,10 @@
 //     light.setIdensity(1)
 //         .setPosition([100, 0, 100]);
 //     const image1 = new Image();
-//     image1.src = "basic/images/sea.jpg";
+//     image1.src = "resources/images/sea.jpg";
 //
 //     const image2 = new Image();
-//     image2.src = "basic/images/chrome.png";
+//     image2.src = "resources/images/chrome.png";
 //
 //     const cube = new CanvasToy.Mesh(
 //         new CanvasToy.CubeGeometry(renderer.gl),

@@ -7,13 +7,17 @@ function onMouseOnStart(renderer) {
         renderer.stop();
     };
 }
+function createSkyBox(renderer, cubeTexture) {
+    return new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.SkyMaterial(renderer.gl, cubeTexture)]);
+}
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
+    var skybox = createSkyBox(renderer, new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/ashcanyon_rt.jpg", "resources/images/skybox/ashcanyon_lf.jpg", "resources/images/skybox/ashcanyon_up.jpg", "resources/images/skybox/ashcanyon_dn.jpg", "resources/images/skybox/ashcanyon_bk.jpg", "resources/images/skybox/ashcanyon_ft.jpg")).setParent(camera);
     var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             specular: [0.1, 0.1, 0.1],
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png"),
+            mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png"),
         })]);
     cube.translate([0, 0, -6]);
     scene.addObject(cube).addObject(camera);
@@ -39,7 +43,7 @@ examples.push(function (canvas) {
     }).then(function (num) {
         console.log("promise resolve " + num);
     });
-    CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot/teapot.obj")
+    CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj")
         .then(function (object) {
         scene.addObject(object);
         scene.addObject(camera);
@@ -61,7 +65,7 @@ examples.push(function (canvas) {
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
     var node = new CanvasToy.Object3d();
-    var mainTexture = new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png");
+    var mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png");
     var material = new CanvasToy.StandardMaterial(renderer.gl, {
         mainTexture: mainTexture,
         specular: [1, 1, 1],
@@ -91,7 +95,8 @@ examples.push(function (canvas) {
     var cubes = [
         new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl)]),
     ];
-    cubes[0].materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, "basic/images/chrome.png")
+    cubes[0].materials[0]
+        .mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png")
         .setFormat(renderer.gl.RGBA);
     cameras[0].setPosition([0, 0, 5]);
     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);

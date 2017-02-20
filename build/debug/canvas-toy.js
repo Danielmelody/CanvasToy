@@ -235,10 +235,6 @@ var CanvasToy;
             this.gl.bindAttribLocation(this.webGlProgram, 0, name);
             return this;
         };
-        Program.prototype.deleteUniform = function (nameInShader) {
-            this.uniforms[nameInShader] = undefined;
-            return this;
-        };
         Program.prototype.addTexture = function (sampler, getter) {
             var unit = this.textures.length;
             this.addUniform(sampler, { type: CanvasToy.DataType.int, updator: function () { return unit; } });
@@ -295,6 +291,10 @@ var CanvasToy;
                     break;
                 default: break;
             }
+        };
+        Program.prototype.deleteUniform = function (nameInShader) {
+            this.uniforms[nameInShader] = undefined;
+            return this;
         };
         Program.prototype.deleteAttribute = function (nameInShader) {
             this.attributes[nameInShader] = undefined;
@@ -972,6 +972,8 @@ var CanvasToy;
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
     CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
     CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
+    CanvasToy.interploters__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
 })(CanvasToy || (CanvasToy = {}));
 function builder(_thisArg) {
     return _thisArg;
@@ -1105,41 +1107,12 @@ var CanvasToy;
         white: vec4.fromValues(1, 1, 1, 1),
     };
     var Material = (function () {
-        function Material(gl, paramter) {
-            if (paramter === void 0) { paramter = {}; }
+        function Material() {
             this.dirty = true;
-            this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
-            this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
-            this.specular = vec3.fromValues(1, 1, 1);
-            this.specularExponent = 1;
-            this.transparency = 0;
-            if (!!paramter) {
-                for (var name_1 in paramter) {
-                    this[name_1] = paramter[name_1];
-                }
-            }
+            this.defines = [];
         }
         return Material;
     }());
-    __decorate([
-        CanvasToy.asDefine("_MAIN_TEXTURE"),
-        CanvasToy.readyRequire
-    ], Material.prototype, "mainTexture", void 0);
-    __decorate([
-        CanvasToy.readyRequire
-    ], Material.prototype, "specularMap", void 0);
-    __decorate([
-        CanvasToy.readyRequire
-    ], Material.prototype, "alphaMap", void 0);
-    __decorate([
-        CanvasToy.readyRequire
-    ], Material.prototype, "bumpMap", void 0);
-    __decorate([
-        CanvasToy.readyRequire
-    ], Material.prototype, "displamentMap", void 0);
-    __decorate([
-        CanvasToy.readyRequire
-    ], Material.prototype, "stencilMap", void 0);
     CanvasToy.Material = Material;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1437,12 +1410,41 @@ var CanvasToy;
         __extends(StandardMaterial, _super);
         function StandardMaterial(gl, paramter) {
             if (paramter === void 0) { paramter = {}; }
-            var _this = _super.call(this, gl, paramter) || this;
+            var _this = _super.call(this) || this;
+            _this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
+            _this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
+            _this.specular = vec3.fromValues(1, 1, 1);
+            _this.specularExponent = 1;
+            _this.transparency = 0;
+            if (!!paramter) {
+                for (var name_1 in paramter) {
+                    _this[name_1] = paramter[name_1];
+                }
+            }
             _this.program = new CanvasToy.StandardShaderBuilder().build(gl);
             return _this;
         }
         return StandardMaterial;
     }(CanvasToy.Material));
+    __decorate([
+        CanvasToy.asDefine("_MAIN_TEXTURE"),
+        CanvasToy.readyRequire
+    ], StandardMaterial.prototype, "mainTexture", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], StandardMaterial.prototype, "specularMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], StandardMaterial.prototype, "alphaMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], StandardMaterial.prototype, "bumpMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], StandardMaterial.prototype, "displamentMap", void 0);
+    __decorate([
+        CanvasToy.readyRequire
+    ], StandardMaterial.prototype, "stencilMap", void 0);
     CanvasToy.StandardMaterial = StandardMaterial;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1686,6 +1688,39 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var SkyMaterial = (function (_super) {
+        __extends(SkyMaterial, _super);
+        function SkyMaterial(gl, cubeTexture) {
+            var _this = _super.call(this) || this;
+            _this.cubeTexture = cubeTexture;
+            _this.program = new CanvasToy.Program(gl, {
+                vertexShader: CanvasToy.interploters__skybox_vert,
+                fragmentShader: CanvasToy.interploters__skybox_frag,
+            }, {
+                faces: function (mesh) { return mesh.geometry.faces; },
+                textures: {
+                    uMainTexture: function (mesh, camera, material) { return material.mainTexture; },
+                },
+                uniforms: {
+                    modelViewProjectionMatrix: {
+                        type: CanvasToy.DataType.mat4,
+                        updator: function (mesh, camera) {
+                            return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.objectToWorldMatrix, mesh.matrix));
+                        },
+                    },
+                },
+            });
+            return _this;
+        }
+        return SkyMaterial;
+    }(CanvasToy.Material));
+    __decorate([
+        CanvasToy.readyRequire
+    ], SkyMaterial.prototype, "cubeTexture", void 0);
+    CanvasToy.SkyMaterial = SkyMaterial;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var Scene = (function () {
         function Scene() {
             this.objects = [];
@@ -1735,16 +1770,6 @@ var CanvasToy;
 (function (CanvasToy) {
     var Graphics;
     (function (Graphics) {
-        function configTexture(gl, texture) {
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-            gl.bindTexture(texture.target, texture.glTexture);
-            gl.texParameteri(texture.target, gl.TEXTURE_WRAP_S, texture.wrapS);
-            gl.texParameteri(texture.target, gl.TEXTURE_WRAP_T, texture.wrapT);
-            gl.texParameteri(texture.target, gl.TEXTURE_MAG_FILTER, texture.magFilter);
-            gl.texParameteri(texture.target, gl.TEXTURE_MIN_FILTER, texture.minFilter);
-            texture.setUpTextureData(gl);
-        }
-        Graphics.configTexture = configTexture;
         function copyDataToVertexBuffer(gl, geometry) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
@@ -1836,14 +1861,18 @@ var CanvasToy;
                 .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT1_WEBGL; })
                 .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT2_WEBGL; })
                 .setType(this.gl, CanvasToy.AttachmentType.Texture));
-            CanvasToy.Graphics.configTexture(this.gl, this.gBuffer.attachments.depth.targetTexture
+            this.gBuffer.attachments.depth.targetTexture
                 .setType(this.gl.UNSIGNED_SHORT)
-                .setFormat(this.gl.DEPTH_COMPONENT));
+                .setFormat(this.gl.DEPTH_COMPONENT)
+                .setUpTextureData(this.gl);
             for (var _i = 0, _a = this.gBuffer.extras; _i < _a.length; _i++) {
                 var colorAttach = _a[_i];
-                CanvasToy.Graphics.configTexture(this.gl, colorAttach.targetTexture
+                colorAttach.targetTexture
                     .setType(this.gl.FLOAT)
-                    .setFormat(this.gl.RGBA));
+                    .setFormat(this.gl.RGBA)
+                    .setMinFilter(this.gl.LINEAR)
+                    .setMagFilter(this.gl.LINEAR)
+                    .setUpTextureData(this.gl);
             }
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
             this.gl.bindTexture(this.gl.TEXTURE_2D, this.gBuffer.attachments.depth.targetTexture.glTexture);
@@ -2170,7 +2199,7 @@ var CanvasToy;
                             var promise = textureGetter(_material);
                             if (!!promise) {
                                 promises.push(promise.then(function (texture) {
-                                    CanvasToy.Graphics.configTexture(_this.gl, texture);
+                                    texture.setUpTextureData(_this.gl);
                                 }));
                             }
                         }
@@ -2199,7 +2228,7 @@ var CanvasToy;
                     }
                 }
             }
-            var processor = new CanvasToy.DeferredProcessor(this.gl, this.ext, scene, camera);
+            var processor = new CanvasToy.ForwardProcessor(this.gl, this.ext, scene, camera);
             scene.programSetUp = true;
             this.renderQueue.push(function (deltaTime) {
                 scene.update(deltaTime);
@@ -2293,39 +2322,59 @@ var CanvasToy;
 (function (CanvasToy) {
     var CubeTexture = (function (_super) {
         __extends(CubeTexture, _super);
-        function CubeTexture(gl, xneg, xpos, yneg, ypos, zneg, zpos) {
+        function CubeTexture(gl, xposUrl, xnegUrl, yposUrl, ynegUrl, zposUrl, znegUrl) {
             var _this = _super.call(this, gl) || this;
-            _this.count = 6;
-            _this.xneg = xneg;
-            _this.xpos = xpos;
-            _this.yneg = yneg;
-            _this.ypos = ypos;
-            _this.zneg = zneg;
-            _this.zpos = zpos;
-            _this.xneg.onload = _this.onLoad;
-            _this.xpos.onload = _this.onLoad;
-            _this.yneg.onload = _this.onLoad;
-            _this.ypos.onload = _this.onLoad;
-            _this.zneg.onload = _this.onLoad;
-            _this.zpos.onload = _this.onLoad;
+            _this.images = [];
+            _this.setTarget(gl.TEXTURE_CUBE_MAP);
+            _this.images = [0, 0, 0, 0, 0, 0].map(function () { return new Image(); });
+            _this.images[0].src = xposUrl;
+            _this.images[1].src = xnegUrl;
+            _this.images[2].src = yposUrl;
+            _this.images[3].src = ynegUrl;
+            _this.images[4].src = zposUrl;
+            _this.images[5].src = znegUrl;
             return _this;
         }
-        CubeTexture.prototype.setUpTextureData = function (gl) {
-            if (_super.prototype.setUpTextureData.call(this, gl)) {
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xneg);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xpos);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.yneg);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.ypos);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.zneg);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.zpos);
-            }
-            return true;
+        Object.defineProperty(CubeTexture.prototype, "wrapR", {
+            get: function () {
+                return this._wrapR;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        CubeTexture.prototype.setWrapR = function (_wrapR) {
+            this._wrapR = _wrapR;
+            return this;
         };
-        CubeTexture.prototype.onLoad = function () {
-            this.count--;
-            if (this.count === 0) {
-                this.isReadyToUpdate = true;
+        CubeTexture.prototype.setUpTextureData = function (gl) {
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+            gl.bindTexture(this.target, this.glTexture);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
+            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
+            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
+            for (var i = 0; i < this.images.length; ++i) {
+                gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.format, this.format, this.type, this.images[i]);
             }
+        };
+        CubeTexture.prototype.asyncFinished = function () {
+            var _this = this;
+            var image = this._image;
+            return Promise.all(this.images.map(function (image) { return _this.createLoadPromise(image); })).then(function () {
+                return Promise.resolve(_this);
+            });
+        };
+        CubeTexture.prototype.createLoadPromise = function (image) {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                if (!image) {
+                    resolve(_this);
+                }
+                else {
+                    image.onload = function () { return resolve(_this); };
+                    image.onerror = function () { return reject(_this); };
+                }
+            });
         };
         return CubeTexture;
     }(CanvasToy.Texture));
@@ -2339,8 +2388,27 @@ var CanvasToy;
             return _super.call(this, gl, url) || this;
         }
         Texture2D.prototype.setUpTextureData = function (gl) {
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.bindTexture(this.target, this.glTexture);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
+            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
+            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
             _super.prototype.setUpTextureData.call(this, gl);
             gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
+        };
+        Texture2D.prototype.asyncFinished = function () {
+            var _this = this;
+            var image = this._image;
+            return new Promise(function (resolve, reject) {
+                if (!image) {
+                    resolve(_this);
+                }
+                else {
+                    image.onload = function () { return resolve(_this); };
+                    image.onerror = function () { return reject(_this); };
+                }
+            });
         };
         return Texture2D;
     }(CanvasToy.Texture));

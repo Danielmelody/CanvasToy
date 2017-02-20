@@ -1,5 +1,5 @@
 namespace CanvasToy {
     export interface IAsyncResource {
-        asyncFinished(): Promise<any>;
+        asyncFinished(): Promise<IAsyncResource>;
     }
 }

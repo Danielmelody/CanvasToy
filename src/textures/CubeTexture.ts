@@ -2,55 +2,75 @@
 
 namespace CanvasToy {
     export class CubeTexture extends Texture {
-        public xneg: HTMLImageElement;
-        public xpos: HTMLImageElement;
-        public yneg: HTMLImageElement;
-        public ypos: HTMLImageElement;
-        public zneg: HTMLImageElement;
-        public zpos: HTMLImageElement;
-        private count: number = 6;
+
+        public images: HTMLImageElement[] = [];
+
+        private _wrapR: number;
 
         constructor(
             gl: WebGLRenderingContext,
-            xneg: HTMLImageElement,
-            xpos: HTMLImageElement,
-            yneg: HTMLImageElement,
-            ypos: HTMLImageElement,
-            zneg: HTMLImageElement,
-            zpos: HTMLImageElement,
+            xposUrl: string,
+            xnegUrl: string,
+            yposUrl: string,
+            ynegUrl: string,
+            zposUrl: string,
+            znegUrl: string,
         ) {
             super(gl);
-            this.xneg = xneg;
-            this.xpos = xpos;
-            this.yneg = yneg;
-            this.ypos = ypos;
-            this.zneg = zneg;
-            this.zpos = zpos;
-            this.xneg.onload = this.onLoad;
-            this.xpos.onload = this.onLoad;
-            this.yneg.onload = this.onLoad;
-            this.ypos.onload = this.onLoad;
-            this.zneg.onload = this.onLoad;
-            this.zpos.onload = this.onLoad;
+            this.setTarget(gl.TEXTURE_CUBE_MAP);
+            this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
+            this.images[0].src = xposUrl;
+            this.images[1].src = xnegUrl;
+            this.images[2].src = yposUrl;
+            this.images[3].src = ynegUrl;
+            this.images[4].src = zposUrl;
+            this.images[5].src = znegUrl;
+        }
+
+        public get wrapR() {
+            return this._wrapR;
+        }
+
+        public setWrapR(_wrapR: number) {
+            this._wrapR = _wrapR;
+            return this;
         }
 
         public setUpTextureData(gl: WebGLRenderingContext) {
-            if (super.setUpTextureData(gl)) {
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xneg);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.xpos);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.yneg);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.ypos);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.zneg);
-                gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.format, this.format, gl.UNSIGNED_BYTE, this.zpos);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+            gl.bindTexture(this.target, this.glTexture);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
+            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
+            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
+            for (let i = 0; i < this.images.length; ++i) {
+                gl.texImage2D(
+                    gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                    0,
+                    this.format,
+                    this.format,
+                    this.type,
+                    this.images[i],
+                );
             }
-            return true;
         }
 
-        private onLoad() {
-            this.count--;
-            if (this.count === 0) {
-                this.isReadyToUpdate = true;
-            }
+        public asyncFinished() {
+            const image = this._image;
+            return Promise.all(this.images.map((image) => this.createLoadPromise(image))).then(() => {
+                return Promise.resolve(this);
+            });
+        }
+
+        private createLoadPromise(image: HTMLImageElement) {
+            return new Promise((resolve, reject) => {
+                if (!image) {
+                    resolve(this);
+                } else {
+                    image.onload = () => resolve(this);
+                    image.onerror = () => reject(this);
+                }
+            });
         }
     }
 }
