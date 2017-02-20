@@ -80,7 +80,7 @@ declare namespace CanvasToy {
         }>;
         vertexPrecision: string;
         fragmentPrecision: string;
-        prefix: {};
+        extensionStatements: string[];
         definesFromMaterial: string[];
         private passFunctions;
         private source;
@@ -304,8 +304,8 @@ declare module CanvasToy {
     const calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
     const definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
     const env_map_vert = "";
-    const interploters__deferred__geometry_frag = "#extension GL_EXT_draw_buffers : require\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    //normal, position, depth, color\n    gl_FragData[0] = vec4(vec3(vDepth), 1.0);\n    gl_FragData[1] = vec4(normalize(vNormal.xyz), 1.0);\n    gl_FragData[2] = vPosition;\n    gl_FragData[3] = vec4(texture2D(uMainTexture, vMainUV).xyz, 1.0);\n#endif\n}\n";
-    const interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    const interploters__deferred__geometry_frag = "uniform vec3 ambient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    // normal, position, color\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#else\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#endif\n    gl_FragData[1] = vPosition;\n#ifdef _MAIN_TEXTURE\n    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);\n#else\n    gl_FragData[2] = vec4(ambient, 1.0);\n#endif\n#endif\n}\n";
+    const interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     const interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     const interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     const interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
@@ -498,11 +498,30 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
+    namespace Graphics {
+        function configTexture(gl: WebGLRenderingContext, texture: Texture): void;
+        function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry): void;
+        function logIfFrameBufferInvalid(gl: WebGLRenderingContext, frameBuffer: WebGLFramebuffer, ext: WebGLExtension): void;
+    }
+}
+declare namespace CanvasToy {
+    interface WebGLExtension {
+        depth_texture: WEBGL_depth_texture;
+        draw_buffer: WebGLDrawBuffers;
+        texture_float: OES_texture_float;
+        texture_float_linear: OES_texture_float_linear;
+    }
+}
+declare namespace CanvasToy {
     class DeferredProcessor implements IProcessor {
         readonly gBuffer: FrameBuffer;
-        readonly geometryPass: Program;
-        constructor(gl: WebGLRenderingContext, scene: Scene);
+        readonly geometryPass: {};
+        readonly gl: WebGLRenderingContext;
+        readonly ext: WebGLExtension;
+        constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
         process(scene: Scene, camera: Camera, materials: IMaterial[]): void;
+        private initGeometryProcess(scene);
+        private gBufferProcess();
     }
 }
 declare namespace CanvasToy {
@@ -552,7 +571,8 @@ declare namespace CanvasToy {
 declare namespace CanvasToy {
     class ForwardProcessor implements IProcessor {
         readonly gl: WebGLRenderingContext;
-        constructor(gl: WebGLRenderingContext, scene: Scene, camera: Camera);
+        readonly ext: WebGLExtension;
+        constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
         process(scene: Scene, camera: Camera, materials: IMaterial[]): void;
         private renderObject(camera, object);
         private setUpLights(scene, material, mesh, camera);
@@ -568,10 +588,7 @@ declare namespace CanvasToy {
     class Renderer {
         readonly canvas: HTMLCanvasElement;
         readonly gl: WebGLRenderingContext;
-        readonly ext: {
-            depth_texture: WEBGL_depth_texture;
-            draw_buffer: WebGLDrawBuffers;
-        };
+        readonly ext: WebGLExtension;
         preloadRes: any[];
         usedTextureNum: number;
         renderTargets: Texture[];
@@ -592,7 +609,6 @@ declare namespace CanvasToy {
         renderFBO(scene: Scene, camera: Camera): void;
         handleResource(scene: Scene): Promise<any[]>;
         render(scene: Scene, camera: Camera): void;
-        configTexture(texture: Texture): void;
         private renderLight(light, scene);
         private main;
         private initMatrix();
@@ -649,7 +665,6 @@ declare namespace CanvasToy {
         FragmentShader = 1,
     }
     function mixin(toObject: Object, fromObject: Object): void;
-    function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry): void;
     function initWebwebglContext(canvas: any): WebGLRenderingContext;
     function getDomScriptText(script: HTMLScriptElement): string;
     function createEntileShader(gl: WebGLRenderingContext, vertexShaderSource: string, fragmentShaderSource: string): WebGLProgram;

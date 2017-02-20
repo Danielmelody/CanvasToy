@@ -140,7 +140,7 @@ var CanvasToy;
             this.textures = [];
             this.vertexPrecision = "highp";
             this.fragmentPrecision = "mediump";
-            this.prefix = {};
+            this.extensionStatements = [];
             this.definesFromMaterial = [];
             this.drawMode = function (gl) { return gl.STATIC_DRAW; };
             this.gl = gl;
@@ -171,8 +171,10 @@ var CanvasToy;
                 defines.push("#define " + define);
                 console.log("#define " + define);
             }
-            this.webGlProgram = CanvasToy.createEntileShader(this.gl, "precision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
-                + this.source.vertexShader, "precision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
+            this.webGlProgram = CanvasToy.createEntileShader(this.gl, this.extensionStatements.join("\n")
+                + "\nprecision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
+                + this.source.vertexShader, this.extensionStatements.join("\n")
+                + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
                 + this.source.fragmentShader);
             var componets = this.passFunctions;
             this.faces = (componets.faces === undefined ? this.faces : componets.faces);
@@ -312,6 +314,9 @@ var CanvasToy;
             if (this.gl === undefined || this.gl === null) {
                 console.error("WebGLRenderingContext has not been initialize!");
                 return null;
+            }
+            if (!this.webGlProgram) {
+                console.warn("program invalid");
             }
             var result = this.gl.getUniformLocation(this.webGlProgram, name);
             if (result === null) {
@@ -959,8 +964,8 @@ var CanvasToy;
     CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
     CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
     CanvasToy.env_map_vert = "";
-    CanvasToy.interploters__deferred__geometry_frag = "#extension GL_EXT_draw_buffers : require\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    //normal, position, depth, color\n    gl_FragData[0] = vec4(vec3(vDepth), 1.0);\n    gl_FragData[1] = vec4(normalize(vNormal.xyz), 1.0);\n    gl_FragData[2] = vPosition;\n    gl_FragData[3] = vec4(texture2D(uMainTexture, vMainUV).xyz, 1.0);\n#endif\n}\n";
-    CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying vec4 vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__deferred__geometry_frag = "uniform vec3 ambient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    // normal, position, color\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#else\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#endif\n    gl_FragData[1] = vPosition;\n#ifdef _MAIN_TEXTURE\n    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);\n#else\n    gl_FragData[2] = vec4(ambient, 1.0);\n#endif\n#endif\n}\n";
+    CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
@@ -1728,32 +1733,155 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var Graphics;
+    (function (Graphics) {
+        function configTexture(gl, texture) {
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.bindTexture(texture.target, texture.glTexture);
+            gl.texParameteri(texture.target, gl.TEXTURE_WRAP_S, texture.wrapS);
+            gl.texParameteri(texture.target, gl.TEXTURE_WRAP_T, texture.wrapT);
+            gl.texParameteri(texture.target, gl.TEXTURE_MAG_FILTER, texture.magFilter);
+            gl.texParameteri(texture.target, gl.TEXTURE_MIN_FILTER, texture.minFilter);
+            texture.setUpTextureData(gl);
+        }
+        Graphics.configTexture = configTexture;
+        function copyDataToVertexBuffer(gl, geometry) {
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
+            for (var name_2 in geometry.attributes) {
+                var attribute = geometry.attributes[name_2];
+                if (attribute !== undefined) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
+                    console.log(name_2 + " buffer size: ", "" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
+                }
+            }
+        }
+        Graphics.copyDataToVertexBuffer = copyDataToVertexBuffer;
+        function logIfFrameBufferInvalid(gl, frameBuffer, ext) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+            var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+            switch (status) {
+                case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                    console.error("gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT: The attachment types are mismatched\n                    or not all framebuffer attachment points are framebuffer attachment complete.");
+                    break;
+                case gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                    console.error("gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: There is no attachment.");
+                    break;
+                case gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                    console.error("gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS: Height and width of the attachment are not the same.");
+                    break;
+                case gl.FRAMEBUFFER_UNSUPPORTED:
+                    console.error("gl.FRAMEBUFFER_UNSUPPORTED: The format of the attachment is not supported,\n                    or if depth and stencil attachments are not the same renderbuffer.");
+                    break;
+                default: break;
+            }
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        }
+        Graphics.logIfFrameBufferInvalid = logIfFrameBufferInvalid;
+    })(Graphics = CanvasToy.Graphics || (CanvasToy.Graphics = {}));
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var DeferredProcessor = (function () {
-        function DeferredProcessor(gl, scene) {
+        function DeferredProcessor(gl, ext, scene, camera) {
+            this.geometryPass = {};
+            this.gl = gl;
+            this.ext = ext;
             this.gBuffer = new CanvasToy.FrameBuffer(gl);
-            this.gBuffer.attachments.color.disable();
-            this.gBuffer.extras.push(new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; }));
-            this.geometryPass = new CanvasToy.Program(gl, {
-                vertexShader: CanvasToy.interploters__deferred__geometry_vert,
-                fragmentShader: CanvasToy.interploters__deferred__geometry_frag,
-            }, CanvasToy.defaultProgramPass);
-            this.geometryPass.deleteUniform("materialDiff")
-                .deleteUniform("materialSpec")
-                .deleteUniform("materialAmbient")
-                .deleteUniform("color");
-            this.geometryPass.make(scene);
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                if (object instanceof CanvasToy.Mesh) {
+                    CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, object.geometry);
+                }
+            }
+            this.initGeometryProcess(scene);
+            scene.programSetUp = true;
         }
         DeferredProcessor.prototype.process = function (scene, camera, materials) {
+            this.gl.enable(this.gl.DEPTH_TEST);
+            this.gl.depthMask(true);
+            this.gl.clearDepth(1.0);
+            this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
+            this.gl.blendFunc(this.gl.ONE, this.gl.ZERO);
+            this.gl.enable(this.gl.CULL_FACE);
+            this.gl.cullFace(this.gl.BACK);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            CanvasToy.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer, this.ext);
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
                 if (object instanceof CanvasToy.Mesh) {
                     var mesh = object;
+                    this.gl.useProgram(this.geometryPass[mesh].webGlProgram);
                     for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
                         var material = _c[_b];
-                        this.geometryPass.pass(mesh, camera, material);
+                        if (material.dirty) {
+                            this.geometryPass[mesh].resetMaterialDefines(material);
+                            this.geometryPass[mesh].make(mesh.scene);
+                            material.dirty = false;
+                        }
+                        this.geometryPass[mesh].pass(mesh, camera, material);
+                        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
+                        this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                     }
                 }
             }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        };
+        DeferredProcessor.prototype.initGeometryProcess = function (scene) {
+            this.gBuffer.attachments.color.disable();
+            this.gBuffer.attachments.depth.setType(this.gl, CanvasToy.AttachmentType.Texture);
+            this.gBuffer.extras.push(new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; })
+                .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT1_WEBGL; })
+                .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT2_WEBGL; })
+                .setType(this.gl, CanvasToy.AttachmentType.Texture));
+            CanvasToy.Graphics.configTexture(this.gl, this.gBuffer.attachments.depth.targetTexture
+                .setType(this.gl.UNSIGNED_SHORT)
+                .setFormat(this.gl.DEPTH_COMPONENT));
+            for (var _i = 0, _a = this.gBuffer.extras; _i < _a.length; _i++) {
+                var colorAttach = _a[_i];
+                CanvasToy.Graphics.configTexture(this.gl, colorAttach.targetTexture
+                    .setType(this.gl.FLOAT)
+                    .setFormat(this.gl.RGBA));
+            }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.gBuffer.attachments.depth.targetTexture.glTexture);
+            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gBuffer.attachments.depth.targetTexture.format, this.gl.canvas.width, this.gl.canvas.height, 0, this.gBuffer.attachments.depth.targetTexture.format, this.gBuffer.attachments.depth.targetTexture.type, null);
+            this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gBuffer.attachments.depth.attachmentCode(this.gl), this.gl.TEXTURE_2D, this.gBuffer.attachments.depth.targetTexture.glTexture, 0);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+            for (var _b = 0, _c = this.gBuffer.extras; _b < _c.length; _b++) {
+                var attachment = _c[_b];
+                this.gl.bindTexture(this.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
+                this.gl.texImage2D(this.gl.TEXTURE_2D, 0, attachment.targetTexture.format, this.gl.canvas.width, this.gl.canvas.height, 0, attachment.targetTexture.format, attachment.targetTexture.type, null);
+                this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, attachment.attachmentCode(this.ext.draw_buffer), this.gl.TEXTURE_2D, attachment.targetTexture.glTexture, 0);
+                this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+            }
+            CanvasToy.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer, this.ext);
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
+            this.ext.draw_buffer.drawBuffersWEBGL([
+                this.ext.draw_buffer.COLOR_ATTACHMENT0_WEBGL,
+                this.ext.draw_buffer.COLOR_ATTACHMENT1_WEBGL,
+                this.ext.draw_buffer.COLOR_ATTACHMENT2_WEBGL,
+                this.ext.draw_buffer.COLOR_ATTACHMENT3_WEBGL,
+            ]);
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            for (var _d = 0, _e = scene.objects; _d < _e.length; _d++) {
+                var object = _e[_d];
+                if (object instanceof CanvasToy.Mesh) {
+                    var geometryProgram = new CanvasToy.Program(this.gl, {
+                        vertexShader: CanvasToy.interploters__deferred__geometry_vert,
+                        fragmentShader: CanvasToy.interploters__deferred__geometry_frag,
+                    }, CanvasToy.defaultProgramPass);
+                    geometryProgram.deleteUniform("materialDiff")
+                        .deleteUniform("materialSpec");
+                    geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
+                    geometryProgram.make(scene);
+                    this.geometryPass[object] = geometryProgram;
+                }
+            }
+        };
+        DeferredProcessor.prototype.gBufferProcess = function () {
         };
         return DeferredProcessor;
     }());
@@ -1864,8 +1992,9 @@ var CanvasToy;
 var CanvasToy;
 (function (CanvasToy) {
     var ForwardProcessor = (function () {
-        function ForwardProcessor(gl, scene, camera) {
+        function ForwardProcessor(gl, ext, scene, camera) {
             this.gl = gl;
+            this.ext = ext;
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
                 if (object instanceof CanvasToy.Mesh) {
@@ -1876,6 +2005,8 @@ var CanvasToy;
             scene.programSetUp = true;
         }
         ForwardProcessor.prototype.process = function (scene, camera, materials) {
+            this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
                 this.renderObject(camera, object);
@@ -1934,9 +2065,7 @@ var CanvasToy;
             }
         };
         ForwardProcessor.prototype.makeMeshPrograms = function (scene, mesh, camera) {
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.geometry.faces.data), this.gl.STATIC_DRAW);
-            CanvasToy.copyDataToVertexBuffer(this.gl, mesh.geometry);
+            CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, mesh.geometry);
             if (mesh.materials.length > 1) {
                 this.gl.enable(this.gl.BLEND);
                 this.gl.blendFunc(this.gl.SRC_COLOR, this.gl.ONE_MINUS_SRC_COLOR);
@@ -2004,6 +2133,8 @@ var CanvasToy;
             this.ext = {
                 depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
                 draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
+                texture_float: this.gl.getExtension("OES_texture_float"),
+                texture_float_linear: this.gl.getExtension("OES_texture_float_linear"),
             };
             this.initMatrix();
             this.gl.clearDepth(1.0);
@@ -2039,7 +2170,7 @@ var CanvasToy;
                             var promise = textureGetter(_material);
                             if (!!promise) {
                                 promises.push(promise.then(function (texture) {
-                                    _this.configTexture(texture);
+                                    CanvasToy.Graphics.configTexture(_this.gl, texture);
                                 }));
                             }
                         }
@@ -2049,7 +2180,6 @@ var CanvasToy;
             return Promise.all(promises);
         };
         Renderer.prototype.render = function (scene, camera) {
-            var _this = this;
             camera.adaptTargetRadio(this.canvas);
             if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
@@ -2069,22 +2199,12 @@ var CanvasToy;
                     }
                 }
             }
-            var processor = new CanvasToy.ForwardProcessor(this.gl, scene, camera);
+            var processor = new CanvasToy.DeferredProcessor(this.gl, this.ext, scene, camera);
             scene.programSetUp = true;
             this.renderQueue.push(function (deltaTime) {
                 scene.update(deltaTime);
-                _this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
                 processor.process(scene, camera, materials);
             });
-        };
-        Renderer.prototype.configTexture = function (texture) {
-            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
-            this.gl.bindTexture(texture.target, texture.glTexture);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_S, texture.wrapS);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_T, texture.wrapT);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MAG_FILTER, texture.magFilter);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MIN_FILTER, texture.minFilter);
-            texture.setUpTextureData(this.gl);
         };
         Renderer.prototype.renderLight = function (light, scene) {
         };
@@ -2244,17 +2364,6 @@ var CanvasToy;
         }
     }
     CanvasToy.mixin = mixin;
-    function copyDataToVertexBuffer(gl, geometry) {
-        for (var name_2 in geometry.attributes) {
-            var attribute = geometry.attributes[name_2];
-            if (attribute !== undefined) {
-                gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                console.log(name_2 + " buffer size: ", "" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
-            }
-        }
-    }
-    CanvasToy.copyDataToVertexBuffer = copyDataToVertexBuffer;
     function initWebwebglContext(canvas) {
         var gl = undefined;
         try {
@@ -2303,13 +2412,15 @@ var CanvasToy;
         }
         return shader;
     }
-    function linkShader(gl, vertexShader, fragmentShader) {
+    function linkShader(gl, vertexShader, fragmentShader, vertexSource, fragmentSource) {
         var shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
         gl.linkProgram(shaderProgram);
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
             console.error("error: link shader program failed.\n" + gl.getProgramInfoLog(shaderProgram));
+            console.error("vertex:\n" + vertexSource);
+            console.error("fragment:\n" + fragmentSource);
         }
         return shaderProgram;
     }
@@ -2317,7 +2428,7 @@ var CanvasToy;
     function createEntileShader(gl, vertexShaderSource, fragmentShaderSource) {
         var vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
         var fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
-        return linkShader(gl, vertShader, fragShader);
+        return linkShader(gl, vertShader, fragShader, vertexShaderSource, fragmentShaderSource);
     }
     CanvasToy.createEntileShader = createEntileShader;
 })(CanvasToy || (CanvasToy = {}));

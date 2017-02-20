@@ -1,13 +1,17 @@
 /// <reference path="../../Scene.ts"/>
 /// <reference path="../../cameras/Camera.ts"/>
+/// <reference path="../IExtension.ts"/>
 
 namespace CanvasToy {
     export class ForwardProcessor implements IProcessor {
 
         public readonly gl: WebGLRenderingContext;
 
-        constructor(gl: WebGLRenderingContext, scene: Scene, camera: Camera) {
+        public readonly ext: WebGLExtension;
+
+        constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
             this.gl = gl;
+            this.ext = ext;
             for (const object of scene.objects) {
                 if (object instanceof Mesh) {
                     const mesh = object as Mesh;
@@ -18,6 +22,13 @@ namespace CanvasToy {
         }
 
         public process(scene: Scene, camera: Camera, materials: IMaterial[]) {
+            this.gl.clearColor(
+                scene.clearColor[0],
+                scene.clearColor[1],
+                scene.clearColor[2],
+                scene.clearColor[3],
+            );
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
             for (const object of scene.objects) {
                 this.renderObject(camera, object);
             }
@@ -72,11 +83,7 @@ namespace CanvasToy {
 
         private makeMeshPrograms(scene: Scene, mesh: Mesh, camera: Camera) {
 
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
-                new Uint16Array(mesh.geometry.faces.data), this.gl.STATIC_DRAW);
-
-            copyDataToVertexBuffer(this.gl, mesh.geometry);
+            Graphics.copyDataToVertexBuffer(this.gl, mesh.geometry);
 
             if (mesh.materials.length > 1) {
                 this.gl.enable(this.gl.BLEND);

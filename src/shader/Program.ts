@@ -73,7 +73,8 @@ namespace CanvasToy {
         }> = [];
         public vertexPrecision: string = "highp";
         public fragmentPrecision: string = "mediump";
-        public prefix = {};
+
+        public extensionStatements: string[] = [];
 
         public definesFromMaterial: string[] = [];
 
@@ -119,9 +120,11 @@ namespace CanvasToy {
             }
             this.webGlProgram = createEntileShader(
                 this.gl,
-                "precision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
+                this.extensionStatements.join("\n")
+                + "\nprecision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
                 + this.source.vertexShader,
-                "precision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
+                this.extensionStatements.join("\n")
+                + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
                 + this.source.fragmentShader);
 
             const componets = this.passFunctions;
@@ -203,7 +206,7 @@ namespace CanvasToy {
         public addTexture(sampler: string, getter: (mesh, camera, material) => Texture) {
             const unit = this.textures.length;
             this.addUniform(sampler, { type: DataType.int, updator: () => unit });
-            this.textures.push({sampler, getter, location : this.gl.getUniformLocation(this.webGlProgram, sampler)});
+            this.textures.push({ sampler, getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
         }
 
         public addUniform(nameInShader, uniform: IUniform) {
@@ -279,6 +282,9 @@ namespace CanvasToy {
             if (this.gl === undefined || this.gl === null) {
                 console.error("WebGLRenderingContext has not been initialize!");
                 return null;
+            }
+            if (!this.webGlProgram) {
+                console.warn("program invalid");
             }
             const result = this.gl.getUniformLocation(this.webGlProgram, name);
             if (result === null) {

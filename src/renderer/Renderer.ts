@@ -1,5 +1,6 @@
 /// <reference path="../textures/Texture.ts"/>
 /// <reference path="../materials/Material.ts"/>
+/// <reference path="./GraphicsUtils.ts"/>
 
 namespace CanvasToy {
 
@@ -9,10 +10,7 @@ namespace CanvasToy {
 
         public readonly gl: WebGLRenderingContext = null;
 
-        public readonly ext: {
-            depth_texture: WEBGL_depth_texture,
-            draw_buffer: WebGLDrawBuffers,
-        };
+        public readonly ext: WebGLExtension;
 
         public preloadRes: any[] = [];
 
@@ -46,6 +44,8 @@ namespace CanvasToy {
             this.ext = {
                 depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
                 draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
+                texture_float: this.gl.getExtension("OES_texture_float"),
+                texture_float_linear : this.gl.getExtension("OES_texture_float_linear"),
             };
             this.initMatrix();
             this.gl.clearDepth(1.0);
@@ -160,7 +160,7 @@ namespace CanvasToy {
                             const promise = textureGetter(_material);
                             if (!!promise) {
                                 promises.push(promise.then((texture) => {
-                                    this.configTexture(texture);
+                                    Graphics.configTexture(this.gl, texture);
                                 }));
                             }
                         }
@@ -193,29 +193,13 @@ namespace CanvasToy {
             }
 
             // TODO: Dynamic processor strategy
-            const processor = new ForwardProcessor(this.gl, scene, camera);
+            const processor = new DeferredProcessor(this.gl, this.ext, scene, camera);
 
             scene.programSetUp = true;
             this.renderQueue.push((deltaTime: number) => {
                 scene.update(deltaTime);
-                this.gl.clearColor(
-                    scene.clearColor[0],
-                    scene.clearColor[1],
-                    scene.clearColor[2],
-                    scene.clearColor[3],
-                );
                 processor.process(scene, camera, materials);
             });
-        }
-
-        public configTexture(texture: Texture) {
-            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
-            this.gl.bindTexture(texture.target, texture.glTexture);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_S, texture.wrapS);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_WRAP_T, texture.wrapT);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MAG_FILTER, texture.magFilter);
-            this.gl.texParameteri(texture.target, this.gl.TEXTURE_MIN_FILTER, texture.minFilter);
-            texture.setUpTextureData(this.gl);
         }
 
         private renderLight(light, scene) {
