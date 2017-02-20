@@ -15,18 +15,6 @@ namespace CanvasToy {
         }
     }
 
-    export function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry) {
-        for (const name in geometry.attributes) {
-            const attribute: Attribute = geometry.attributes[name];
-            if (attribute !== undefined) {
-                gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                console.log(`${name} buffer size: `,
-                    `${gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE)}`);
-            }
-        }
-    }
-
     export function initWebwebglContext(canvas): WebGLRenderingContext {
         let gl = undefined;
         try {
@@ -95,6 +83,8 @@ namespace CanvasToy {
         gl: WebGLRenderingContext,
         vertexShader: WebGLShader,
         fragmentShader: WebGLShader,
+        vertexSource: string,
+        fragmentSource: string,
     ): WebGLProgram {
         const shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
@@ -102,6 +92,8 @@ namespace CanvasToy {
         gl.linkProgram(shaderProgram);
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
             console.error("error: link shader program failed.\n" + gl.getProgramInfoLog(shaderProgram));
+            console.error("vertex:\n" + vertexSource);
+            console.error("fragment:\n" + fragmentSource);
         }
         return shaderProgram;
     };
@@ -112,6 +104,6 @@ namespace CanvasToy {
     ): WebGLProgram {
         const vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
         const fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
-        return linkShader(gl, vertShader, fragShader);
+        return linkShader(gl, vertShader, fragShader, vertexShaderSource, fragmentShaderSource);
     }
 }

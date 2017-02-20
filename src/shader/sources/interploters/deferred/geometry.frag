@@ -1,10 +1,10 @@
-#extension GL_EXT_draw_buffers : require
+uniform vec3 ambient;
 
 #ifdef OPEN_LIGHT
 uniform vec4 eyePos;
 varying vec3 vNormal;
 varying vec4 vPosition;
-varying vec4 vDepth;
+varying float vDepth;
 #endif
 
 #ifdef _MAIN_TEXTURE
@@ -19,16 +19,19 @@ varying vec2 vNormalUV;
 
 void main () {
 
-#ifdef _MAIN_TEXTURE
-    gl_FragColor = gl_FragColor * texture2D(uMainTexture, vMainUV);
-#endif
 #ifdef OPEN_LIGHT
     vec3 normal = normalize(vNormal);
-    vec3 totalLighting = ambient;
-    //normal, position, depth, color
-    gl_FragData[0] = vec4(vec3(vDepth), 1.0);
-    gl_FragData[1] = vec4(normalize(vNormal.xyz), 1.0);
-    gl_FragData[2] = vPosition;
-    gl_FragData[3] = vec4(texture2D(uMainTexture, vMainUV).xyz, 1.0);
+    // normal, position, color
+#ifdef _NORMAL_TEXTURE
+    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);
+#else
+    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);
+#endif
+    gl_FragData[1] = vPosition;
+#ifdef _MAIN_TEXTURE
+    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);
+#else
+    gl_FragData[2] = vec4(ambient, 1.0);
+#endif
 #endif
 }

@@ -11,7 +11,7 @@ uniform mat4 normalMatrix;
 attribute vec3 aNormal;
 varying vec3 vNormal;
 varying vec4 vPosition;
-varying vec4 vDepth;
+varying float vDepth;
 #endif
 
 void main (){
