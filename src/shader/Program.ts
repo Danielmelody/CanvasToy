@@ -3,8 +3,8 @@
 namespace CanvasToy {
 
     export interface IProgramSource {
-        vertexShader?: string;
-        fragmentShader?: string;
+        vertexShader: string;
+        fragmentShader: string;
     }
 
     export interface IProgramPass {
@@ -198,11 +198,6 @@ namespace CanvasToy {
             return this;
         }
 
-        public deleteUniform(nameInShader) {
-            this.uniforms[nameInShader] = undefined;
-            return this;
-        }
-
         public addTexture(sampler: string, getter: (mesh, camera, material) => Texture) {
             const unit = this.textures.length;
             this.addUniform(sampler, { type: DataType.int, updator: () => unit });
@@ -258,6 +253,11 @@ namespace CanvasToy {
                     break;
                 default: break;
             }
+        }
+
+        public deleteUniform(nameInShader) {
+            this.uniforms[nameInShader] = undefined;
+            return this;
         }
 
         public deleteAttribute(nameInShader: string) {

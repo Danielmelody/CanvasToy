@@ -12,59 +12,9 @@ namespace CanvasToy {
         white: vec4.fromValues(1, 1, 1, 1),
     };
 
-    export interface IMaterial {
-        mainTexture?: Texture;
-        color?: Vec3Array;
-        diffuse?: Vec3Array;
-        specular?: Vec3Array;
-        interplotationMethod?: InterplotationMethod;
-        lightingMode?: LightingMode;
-        program?: Program;
-    }
-
-    export abstract class Material implements IMaterial {
-
+    export abstract class Material {
         public dirty = true;
-
+        public defines: string[] = [];
         public program: Program;
-
-        @asDefine("_MAIN_TEXTURE")
-        @readyRequire
-        public mainTexture: Texture;
-
-        public ambient: Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
-
-        public diffuse: Vec3Array = vec3.fromValues(0.8, 0.8, 0.8);
-
-        public specular: Vec3Array = vec3.fromValues(1, 1, 1);
-
-        public specularExponent: number = 1;
-
-        @readyRequire
-        public specularMap: Texture;
-
-        public transparency: number = 0;
-
-        @readyRequire
-        public alphaMap: Texture;
-
-        @readyRequire
-        public bumpMap: Texture;
-
-        @readyRequire
-        public displamentMap: Texture;
-
-        @readyRequire
-        public stencilMap: Texture;
-
-        public reflactivity: number;
-
-        constructor(gl: WebGLRenderingContext, paramter: IMaterial = {}) {
-            if (!!paramter) {
-                for (const name in paramter) {
-                    this[name] = paramter[name];
-                }
-            }
-        }
     }
 }

@@ -3,6 +3,6 @@
 
 namespace CanvasToy {
     export interface IProcessor {
-        process(scene: Scene, camera: Camera, matriels: IMaterial[]);
+        process(scene: Scene, camera: Camera, matriels: Material[]);
     };
 }

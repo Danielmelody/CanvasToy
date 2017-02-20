@@ -16,7 +16,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     }).then((num) => {
         console.log(`promise resolve ${num}`);
     });
-    CanvasToy.OBJLoader.load(renderer.gl, "basic/models/teapot/teapot.obj")
+    CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj")
         .then((object) => {
             scene.addObject(object);
             scene.addObject(camera);

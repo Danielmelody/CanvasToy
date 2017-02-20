@@ -1,6 +1,7 @@
 /// <reference path="../textures/Texture.ts"/>
 /// <reference path="../materials/Material.ts"/>
 /// <reference path="./GraphicsUtils.ts"/>
+/// <reference path="./IEXtension.ts"/>
 
 namespace CanvasToy {
 
@@ -36,7 +37,7 @@ namespace CanvasToy {
 
         private stopped: boolean = false;
 
-        private materials: IMaterial[] = [];
+        private materials: Material[] = [];
 
         constructor(canvas: HTMLCanvasElement) {
             this.canvas = canvas;
@@ -45,7 +46,7 @@ namespace CanvasToy {
                 depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
                 draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
                 texture_float: this.gl.getExtension("OES_texture_float"),
-                texture_float_linear : this.gl.getExtension("OES_texture_float_linear"),
+                texture_float_linear: this.gl.getExtension("OES_texture_float_linear"),
             };
             this.initMatrix();
             this.gl.clearDepth(1.0);
@@ -160,7 +161,7 @@ namespace CanvasToy {
                             const promise = textureGetter(_material);
                             if (!!promise) {
                                 promises.push(promise.then((texture) => {
-                                    Graphics.configTexture(this.gl, texture);
+                                    texture.setUpTextureData(this.gl);
                                 }));
                             }
                         }
@@ -193,7 +194,7 @@ namespace CanvasToy {
             }
 
             // TODO: Dynamic processor strategy
-            const processor = new DeferredProcessor(this.gl, this.ext, scene, camera);
+            const processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
 
             scene.programSetUp = true;
             this.renderQueue.push((deltaTime: number) => {

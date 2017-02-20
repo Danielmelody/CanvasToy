@@ -1,4 +1,5 @@
 /// <reference path="../CanvasToy.ts"/>
+/// <reference path="../shader/Program.ts"/>
 
 namespace CanvasToy {
 

@@ -29,7 +29,7 @@ namespace CanvasToy {
             scene.programSetUp = true;
         }
 
-        public process(scene: Scene, camera: Camera, materials: IMaterial[]) {
+        public process(scene: Scene, camera: Camera, materials: Material[]) {
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.depthMask(true);
             this.gl.clearDepth(1.0);
@@ -75,18 +75,17 @@ namespace CanvasToy {
                 new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT2_WEBGL)
                     .setType(this.gl, AttachmentType.Texture),
             );
-            Graphics.configTexture(this.gl, this.gBuffer.attachments.depth.targetTexture
+            this.gBuffer.attachments.depth.targetTexture
                 .setType(this.gl.UNSIGNED_SHORT)
-                .setFormat(this.gl.DEPTH_COMPONENT));
+                .setFormat(this.gl.DEPTH_COMPONENT)
+                .setUpTextureData(this.gl);
             for (const colorAttach of this.gBuffer.extras) {
-                Graphics.configTexture(
-                    this.gl,
                     colorAttach.targetTexture
                         .setType(this.gl.FLOAT)
                         .setFormat(this.gl.RGBA)
                         .setMinFilter(this.gl.LINEAR)
-                        .setMagFilter(this.gl.LINEAR),
-                );
+                        .setMagFilter(this.gl.LINEAR)
+                        .setUpTextureData(this.gl);
             }
 
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);

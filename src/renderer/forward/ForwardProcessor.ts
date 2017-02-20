@@ -21,7 +21,7 @@ namespace CanvasToy {
             scene.programSetUp = true;
         }
 
-        public process(scene: Scene, camera: Camera, materials: IMaterial[]) {
+        public process(scene: Scene, camera: Camera, materials: Material[]) {
             this.gl.clearColor(
                 scene.clearColor[0],
                 scene.clearColor[1],
