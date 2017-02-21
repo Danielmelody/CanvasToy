@@ -10,26 +10,10 @@ namespace CanvasToy {
             let currentMaterial: StandardMaterial = null;
             const home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
             return fetchRes(baseurl).then((content: string) => {
-                // remove comment of .obj file
-                // content = content.replace(MTLLoader.removeCommentPattern, "");
-                // const textureLines: string[] = content.match(MTLLoader.mapPattern);
-                // const texturePromises = [];
-                // const mapPerLine = new RegExp(MTLLoader.mapPattern);
-                // if (!!textureLines) {
-                //     for (const line of textureLines) {
-                //         const url = line.match(MTLLoader.mapSinglePattern)[2];
-                //         texturePromises.push(MTLLoader.fetchTexture(home + url).then((image) => {
-                //             url] = image;
-                //         }));
-                //     }
-                // }
-                // return Promise.all(texturePromises)
-                //     .then((test) => {
                 content.split("\n").forEach((line) => {
                     currentMaterial = MTLLoader.handleSingleLine(gl, home, line, materials, currentMaterial);
                 });
                 return Promise.resolve(materials);
-                // });
             });
         }
 
@@ -43,19 +27,6 @@ namespace CanvasToy {
 
         protected static mapPattern = /(map_[^\s]+|bump|disp|decal)\s.+/mg;
         protected static mapSinglePattern = /(map_[^\s]+|bump|disp|decal)\s([^\s]+)/m;
-
-        private static fetchTexture(url: string) {
-            return new Promise((resolve, reject) => {
-                const image = new Image();
-                image.onload = () => {
-                    resolve(image);
-                };
-                image.onerror = () => {
-                    reject(new Error("No such image file " + url));
-                };
-                image.src = url;
-            });
-        }
 
         private static handleSingleLine(
             gl: WebGLRenderingContext,
@@ -82,7 +53,7 @@ namespace CanvasToy {
                 case "Ks":
                     currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
                     break;
-                case "Ds":
+                case "Ns":
                     currentMaterial.specularExponent =
                         MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
                     break;

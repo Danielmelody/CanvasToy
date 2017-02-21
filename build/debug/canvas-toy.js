@@ -359,12 +359,13 @@ var CanvasToy;
         faces: function (mesh) { return mesh.geometry.faces; },
         textures: {
             uMainTexture: function (mesh, camera, material) { return material.mainTexture; },
+            uCubeTexture: function (mesh, camera, material) { return material.reflectionMap; },
         },
         uniforms: {
             modelViewProjectionMatrix: {
                 type: CanvasToy.DataType.mat4,
                 updator: function (mesh, camera) {
-                    return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.objectToWorldMatrix, mesh.matrix));
+                    return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix));
                 },
             },
             materialDiff: {
@@ -396,6 +397,12 @@ var CanvasToy;
                     return vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1);
                 },
             },
+            reflectivity: {
+                type: CanvasToy.DataType.float,
+                updator: function (mesh, camera, material) {
+                    return material.reflectivity;
+                },
+            },
         },
         attributes: {
             position: function (mesh) { return mesh.geometry.attributes.position; },
@@ -410,7 +417,8 @@ var CanvasToy;
     var Object3d = (function () {
         function Object3d(tag) {
             this.children = [];
-            this.objectToWorldMatrix = mat4.create();
+            this.worldToObjectMatrix = mat4.create();
+            this._asyncFinished = Promise.resolve(this);
             this._matrix = mat4.create();
             this._parent = null;
             this._localMatrix = mat4.create();
@@ -625,8 +633,14 @@ var CanvasToy;
         };
         Object3d.prototype.handleUniformProperty = function () {
         };
+        Object3d.prototype.asyncFinished = function () {
+            return this._asyncFinished;
+        };
+        Object3d.prototype.setAsyncFinished = function (promise) {
+            this._asyncFinished = promise;
+        };
         Object3d.prototype.genOtherMatrixs = function () {
-            mat4.invert(this.objectToWorldMatrix, this.matrix);
+            mat4.invert(this.worldToObjectMatrix, this.matrix);
         };
         Object3d.prototype.composeFromLocalMatrix = function () {
             mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
@@ -642,7 +656,7 @@ var CanvasToy;
             mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
             this.genOtherMatrixs();
             if (!!this._parent) {
-                mat4.mul(this._localMatrix, this._parent.objectToWorldMatrix, this.matrix);
+                mat4.mul(this._localMatrix, this._parent.worldToObjectMatrix, this.matrix);
             }
             else {
                 this._localMatrix = mat4.clone(this._matrix);
@@ -970,8 +984,8 @@ var CanvasToy;
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
-    CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\nuniform mat4 cameraInverseMatrix;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n    vec3 color;\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 worldPosition = (cameraInverseMatrix * vPosition).xyz;\n    vec3 viewDir = worldPosition - eyePos.xyz;\n    vec3 skyUV = reflect(viewDir, vNormal);\n    vec3 previous = color;\n    color = mix(textureCube(uCubeTexture, skyUV).xyz, previous , 0.4);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+    CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     CanvasToy.interploters__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
     CanvasToy.interploters__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
 })(CanvasToy || (CanvasToy = {}));
@@ -982,7 +996,18 @@ var CanvasToy;
 (function (CanvasToy) {
     var Texture = (function () {
         function Texture(gl, url) {
+            var _this = this;
             this.isReadyToUpdate = false;
+            var image = this._image;
+            this.setAsyncFinished(new Promise(function (resolve, reject) {
+                if (!image) {
+                    resolve(_this);
+                }
+                else {
+                    image.onload = function () { return resolve(_this); };
+                    image.onerror = function () { return reject(_this); };
+                }
+            }));
             this.setTarget(gl.TEXTURE_2D)
                 .setFormat(gl.RGB)
                 .setWrapS(gl.CLAMP_TO_EDGE)
@@ -1080,19 +1105,13 @@ var CanvasToy;
             this._type = _type;
             return this;
         };
-        Texture.prototype.asyncFinished = function () {
-            var _this = this;
-            var image = this._image;
-            return new Promise(function (resolve, reject) {
-                if (!image) {
-                    resolve(_this);
-                }
-                else {
-                    image.onload = function () { return resolve(_this); };
-                    image.onerror = function () { return reject(_this); };
-                }
-            });
+        Texture.prototype.setAsyncFinished = function (promise) {
+            this._asyncFinished = promise;
         };
+        Texture.prototype.asyncFinished = function () {
+            return this._asyncFinished;
+        };
+        ;
         Texture.prototype.setUpTextureData = function (gl) { };
         return Texture;
     }());
@@ -1416,6 +1435,7 @@ var CanvasToy;
             _this.specular = vec3.fromValues(1, 1, 1);
             _this.specularExponent = 1;
             _this.transparency = 0;
+            _this.reflactivity = 0.5;
             if (!!paramter) {
                 for (var name_1 in paramter) {
                     _this[name_1] = paramter[name_1];
@@ -1445,6 +1465,10 @@ var CanvasToy;
     __decorate([
         CanvasToy.readyRequire
     ], StandardMaterial.prototype, "stencilMap", void 0);
+    __decorate([
+        CanvasToy.asDefine("_ENVIRONMENT_MAP"),
+        CanvasToy.readyRequire
+    ], StandardMaterial.prototype, "reflectionMap", void 0);
     CanvasToy.StandardMaterial = StandardMaterial;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1461,18 +1485,6 @@ var CanvasToy;
                     currentMaterial = MTLLoader.handleSingleLine(gl, home, line, materials, currentMaterial);
                 });
                 return Promise.resolve(materials);
-            });
-        };
-        MTLLoader.fetchTexture = function (url) {
-            return new Promise(function (resolve, reject) {
-                var image = new Image();
-                image.onload = function () {
-                    resolve(image);
-                };
-                image.onerror = function () {
-                    reject(new Error("No such image file " + url));
-                };
-                image.src = url;
             });
         };
         MTLLoader.handleSingleLine = function (gl, home, line, materials, currentMaterial) {
@@ -1494,7 +1506,7 @@ var CanvasToy;
                 case "Ks":
                     currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
                     break;
-                case "Ds":
+                case "Ns":
                     currentMaterial.specularExponent =
                         MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
                     break;
@@ -1565,16 +1577,19 @@ var CanvasToy;
         function OBJLoader() {
         }
         OBJLoader.load = function (gl, url) {
-            return CanvasToy.fetchRes(url).then(function (content) {
+            var container = new CanvasToy.Object3d();
+            container.setAsyncFinished(CanvasToy.fetchRes(url).then(function (content) {
                 content = content.replace(OBJLoader.commentPattern, "");
                 var home = url.substr(0, url.lastIndexOf("/") + 1);
                 var materialLibs = content.match(OBJLoader.mtlLibPattern);
                 var materialsMixin = {};
                 var promises = [];
-                for (var _i = 0, materialLibs_1 = materialLibs; _i < materialLibs_1.length; _i++) {
-                    var mtlLib = materialLibs_1[_i];
-                    var mtlurl = home + mtlLib.match(OBJLoader.mtlLibSinglePattern)[1];
-                    promises.push(CanvasToy.MTLLoader.load(gl, mtlurl));
+                if (materialLibs != null) {
+                    for (var _i = 0, materialLibs_1 = materialLibs; _i < materialLibs_1.length; _i++) {
+                        var mtlLib = materialLibs_1[_i];
+                        var mtlurl = home + mtlLib.match(OBJLoader.mtlLibSinglePattern)[1];
+                        promises.push(CanvasToy.MTLLoader.load(gl, mtlurl));
+                    }
                 }
                 return Promise.all(promises).then(function (materialLibs) {
                     for (var _i = 0, materialLibs_2 = materialLibs; _i < materialLibs_2.length; _i++) {
@@ -1587,10 +1602,11 @@ var CanvasToy;
                     var unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
                     var unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
                     var unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
-                    var container = OBJLoader.buildUpMeshes(gl, content, materialsMixin, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                    OBJLoader.buildUpMeshes(gl, container, content, materialsMixin, unIndexedPositions, unIndexedUVs, unIndexedNormals);
                     return Promise.resolve(container);
                 });
-            });
+            }));
+            return container;
         };
         OBJLoader.praiseAttibuteLines = function (lines) {
             var result = [];
@@ -1614,8 +1630,7 @@ var CanvasToy;
                 forEachFace(triangleFace);
             }
         };
-        OBJLoader.buildUpMeshes = function (gl, content, materials, unIndexedPositions, unIndexedUVs, unIndexedNormals) {
-            var container = new CanvasToy.Object3d();
+        OBJLoader.buildUpMeshes = function (gl, container, content, materials, unIndexedPositions, unIndexedUVs, unIndexedNormals) {
             var objects = content.split(OBJLoader.objectSplitPattern);
             objects.splice(0, 1);
             objects.forEach(function (objectContent) {
@@ -1652,7 +1667,6 @@ var CanvasToy;
                 var mesh = new CanvasToy.Mesh(geometry, meshMaterials);
                 mesh.setParent(container);
             });
-            return container;
         };
         return OBJLoader;
     }());
@@ -1705,9 +1719,12 @@ var CanvasToy;
                     modelViewProjectionMatrix: {
                         type: CanvasToy.DataType.mat4,
                         updator: function (mesh, camera) {
-                            return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.objectToWorldMatrix, mesh.matrix));
+                            return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix));
                         },
                     },
+                },
+                attributes: {
+                    position: function (mesh) { return mesh.geometry.attributes.position; },
                 },
             });
             return _this;
@@ -2187,52 +2204,72 @@ var CanvasToy;
         };
         Renderer.prototype.handleResource = function (scene) {
             var _this = this;
-            var promises = [];
+            var objectPromises = [];
+            var _loop_3 = function (object) {
+                var promise = object.asyncFinished();
+                if (!!promise) {
+                    objectPromises.push(promise.then(function () {
+                        for (var _i = 0, _a = object.children; _i < _a.length; _i++) {
+                            var child = _a[_i];
+                            scene.addObject(child);
+                        }
+                    }));
+                }
+            };
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
-                if (object instanceof CanvasToy.Mesh) {
-                    for (var _b = 0, _c = object.materials; _b < _c.length; _b++) {
-                        var material = _c[_b];
-                        var _material = material;
-                        for (var _d = 0, _e = _material.asyncResources; _d < _e.length; _d++) {
-                            var textureGetter = _e[_d];
-                            var promise = textureGetter(_material);
-                            if (!!promise) {
-                                promises.push(promise.then(function (texture) {
-                                    texture.setUpTextureData(_this.gl);
-                                }));
+                _loop_3(object);
+            }
+            return Promise.all(objectPromises).then(function () {
+                var materialPromises = [];
+                for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                    var object = _a[_i];
+                    if (object instanceof CanvasToy.Mesh) {
+                        for (var _b = 0, _c = object.materials; _b < _c.length; _b++) {
+                            var material = _c[_b];
+                            var _material = material;
+                            for (var _d = 0, _e = _material.asyncResources; _d < _e.length; _d++) {
+                                var textureGetter = _e[_d];
+                                var promise = textureGetter(_material);
+                                if (!!promise) {
+                                    materialPromises.push(promise.then(function (texture) {
+                                        texture.setUpTextureData(_this.gl);
+                                    }));
+                                }
                             }
                         }
                     }
                 }
-            }
-            return Promise.all(promises);
+                return Promise.all(materialPromises);
+            });
         };
         Renderer.prototype.render = function (scene, camera) {
+            var _this = this;
             camera.adaptTargetRadio(this.canvas);
             if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
                 return;
             }
             this.scenes.push(scene);
-            this.handleResource(scene);
-            var materials = [];
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var obj = _a[_i];
-                if (obj instanceof CanvasToy.Mesh) {
-                    var mesh = obj;
-                    for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
-                        var material = _c[_b];
-                        if (materials.indexOf(material) === -1) {
-                            materials.push(material);
+            this.handleResource(scene).then(function () {
+                var materials = [];
+                for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                    var obj = _a[_i];
+                    if (obj instanceof CanvasToy.Mesh) {
+                        var mesh = obj;
+                        for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
+                            var material = _c[_b];
+                            if (materials.indexOf(material) === -1) {
+                                materials.push(material);
+                            }
                         }
                     }
                 }
-            }
-            var processor = new CanvasToy.ForwardProcessor(this.gl, this.ext, scene, camera);
-            scene.programSetUp = true;
-            this.renderQueue.push(function (deltaTime) {
-                scene.update(deltaTime);
-                processor.process(scene, camera, materials);
+                var processor = new CanvasToy.ForwardProcessor(_this.gl, _this.ext, scene, camera);
+                scene.programSetUp = true;
+                _this.renderQueue.push(function (deltaTime) {
+                    scene.update(deltaTime);
+                    processor.process(scene, camera, materials);
+                });
             });
         };
         Renderer.prototype.renderLight = function (light, scene) {
@@ -2325,6 +2362,10 @@ var CanvasToy;
         function CubeTexture(gl, xposUrl, xnegUrl, yposUrl, ynegUrl, zposUrl, znegUrl) {
             var _this = _super.call(this, gl) || this;
             _this.images = [];
+            var image = _this._image;
+            _this.setAsyncFinished(Promise.all(_this.images.map(function (image) { return _this.createLoadPromise(image); })).then(function () {
+                return Promise.resolve(_this);
+            }));
             _this.setTarget(gl.TEXTURE_CUBE_MAP);
             _this.images = [0, 0, 0, 0, 0, 0].map(function () { return new Image(); });
             _this.images[0].src = xposUrl;
@@ -2356,13 +2397,6 @@ var CanvasToy;
             for (var i = 0; i < this.images.length; ++i) {
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.format, this.format, this.type, this.images[i]);
             }
-        };
-        CubeTexture.prototype.asyncFinished = function () {
-            var _this = this;
-            var image = this._image;
-            return Promise.all(this.images.map(function (image) { return _this.createLoadPromise(image); })).then(function () {
-                return Promise.resolve(_this);
-            });
         };
         CubeTexture.prototype.createLoadPromise = function (image) {
             var _this = this;

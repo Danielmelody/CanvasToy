@@ -17,6 +17,10 @@ namespace CanvasToy {
             znegUrl: string,
         ) {
             super(gl);
+            const image = this._image;
+            this.setAsyncFinished(Promise.all(this.images.map((image) => this.createLoadPromise(image))).then(() => {
+                return Promise.resolve(this);
+            }));
             this.setTarget(gl.TEXTURE_CUBE_MAP);
             this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
             this.images[0].src = xposUrl;
@@ -53,13 +57,6 @@ namespace CanvasToy {
                     this.images[i],
                 );
             }
-        }
-
-        public asyncFinished() {
-            const image = this._image;
-            return Promise.all(this.images.map((image) => this.createLoadPromise(image))).then(() => {
-                return Promise.resolve(this);
-            });
         }
 
         private createLoadPromise(image: HTMLImageElement) {

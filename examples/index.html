@@ -22,8 +22,8 @@
   var table = document.getElementById("table");
   for (var i in examples) {
       var newCanvas = document.createElement("canvas");
-      newCanvas.width = 640;
-      newCanvas.height = 360;
+      newCanvas.width = 1280;
+      newCanvas.height = 720;
       newCanvas.style.background = "black";
       table.appendChild(newCanvas);
       var renderer = examples[i](newCanvas);

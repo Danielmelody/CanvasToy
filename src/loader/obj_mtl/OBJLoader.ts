@@ -7,8 +7,9 @@ namespace CanvasToy {
 
     export class OBJLoader {
 
-        public static load(gl: WebGLRenderingContext, url: string): Promise<Object3d> {
-            return fetchRes(url).then((content: string) => {
+        public static load(gl: WebGLRenderingContext, url: string): Object3d {
+            const container: Object3d = new Object3d();
+            container.setAsyncFinished(fetchRes(url).then((content: string) => {
                 // remove comment of .obj file
                 content = content.replace(OBJLoader.commentPattern, "");
 
@@ -18,9 +19,11 @@ namespace CanvasToy {
                 const materialsMixin = {};
                 const promises = [];
 
-                for (const mtlLib of materialLibs) {
-                    const mtlurl = home + mtlLib.match(OBJLoader.mtlLibSinglePattern)[1];
-                    promises.push(MTLLoader.load(gl, mtlurl));
+                if (materialLibs != null) {
+                    for (const mtlLib of materialLibs) {
+                        const mtlurl = home + mtlLib.match(OBJLoader.mtlLibSinglePattern)[1];
+                        promises.push(MTLLoader.load(gl, mtlurl));
+                    }
                 }
                 return Promise.all(promises).then((materialLibs) => {
                     for (const materials of materialLibs) {
@@ -32,11 +35,12 @@ namespace CanvasToy {
                     const unIndexedPositions = OBJLoader.praiseAttibuteLines(positionlines);
                     const unIndexedUVs = OBJLoader.praiseAttibuteLines(uvlines);
                     const unIndexedNormals = OBJLoader.praiseAttibuteLines(normallines);
-                    const container = OBJLoader.buildUpMeshes(
-                        gl, content, materialsMixin, unIndexedPositions, unIndexedUVs, unIndexedNormals);
+                    OBJLoader.buildUpMeshes(
+                        gl, container, content, materialsMixin, unIndexedPositions, unIndexedUVs, unIndexedNormals);
                     return Promise.resolve(container);
                 });
-            });
+            }));
+            return container;
         }
 
         protected static commentPattern = /#.*/mg;
@@ -80,13 +84,13 @@ namespace CanvasToy {
 
         protected static buildUpMeshes(
             gl: WebGLRenderingContext,
+            container: Object3d,
             content: string,
             materials: any,
             unIndexedPositions: number[][],
             unIndexedUVs: number[][],
             unIndexedNormals: number[][],
-        ): Object3d {
-            const container: Object3d = new Object3d();
+        ) {
             const objects = content.split(OBJLoader.objectSplitPattern);
             objects.splice(0, 1);
             objects.forEach((objectContent) => {
@@ -122,7 +126,6 @@ namespace CanvasToy {
                 const mesh = new Mesh(geometry, meshMaterials);
                 mesh.setParent(container);
             });
-            return container;
         }
     }
 }

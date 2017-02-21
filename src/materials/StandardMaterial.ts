@@ -42,7 +42,11 @@ namespace CanvasToy {
         @readyRequire
         public stencilMap: Texture;
 
-        public reflactivity: number;
+        public reflactivity: number = 0.5;
+
+        @asDefine("_ENVIRONMENT_MAP")
+        @readyRequire
+        public reflectionMap: CubeTexture;
 
         constructor(gl: WebGLRenderingContext, paramter: IStandardMaterial = {}) {
             super();

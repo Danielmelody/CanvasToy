@@ -8,7 +8,7 @@ namespace CanvasToy {
      * class Object3d
      * @descripton the base class of transform object
      */
-    export class Object3d {
+    export class Object3d implements IAsyncResource {
 
         public tag: string;
 
@@ -18,17 +18,19 @@ namespace CanvasToy {
 
         public depredations: string[];
 
-        public objectToWorldMatrix: Mat4Array = mat4.create();
+        public worldToObjectMatrix: Mat4Array = mat4.create();
 
         // @uniform("modelViewProjectionMatrix", DataType.mat4, (mesh: Object3d, camera: Camera) => {
         //     return mat4.multiply(
         //         mat4.create(),
         //         camera.projectionMatrix,
         //         mat4.multiply(mat4.create(),
-        //             camera.objectToWorldMatrix,
+        //             camera.worldToObjectMatrix,
         //             mesh.matrix),
         //     );
         // })
+        //
+        protected _asyncFinished: Promise<Object3d> = Promise.resolve(this);
         protected _matrix: Mat4Array = mat4.create();
 
         protected _parent: Object3d = null;
@@ -235,7 +237,7 @@ namespace CanvasToy {
         }
 
         /**
-         * Reset all global transforms { position, rotation, scaling, objectToWorldMatrix }
+         * Reset all global transforms { position, rotation, scaling, worldToObjectMatrix }
          * by parent, but keep all local transforms the same before called.
          */
         public setTransformFromParent() {
@@ -333,8 +335,16 @@ namespace CanvasToy {
             // });
         }
 
+        public asyncFinished() {
+            return this._asyncFinished;
+        }
+
+        public setAsyncFinished(promise: Promise<Object3d>) {
+            this._asyncFinished = promise;
+        }
+
         protected genOtherMatrixs() {
-            mat4.invert(this.objectToWorldMatrix, this.matrix);
+            mat4.invert(this.worldToObjectMatrix, this.matrix);
         }
 
         private composeFromLocalMatrix() {
@@ -361,7 +371,7 @@ namespace CanvasToy {
             );
             this.genOtherMatrixs();
             if (!!this._parent) {
-                mat4.mul(this._localMatrix, this._parent.objectToWorldMatrix, this.matrix);
+                mat4.mul(this._localMatrix, this._parent.worldToObjectMatrix, this.matrix);
             } else {
                 this._localMatrix = mat4.clone(this._matrix);
             }

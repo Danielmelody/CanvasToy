@@ -11,7 +11,9 @@ namespace CanvasToy {
         public readonly glTexture: WebGLTexture;
         public isReadyToUpdate: boolean = false;
 
+        protected _asyncFinished: Promise<Texture>;
         protected readonly _image: HTMLImageElement;
+
         private _target: number;
         private _format: number;
         private _wrapS: number;
@@ -24,6 +26,15 @@ namespace CanvasToy {
             gl: WebGLRenderingContext,
             url?: string,
         ) {
+            const image = this._image;
+            this.setAsyncFinished(new Promise((resolve, reject) => {
+                if (!image) {
+                    resolve(this);
+                } else {
+                    image.onload = () => resolve(this);
+                    image.onerror = () => reject(this);
+                }
+            }));
             this.setTarget(gl.TEXTURE_2D)
                 .setFormat(gl.RGB)
                 .setWrapS(gl.CLAMP_TO_EDGE)
@@ -105,17 +116,13 @@ namespace CanvasToy {
             return this;
         }
 
-        public asyncFinished() {
-            const image = this._image;
-            return new Promise((resolve, reject) => {
-                if (!image) {
-                    resolve(this);
-                } else {
-                    image.onload = () => resolve(this);
-                    image.onerror = () => reject(this);
-                }
-            });
+        public setAsyncFinished(promise: Promise<Texture>) {
+            this._asyncFinished = promise;
         }
+
+        public asyncFinished() {
+            return this._asyncFinished;
+        };
 
         public setUpTextureData(gl: WebGLRenderingContext) { }
     }

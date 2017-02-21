@@ -14,7 +14,6 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    var skybox = createSkyBox(renderer, new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/ashcanyon_rt.jpg", "resources/images/skybox/ashcanyon_lf.jpg", "resources/images/skybox/ashcanyon_up.jpg", "resources/images/skybox/ashcanyon_dn.jpg", "resources/images/skybox/ashcanyon_bk.jpg", "resources/images/skybox/ashcanyon_ft.jpg")).setParent(camera);
     var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             specular: [0.1, 0.1, 0.1],
             mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png"),
@@ -34,30 +33,35 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    scene.ambientLight = [0.2, 0.1, 0.1];
+    scene.ambientLight = [0.4, 0.4, 0.4];
     var light = new CanvasToy.PointLight();
-    light.setPosition([100, 0, 100]).setColor([1, 1, 1]);
+    light.setPosition([30, 0, 200]).setColor([1, 1, 1]).setIdensity(2);
     scene.addLight(light);
+    var skyTexture = new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/ashcanyon_rt.jpg", "resources/images/skybox/ashcanyon_lf.jpg", "resources/images/skybox/ashcanyon_up.jpg", "resources/images/skybox/ashcanyon_dn.jpg", "resources/images/skybox/ashcanyon_bk.jpg", "resources/images/skybox/ashcanyon_ft.jpg");
+    createSkyBox(renderer, skyTexture).setParent(camera);
+    scene.addObject(camera);
     var test = new Promise(function (resolve, reject) {
         resolve(100);
     }).then(function (num) {
         console.log("promise resolve " + num);
     });
-    CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj")
-        .then(function (object) {
-        scene.addObject(object);
-        scene.addObject(camera);
-        camera.translate([0, -8, 0]);
-        object.translate([0, -10, -40]);
-        var time = 0;
-        object.rotateY(Math.PI / 2);
-        object.registUpdate(function () {
-            time += 1 / 60;
-            light.translate([0, 10 * Math.cos(time * 4), 0]);
-            object.rotateY(0.01);
-        });
-        renderer.render(scene, camera);
+    var teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
+    teapot.setAsyncFinished(teapot.asyncFinished().then(function () {
+        var material = teapot.children[0].materials[0];
+        material.reflectionMap = skyTexture;
+        return Promise.resolve(teapot);
+    }));
+    scene.addObject(teapot);
+    camera.translate([0, -8, 0]);
+    teapot.translate([0, -10, -40]);
+    var time = 0;
+    teapot.rotateY(Math.PI / 2);
+    teapot.registUpdate(function () {
+        time += 1 / 60;
+        light.translate([0, 10 * Math.cos(time * 4), 0]);
+        teapot.rotateY(0.01);
     });
+    renderer.render(scene, camera);
     return renderer;
 });
 examples.push(function (canvas) {
