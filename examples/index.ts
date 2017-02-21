@@ -8,3 +8,10 @@ function onMouseOnStart(renderer: CanvasToy.Renderer) {
         renderer.stop();
     };
 }
+
+function createSkyBox(renderer: CanvasToy.Renderer, cubeTexture) {
+    return new CanvasToy.Mesh(
+        new CanvasToy.CubeGeometry(renderer.gl),
+        [new CanvasToy.SkyMaterial(renderer.gl, cubeTexture)],
+    );
+}

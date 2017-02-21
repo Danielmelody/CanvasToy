@@ -28,11 +28,14 @@ namespace CanvasToy {
                                     mat4.create(),
                                     camera.projectionMatrix,
                                     mat4.multiply(mat4.create(),
-                                        camera.objectToWorldMatrix,
+                                        camera.worldToObjectMatrix,
                                         mesh.matrix),
                                 );
                             },
                         },
+                    },
+                    attributes: {
+                        position: (mesh) => mesh.geometry.attributes.position,
                     },
                 },
             );

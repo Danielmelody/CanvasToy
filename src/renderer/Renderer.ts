@@ -152,23 +152,36 @@ namespace CanvasToy {
         }
 
         public handleResource(scene: Scene) {
-            const promises = [];
+            const objectPromises = [];
             for (const object of scene.objects) {
-                if (object instanceof Mesh) {
-                    for (const material of (object as Mesh).materials) {
-                        const _material: any = material;
-                        for (const textureGetter of _material.asyncResources) {
-                            const promise = textureGetter(_material);
-                            if (!!promise) {
-                                promises.push(promise.then((texture) => {
-                                    texture.setUpTextureData(this.gl);
-                                }));
+                const promise = object.asyncFinished();
+                if (!!promise) {
+                    objectPromises.push(promise.then(() => {
+                        for (const child of object.children) {
+                            scene.addObject(child);
+                        }
+                    }));
+                }
+            }
+            return Promise.all(objectPromises).then(() => {
+                const materialPromises = [];
+                for (const object of scene.objects) {
+                    if (object instanceof Mesh) {
+                        for (const material of (object as Mesh).materials) {
+                            const _material: any = material;
+                            for (const textureGetter of _material.asyncResources) {
+                                const promise = textureGetter(_material);
+                                if (!!promise) {
+                                    materialPromises.push(promise.then((texture) => {
+                                        texture.setUpTextureData(this.gl);
+                                    }));
+                                }
                             }
                         }
                     }
                 }
-            }
-            return Promise.all(promises);
+                return Promise.all(materialPromises);
+            });
         }
 
         public render(scene: Scene, camera: Camera) {
@@ -178,28 +191,25 @@ namespace CanvasToy {
             }
             this.scenes.push(scene);
 
-            this.handleResource(scene);
-
-            const materials = [];
-
-            for (const obj of scene.objects) {
-                if (obj instanceof Mesh) {
-                    const mesh = obj as Mesh;
-                    for (const material of mesh.materials) {
-                        if (materials.indexOf(material) === -1) {
-                            materials.push(material);
+            this.handleResource(scene).then(() => {
+                const materials = [];
+                for (const obj of scene.objects) {
+                    if (obj instanceof Mesh) {
+                        const mesh = obj as Mesh;
+                        for (const material of mesh.materials) {
+                            if (materials.indexOf(material) === -1) {
+                                materials.push(material);
+                            }
                         }
                     }
                 }
-            }
-
-            // TODO: Dynamic processor strategy
-            const processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
-
-            scene.programSetUp = true;
-            this.renderQueue.push((deltaTime: number) => {
-                scene.update(deltaTime);
-                processor.process(scene, camera, materials);
+                // TODO: Dynamic processor strategy
+                const processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
+                scene.programSetUp = true;
+                this.renderQueue.push((deltaTime: number) => {
+                    scene.update(deltaTime);
+                    processor.process(scene, camera, materials);
+                });
             });
         }
 

@@ -106,6 +106,7 @@ declare namespace CanvasToy {
         faces: (mesh: any) => any;
         textures: {
             uMainTexture: (mesh: any, camera: any, material: any) => any;
+            uCubeTexture: (mesh: any, camera: any, material: any) => any;
         };
         uniforms: {
             modelViewProjectionMatrix: {
@@ -136,6 +137,10 @@ declare namespace CanvasToy {
                 type: DataType;
                 updator: (object3d: Object3d, camera: Camera) => GLM.IArray;
             };
+            reflectivity: {
+                type: DataType;
+                updator: (mesh: any, camera: any, material: any) => any;
+            };
         };
         attributes: {
             position: (mesh: any) => any;
@@ -145,12 +150,13 @@ declare namespace CanvasToy {
     };
 }
 declare namespace CanvasToy {
-    class Object3d {
+    class Object3d implements IAsyncResource {
         tag: string;
         scene: Scene;
         children: Object3d[];
         depredations: string[];
-        objectToWorldMatrix: Mat4Array;
+        worldToObjectMatrix: Mat4Array;
+        protected _asyncFinished: Promise<Object3d>;
         protected _matrix: Mat4Array;
         protected _parent: Object3d;
         protected _localMatrix: Mat4Array;
@@ -189,6 +195,8 @@ declare namespace CanvasToy {
         rotateY(angle: number): this;
         rotateZ(angle: number): this;
         handleUniformProperty(): void;
+        asyncFinished(): Promise<Object3d>;
+        setAsyncFinished(promise: Promise<Object3d>): void;
         protected genOtherMatrixs(): void;
         private composeFromLocalMatrix();
         private composeFromGlobalMatrix();
@@ -310,8 +318,8 @@ declare module CanvasToy {
     const interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     const interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     const interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    const interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    gl_FragColor *= vec4(totalLighting, 1.0);\n#endif\n}\n";
-    const interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    const interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\nuniform mat4 cameraInverseMatrix;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n    vec3 color;\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 worldPosition = (cameraInverseMatrix * vPosition).xyz;\n    vec3 viewDir = worldPosition - eyePos.xyz;\n    vec3 skyUV = reflect(viewDir, vNormal);\n    vec3 previous = color;\n    color = mix(textureCube(uCubeTexture, skyUV).xyz, previous , 0.4);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+    const interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     const interploters__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
     const interploters__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
 }
@@ -320,6 +328,7 @@ declare namespace CanvasToy {
     class Texture implements IAsyncResource {
         readonly glTexture: WebGLTexture;
         isReadyToUpdate: boolean;
+        protected _asyncFinished: Promise<Texture>;
         protected readonly _image: HTMLImageElement;
         private _target;
         private _format;
@@ -344,7 +353,8 @@ declare namespace CanvasToy {
         setMagFilter(_magFilter: number): this;
         setMinFilter(_minFilter: number): this;
         setType(_type: number): this;
-        asyncFinished(): Promise<{}>;
+        setAsyncFinished(promise: Promise<Texture>): void;
+        asyncFinished(): Promise<Texture>;
         setUpTextureData(gl: WebGLRenderingContext): void;
     }
 }
@@ -381,6 +391,7 @@ declare namespace CanvasToy {
 declare namespace CanvasToy {
     interface IAsyncResource {
         asyncFinished(): Promise<IAsyncResource>;
+        setAsyncFinished(promise: Promise<IAsyncResource>): void;
     }
 }
 declare namespace CanvasToy {
@@ -439,6 +450,7 @@ declare namespace CanvasToy {
         displamentMap: Texture;
         stencilMap: Texture;
         reflactivity: number;
+        reflectionMap: CubeTexture;
         constructor(gl: WebGLRenderingContext, paramter?: IStandardMaterial);
     }
 }
@@ -454,7 +466,6 @@ declare namespace CanvasToy {
         protected static trancparencyPattern: RegExp;
         protected static mapPattern: RegExp;
         protected static mapSinglePattern: RegExp;
-        private static fetchTexture(url);
         private static handleSingleLine(gl, home, line, materials, currentMaterial);
         private static getImageUrl(line);
         private static getVector(pattern, line);
@@ -463,7 +474,7 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class OBJLoader {
-        static load(gl: WebGLRenderingContext, url: string): Promise<Object3d>;
+        static load(gl: WebGLRenderingContext, url: string): Object3d;
         protected static commentPattern: RegExp;
         protected static faceSplitVertPattern: RegExp;
         protected static facePerVertPattern: RegExp;
@@ -478,7 +489,7 @@ declare namespace CanvasToy {
         protected static indexPattern: RegExp;
         protected static praiseAttibuteLines(lines: any): number[][];
         protected static parseAsTriangle(faces: string[], forEachFace: (face: string[]) => void): void;
-        protected static buildUpMeshes(gl: WebGLRenderingContext, content: string, materials: any, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): Object3d;
+        protected static buildUpMeshes(gl: WebGLRenderingContext, container: Object3d, content: string, materials: any, unIndexedPositions: number[][], unIndexedUVs: number[][], unIndexedNormals: number[][]): void;
     }
 }
 declare namespace CanvasToy {
@@ -654,7 +665,6 @@ declare namespace CanvasToy {
         readonly wrapR: number;
         setWrapR(_wrapR: number): this;
         setUpTextureData(gl: WebGLRenderingContext): void;
-        asyncFinished(): Promise<this>;
         private createLoadPromise(image);
     }
 }

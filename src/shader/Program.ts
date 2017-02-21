@@ -170,7 +170,8 @@ namespace CanvasToy {
                     attribute.type,
                     false,
                     0,
-                    0);
+                    0,
+                );
             }
             return this;
         }
@@ -329,6 +330,7 @@ namespace CanvasToy {
         faces: (mesh) => mesh.geometry.faces,
         textures: {
             uMainTexture: (mesh, camera, material) => material.mainTexture,
+            uCubeTexture: (mesh, camera, material) => material.reflectionMap,
         },
         uniforms: {
             modelViewProjectionMatrix: {
@@ -338,7 +340,7 @@ namespace CanvasToy {
                         mat4.create(),
                         camera.projectionMatrix,
                         mat4.multiply(mat4.create(),
-                            camera.objectToWorldMatrix,
+                            camera.worldToObjectMatrix,
                             mesh.matrix),
                     );
                 },
@@ -375,6 +377,12 @@ namespace CanvasToy {
                         camera.position[2],
                         1,
                     );
+                },
+            },
+            reflectivity: {
+                type: DataType.float,
+                updator: (mesh, camera, material) => {
+                    return material.reflectivity;
                 },
             },
         },

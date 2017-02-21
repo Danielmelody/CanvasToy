@@ -80,12 +80,12 @@ namespace CanvasToy {
                 .setFormat(this.gl.DEPTH_COMPONENT)
                 .setUpTextureData(this.gl);
             for (const colorAttach of this.gBuffer.extras) {
-                    colorAttach.targetTexture
-                        .setType(this.gl.FLOAT)
-                        .setFormat(this.gl.RGBA)
-                        .setMinFilter(this.gl.LINEAR)
-                        .setMagFilter(this.gl.LINEAR)
-                        .setUpTextureData(this.gl);
+                colorAttach.targetTexture
+                    .setType(this.gl.FLOAT)
+                    .setFormat(this.gl.RGBA)
+                    .setMinFilter(this.gl.LINEAR)
+                    .setMagFilter(this.gl.LINEAR)
+                    .setUpTextureData(this.gl);
             }
 
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
