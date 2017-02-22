@@ -26,15 +26,15 @@ namespace CanvasToy {
             gl: WebGLRenderingContext,
             url?: string,
         ) {
-            const image = this._image;
-            this.setAsyncFinished(new Promise((resolve, reject) => {
-                if (!image) {
-                    resolve(this);
-                } else {
+            if (!!url) {
+                this._image = new Image();
+                const image = this._image;
+                this.setAsyncFinished(new Promise((resolve, reject) => {
                     image.onload = () => resolve(this);
                     image.onerror = () => reject(this);
-                }
-            }));
+                    this._image.src = url;
+                }));
+            }
             this.setTarget(gl.TEXTURE_2D)
                 .setFormat(gl.RGB)
                 .setWrapS(gl.CLAMP_TO_EDGE)
@@ -43,10 +43,6 @@ namespace CanvasToy {
                 .setMinFilter(gl.NEAREST)
                 .setType(gl.UNSIGNED_BYTE);
             this.glTexture = gl.createTexture();
-            if (!!url) {
-                this._image = new Image();
-                this._image.src = url;
-            }
         }
 
         public get image() {

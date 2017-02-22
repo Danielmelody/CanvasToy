@@ -23,16 +23,35 @@ examples.push((canvas: HTMLCanvasElement) => {
             specular: [0.1, 0.1, 0.1],
             mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png"),
         })]);
-    cube.translate([0, 0, -6]);
-    scene.addObject(cube).addObject(camera);
+    cube.translate([-2, 0, -6]);
+
+    const sphere = new CanvasToy.Mesh(
+        new CanvasToy.SphereGeometry(renderer.gl)
+            .setRadius(1.5)
+            .setWidthSegments(100)
+            .setHeightSegments(100)
+            .build(),
+        [new CanvasToy.StandardMaterial(renderer.gl, {
+            specular: [0.1, 0.1, 0.1],
+            mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
+        })]);
+
+    sphere.translate([2, 0, -6]);
+
+    scene.addObject(cube).addObject(sphere).addObject(camera);
 
     scene.ambientLight = [0.1, 0.1, 0.1];
-    const light = new CanvasToy.PointLight().setPosition([100, 0, 100]);
+    const light = new CanvasToy.PointLight(renderer.gl);
 
     scene.addLight(light);
 
-    cube.registUpdate(() => {
+    let time = 0;
+
+    cube.registUpdate((delta) => {
+        time += delta;
         cube.rotateY(0.01);
+        sphere.rotateX(0.01);
+        light.setPosition([-10, 30 * Math.sin(time / 200), 100]);
     });
     renderer.render(scene, camera);
     return renderer;

@@ -51,7 +51,7 @@ void main () {
 #ifdef _ENVIRONMENT_MAP
     vec3 worldPosition = (cameraInverseMatrix * vPosition).xyz;
     vec3 viewDir = worldPosition - eyePos.xyz;
-    vec3 skyUV = reflect(viewDir, vNormal);
+    vec3 skyUV = reflect(-viewDir, vNormal);
     vec3 previous = color;
     color = mix(textureCube(uCubeTexture, skyUV).xyz, previous , 0.4);
 #endif

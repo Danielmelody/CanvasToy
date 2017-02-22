@@ -14,6 +14,8 @@ namespace CanvasToy {
         @uniform("position", DataType.vec3)
         protected _position: Vec3Array = vec3.create();
 
+        protected _volume: Geometry;
+
         protected _shadowRtt: Texture;
 
         protected _projectCamera: Camera;

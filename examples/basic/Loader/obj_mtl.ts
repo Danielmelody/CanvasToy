@@ -7,7 +7,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     const scene = new CanvasToy.Scene();
     const camera = new CanvasToy.PerspectiveCamera();
     scene.ambientLight = [0.4, 0.4, 0.4];
-    const light = new CanvasToy.PointLight();
+    const light = new CanvasToy.PointLight(renderer.gl);
     light.setPosition([30, 0, 200]).setColor([1, 1, 1]).setIdensity(2);
     scene.addLight(light);
 
@@ -39,11 +39,10 @@ examples.push((canvas: HTMLCanvasElement) => {
     camera.translate([0, -8, 0]);
     teapot.translate([0, -10, -40]);
     let time = 0;
-    teapot.rotateY(Math.PI / 2);
     teapot.registUpdate(() => {
         time += 1 / 60;
         light.translate([0, 10 * Math.cos(time * 4), 0]);
-        teapot.rotateY(0.01);
+        teapot.rotateX(0.01);
     });
     renderer.render(scene, camera);
     return renderer;

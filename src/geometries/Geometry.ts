@@ -3,6 +3,15 @@
 
 namespace CanvasToy {
 
+    export class Faces {
+        public buffer: WebGLBuffer;
+        public data: number[] = [];
+        constructor(gl: WebGLRenderingContext, data: number[]) {
+            this.data = data;
+            this.buffer = gl.createBuffer();
+        }
+    }
+
     export class Geometry {
 
         public attributes: {
@@ -33,14 +42,15 @@ namespace CanvasToy {
             for (const attributeName in this.attributes) {
                 if (this.attributes[attributeName] !== undefined) {
                     if (vertex[attributeName] === undefined) {
-                        return this;
+                        continue;
                     }
                     if (vertex[attributeName].length !== this.attributes[attributeName].size) {
                         console.error("length " + attributeName + "wrong");
-                        return this;
+                        continue;
                     }
-                    this.attributes[attributeName].data
-                        = this.attributes[attributeName].data.concat(vertex[attributeName]);
+                    for (const comp of vertex[attributeName]) {
+                        this.attributes[attributeName].data.push(comp);
+                    }
                 }
             }
             return this;

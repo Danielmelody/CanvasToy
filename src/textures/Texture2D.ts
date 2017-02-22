@@ -22,17 +22,5 @@ namespace CanvasToy {
             super.setUpTextureData(gl);
             gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
         }
-
-        public asyncFinished() {
-            const image = this._image;
-            return new Promise((resolve, reject) => {
-                if (!image) {
-                    resolve(this);
-                } else {
-                    image.onload = () => resolve(this);
-                    image.onerror = () => reject(this);
-                }
-            });
-        }
     }
 }
