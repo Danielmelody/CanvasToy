@@ -13,12 +13,12 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     const skyTexture = new CanvasToy.CubeTexture(
         renderer.gl,
-        "resources/images/skybox/ashcanyon_rt.jpg",
-        "resources/images/skybox/ashcanyon_lf.jpg",
-        "resources/images/skybox/ashcanyon_up.jpg",
-        "resources/images/skybox/ashcanyon_dn.jpg",
-        "resources/images/skybox/ashcanyon_bk.jpg",
-        "resources/images/skybox/ashcanyon_ft.jpg",
+        "resources/images/skybox/arid2_rt.jpg",
+        "resources/images/skybox/arid2_lf.jpg",
+        "resources/images/skybox/arid2_up.jpg",
+        "resources/images/skybox/arid2_dn.jpg",
+        "resources/images/skybox/arid2_bk.jpg",
+        "resources/images/skybox/arid2_ft.jpg",
     );
     createSkyBox(renderer, skyTexture).setParent(camera);
 
