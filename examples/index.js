@@ -37,7 +37,7 @@ examples.push(function (canvas) {
     var light = new CanvasToy.PointLight();
     light.setPosition([30, 0, 200]).setColor([1, 1, 1]).setIdensity(2);
     scene.addLight(light);
-    var skyTexture = new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/ashcanyon_rt.jpg", "resources/images/skybox/ashcanyon_lf.jpg", "resources/images/skybox/ashcanyon_up.jpg", "resources/images/skybox/ashcanyon_dn.jpg", "resources/images/skybox/ashcanyon_bk.jpg", "resources/images/skybox/ashcanyon_ft.jpg");
+    var skyTexture = new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/arid2_rt.jpg", "resources/images/skybox/arid2_lf.jpg", "resources/images/skybox/arid2_up.jpg", "resources/images/skybox/arid2_dn.jpg", "resources/images/skybox/arid2_bk.jpg", "resources/images/skybox/arid2_ft.jpg");
     createSkyBox(renderer, skyTexture).setParent(camera);
     scene.addObject(camera);
     var test = new Promise(function (resolve, reject) {
