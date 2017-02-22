@@ -15,15 +15,6 @@ namespace CanvasToy {
         prefix?: any;
     }
 
-    export class Faces {
-        public buffer: WebGLBuffer;
-        public data: number[] = [];
-        constructor(gl: WebGLRenderingContext, data: number[]) {
-            this.data = data;
-            this.buffer = gl.createBuffer();
-        }
-    }
-
     export interface IUniform {
         name?: string;
         type: DataType;

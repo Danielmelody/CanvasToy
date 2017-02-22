@@ -380,6 +380,7 @@ namespace CanvasToy {
         private applyToChildren() {
             for (const child of this.children) {
                 child.setTransformFromParent();
+                child.applyToChildren();
             }
         }
     }

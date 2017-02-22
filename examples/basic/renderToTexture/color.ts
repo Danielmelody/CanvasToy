@@ -6,7 +6,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     const renderer = new CanvasToy.Renderer(canvas);
     const scenes = Array(2, 0).map(() => new CanvasToy.Scene());
     const cameras = Array(2, 0).map(() => new CanvasToy.PerspectiveCamera());
-    const light = new CanvasToy.PointLight();
+    const light = new CanvasToy.PointLight(renderer.gl);
     const cubes = [
         new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl),
             [new CanvasToy.StandardMaterial(renderer.gl)]),

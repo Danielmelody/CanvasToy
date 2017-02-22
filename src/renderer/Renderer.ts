@@ -1,7 +1,7 @@
 /// <reference path="../textures/Texture.ts"/>
 /// <reference path="../materials/Material.ts"/>
 /// <reference path="./GraphicsUtils.ts"/>
-/// <reference path="./IEXtension.ts"/>
+/// <reference path="./IExtension.ts"/>
 
 namespace CanvasToy {
 
@@ -164,23 +164,24 @@ namespace CanvasToy {
                 }
             }
             return Promise.all(objectPromises).then(() => {
-                const materialPromises = [];
+                const texturePromises = [];
                 for (const object of scene.objects) {
                     if (object instanceof Mesh) {
                         for (const material of (object as Mesh).materials) {
                             const _material: any = material;
                             for (const textureGetter of _material.asyncResources) {
-                                const promise = textureGetter(_material);
+                                const promise: Promise<any> = textureGetter(_material);
                                 if (!!promise) {
-                                    materialPromises.push(promise.then((texture) => {
+                                    texturePromises.push(promise.then((texture) => {
                                         texture.setUpTextureData(this.gl);
+                                        return Promise.resolve(texture);
                                     }));
                                 }
                             }
                         }
                     }
                 }
-                return Promise.all(materialPromises);
+                return Promise.all(texturePromises);
             });
         }
 
@@ -191,26 +192,30 @@ namespace CanvasToy {
             }
             this.scenes.push(scene);
 
-            this.handleResource(scene).then(() => {
-                const materials = [];
-                for (const obj of scene.objects) {
-                    if (obj instanceof Mesh) {
-                        const mesh = obj as Mesh;
-                        for (const material of mesh.materials) {
-                            if (materials.indexOf(material) === -1) {
-                                materials.push(material);
+            this.handleResource(scene)
+                .then(() => {
+                    const materials = [];
+                    for (const obj of scene.objects) {
+                        if (obj instanceof Mesh) {
+                            const mesh = obj as Mesh;
+                            for (const material of mesh.materials) {
+                                if (materials.indexOf(material) === -1) {
+                                    materials.push(material);
+                                }
                             }
                         }
                     }
-                }
-                // TODO: Dynamic processor strategy
-                const processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
-                scene.programSetUp = true;
-                this.renderQueue.push((deltaTime: number) => {
-                    scene.update(deltaTime);
-                    processor.process(scene, camera, materials);
+                    // TODO: Dynamic processor strategy
+                    const processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
+                    scene.programSetUp = true;
+                    this.renderQueue.push((deltaTime: number) => {
+                        scene.update(deltaTime);
+                        processor.process(scene, camera, materials);
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
                 });
-            });
         }
 
         private renderLight(light, scene) {

@@ -28,11 +28,13 @@ namespace CanvasToy {
         }
 
         public addObject(object: Object3d) {
-            this.objects.push(object);
-            object.scene = this;
-            object.children.forEach((child) => {
-                this.addObject(child);
-            });
+            if (this.objects.indexOf(object) === -1) {
+                this.objects.push(object);
+                object.scene = this;
+                object.children.forEach((child) => {
+                    this.addObject(child);
+                });
+            }
             return this;
         }
 

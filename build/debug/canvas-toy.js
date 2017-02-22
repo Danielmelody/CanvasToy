@@ -94,15 +94,6 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var Faces = (function () {
-        function Faces(gl, data) {
-            this.data = [];
-            this.data = data;
-            this.buffer = gl.createBuffer();
-        }
-        return Faces;
-    }());
-    CanvasToy.Faces = Faces;
     var Attribute = (function () {
         function Attribute(gl, paramter) {
             this.size = 3;
@@ -666,6 +657,7 @@ var CanvasToy;
             for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
                 var child = _a[_i];
                 child.setTransformFromParent();
+                child.applyToChildren();
             }
         };
         return Object3d;
@@ -878,6 +870,15 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var Faces = (function () {
+        function Faces(gl, data) {
+            this.data = [];
+            this.data = data;
+            this.buffer = gl.createBuffer();
+        }
+        return Faces;
+    }());
+    CanvasToy.Faces = Faces;
     var Geometry = (function () {
         function Geometry(gl) {
             this.attributes = {
@@ -896,14 +897,16 @@ var CanvasToy;
             for (var attributeName in this.attributes) {
                 if (this.attributes[attributeName] !== undefined) {
                     if (vertex[attributeName] === undefined) {
-                        return this;
+                        continue;
                     }
                     if (vertex[attributeName].length !== this.attributes[attributeName].size) {
                         console.error("length " + attributeName + "wrong");
-                        return this;
+                        continue;
                     }
-                    this.attributes[attributeName].data
-                        = this.attributes[attributeName].data.concat(vertex[attributeName]);
+                    for (var _i = 0, _a = vertex[attributeName]; _i < _a.length; _i++) {
+                        var comp = _a[_i];
+                        this.attributes[attributeName].data.push(comp);
+                    }
                 }
             }
             return this;
@@ -984,7 +987,7 @@ var CanvasToy;
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\nuniform mat4 cameraInverseMatrix;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n    vec3 color;\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 worldPosition = (cameraInverseMatrix * vPosition).xyz;\n    vec3 viewDir = worldPosition - eyePos.xyz;\n    vec3 skyUV = reflect(viewDir, vNormal);\n    vec3 previous = color;\n    color = mix(textureCube(uCubeTexture, skyUV).xyz, previous , 0.4);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\nuniform mat4 cameraInverseMatrix;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n    vec3 color;\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 worldPosition = (cameraInverseMatrix * vPosition).xyz;\n    vec3 viewDir = worldPosition - eyePos.xyz;\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    vec3 previous = color;\n    color = mix(textureCube(uCubeTexture, skyUV).xyz, previous , 0.4);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
     CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     CanvasToy.interploters__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
     CanvasToy.interploters__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
@@ -998,16 +1001,15 @@ var CanvasToy;
         function Texture(gl, url) {
             var _this = this;
             this.isReadyToUpdate = false;
-            var image = this._image;
-            this.setAsyncFinished(new Promise(function (resolve, reject) {
-                if (!image) {
-                    resolve(_this);
-                }
-                else {
-                    image.onload = function () { return resolve(_this); };
-                    image.onerror = function () { return reject(_this); };
-                }
-            }));
+            if (!!url) {
+                this._image = new Image();
+                var image_1 = this._image;
+                this.setAsyncFinished(new Promise(function (resolve, reject) {
+                    image_1.onload = function () { return resolve(_this); };
+                    image_1.onerror = function () { return reject(_this); };
+                    _this._image.src = url;
+                }));
+            }
             this.setTarget(gl.TEXTURE_2D)
                 .setFormat(gl.RGB)
                 .setWrapS(gl.CLAMP_TO_EDGE)
@@ -1016,10 +1018,6 @@ var CanvasToy;
                 .setMinFilter(gl.NEAREST)
                 .setType(gl.UNSIGNED_BYTE);
             this.glTexture = gl.createTexture();
-            if (!!url) {
-                this._image = new Image();
-                this._image.src = url;
-            }
         }
         Object.defineProperty(Texture.prototype, "image", {
             get: function () {
@@ -1281,21 +1279,120 @@ var CanvasToy;
 (function (CanvasToy) {
     var SphereGeometry = (function (_super) {
         __extends(SphereGeometry, _super);
-        function SphereGeometry(gl, radius, perVertDistance) {
+        function SphereGeometry(gl) {
             var _this = _super.call(this, gl) || this;
-            for (var y = -radius; y <= radius; y += perVertDistance) {
-                var circlrRadius = Math.sqrt(radius * radius - y * y);
-                for (var x = -circlrRadius; x <= circlrRadius; x += perVertDistance) {
-                    var z1 = Math.sqrt(circlrRadius * circlrRadius - x * x);
-                    var z2 = -z1;
-                    _this.attributes.position.data.push(x, y, z1);
-                    _this.attributes.position.data.push(x, y, z2);
-                }
-            }
+            _this._radius = 1;
+            _this._widthSegments = 8;
+            _this._heightSegments = 6;
+            _this._phiStart = 0;
+            _this._phiLength = Math.PI * 2;
+            _this._thetaStart = 0;
+            _this._thetaLength = Math.PI;
             return _this;
         }
+        SphereGeometry.prototype.build = function () {
+            var iy = 0;
+            var ix = 0;
+            var index = 0;
+            var grid = [];
+            var thetaEnd = this._thetaStart + this._thetaLength;
+            for (iy = 0; iy <= this._heightSegments; iy++) {
+                var verticesRow = [];
+                var v = iy / this._heightSegments;
+                for (ix = 0; ix <= this._widthSegments; ix++) {
+                    var uv = [ix / this._widthSegments, 1 - iy / this._heightSegments];
+                    var position = [];
+                    position.push(-this._radius * Math.cos(this._phiStart + uv[0] * this._phiLength)
+                        * Math.sin(this._thetaStart + v * this._thetaLength), this._radius * Math.cos(this._thetaStart + uv[1] * this._thetaLength), this._radius * Math.sin(this._phiStart + uv[0] * this._phiLength)
+                        * Math.sin(this._thetaStart + v * this._thetaLength));
+                    var normal = vec3.normalize([], position);
+                    this.addVertex({ position: position, normal: normal, uv: uv });
+                    verticesRow.push(index++);
+                }
+                grid.push(verticesRow);
+            }
+            for (iy = 0; iy < this._heightSegments; iy++) {
+                for (ix = 0; ix < this._widthSegments; ix++) {
+                    var a = grid[iy][ix + 1];
+                    var b = grid[iy][ix];
+                    var c = grid[iy + 1][ix];
+                    var d = grid[iy + 1][ix + 1];
+                    if (iy !== 0 || this._thetaStart > 0) {
+                        this.faces.data.push(a, b, d);
+                    }
+                    if (iy !== this._heightSegments - 1 || thetaEnd < Math.PI) {
+                        this.faces.data.push(b, c, d);
+                    }
+                }
+            }
+            return this;
+        };
+        Object.defineProperty(SphereGeometry.prototype, "radius", {
+            get: function () { return this._radius; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SphereGeometry.prototype, "widthSegments", {
+            get: function () { return this._widthSegments; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SphereGeometry.prototype, "heightSegments", {
+            get: function () { return this._heightSegments; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SphereGeometry.prototype, "phiStart", {
+            get: function () { return this._phiStart; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SphereGeometry.prototype, "phiLength", {
+            get: function () { return this._phiLength; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SphereGeometry.prototype, "thetaStart", {
+            get: function () { return this._thetaStart; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SphereGeometry.prototype, "thetaLength", {
+            get: function () { return this._thetaLength; },
+            enumerable: true,
+            configurable: true
+        });
+        SphereGeometry.prototype.setRadius = function (radius) {
+            this._radius = radius;
+            return this;
+        };
+        SphereGeometry.prototype.setWidthSegments = function (widthSegments) {
+            this._widthSegments = widthSegments;
+            return this;
+        };
+        SphereGeometry.prototype.setHeightSegments = function (heightSegments) {
+            this._heightSegments = heightSegments;
+            return this;
+        };
+        SphereGeometry.prototype.setPhiStart = function (phiStart) {
+            this._phiStart = phiStart;
+            return this;
+        };
+        SphereGeometry.prototype.setPhiLength = function (phiLength) {
+            this._phiLength = phiLength;
+            return this;
+        };
+        SphereGeometry.prototype.setThetaStart = function (thetaStart) {
+            this._thetaStart = thetaStart;
+            return this;
+        };
+        SphereGeometry.prototype.setThetaLength = function (thetaLength) {
+            this._thetaLength = thetaLength;
+            return this;
+        };
         return SphereGeometry;
     }(CanvasToy.Geometry));
+    CanvasToy.SphereGeometry = SphereGeometry;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1370,9 +1467,10 @@ var CanvasToy;
 (function (CanvasToy) {
     var PointLight = (function (_super) {
         __extends(PointLight, _super);
-        function PointLight() {
+        function PointLight(gl) {
             var _this = _super.call(this) || this;
             _this._projectCamera = new CanvasToy.PerspectiveCamera();
+            _this._volume = new CanvasToy.SphereGeometry(gl).setRadius(100).build();
             return _this;
         }
         return PointLight;
@@ -1758,11 +1856,13 @@ var CanvasToy;
         };
         Scene.prototype.addObject = function (object) {
             var _this = this;
-            this.objects.push(object);
-            object.scene = this;
-            object.children.forEach(function (child) {
-                _this.addObject(child);
-            });
+            if (this.objects.indexOf(object) === -1) {
+                this.objects.push(object);
+                object.scene = this;
+                object.children.forEach(function (child) {
+                    _this.addObject(child);
+                });
+            }
             return this;
         };
         Scene.prototype.removeObject = function (object) {
@@ -2221,7 +2321,7 @@ var CanvasToy;
                 _loop_3(object);
             }
             return Promise.all(objectPromises).then(function () {
-                var materialPromises = [];
+                var texturePromises = [];
                 for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                     var object = _a[_i];
                     if (object instanceof CanvasToy.Mesh) {
@@ -2232,15 +2332,16 @@ var CanvasToy;
                                 var textureGetter = _e[_d];
                                 var promise = textureGetter(_material);
                                 if (!!promise) {
-                                    materialPromises.push(promise.then(function (texture) {
+                                    texturePromises.push(promise.then(function (texture) {
                                         texture.setUpTextureData(_this.gl);
+                                        return Promise.resolve(texture);
                                     }));
                                 }
                             }
                         }
                     }
                 }
-                return Promise.all(materialPromises);
+                return Promise.all(texturePromises);
             });
         };
         Renderer.prototype.render = function (scene, camera) {
@@ -2250,7 +2351,8 @@ var CanvasToy;
                 return;
             }
             this.scenes.push(scene);
-            this.handleResource(scene).then(function () {
+            this.handleResource(scene)
+                .then(function () {
                 var materials = [];
                 for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                     var obj = _a[_i];
@@ -2270,6 +2372,9 @@ var CanvasToy;
                     scene.update(deltaTime);
                     processor.process(scene, camera, materials);
                 });
+            })
+                .catch(function (err) {
+                console.log(err);
             });
         };
         Renderer.prototype.renderLight = function (light, scene) {
@@ -2430,19 +2535,6 @@ var CanvasToy;
             gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
             _super.prototype.setUpTextureData.call(this, gl);
             gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
-        };
-        Texture2D.prototype.asyncFinished = function () {
-            var _this = this;
-            var image = this._image;
-            return new Promise(function (resolve, reject) {
-                if (!image) {
-                    resolve(_this);
-                }
-                else {
-                    image.onload = function () { return resolve(_this); };
-                    image.onerror = function () { return reject(_this); };
-                }
-            });
         };
         return Texture2D;
     }(CanvasToy.Texture));
