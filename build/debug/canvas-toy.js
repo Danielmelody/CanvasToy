@@ -934,6 +934,7 @@ var CanvasToy;
     CanvasToy.Faces = Faces;
     var Geometry = (function () {
         function Geometry(gl) {
+            this.gl = gl;
             this.attributes = {
                 position: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
                 uv: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 2, data: [] }),
@@ -942,6 +943,8 @@ var CanvasToy;
             };
             this.faces = { data: [], buffer: gl.createBuffer() };
         }
+        Geometry.prototype.build = function () {
+        };
         Geometry.prototype.setAttribute = function (name, attribute) {
             this.attributes[name] = attribute;
             return this;
@@ -1037,6 +1040,7 @@ var CanvasToy;
     CanvasToy.env_map_vert = "";
     CanvasToy.interploters__deferred__geometry_frag = "uniform vec3 ambient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    // normal, position, color\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#else\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#endif\n    gl_FragData[1] = vPosition;\n#ifdef _MAIN_TEXTURE\n    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);\n#else\n    gl_FragData[2] = vec4(ambient, 1.0);\n#endif\n#endif\n}\n";
     CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__deferred__tiledLight_frag = "";
     CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
@@ -1355,10 +1359,13 @@ var CanvasToy;
                 var v = iy / this._heightSegments;
                 for (ix = 0; ix <= this._widthSegments; ix++) {
                     var uv = [ix / this._widthSegments, 1 - iy / this._heightSegments];
-                    var position = [];
-                    position.push(-this._radius * Math.cos(this._phiStart + uv[0] * this._phiLength)
-                        * Math.sin(this._thetaStart + v * this._thetaLength), this._radius * Math.cos(this._thetaStart + uv[1] * this._thetaLength), this._radius * Math.sin(this._phiStart + uv[0] * this._phiLength)
-                        * Math.sin(this._thetaStart + v * this._thetaLength));
+                    var position = [
+                        -this._radius * Math.cos(this._phiStart + uv[0] * this._phiLength)
+                            * Math.sin(this._thetaStart + v * this._thetaLength),
+                        this._radius * Math.cos(this._thetaStart + uv[1] * this._thetaLength),
+                        this._radius * Math.sin(this._phiStart + uv[0] * this._phiLength)
+                            * Math.sin(this._thetaStart + v * this._thetaLength),
+                    ];
                     var normal = vec3.normalize([], position);
                     this.addVertex({ position: position, normal: normal, uv: uv });
                     verticesRow.push(index++);
@@ -1447,6 +1454,52 @@ var CanvasToy;
         return SphereGeometry;
     }(CanvasToy.Geometry));
     CanvasToy.SphereGeometry = SphereGeometry;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var TileGeometry = (function (_super) {
+        __extends(TileGeometry, _super);
+        function TileGeometry(gl) {
+            var _this = _super.call(this, gl) || this;
+            _this._widthSegments = 8;
+            _this._heightSegments = 6;
+            _this._width = 2;
+            _this._height = 2;
+            return _this;
+        }
+        TileGeometry.prototype.build = function () {
+            var index = 0;
+            var grid = [];
+            for (var x = 0; x <= this._widthSegments; ++x) {
+                var row = [];
+                for (var y = 0; y <= this._heightSegments; ++y) {
+                    var position = [
+                        this._width * (x - this._widthSegments / 2) / this._widthSegments,
+                        this._height * (y - this._heightSegments / 2) / this._heightSegments,
+                        0,
+                    ];
+                    var uv = [x / this._widthSegments, y / this._heightSegments];
+                    var normal = [0, 0, 1];
+                    this.addVertex({ position: position, normal: normal, uv: uv });
+                    row.push(index++);
+                }
+                grid.push(row);
+            }
+            for (var x = 0; x < this._widthSegments; ++x) {
+                for (var y = 0; y < this._heightSegments; ++y) {
+                    var a = grid[x][y];
+                    var b = grid[x + 1][y];
+                    var c = grid[x + 1][y + 1];
+                    var d = grid[x][y + 1];
+                    this.faces.data.push(a, b, c);
+                    this.faces.data.push(a, d, c);
+                }
+            }
+            return this;
+        };
+        return TileGeometry;
+    }(CanvasToy.Geometry));
+    CanvasToy.TileGeometry = TileGeometry;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {

@@ -38,9 +38,9 @@ examples.push(function (canvas) {
     }
     meshes[0].translate([0, -2, -10]);
     meshes[0].registUpdate(function () {
-        meshes[0].rotateY(-0.01);
-        meshes[1].rotateY(0.03);
-        meshes[2].rotateX(0.03);
+        meshes[0].rotateY(-0.005);
+        meshes[1].rotateY(0.01);
+        meshes[2].rotateX(0.05);
     });
     scene.addObject(meshes[0]);
     scene.addObject(camera);
@@ -49,6 +49,21 @@ examples.push(function (canvas) {
     scene.addLight(light);
     renderer.render(scene, camera);
     console.log(scene);
+    return renderer;
+});
+examples.push(function (canvas) {
+    var renderer = new CanvasToy.Renderer(canvas);
+    var scene = new CanvasToy.Scene();
+    var camera = new CanvasToy.PerspectiveCamera();
+    var material = new CanvasToy.StandardMaterial(renderer.gl, {
+        mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
+    });
+    var tile = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [material])
+        .setPosition([0, 0, -3]);
+    scene.addObject(tile).addObject(camera);
+    scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]));
+    scene.ambientLight = [0.2, 0.2, 0.2];
+    renderer.render(scene, camera);
     return renderer;
 });
 examples.push(function (canvas) {
