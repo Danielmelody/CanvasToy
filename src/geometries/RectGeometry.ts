@@ -1,5 +1,5 @@
 /// <reference path="./Geometry.ts"/>
-//
+
 namespace CanvasToy {
 
     export class RectGeometry extends Geometry {

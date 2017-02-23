@@ -297,7 +297,9 @@ declare namespace CanvasToy {
             flatNormal: Attribute;
         };
         faces: Faces;
+        protected gl: WebGLRenderingContext;
         constructor(gl: WebGLRenderingContext);
+        build(): void;
         setAttribute(name: any, attribute: Attribute): this;
         addVertex(vertex: any): this;
         removeAttribute(name: string): this;
@@ -325,6 +327,7 @@ declare module CanvasToy {
     const env_map_vert = "";
     const interploters__deferred__geometry_frag = "uniform vec3 ambient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    // normal, position, color\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#else\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#endif\n    gl_FragData[1] = vPosition;\n#ifdef _MAIN_TEXTURE\n    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);\n#else\n    gl_FragData[2] = vec4(ambient, 1.0);\n#endif\n#endif\n}\n";
     const interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    const interploters__deferred__tiledLight_frag = "";
     const interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     const interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     const interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
@@ -422,6 +425,16 @@ declare namespace CanvasToy {
         setPhiLength(phiLength: number): this;
         setThetaStart(thetaStart: number): this;
         setThetaLength(thetaLength: number): this;
+    }
+}
+declare namespace CanvasToy {
+    class TileGeometry extends Geometry {
+        private _widthSegments;
+        private _heightSegments;
+        private _width;
+        private _height;
+        constructor(gl: WebGLRenderingContext);
+        build(): this;
     }
 }
 declare namespace CanvasToy {
