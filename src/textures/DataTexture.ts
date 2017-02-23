@@ -2,7 +2,6 @@
 
 namespace CanvasToy {
     export class DataTexture<TypeArray extends ArrayBufferView> extends Texture {
-
         public width: number;
         public height: number;
 
@@ -32,6 +31,7 @@ namespace CanvasToy {
             gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
             gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
             super.bindTextureData(gl);
+
             gl.texImage2D(
                 this.target,
                 0,
