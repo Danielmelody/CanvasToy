@@ -76,6 +76,7 @@ namespace CanvasToy {
                 this._interplotationVert,
                 fragmentShader:
                 this._definitions.join("\n") +
+                calculators__linearlize_depth_glsl +
                 this._lightingModeSource +
                 this._interplotationFrag,
             },
