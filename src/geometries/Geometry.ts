@@ -14,6 +14,8 @@ namespace CanvasToy {
 
     export class Geometry {
 
+        public dirty = true;
+
         public attributes: {
             position: Attribute,
             uv: Attribute,
@@ -23,7 +25,10 @@ namespace CanvasToy {
 
         public faces: Faces;
 
+        protected gl: WebGLRenderingContext;
+
         constructor(gl: WebGLRenderingContext) {
+            this.gl = gl;
             this.attributes = {
                 position: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
                 uv: new Attribute(gl, { type: DataType.float, size: 2, data: [] }),
@@ -31,6 +36,11 @@ namespace CanvasToy {
                 flatNormal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
             };
             this.faces = { data: [], buffer: gl.createBuffer() };
+        }
+
+        public build() {
+            // empty here
+            return this;
         }
 
         public setAttribute(name, attribute: Attribute) {

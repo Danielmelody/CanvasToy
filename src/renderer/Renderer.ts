@@ -39,6 +39,8 @@ namespace CanvasToy {
 
         private materials: Material[] = [];
 
+        private isDeferred = false;
+
         constructor(canvas: HTMLCanvasElement) {
             this.canvas = canvas;
             this.gl = initWebwebglContext(canvas);
@@ -173,7 +175,7 @@ namespace CanvasToy {
                                 const promise: Promise<any> = textureGetter(_material);
                                 if (!!promise) {
                                     texturePromises.push(promise.then((texture) => {
-                                        texture.setUpTextureData(this.gl);
+                                        texture.bindTextureData(this.gl);
                                         return Promise.resolve(texture);
                                     }));
                                 }
@@ -183,6 +185,10 @@ namespace CanvasToy {
                 }
                 return Promise.all(texturePromises);
             });
+        }
+
+        public forceDeferred() {
+            this.isDeferred = true;
         }
 
         public render(scene: Scene, camera: Camera) {
@@ -205,8 +211,14 @@ namespace CanvasToy {
                             }
                         }
                     }
+
+                    let processor;
                     // TODO: Dynamic processor strategy
-                    const processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
+                    if (this.isDeferred) {
+                        processor = new DeferredProcessor(this.gl, this.ext, scene, camera);
+                    } else {
+                        processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
+                    }
                     scene.programSetUp = true;
                     this.renderQueue.push((deltaTime: number) => {
                         scene.update(deltaTime);
@@ -214,7 +226,7 @@ namespace CanvasToy {
                     });
                 })
                 .catch((err) => {
-                    console.log(err);
+                    console.error(err);
                 });
         }
 

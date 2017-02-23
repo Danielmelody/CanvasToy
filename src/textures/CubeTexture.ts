@@ -21,7 +21,9 @@ namespace CanvasToy {
             this.setAsyncFinished(Promise.all(this.images.map((image) => this.createLoadPromise(image))).then(() => {
                 return Promise.resolve(this);
             }));
-            this.setTarget(gl.TEXTURE_CUBE_MAP);
+            this.setTarget(gl.TEXTURE_CUBE_MAP)
+                .setMinFilter(gl.LINEAR)
+                .setMagFilter(gl.LINEAR);
             this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
             this.images[0].src = xposUrl;
             this.images[1].src = xnegUrl;
@@ -40,13 +42,9 @@ namespace CanvasToy {
             return this;
         }
 
-        public setUpTextureData(gl: WebGLRenderingContext) {
+        public bindTextureData(gl: WebGLRenderingContext) {
+            super.bindTextureData(gl);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-            gl.bindTexture(this.target, this.glTexture);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
-            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
-            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
             for (let i = 0; i < this.images.length; ++i) {
                 gl.texImage2D(
                     gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,

@@ -6,15 +6,11 @@ examples.push((canvas: HTMLCanvasElement) => {
     const renderer = new CanvasToy.Renderer(canvas);
 
     const scene = new CanvasToy.Scene();
-    scene.ambientLight = [0.1, 0.1, 0.1];
     const camera = new CanvasToy.PerspectiveCamera();
 
     const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
 
-    const material = new CanvasToy.StandardMaterial(renderer.gl, {
-        mainTexture,
-        specular: [1, 1, 1],
-    });
+    const material = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture });
 
     const meshes: CanvasToy.Object3d[] = [];
 
@@ -39,9 +35,9 @@ examples.push((canvas: HTMLCanvasElement) => {
     meshes[0].translate([0, -2, -10]);
 
     meshes[0].registUpdate(() => {
-        meshes[0].rotateY(-0.01);
-        meshes[1].rotateY(0.03);
-        meshes[2].rotateX(0.03);
+        meshes[0].rotateY(-0.005);
+        meshes[1].rotateY(0.01);
+        meshes[2].rotateX(0.05);
     });
 
     scene.addObject(meshes[0]);

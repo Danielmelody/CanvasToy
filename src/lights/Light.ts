@@ -5,16 +5,13 @@ namespace CanvasToy {
 
     export abstract class Light extends Object3d {
 
+        public volume: Geometry;
+
         @uniform("color", DataType.vec3)
         protected _color = vec3.fromValues(1, 1, 1);
 
         @uniform("idensity", DataType.float)
         protected _idensity = 1.0;
-
-        @uniform("position", DataType.vec3)
-        protected _position: Vec3Array = vec3.create();
-
-        protected _volume: Geometry;
 
         protected _shadowRtt: Texture;
 
@@ -23,6 +20,8 @@ namespace CanvasToy {
         constructor() {
             super();
         }
+
+        public abstract getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D;
 
         public setColor(color: Vec3Array) {
             this._color = color;

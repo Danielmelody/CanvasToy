@@ -4,7 +4,7 @@ namespace CanvasToy {
 
     export interface IStandardMaterial {
         mainTexture?: Texture;
-        color?: Vec3Array;
+        ambient?: Vec3Array;
         diffuse?: Vec3Array;
         specular?: Vec3Array;
         interplotationMethod?: InterplotationMethod;
@@ -13,17 +13,22 @@ namespace CanvasToy {
     }
 
     export class StandardMaterial extends Material {
-        @asDefine("_MAIN_TEXTURE")
+
         @readyRequire
+        @asDefine("_MAIN_TEXTURE")
         public mainTexture: Texture;
 
+        @uniform("ambient", DataType.vec3)
         public ambient: Vec3Array = vec3.fromValues(0.1, 0.1, 0.1);
 
+        @uniform("materialDiff", DataType.vec3)
         public diffuse: Vec3Array = vec3.fromValues(0.8, 0.8, 0.8);
 
-        public specular: Vec3Array = vec3.fromValues(1, 1, 1);
+        @uniform("materialSpec", DataType.vec3)
+        public specular: Vec3Array = vec3.fromValues(0.3, 0.3, 0.3);
 
-        public specularExponent: number = 1;
+        @uniform("materialSpecExp", DataType.float)
+        public specularExponent: number = 64;
 
         @readyRequire
         public specularMap: Texture;
@@ -42,20 +47,23 @@ namespace CanvasToy {
         @readyRequire
         public stencilMap: Texture;
 
-        public reflactivity: number = 0.5;
+        @uniform("reflectivity", DataType.float)
+        public reflectivity: number = 0.5;
 
         @asDefine("_ENVIRONMENT_MAP")
         @readyRequire
         public reflectionMap: CubeTexture;
 
+        public geometryProgram: Program;
+
         constructor(gl: WebGLRenderingContext, paramter: IStandardMaterial = {}) {
             super();
+            this.program = new StandardShaderBuilder().build(gl);
             if (!!paramter) {
                 for (const name in paramter) {
                     this[name] = paramter[name];
                 }
             }
-            this.program = new StandardShaderBuilder().build(gl);
         }
     }
 }

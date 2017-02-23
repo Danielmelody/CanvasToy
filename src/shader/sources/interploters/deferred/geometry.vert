@@ -7,19 +7,15 @@ varying vec2 vMainUV;
 #endif
 
 #ifdef OPEN_LIGHT
-uniform mat4 normalMatrix;
+uniform mat4 normalViewMatrix;
 attribute vec3 aNormal;
 varying vec3 vNormal;
-varying vec4 vPosition;
-varying float vDepth;
 #endif
 
 void main (){
     gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
 #ifdef OPEN_LIGHT
-    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;
-    vPosition = gl_Position;
-    vDepth = gl_Position.z / gl_Position.w;
+    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;
 #endif
 
 #ifdef _MAIN_TEXTURE

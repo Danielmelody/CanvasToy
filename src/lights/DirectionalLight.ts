@@ -2,16 +2,26 @@
 
 namespace CanvasToy {
     export class DirectionalLight extends Light {
-        private _direction: Vec3Array = vec3.fromValues(1, 1, 1);
+
+        @uniform("direction", DataType.vec3)
+        protected _direction: Vec3Array = vec3.fromValues(1, 1, 1);
+
         public get direction(): Vec3Array {
             return this._direction;
         }
-        public set direction(_direction: Vec3Array) {
-            vec3.normalize(this._direction, _direction);
+
+        public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
         }
 
-        constructor() {
-            super();
+        public setDirection(_direction: Vec3Array) {
+            vec3.normalize(this._direction, _direction);
+            return this;
         }
     }
 }

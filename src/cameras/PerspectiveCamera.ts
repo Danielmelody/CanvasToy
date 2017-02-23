@@ -5,8 +5,6 @@ namespace CanvasToy {
     export class PerspectiveCamera extends Camera {
         protected _aspect: number = 1;
         protected _fovy: number = 45;
-        protected _near: number = 0.01;
-        protected _far: number = 10000;
         constructor(parameter: {
             aspect?: number,
             fovy?: number,
@@ -38,14 +36,6 @@ namespace CanvasToy {
             return this._fovy;
         }
 
-        public get near() {
-            return this._near;
-        }
-
-        public get far() {
-            return this._far;
-        }
-
         public setAspect(aspect: number) {
             if (aspect !== this._aspect) {
                 this.compuseProjectionMatrix();
@@ -58,22 +48,6 @@ namespace CanvasToy {
             if (fovy !== this._fovy) {
                 this.compuseProjectionMatrix();
                 this._fovy = fovy;
-            }
-            return this;
-        }
-
-        public setNear(near: number) {
-            if (near !== this._near) {
-                this.compuseProjectionMatrix();
-                this._near = near;
-            }
-            return this;
-        }
-
-        public setFar(far: number) {
-            if (far !== this._far) {
-                this.compuseProjectionMatrix();
-                this._far = far;
             }
             return this;
         }
