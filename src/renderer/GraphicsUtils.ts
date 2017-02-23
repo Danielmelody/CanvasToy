@@ -3,18 +3,36 @@
 namespace CanvasToy {
     export namespace Graphics {
 
-        export function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry) {
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-                new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
-            for (const name in geometry.attributes) {
-                const attribute: Attribute = geometry.attributes[name];
-                if (attribute !== undefined) {
-                    gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                    console.log(`${name} buffer size: `,
-                        `${gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE)}`);
+        export function addRootUniformContainer(program: Program, uniformContainer: any) {
+            if (uniformContainer.uniforms instanceof Array) {
+                for (const uniformProperty of uniformContainer.uniforms) {
+                    if (uniformProperty.updator(uniformContainer) !== undefined) {
+                        program.addUniform(uniformProperty.name, {
+                            type: uniformProperty.type,
+                            updator: () => {
+                                return uniformProperty.updator(uniformContainer);
+                            },
+                        });
+                    }
                 }
+            }
+        }
+
+        export function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry) {
+            if (geometry.dirty) {
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+                    new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
+                for (const name in geometry.attributes) {
+                    const attribute: Attribute = geometry.attributes[name];
+                    if (attribute !== undefined) {
+                        gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
+                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
+                        console.log(`${name} buffer size: `,
+                            `${gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE)}`);
+                    }
+                }
+                geometry.dirty = false;
             }
         }
 

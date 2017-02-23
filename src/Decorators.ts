@@ -2,7 +2,7 @@ namespace CanvasToy {
 
     export function uniform<DecoratorClass>(name: string, type: DataType, updator?: (obj, camera) => {}) {
         return (proto, key) => {
-            if (!proto.hasOwnProperty("uniforms")) {
+            if (!proto.hasOwnProperty("uniforms") && !proto.uniforms) {
                 Object.defineProperty(proto, "uniforms", {
                     enumerable: true,
                     configurable: false,
@@ -15,7 +15,10 @@ namespace CanvasToy {
                 name,
                 type,
                 updator: updator ? updator : (obj: DecoratorClass) => {
-                    return obj[key];
+                    if (obj.hasOwnProperty(key)) {
+                        return obj[key];
+                    }
+                    return undefined;
                 },
             });
         };
@@ -23,7 +26,7 @@ namespace CanvasToy {
 
     export function asDefine(...defineNames: string[]) {
         return (proto, key) => {
-            if (!proto.hasOwnProperty("defines")) {
+            if (!proto.hasOwnProperty("defines") && !proto.defines) {
                 Object.defineProperty(proto, "defines", {
                     enumerable: true,
                     configurable: false,
@@ -42,7 +45,7 @@ namespace CanvasToy {
     }
 
     export function readyRequire<IAsyncResource>(proto, key) {
-        if (!proto.hasOwnProperty("asyncResources")) {
+        if (!proto.hasOwnProperty("asyncResources") && !proto.asyncResources) {
             Object.defineProperty(proto, "asyncResources", {
                 enumerable: true,
                 configurable: false,

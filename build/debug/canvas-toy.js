@@ -29,7 +29,7 @@ var CanvasToy;
 (function (CanvasToy) {
     function uniform(name, type, updator) {
         return function (proto, key) {
-            if (!proto.hasOwnProperty("uniforms")) {
+            if (!proto.hasOwnProperty("uniforms") && !proto.uniforms) {
                 Object.defineProperty(proto, "uniforms", {
                     enumerable: true,
                     configurable: false,
@@ -42,7 +42,10 @@ var CanvasToy;
                 name: name,
                 type: type,
                 updator: updator ? updator : function (obj) {
-                    return obj[key];
+                    if (obj.hasOwnProperty(key)) {
+                        return obj[key];
+                    }
+                    return undefined;
                 },
             });
         };
@@ -54,7 +57,7 @@ var CanvasToy;
             defineNames[_i] = arguments[_i];
         }
         return function (proto, key) {
-            if (!proto.hasOwnProperty("defines")) {
+            if (!proto.hasOwnProperty("defines") && !proto.defines) {
                 Object.defineProperty(proto, "defines", {
                     enumerable: true,
                     configurable: false,
@@ -73,7 +76,7 @@ var CanvasToy;
     }
     CanvasToy.asDefine = asDefine;
     function readyRequire(proto, key) {
-        if (!proto.hasOwnProperty("asyncResources")) {
+        if (!proto.hasOwnProperty("asyncResources") && !proto.asyncResources) {
             Object.defineProperty(proto, "asyncResources", {
                 enumerable: true,
                 configurable: false,
@@ -130,7 +133,7 @@ var CanvasToy;
             this.attributeLocations = {};
             this.textures = [];
             this.vertexPrecision = "highp";
-            this.fragmentPrecision = "mediump";
+            this.fragmentPrecision = "highp";
             this.extensionStatements = [];
             this.definesFromMaterial = [];
             this.drawMode = function (gl) { return gl.STATIC_DRAW; };
@@ -359,39 +362,16 @@ var CanvasToy;
                     return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix));
                 },
             },
-            materialDiff: {
-                type: CanvasToy.DataType.vec3, updator: function (mesh, camera, material) {
-                    return material.diffuse;
-                },
-            },
-            materialSpec: {
-                type: CanvasToy.DataType.vec3, updator: function (mesh, camera, material) {
-                    return material.specular;
-                },
-            },
-            materialSpecExp: {
-                type: CanvasToy.DataType.float, updator: function (mesh, camera, material) {
-                    return material.specularExponent;
-                },
-            },
-            ambient: {
-                type: CanvasToy.DataType.vec3,
-                updator: function (mesh) { return mesh.scene.ambientLight; },
-            },
-            normalMatrix: {
+            modelViewMatrix: {
                 type: CanvasToy.DataType.mat4,
-                updator: function (mesh) { return new Float32Array(mesh.normalMatrix); },
-            },
-            eyePos: {
-                type: CanvasToy.DataType.vec4,
-                updator: function (object3d, camera) {
-                    return vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1);
+                updator: function (mesh, camera) {
+                    return mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix);
                 },
             },
-            reflectivity: {
-                type: CanvasToy.DataType.float,
-                updator: function (mesh, camera, material) {
-                    return material.reflectivity;
+            normalViewMatrix: {
+                type: CanvasToy.DataType.mat4,
+                updator: function (mesh, camera) {
+                    return mat4.transpose(mat4.create(), mat4.invert(mat4.create(), mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix)));
                 },
             },
         },
@@ -460,7 +440,7 @@ var CanvasToy;
         Object3d.prototype.setWorldToObjectMatrix = function (worldToObjectMatrix) {
             this._worldToObjectMatrix = worldToObjectMatrix;
             mat4.invert(this._matrix, this._worldToObjectMatrix);
-            this.composeFromGlobalMatrix();
+            this.deComposeGlobalMatrix();
             return this;
         };
         Object.defineProperty(Object3d.prototype, "localPosition", {
@@ -473,7 +453,7 @@ var CanvasToy;
         Object3d.prototype.setLocalPosition = function (_localPosition) {
             console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
             this._localPosition = _localPosition;
-            this.composeFromLocalMatrix();
+            this.composeFromLocalTransform();
             if (!!this._parent) {
                 mat4.getTranslation(this._position, this.matrix);
             }
@@ -493,7 +473,7 @@ var CanvasToy;
         Object3d.prototype.setPosition = function (_position) {
             console.assert(_position && _position.length === 3, "invalid object position paramter");
             this._position = _position;
-            this.composeFromGlobalMatrix();
+            this.composeFromGlobalTransform();
             if (!!this._parent) {
                 mat4.getTranslation(this._localPosition, this._localMatrix);
             }
@@ -514,7 +494,7 @@ var CanvasToy;
             console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
             quat.normalize(_localRotation, quat.clone(_localRotation));
             this._localRotation = _localRotation;
-            this.composeFromLocalMatrix();
+            this.composeFromLocalTransform();
             if (!!this._parent) {
                 mat4.getRotation(this._rotation, this.matrix);
             }
@@ -535,7 +515,7 @@ var CanvasToy;
             console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
             quat.normalize(_rotation, quat.clone(_rotation));
             this._rotation = _rotation;
-            this.composeFromGlobalMatrix();
+            this.composeFromGlobalTransform();
             if (!!this._parent) {
                 mat4.getRotation(this._localRotation, this.localMatrix);
             }
@@ -574,7 +554,7 @@ var CanvasToy;
         Object3d.prototype.setScaling = function (_scaling) {
             console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
             this._scaling = _scaling;
-            this.composeFromGlobalMatrix();
+            this.composeFromGlobalTransform();
             if (!!this._parent) {
                 vec3.div(this._localScaling, this.scaling, this._parent.scaling);
             }
@@ -646,7 +626,18 @@ var CanvasToy;
         Object3d.prototype.genOtherMatrixs = function () {
             mat4.invert(this._worldToObjectMatrix, this.matrix);
         };
-        Object3d.prototype.composeFromLocalMatrix = function () {
+        Object3d.prototype.deComposeLocalMatrix = function () {
+            mat4.getTranslation(this._localPosition, this._localMatrix);
+            mat4.getRotation(this._localRotation, this._localMatrix);
+            if (!!this._parent) {
+                mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
+            }
+            else {
+                this._matrix = mat4.clone(this._localMatrix);
+            }
+            mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
+        };
+        Object3d.prototype.composeFromLocalTransform = function () {
             mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
             if (!!this._parent) {
                 mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
@@ -656,7 +647,18 @@ var CanvasToy;
             }
             this.genOtherMatrixs();
         };
-        Object3d.prototype.composeFromGlobalMatrix = function () {
+        Object3d.prototype.deComposeGlobalMatrix = function () {
+            mat4.getTranslation(this._position, this._matrix);
+            mat4.getRotation(this._rotation, this._matrix);
+            if (!!this._parent) {
+                mat4.mul(this._localMatrix, this._parent._worldToObjectMatrix, this.matrix);
+            }
+            else {
+                this._localMatrix = mat4.clone(this._matrix);
+            }
+            mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
+        };
+        Object3d.prototype.composeFromGlobalTransform = function () {
             mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
             this.genOtherMatrixs();
             if (!!this._parent) {
@@ -687,8 +689,24 @@ var CanvasToy;
             _this._centerVector = vec3.fromValues(0, 0, -1);
             _this._rightVector = vec3.fromValues(1, 0, 0);
             _this._projectionMatrix = mat4.create();
+            _this._near = 0.1;
+            _this._far = 1000;
             return _this;
         }
+        Object.defineProperty(Camera.prototype, "near", {
+            get: function () {
+                return this._near;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Camera.prototype, "far", {
+            get: function () {
+                return this._far;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Camera.prototype, "eyeVector", {
             get: function () {
                 return this._centerVector;
@@ -724,12 +742,11 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Camera.prototype.lookAt = function (eye, center, up) {
-            this.setPosition(eye);
+        Camera.prototype.lookAt = function (center, up) {
             this._centerVector = center;
             this._upVector = up;
             vec3.cross(this._rightVector, up, center);
-            mat4.lookAt(this._worldToObjectMatrix, eye, center, up);
+            mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
             this.setWorldToObjectMatrix(this._worldToObjectMatrix);
             return this;
         };
@@ -737,8 +754,28 @@ var CanvasToy;
             this._projectionMatrix = projectionMatrix;
             return this;
         };
+        Camera.prototype.setNear = function (near) {
+            if (near !== this._near) {
+                this.compuseProjectionMatrix();
+                this._near = near;
+            }
+            return this;
+        };
+        Camera.prototype.setFar = function (far) {
+            if (far !== this._far) {
+                this.compuseProjectionMatrix();
+                this._far = far;
+            }
+            return this;
+        };
         return Camera;
     }(CanvasToy.Object3d));
+    __decorate([
+        CanvasToy.uniform("cameraNear", CanvasToy.DataType.float)
+    ], Camera.prototype, "_near", void 0);
+    __decorate([
+        CanvasToy.uniform("cameraFar", CanvasToy.DataType.float)
+    ], Camera.prototype, "_far", void 0);
     CanvasToy.Camera = Camera;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -752,8 +789,6 @@ var CanvasToy;
             _this._right = 1;
             _this._bottom = -1;
             _this._top = 1;
-            _this._near = 0.001;
-            _this._far = 1000;
             _this._left = parameters.left || _this._left;
             _this._right = parameters.right || _this._right;
             _this._bottom = parameters.bottom || _this._bottom;
@@ -797,20 +832,6 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(OrthoCamera.prototype, "near", {
-            get: function () {
-                return this._near;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(OrthoCamera.prototype, "far", {
-            get: function () {
-                return this._far;
-            },
-            enumerable: true,
-            configurable: true
-        });
         OrthoCamera.prototype.compuseProjectionMatrix = function () {
             mat4.ortho(this._projectionMatrix, this._left, this._right, this._bottom, this._top, this._near, this._far);
         };
@@ -840,8 +861,6 @@ var CanvasToy;
             var _this = _super.call(this) || this;
             _this._aspect = 1;
             _this._fovy = 45;
-            _this._near = 0.01;
-            _this._far = 10000;
             _this._aspect = parameter.aspect || _this._aspect;
             _this._fovy = parameter.fovy || _this._fovy;
             _this._near = parameter.near || _this._near;
@@ -865,20 +884,6 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(PerspectiveCamera.prototype, "near", {
-            get: function () {
-                return this._near;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(PerspectiveCamera.prototype, "far", {
-            get: function () {
-                return this._far;
-            },
-            enumerable: true,
-            configurable: true
-        });
         PerspectiveCamera.prototype.setAspect = function (aspect) {
             if (aspect !== this._aspect) {
                 this.compuseProjectionMatrix();
@@ -890,20 +895,6 @@ var CanvasToy;
             if (fovy !== this._fovy) {
                 this.compuseProjectionMatrix();
                 this._fovy = fovy;
-            }
-            return this;
-        };
-        PerspectiveCamera.prototype.setNear = function (near) {
-            if (near !== this._near) {
-                this.compuseProjectionMatrix();
-                this._near = near;
-            }
-            return this;
-        };
-        PerspectiveCamera.prototype.setFar = function (far) {
-            if (far !== this._far) {
-                this.compuseProjectionMatrix();
-                this._far = far;
             }
             return this;
         };
@@ -934,6 +925,8 @@ var CanvasToy;
     CanvasToy.Faces = Faces;
     var Geometry = (function () {
         function Geometry(gl) {
+            this.dirty = true;
+            this.gl = gl;
             this.attributes = {
                 position: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
                 uv: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 2, data: [] }),
@@ -942,6 +935,9 @@ var CanvasToy;
             };
             this.faces = { data: [], buffer: gl.createBuffer() };
         }
+        Geometry.prototype.build = function () {
+            return this;
+        };
         Geometry.prototype.setAttribute = function (name, attribute) {
             this.attributes[name] = attribute;
             return this;
@@ -1012,7 +1008,6 @@ var CanvasToy;
             var _this = _super.call(this) || this;
             _this.materials = [];
             _this.maps = [];
-            _this.normalMatrix = mat4.create();
             _this.materials = materials;
             _this.geometry = geometry;
             return _this;
@@ -1020,29 +1015,27 @@ var CanvasToy;
         Mesh.prototype.drawMode = function (gl) {
             return gl.STATIC_DRAW;
         };
-        Mesh.prototype.genOtherMatrixs = function () {
-            _super.prototype.genOtherMatrixs.call(this);
-            mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));
-        };
         return Mesh;
     }(CanvasToy.Object3d));
     CanvasToy.Mesh = Mesh;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    CanvasToy.calculators__blinn_phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec3 lightPos, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec3 lightPos, vec3 spotDir, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-    CanvasToy.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 + 1.0;;\n    return 2.0 * near * far / (near + far - NDRDepth * (far - near));\n}\n";
-    CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-    CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
+    CanvasToy.calculators__blinn_phong_glsl = "vec3 calculate_light(vec3 position, vec3 normal, vec3 lightPos, vec3 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec3 position, vec3 normal, vec3 lightPos, vec3 spotDir, vec3 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
+    CanvasToy.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 - 1.0;;\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n}\n";
+    CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec3 position, vec3 normal, vec3 lightPos, vec3 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec3 position, vec3 normal, vec3 lightPos, vec3 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
+    CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    vec3 direction;\n};\n\n#endif // light declaration\n";
     CanvasToy.env_map_vert = "";
-    CanvasToy.interploters__deferred__geometry_frag = "uniform vec3 ambient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    // normal, position, color\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#else\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#endif\n    gl_FragData[1] = vPosition;\n#ifdef _MAIN_TEXTURE\n    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);\n#else\n    gl_FragData[2] = vec4(ambient, 1.0);\n#endif\n#endif\n}\n";
-    CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
+    CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculate_light(\n                viewPosition,\n                normal,\n                lightPos,\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
+    CanvasToy.interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
     CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
     CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
     CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\nuniform mat4 cameraInverseMatrix;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\nuniform Light lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n    vec3 color;\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            eyePos,\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 worldPosition = (cameraInverseMatrix * vPosition).xyz;\n    vec3 viewDir = worldPosition - eyePos.xyz;\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    vec3 previous = color;\n    color = mix(textureCube(uCubeTexture, skyUV).xyz, previous , 0.4);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
-    CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\nuniform PointLight lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    gl_FragColor = vec4(1.0);\n#endif\n    vec3 color;\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            vec3(0.0),\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+    CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
     CanvasToy.interploters__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
     CanvasToy.interploters__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
 })(CanvasToy || (CanvasToy = {}));
@@ -1164,7 +1157,15 @@ var CanvasToy;
             return this._asyncFinished;
         };
         ;
-        Texture.prototype.setUpTextureData = function (gl) { };
+        Texture.prototype.bindTextureData = function (gl) {
+            gl.bindTexture(this.target, this.glTexture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.bindTexture(this.target, this.glTexture);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
+            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
+            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
+        };
         return Texture;
     }());
     CanvasToy.Texture = Texture;
@@ -1314,10 +1315,10 @@ var CanvasToy;
                 1.0, 1.0,
             ];
             _this.attributes.normal.data = [
-                1, 0, 0,
-                0, 1, 0,
                 0, 0, 1,
-                0, 1, 1,
+                0, 0, 1,
+                0, 0, 1,
+                0, 0, 1,
             ];
             _this.faces.data = [
                 0, 1, 2,
@@ -1355,10 +1356,13 @@ var CanvasToy;
                 var v = iy / this._heightSegments;
                 for (ix = 0; ix <= this._widthSegments; ix++) {
                     var uv = [ix / this._widthSegments, 1 - iy / this._heightSegments];
-                    var position = [];
-                    position.push(-this._radius * Math.cos(this._phiStart + uv[0] * this._phiLength)
-                        * Math.sin(this._thetaStart + v * this._thetaLength), this._radius * Math.cos(this._thetaStart + uv[1] * this._thetaLength), this._radius * Math.sin(this._phiStart + uv[0] * this._phiLength)
-                        * Math.sin(this._thetaStart + v * this._thetaLength));
+                    var position = [
+                        -this._radius * Math.cos(this._phiStart + uv[0] * this._phiLength)
+                            * Math.sin(this._thetaStart + v * this._thetaLength),
+                        this._radius * Math.cos(this._thetaStart + uv[1] * this._thetaLength),
+                        this._radius * Math.sin(this._phiStart + uv[0] * this._phiLength)
+                            * Math.sin(this._thetaStart + v * this._thetaLength),
+                    ];
                     var normal = vec3.normalize([], position);
                     this.addVertex({ position: position, normal: normal, uv: uv });
                     verticesRow.push(index++);
@@ -1450,13 +1454,58 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var TileGeometry = (function (_super) {
+        __extends(TileGeometry, _super);
+        function TileGeometry(gl) {
+            var _this = _super.call(this, gl) || this;
+            _this._widthSegments = 8;
+            _this._heightSegments = 6;
+            _this._width = 2;
+            _this._height = 2;
+            return _this;
+        }
+        TileGeometry.prototype.build = function () {
+            var index = 0;
+            var grid = [];
+            for (var x = 0; x <= this._widthSegments; ++x) {
+                var row = [];
+                for (var y = 0; y <= this._heightSegments; ++y) {
+                    var position = [
+                        this._width * (x - this._widthSegments / 2) / this._widthSegments,
+                        this._height * (y - this._heightSegments / 2) / this._heightSegments,
+                        0,
+                    ];
+                    var uv = [x / this._widthSegments, y / this._heightSegments];
+                    var normal = [0, 0, 1];
+                    this.addVertex({ position: position, normal: normal, uv: uv });
+                    row.push(index++);
+                }
+                grid.push(row);
+            }
+            for (var x = 0; x < this._widthSegments; ++x) {
+                for (var y = 0; y < this._heightSegments; ++y) {
+                    var a = grid[x][y];
+                    var b = grid[x + 1][y];
+                    var c = grid[x + 1][y + 1];
+                    var d = grid[x][y + 1];
+                    this.faces.data.push(a, b, c);
+                    this.faces.data.push(a, d, c);
+                }
+            }
+            return this;
+        };
+        return TileGeometry;
+    }(CanvasToy.Geometry));
+    CanvasToy.TileGeometry = TileGeometry;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var Light = (function (_super) {
         __extends(Light, _super);
         function Light() {
             var _this = _super.call(this) || this;
             _this._color = vec3.fromValues(1, 1, 1);
             _this._idensity = 1.0;
-            _this._position = vec3.create();
             return _this;
         }
         Light.prototype.setColor = function (color) {
@@ -1489,9 +1538,6 @@ var CanvasToy;
     __decorate([
         CanvasToy.uniform("idensity", CanvasToy.DataType.float)
     ], Light.prototype, "_idensity", void 0);
-    __decorate([
-        CanvasToy.uniform("position", CanvasToy.DataType.vec3)
-    ], Light.prototype, "_position", void 0);
     CanvasToy.Light = Light;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1499,7 +1545,7 @@ var CanvasToy;
     var DirectionalLight = (function (_super) {
         __extends(DirectionalLight, _super);
         function DirectionalLight() {
-            var _this = _super.call(this) || this;
+            var _this = _super.apply(this, arguments) || this;
             _this._direction = vec3.fromValues(1, 1, 1);
             return _this;
         }
@@ -1507,14 +1553,26 @@ var CanvasToy;
             get: function () {
                 return this._direction;
             },
-            set: function (_direction) {
-                vec3.normalize(this._direction, _direction);
-            },
             enumerable: true,
             configurable: true
         });
+        DirectionalLight.prototype.getProjecttionBoundingBox2D = function (camera) {
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
+        };
+        DirectionalLight.prototype.setDirection = function (_direction) {
+            vec3.normalize(this._direction, _direction);
+            return this;
+        };
         return DirectionalLight;
     }(CanvasToy.Light));
+    __decorate([
+        CanvasToy.uniform("direction", CanvasToy.DataType.vec3)
+    ], DirectionalLight.prototype, "_direction", void 0);
     CanvasToy.DirectionalLight = DirectionalLight;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1523,12 +1581,57 @@ var CanvasToy;
         __extends(PointLight, _super);
         function PointLight(gl) {
             var _this = _super.call(this) || this;
+            _this._position = vec3.create();
+            _this._radius = 100;
+            _this.volume = new CanvasToy.SphereGeometry(gl).setRadius(_this._radius).build();
             _this._projectCamera = new CanvasToy.PerspectiveCamera();
-            _this._volume = new CanvasToy.SphereGeometry(gl).setRadius(100).build();
             return _this;
         }
+        PointLight.prototype.getProjecttionBoundingBox2D = function (camera) {
+            var viewMatrix = mat4.multiply(mat4.create(), camera.projectionMatrix, camera.worldToObjectMatrix);
+            var viewDir = vec3.sub(vec3.create(), this.position, camera.position);
+            var upSide = vec3.normalize(vec3.create(), camera.upVector);
+            var rightSide = vec3.create();
+            vec3.cross(rightSide, upSide, viewDir);
+            vec3.normalize(rightSide, rightSide);
+            vec3.scale(upSide, upSide, this.radius);
+            vec3.scale(rightSide, rightSide, this.radius);
+            var lightUpPoint = vec3.add(vec3.create(), this.position, upSide);
+            var lightRightPoint = vec3.add(vec3.create(), this.position, rightSide);
+            var screenPos = vec3.transformMat4(vec3.create(), this._position, viewMatrix);
+            lightUpPoint = vec3.transformMat4(vec3.create(), lightUpPoint, viewMatrix);
+            lightRightPoint = vec3.transformMat4(vec3.create(), lightRightPoint, viewMatrix);
+            var screenH = Math.abs(vec3.len(vec3.sub(vec3.create(), lightUpPoint, screenPos)));
+            var screenW = Math.abs(vec3.len(vec3.sub(vec3.create(), lightRightPoint, screenPos)));
+            return {
+                left: screenPos[0] - screenW,
+                right: screenPos[0] + screenW,
+                top: -screenPos[1] + screenH,
+                bottom: -screenPos[1] - screenH,
+            };
+        };
+        PointLight.prototype.setRadius = function (radius) {
+            this._radius = radius;
+            this.volume.setRadius(this._radius).build();
+            return this;
+        };
+        Object.defineProperty(PointLight.prototype, "radius", {
+            get: function () {
+                return this._radius;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return PointLight;
     }(CanvasToy.Light));
+    __decorate([
+        CanvasToy.uniform("position", CanvasToy.DataType.vec3, function (light, camera) {
+            return vec3.transformMat4(vec3.create(), light.position, mat4.mul(mat4.create(), camera.worldToObjectMatrix, light.matrix));
+        })
+    ], PointLight.prototype, "_position", void 0);
+    __decorate([
+        CanvasToy.uniform("radius", CanvasToy.DataType.float)
+    ], PointLight.prototype, "_radius", void 0);
     CanvasToy.PointLight = PointLight;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1559,6 +1662,15 @@ var CanvasToy;
             this._coneAngle = coneAngle;
             return this;
         };
+        SpotLight.prototype.getProjecttionBoundingBox2D = function (camera) {
+            console.error("function getProjecttionBoundingBox2D has not been init");
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
+        };
         return SpotLight;
     }(CanvasToy.Light));
     __decorate([
@@ -1584,24 +1696,36 @@ var CanvasToy;
             var _this = _super.call(this) || this;
             _this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
             _this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
-            _this.specular = vec3.fromValues(1, 1, 1);
-            _this.specularExponent = 1;
+            _this.specular = vec3.fromValues(0.3, 0.3, 0.3);
+            _this.specularExponent = 64;
             _this.transparency = 0;
-            _this.reflactivity = 0.5;
+            _this.reflectivity = 0.5;
+            _this.program = new CanvasToy.StandardShaderBuilder().build(gl);
             if (!!paramter) {
                 for (var name_1 in paramter) {
                     _this[name_1] = paramter[name_1];
                 }
             }
-            _this.program = new CanvasToy.StandardShaderBuilder().build(gl);
             return _this;
         }
         return StandardMaterial;
     }(CanvasToy.Material));
     __decorate([
-        CanvasToy.asDefine("_MAIN_TEXTURE"),
-        CanvasToy.readyRequire
+        CanvasToy.readyRequire,
+        CanvasToy.asDefine("_MAIN_TEXTURE")
     ], StandardMaterial.prototype, "mainTexture", void 0);
+    __decorate([
+        CanvasToy.uniform("ambient", CanvasToy.DataType.vec3)
+    ], StandardMaterial.prototype, "ambient", void 0);
+    __decorate([
+        CanvasToy.uniform("materialDiff", CanvasToy.DataType.vec3)
+    ], StandardMaterial.prototype, "diffuse", void 0);
+    __decorate([
+        CanvasToy.uniform("materialSpec", CanvasToy.DataType.vec3)
+    ], StandardMaterial.prototype, "specular", void 0);
+    __decorate([
+        CanvasToy.uniform("materialSpecExp", CanvasToy.DataType.float)
+    ], StandardMaterial.prototype, "specularExponent", void 0);
     __decorate([
         CanvasToy.readyRequire
     ], StandardMaterial.prototype, "specularMap", void 0);
@@ -1617,6 +1741,9 @@ var CanvasToy;
     __decorate([
         CanvasToy.readyRequire
     ], StandardMaterial.prototype, "stencilMap", void 0);
+    __decorate([
+        CanvasToy.uniform("reflectivity", CanvasToy.DataType.float)
+    ], StandardMaterial.prototype, "reflectivity", void 0);
     __decorate([
         CanvasToy.asDefine("_ENVIRONMENT_MAP"),
         CanvasToy.readyRequire
@@ -1941,16 +2068,38 @@ var CanvasToy;
 (function (CanvasToy) {
     var Graphics;
     (function (Graphics) {
-        function copyDataToVertexBuffer(gl, geometry) {
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
-            for (var name_2 in geometry.attributes) {
-                var attribute = geometry.attributes[name_2];
-                if (attribute !== undefined) {
-                    gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                    console.log(name_2 + " buffer size: ", "" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
+        function addRootUniformContainer(program, uniformContainer) {
+            if (uniformContainer.uniforms instanceof Array) {
+                var _loop_1 = function (uniformProperty) {
+                    if (uniformProperty.updator(uniformContainer) !== undefined) {
+                        program.addUniform(uniformProperty.name, {
+                            type: uniformProperty.type,
+                            updator: function () {
+                                return uniformProperty.updator(uniformContainer);
+                            },
+                        });
+                    }
+                };
+                for (var _i = 0, _a = uniformContainer.uniforms; _i < _a.length; _i++) {
+                    var uniformProperty = _a[_i];
+                    _loop_1(uniformProperty);
                 }
+            }
+        }
+        Graphics.addRootUniformContainer = addRootUniformContainer;
+        function copyDataToVertexBuffer(gl, geometry) {
+            if (geometry.dirty) {
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
+                for (var name_2 in geometry.attributes) {
+                    var attribute = geometry.attributes[name_2];
+                    if (attribute !== undefined) {
+                        gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
+                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
+                        console.log(name_2 + " buffer size: ", "" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
+                    }
+                }
+                geometry.dirty = false;
             }
         }
         Graphics.copyDataToVertexBuffer = copyDataToVertexBuffer;
@@ -1981,10 +2130,15 @@ var CanvasToy;
 (function (CanvasToy) {
     var DeferredProcessor = (function () {
         function DeferredProcessor(gl, ext, scene, camera) {
-            this.geometryPass = {};
+            this.tilePixelSize = 128;
+            this.tileLightIndex = [];
+            this.linearLightIndex = [];
             this.gl = gl;
             this.ext = ext;
             this.gBuffer = new CanvasToy.FrameBuffer(gl);
+            this.horizontalTileNum = Math.floor(this.gl.canvas.width / this.tilePixelSize);
+            this.verticalTileNum = Math.floor(this.gl.canvas.height / this.tilePixelSize);
+            this.tileCount = this.horizontalTileNum * this.verticalTileNum;
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
                 if (object instanceof CanvasToy.Mesh) {
@@ -1992,58 +2146,67 @@ var CanvasToy;
                 }
             }
             this.initGeometryProcess(scene);
+            this.initTiledPass(scene);
             scene.programSetUp = true;
         }
         DeferredProcessor.prototype.process = function (scene, camera, materials) {
-            this.gl.enable(this.gl.DEPTH_TEST);
-            this.gl.depthMask(true);
-            this.gl.clearDepth(1.0);
-            this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
-            this.gl.blendFunc(this.gl.ONE, this.gl.ZERO);
-            this.gl.enable(this.gl.CULL_FACE);
-            this.gl.cullFace(this.gl.BACK);
-            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
             CanvasToy.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer, this.ext);
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
+            this.gl.enable(this.gl.DEPTH_TEST);
+            this.gl.enable(this.gl.CULL_FACE);
+            this.gl.cullFace(this.gl.BACK);
+            this.gl.disable(this.gl.BLEND);
+            this.gl.depthFunc(this.gl.LESS);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
                 if (object instanceof CanvasToy.Mesh) {
                     var mesh = object;
-                    this.gl.useProgram(this.geometryPass[mesh].webGlProgram);
                     for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
                         var material = _c[_b];
-                        if (material.dirty) {
-                            this.geometryPass[mesh].resetMaterialDefines(material);
-                            this.geometryPass[mesh].make(mesh.scene);
-                            material.dirty = false;
+                        if (material instanceof CanvasToy.StandardMaterial) {
+                            if (material.dirty) {
+                                material.geometryProgram.resetMaterialDefines(material);
+                                material.geometryProgram.make(mesh.scene);
+                                CanvasToy.Graphics.addRootUniformContainer(material.geometryProgram, object);
+                                CanvasToy.Graphics.addRootUniformContainer(material.geometryProgram, material);
+                                material.dirty = false;
+                            }
+                            material.geometryProgram.pass(mesh, camera, material);
+                            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
+                            this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                         }
-                        this.geometryPass[mesh].pass(mesh, camera, material);
-                        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                        this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                     }
                 }
             }
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            this.gl.disable(this.gl.DEPTH_TEST);
+            this.gl.enable(this.gl.BLEND);
+            this.gl.depthFunc(this.gl.EQUAL);
+            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+            this.passLightInfoToTexture(scene, camera);
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.tile.faces.buffer);
+            this.gl.drawElements(this.gl.TRIANGLES, this.tile.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
         };
         DeferredProcessor.prototype.initGeometryProcess = function (scene) {
             this.gBuffer.attachments.color.disable();
             this.gBuffer.attachments.depth.setType(this.gl, CanvasToy.AttachmentType.Texture);
             this.gBuffer.extras.push(new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; })
                 .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT1_WEBGL; })
-                .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT2_WEBGL; })
                 .setType(this.gl, CanvasToy.AttachmentType.Texture));
             this.gBuffer.attachments.depth.targetTexture
                 .setType(this.gl.UNSIGNED_SHORT)
                 .setFormat(this.gl.DEPTH_COMPONENT)
-                .setUpTextureData(this.gl);
+                .bindTextureData(this.gl);
             for (var _i = 0, _a = this.gBuffer.extras; _i < _a.length; _i++) {
                 var colorAttach = _a[_i];
                 colorAttach.targetTexture
                     .setType(this.gl.FLOAT)
                     .setFormat(this.gl.RGBA)
-                    .setMinFilter(this.gl.LINEAR)
-                    .setMagFilter(this.gl.LINEAR)
-                    .setUpTextureData(this.gl);
+                    .setMinFilter(this.gl.NEAREST)
+                    .setMagFilter(this.gl.NEAREST)
+                    .bindTextureData(this.gl);
             }
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
             this.gl.bindTexture(this.gl.TEXTURE_2D, this.gBuffer.attachments.depth.targetTexture.glTexture);
@@ -2062,8 +2225,6 @@ var CanvasToy;
             this.ext.draw_buffer.drawBuffersWEBGL([
                 this.ext.draw_buffer.COLOR_ATTACHMENT0_WEBGL,
                 this.ext.draw_buffer.COLOR_ATTACHMENT1_WEBGL,
-                this.ext.draw_buffer.COLOR_ATTACHMENT2_WEBGL,
-                this.ext.draw_buffer.COLOR_ATTACHMENT3_WEBGL,
             ]);
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
             for (var _d = 0, _e = scene.objects; _d < _e.length; _d++) {
@@ -2073,19 +2234,261 @@ var CanvasToy;
                         vertexShader: CanvasToy.interploters__deferred__geometry_vert,
                         fragmentShader: CanvasToy.interploters__deferred__geometry_frag,
                     }, CanvasToy.defaultProgramPass);
-                    geometryProgram.deleteUniform("materialDiff")
-                        .deleteUniform("materialSpec");
-                    geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                    geometryProgram.make(scene);
-                    this.geometryPass[object] = geometryProgram;
+                    for (var _f = 0, _g = object.materials; _f < _g.length; _f++) {
+                        var material = _g[_f];
+                        if (material instanceof CanvasToy.StandardMaterial) {
+                            geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
+                            geometryProgram.make(scene);
+                            CanvasToy.Graphics.addRootUniformContainer(geometryProgram, object);
+                            CanvasToy.Graphics.addRootUniformContainer(geometryProgram, material);
+                            material.geometryProgram = geometryProgram;
+                        }
+                    }
                 }
             }
         };
-        DeferredProcessor.prototype.gBufferProcess = function () {
+        DeferredProcessor.prototype.passLightInfoToTexture = function (scene, camera) {
+            var lightColors = [];
+            var lightPositionRadius = [];
+            for (var _i = 0, _a = scene.lights; _i < _a.length; _i++) {
+                var light = _a[_i];
+                if (light instanceof CanvasToy.PointLight) {
+                    lightColors.push(light.color[0], light.color[1], light.color[2], light.idensity);
+                    var lightPosInViewSpace = vec3.transformMat4(vec3.create(), light.position, camera.worldToObjectMatrix);
+                    lightPositionRadius.push(lightPosInViewSpace[0], lightPosInViewSpace[1], lightPosInViewSpace[2], light.radius);
+                }
+            }
+            this.lightColorIdensityMap.resetData(this.gl, new Float32Array(lightColors), lightColors.length / 4, 1);
+            this.lightPositionRadiusMap.resetData(this.gl, new Float32Array(lightPositionRadius), lightPositionRadius.length / 4, 1);
+            for (var i = 0; i < this.tileCount; ++i) {
+                this.tileLightIndex[i] = [];
+            }
+            this.linearLightIndex = [];
+            for (var i = 0; i < scene.lights.length; ++i) {
+                var light = scene.lights[i];
+                var box = light.getProjecttionBoundingBox2D(camera);
+                this.fillTileWithBoundingBox2D(camera, box, i);
+            }
+            var lightOffsetCount = [];
+            var offset = 0;
+            for (var _b = 0, _c = this.tileLightIndex; _b < _c.length; _b++) {
+                var indices = _c[_b];
+                lightOffsetCount.push(offset);
+                lightOffsetCount.push(indices.length);
+                offset += indices.length;
+                for (var _d = 0, indices_1 = indices; _d < indices_1.length; _d++) {
+                    var index = indices_1[_d];
+                    this.linearLightIndex.push(index / scene.lights.length);
+                }
+            }
+            this.tileLightIndexMap.resetData(this.gl, new Float32Array(this.linearLightIndex), this.linearLightIndex.length, 1);
+            this.tileLightOffsetCountMap.resetData(this.gl, new Float32Array(lightOffsetCount), this.horizontalTileNum, this.verticalTileNum);
+            this.tilePass.pass(null, camera, null);
+        };
+        DeferredProcessor.prototype.initTiledPass = function (scene) {
+            var _this = this;
+            if (this.tile === undefined) {
+                this.tile = new CanvasToy.RectGeometry(this.gl).build();
+            }
+            for (var i = 0; i < this.horizontalTileNum; ++i) {
+                for (var j = 0; j < this.verticalTileNum; ++j) {
+                    this.tileLightIndex.push([]);
+                }
+            }
+            this.tileLightIndexMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
+                .setFormat(this.gl.LUMINANCE)
+                .setType(this.gl.FLOAT);
+            this.tileLightOffsetCountMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]), this.horizontalTileNum, this.verticalTileNum)
+                .setFormat(this.gl.LUMINANCE_ALPHA)
+                .setType(this.gl.FLOAT);
+            this.tileLightCountMap = new CanvasToy.DataTexture(this.gl, new Uint8Array([]), this.horizontalTileNum, this.verticalTileNum).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
+            this.lightColorIdensityMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA);
+            this.lightPositionRadiusMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA);
+            this.tilePass = new CanvasToy.Program(this.gl, {
+                vertexShader: CanvasToy.interploters__deferred__tiledLight_vert,
+                fragmentShader: CanvasToy.calculators__blinn_phong_glsl +
+                    CanvasToy.interploters__deferred__tiledLight_frag,
+            }, {
+                faces: function () { return _this.tile.faces; },
+                uniforms: {
+                    cameraFar: {
+                        type: CanvasToy.DataType.float,
+                        updator: function (mesh, camera) { return camera.far; },
+                    },
+                    cameraNear: {
+                        type: CanvasToy.DataType.float,
+                        updator: function (mesh, camera) { return camera.near; },
+                    },
+                    inverseProjection: {
+                        type: CanvasToy.DataType.mat4,
+                        updator: function (mesh, camera) { return mat4.invert(mat4.create(), camera.projectionMatrix); },
+                    },
+                    uLightListLengthSqrt: {
+                        type: CanvasToy.DataType.float,
+                        updator: function () { return _this.linearLightIndex.length; },
+                    },
+                    uHorizontalTileNum: {
+                        type: CanvasToy.DataType.float,
+                        updator: function () { return _this.horizontalTileNum; },
+                    },
+                    uVerticalTileNum: {
+                        type: CanvasToy.DataType.float,
+                        updator: function () { return _this.verticalTileNum; },
+                    },
+                    uTotalLightNum: {
+                        type: CanvasToy.DataType.float,
+                        updator: function () { return scene.lights.length; },
+                    },
+                },
+                textures: {
+                    uNormalDepthSE: function () { return _this.gBuffer.extras[0].targetTexture; },
+                    uDiffSpec: function () { return _this.gBuffer.extras[1].targetTexture; },
+                    uLightOffsetCount: function () { return _this.tileLightOffsetCountMap; },
+                    uLightPositionRadius: function () { return _this.lightPositionRadiusMap; },
+                    uLightColorIdensity: function () { return _this.lightColorIdensityMap; },
+                    uLightIndex: function () { return _this.tileLightIndexMap; },
+                },
+                attributes: {
+                    position: function () { return _this.tile.attributes.position; },
+                },
+            });
+            CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, this.tile);
+            this.tilePass.make(scene);
+        };
+        DeferredProcessor.prototype.fillTileWithBoundingBox2D = function (camera, box, lightIndex) {
+            var leftTile = Math.max(Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum) - 1, 0);
+            var topTile = Math.min(Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum) + 1, this.verticalTileNum);
+            var rightTile = Math.min(Math.ceil((box.right / 2.0 + 0.5) * this.horizontalTileNum) + 1, this.horizontalTileNum);
+            var bottomTile = Math.max(Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum) - 1, 0);
+            for (var i = leftTile; i < rightTile; i++) {
+                for (var j = bottomTile; j < topTile; j++) {
+                    var tileIndex = i + j * this.horizontalTileNum;
+                    if (tileIndex < this.tileCount && tileIndex >= 0) {
+                        this.tileLightIndex[tileIndex].push(lightIndex);
+                    }
+                }
+            }
         };
         return DeferredProcessor;
     }());
     CanvasToy.DeferredProcessor = DeferredProcessor;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var ForwardProcessor = (function () {
+        function ForwardProcessor(gl, ext, scene, camera) {
+            this.gl = gl;
+            this.ext = ext;
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                if (object instanceof CanvasToy.Mesh) {
+                    var mesh = object;
+                    this.makeMeshPrograms(scene, mesh, camera);
+                }
+            }
+            scene.programSetUp = true;
+        }
+        ForwardProcessor.prototype.process = function (scene, camera, materials) {
+            this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                this.renderObject(camera, object);
+            }
+        };
+        ForwardProcessor.prototype.renderObject = function (camera, object) {
+            if (object instanceof CanvasToy.Mesh) {
+                var mesh = object;
+                for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
+                    var material = _a[_i];
+                    var program = material.program;
+                    if (program.enableDepthTest) {
+                        this.gl.enable(this.gl.DEPTH_TEST);
+                    }
+                    else {
+                        this.gl.disable(this.gl.DEPTH_TEST);
+                    }
+                    if (program.enableStencilTest) {
+                        this.gl.enable(this.gl.STENCIL_TEST);
+                    }
+                    else {
+                        this.gl.disable(this.gl.STENCIL_TEST);
+                    }
+                    if (material.dirty) {
+                        program.resetMaterialDefines(material);
+                        program.make(mesh.scene);
+                        CanvasToy.Graphics.addRootUniformContainer(material.program, mesh);
+                        CanvasToy.Graphics.addRootUniformContainer(material.program, material);
+                        CanvasToy.Graphics.addRootUniformContainer(material.program, camera);
+                        this.setUpLights(mesh.scene, material, mesh, camera);
+                        material.dirty = false;
+                    }
+                    this.gl.useProgram(program.webGlProgram);
+                    program.pass(mesh, camera, material);
+                    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
+                    this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
+                }
+            }
+        };
+        ForwardProcessor.prototype.setUpLights = function (scene, material, mesh, camera) {
+            var _loop_2 = function (index) {
+                var light = scene.lights[index];
+                console.assert(light.uniforms !== undefined);
+                var _loop_3 = function (uniformProperty) {
+                    if (uniformProperty.updator(light, camera) !== undefined) {
+                        material.program.addUniform("lights[" + index + "]." + uniformProperty.name, {
+                            type: uniformProperty.type,
+                            updator: function (obj, camera) {
+                                return uniformProperty.updator(light, camera);
+                            },
+                        });
+                    }
+                };
+                for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
+                    var uniformProperty = _a[_i];
+                    _loop_3(uniformProperty);
+                }
+            };
+            for (var index in scene.lights) {
+                _loop_2(index);
+            }
+        };
+        ForwardProcessor.prototype.makeMeshPrograms = function (scene, mesh, camera) {
+            CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, mesh.geometry);
+            if (mesh.materials.length > 1) {
+                this.gl.enable(this.gl.BLEND);
+                this.gl.blendFunc(this.gl.SRC_COLOR, this.gl.ONE_MINUS_SRC_COLOR);
+            }
+            for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
+                var material = _a[_i];
+                var cameraInScene = false;
+                for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
+                    var object = _c[_b];
+                    if (object === camera) {
+                        cameraInScene = true;
+                        break;
+                    }
+                }
+                if (!cameraInScene) {
+                    console.error("Camera has not been added in Scene. Rendering stopped");
+                    return;
+                }
+                material.program.make(scene);
+                CanvasToy.Graphics.addRootUniformContainer(material.program, mesh);
+                CanvasToy.Graphics.addRootUniformContainer(material.program, material);
+                CanvasToy.Graphics.addRootUniformContainer(material.program, camera);
+                if (scene.openLight) {
+                    this.setUpLights(scene, material, mesh, camera);
+                }
+            }
+        };
+        return ForwardProcessor;
+    }());
+    CanvasToy.ForwardProcessor = ForwardProcessor;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -2176,126 +2579,6 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var GeometryBuffer = (function () {
-        function GeometryBuffer(gl) {
-            this.positionTexture = new CanvasToy.Texture(gl);
-            this.normalTexture = new CanvasToy.Texture(gl);
-            this.colorTexture = new CanvasToy.Texture(gl);
-        }
-        GeometryBuffer.prototype.depth = function (gl) {
-            this.depthTexture = new CanvasToy.Texture(gl);
-        };
-        return GeometryBuffer;
-    }());
-    CanvasToy.GeometryBuffer = GeometryBuffer;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var ForwardProcessor = (function () {
-        function ForwardProcessor(gl, ext, scene, camera) {
-            this.gl = gl;
-            this.ext = ext;
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                if (object instanceof CanvasToy.Mesh) {
-                    var mesh = object;
-                    this.makeMeshPrograms(scene, mesh, camera);
-                }
-            }
-            scene.programSetUp = true;
-        }
-        ForwardProcessor.prototype.process = function (scene, camera, materials) {
-            this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
-            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                this.renderObject(camera, object);
-            }
-        };
-        ForwardProcessor.prototype.renderObject = function (camera, object) {
-            if (object instanceof CanvasToy.Mesh) {
-                var mesh = object;
-                for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
-                    var material = _a[_i];
-                    var program = material.program;
-                    if (program.enableDepthTest) {
-                        this.gl.enable(this.gl.DEPTH_TEST);
-                    }
-                    else {
-                        this.gl.disable(this.gl.DEPTH_TEST);
-                    }
-                    if (program.enableStencilTest) {
-                        this.gl.enable(this.gl.STENCIL_TEST);
-                    }
-                    else {
-                        this.gl.disable(this.gl.STENCIL_TEST);
-                    }
-                    if (material.dirty) {
-                        program.resetMaterialDefines(material);
-                        program.make(mesh.scene);
-                        this.setUpLights(mesh.scene, material, mesh, camera);
-                        material.dirty = false;
-                    }
-                    this.gl.useProgram(program.webGlProgram);
-                    program.pass(mesh, camera, material);
-                    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                    this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
-                }
-            }
-        };
-        ForwardProcessor.prototype.setUpLights = function (scene, material, mesh, camera) {
-            var _loop_1 = function (index) {
-                var light = scene.lights[index];
-                console.assert(light.uniforms !== undefined);
-                var _loop_2 = function (uniformProperty) {
-                    material.program.addUniform("lights[" + index + "]." + uniformProperty.name, {
-                        type: uniformProperty.type,
-                        updator: function () {
-                            return uniformProperty.updator(light);
-                        },
-                    });
-                };
-                for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
-                    var uniformProperty = _a[_i];
-                    _loop_2(uniformProperty);
-                }
-            };
-            for (var index in scene.lights) {
-                _loop_1(index);
-            }
-        };
-        ForwardProcessor.prototype.makeMeshPrograms = function (scene, mesh, camera) {
-            CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, mesh.geometry);
-            if (mesh.materials.length > 1) {
-                this.gl.enable(this.gl.BLEND);
-                this.gl.blendFunc(this.gl.SRC_COLOR, this.gl.ONE_MINUS_SRC_COLOR);
-            }
-            for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
-                var material = _a[_i];
-                var cameraInScene = false;
-                for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
-                    var object = _c[_b];
-                    if (object === camera) {
-                        cameraInScene = true;
-                        break;
-                    }
-                }
-                if (!cameraInScene) {
-                    console.error("Camera has not been added in Scene. Rendering stopped");
-                    return;
-                }
-                material.program.make(scene);
-                if (scene.openLight) {
-                    this.setUpLights(scene, material, mesh, camera);
-                }
-            }
-        };
-        return ForwardProcessor;
-    }());
-    CanvasToy.ForwardProcessor = ForwardProcessor;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
     ;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -2318,6 +2601,7 @@ var CanvasToy;
             this.frameRate = 1000 / 60;
             this.stopped = false;
             this.materials = [];
+            this.isDeferred = false;
             this.main = function () {
                 for (var _i = 0, _a = _this.renderQueue; _i < _a.length; _i++) {
                     var renderCommand = _a[_i];
@@ -2359,7 +2643,7 @@ var CanvasToy;
         Renderer.prototype.handleResource = function (scene) {
             var _this = this;
             var objectPromises = [];
-            var _loop_3 = function (object) {
+            var _loop_4 = function (object) {
                 var promise = object.asyncFinished();
                 if (!!promise) {
                     objectPromises.push(promise.then(function () {
@@ -2372,7 +2656,7 @@ var CanvasToy;
             };
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
-                _loop_3(object);
+                _loop_4(object);
             }
             return Promise.all(objectPromises).then(function () {
                 var texturePromises = [];
@@ -2387,7 +2671,7 @@ var CanvasToy;
                                 var promise = textureGetter(_material);
                                 if (!!promise) {
                                     texturePromises.push(promise.then(function (texture) {
-                                        texture.setUpTextureData(_this.gl);
+                                        texture.bindTextureData(_this.gl);
                                         return Promise.resolve(texture);
                                     }));
                                 }
@@ -2397,6 +2681,9 @@ var CanvasToy;
                 }
                 return Promise.all(texturePromises);
             });
+        };
+        Renderer.prototype.forceDeferred = function () {
+            this.isDeferred = true;
         };
         Renderer.prototype.render = function (scene, camera) {
             var _this = this;
@@ -2420,7 +2707,13 @@ var CanvasToy;
                         }
                     }
                 }
-                var processor = new CanvasToy.ForwardProcessor(_this.gl, _this.ext, scene, camera);
+                var processor;
+                if (_this.isDeferred) {
+                    processor = new CanvasToy.DeferredProcessor(_this.gl, _this.ext, scene, camera);
+                }
+                else {
+                    processor = new CanvasToy.ForwardProcessor(_this.gl, _this.ext, scene, camera);
+                }
                 scene.programSetUp = true;
                 _this.renderQueue.push(function (deltaTime) {
                     scene.update(deltaTime);
@@ -2428,7 +2721,7 @@ var CanvasToy;
                 });
             })
                 .catch(function (err) {
-                console.log(err);
+                console.error(err);
             });
         };
         Renderer.prototype.renderLight = function (light, scene) {
@@ -2526,7 +2819,9 @@ var CanvasToy;
             _this.setAsyncFinished(Promise.all(_this.images.map(function (image) { return _this.createLoadPromise(image); })).then(function () {
                 return Promise.resolve(_this);
             }));
-            _this.setTarget(gl.TEXTURE_CUBE_MAP);
+            _this.setTarget(gl.TEXTURE_CUBE_MAP)
+                .setMinFilter(gl.LINEAR)
+                .setMagFilter(gl.LINEAR);
             _this.images = [0, 0, 0, 0, 0, 0].map(function () { return new Image(); });
             _this.images[0].src = xposUrl;
             _this.images[1].src = xnegUrl;
@@ -2547,13 +2842,9 @@ var CanvasToy;
             this._wrapR = _wrapR;
             return this;
         };
-        CubeTexture.prototype.setUpTextureData = function (gl) {
+        CubeTexture.prototype.bindTextureData = function (gl) {
+            _super.prototype.bindTextureData.call(this, gl);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-            gl.bindTexture(this.target, this.glTexture);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
-            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
-            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
             for (var i = 0; i < this.images.length; ++i) {
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.format, this.format, this.type, this.images[i]);
             }
@@ -2581,19 +2872,50 @@ var CanvasToy;
         function Texture2D(gl, url) {
             return _super.call(this, gl, url) || this;
         }
-        Texture2D.prototype.setUpTextureData = function (gl) {
+        Texture2D.prototype.bindTextureData = function (gl) {
+            _super.prototype.bindTextureData.call(this, gl);
+            gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
+        };
+        return Texture2D;
+    }(CanvasToy.Texture));
+    CanvasToy.Texture2D = Texture2D;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var DataTexture = (function (_super) {
+        __extends(DataTexture, _super);
+        function DataTexture(gl, data, width, height) {
+            if (width === void 0) { width = 16; }
+            if (height === void 0) { height = 16; }
+            var _this = _super.call(this, gl) || this;
+            _this.data = data;
+            _this.width = width;
+            _this.height = height;
+            return _this;
+        }
+        DataTexture.prototype.resetData = function (gl, data, width, height) {
+            this.data = data;
+            this.width = width ? width : this.width;
+            this.height = height ? height : this.height;
+            this.bindTextureData(gl);
+            return this;
+        };
+        DataTexture.prototype.bindTextureData = function (gl) {
+            gl.bindTexture(this.target, this.glTexture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
             gl.bindTexture(this.target, this.glTexture);
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
             gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
             gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
-            _super.prototype.setUpTextureData.call(this, gl);
-            gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
+            _super.prototype.bindTextureData.call(this, gl);
+            gl.texImage2D(this.target, 0, this.format, this.width, this.height, 0, this.format, this.type, this.data);
+            gl.bindTexture(this.target, null);
+            return this;
         };
-        return Texture2D;
+        return DataTexture;
     }(CanvasToy.Texture));
-    CanvasToy.Texture2D = Texture2D;
+    CanvasToy.DataTexture = DataTexture;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {

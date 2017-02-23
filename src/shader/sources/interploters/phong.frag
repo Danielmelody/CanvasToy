@@ -3,12 +3,9 @@ uniform vec3 materialSpec;
 uniform float materialSpecExp;
 uniform vec3 materialDiff;
 
-uniform mat4 cameraInverseMatrix;
-
 #ifdef OPEN_LIGHT
-uniform vec4 eyePos;
 varying vec3 vNormal;
-varying vec4 vPosition;
+varying vec3 vPosition;
 #endif
 
 #ifdef _MAIN_TEXTURE
@@ -21,7 +18,7 @@ uniform float reflectivity;
 uniform samplerCube uCubeTexture;
 #endif
 
-uniform Light lights[LIGHT_NUM];
+uniform PointLight lights[LIGHT_NUM];
 uniform SpotLight spotLights[LIGHT_NUM];
 
 void main () {
@@ -39,7 +36,7 @@ void main () {
             vPosition,
             normal,
             lights[index].position,
-            eyePos,
+            vec3(0.0),
             materialSpec * lights[index].color,
             materialDiff * lights[index].color,
             materialSpecExp,
@@ -49,11 +46,9 @@ void main () {
     color = totalLighting;
 #endif
 #ifdef _ENVIRONMENT_MAP
-    vec3 worldPosition = (cameraInverseMatrix * vPosition).xyz;
-    vec3 viewDir = worldPosition - eyePos.xyz;
+    vec3 viewDir = normalize(-vPosition);
     vec3 skyUV = reflect(-viewDir, vNormal);
-    vec3 previous = color;
-    color = mix(textureCube(uCubeTexture, skyUV).xyz, previous , 0.4);
+    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);
 #endif
     gl_FragColor *= vec4(color, 1.0);
 }

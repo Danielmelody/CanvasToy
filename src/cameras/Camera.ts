@@ -8,8 +8,22 @@ namespace CanvasToy {
         protected _rightVector: Vec3Array = vec3.fromValues(1, 0, 0);
         protected _projectionMatrix: Mat4Array = mat4.create();
 
+        @uniform("cameraNear", DataType.float)
+        protected _near: number = 0.1;
+
+        @uniform("cameraFar", DataType.float)
+        protected _far: number = 1000;
+
         constructor() {
             super();
+        }
+
+        public get near() {
+            return this._near;
+        }
+
+        public get far() {
+            return this._far;
         }
 
         public get eyeVector() {
@@ -32,18 +46,33 @@ namespace CanvasToy {
             return this._projectionMatrix;
         }
 
-        public lookAt(eye: Vec3Array, center: Vec3Array, up: Vec3Array) {
-            this.setPosition(eye);
+        public lookAt(center: Vec3Array, up: Vec3Array) {
             this._centerVector = center;
             this._upVector = up;
             vec3.cross(this._rightVector, up, center);
-            mat4.lookAt(this._worldToObjectMatrix, eye, center, up);
+            mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
             this.setWorldToObjectMatrix(this._worldToObjectMatrix);
             return this;
         }
 
         public setProjectionMatrix(projectionMatrix: Mat4Array) {
             this._projectionMatrix = projectionMatrix;
+            return this;
+        }
+
+        public setNear(near: number) {
+            if (near !== this._near) {
+                this.compuseProjectionMatrix();
+                this._near = near;
+            }
+            return this;
+        }
+
+        public setFar(far: number) {
+            if (far !== this._far) {
+                this.compuseProjectionMatrix();
+                this._far = far;
+            }
             return this;
         }
 
