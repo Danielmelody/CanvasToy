@@ -27,7 +27,7 @@ namespace CanvasToy {
         private lightColorIdensityMap: DataTexture<Float32Array>;
 
         private tileLightIndex: number[][] = [];
-        private linearLightIndex: number[] = [];
+        private linearLightIndex: number[] = []
 
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
             this.gl = gl;

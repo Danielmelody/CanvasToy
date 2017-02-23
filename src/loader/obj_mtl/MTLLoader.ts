@@ -10,6 +10,7 @@ namespace CanvasToy {
             let currentMaterial: StandardMaterial = null;
             const home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
             return fetchRes(baseurl).then((content: string) => {
+                content = content.replace(patterns.commentPattern, "");
                 content.split("\n").forEach((line) => {
                     currentMaterial = MTLLoader.handleSingleLine(gl, home, line, materials, currentMaterial);
                 });
@@ -17,7 +18,6 @@ namespace CanvasToy {
             });
         }
 
-        protected static removeCommentPattern = /#.*/mg;
         protected static newmtlPattern = /newmtl\s(.+)/m;
         protected static ambientPattern = /Ka\s(.+)/m;
         protected static diffusePattern = /Kd\s(.+)/m;
