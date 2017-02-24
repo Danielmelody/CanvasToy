@@ -7,9 +7,19 @@ namespace CanvasToy {
         protected _centerVector: Vec3Array = vec3.fromValues(0, 0, -1);
         protected _rightVector: Vec3Array = vec3.fromValues(1, 0, 0);
         protected _projectionMatrix: Mat4Array = mat4.create();
+        protected _near: number = 0.001;
+        protected _far: number = 1000;
 
         constructor() {
             super();
+        }
+
+        public get near() {
+            return this._near;
+        }
+
+        public get far() {
+            return this._far;
         }
 
         public get eyeVector() {
@@ -44,6 +54,22 @@ namespace CanvasToy {
 
         public setProjectionMatrix(projectionMatrix: Mat4Array) {
             this._projectionMatrix = projectionMatrix;
+            return this;
+        }
+
+        public setNear(near: number) {
+            if (near !== this._near) {
+                this.compuseProjectionMatrix();
+                this._near = near;
+            }
+            return this;
+        }
+
+        public setFar(far: number) {
+            if (far !== this._far) {
+                this.compuseProjectionMatrix();
+                this._far = far;
+            }
             return this;
         }
 

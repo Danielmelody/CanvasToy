@@ -15,7 +15,7 @@ namespace CanvasToy {
             const grid = [];
             for (let x = 0; x <= this._widthSegments; ++x) {
                 const row = [];
-                for(let y = 0; y <= this._heightSegments; ++y) {
+                for (let y = 0; y <= this._heightSegments; ++y) {
                     const position = [
                         this._width * (x - this._widthSegments / 2) / this._widthSegments,
                         this._height * (y - this._heightSegments / 2) / this._heightSegments,
@@ -29,7 +29,7 @@ namespace CanvasToy {
                 grid.push(row);
             }
             for (let x = 0; x < this._widthSegments; ++x) {
-                for(let y = 0; y < this._heightSegments; ++y) {
+                for (let y = 0; y < this._heightSegments; ++y) {
                     const a = grid[x][y];
                     const b = grid[x + 1][y];
                     const c = grid[x + 1][y + 1];

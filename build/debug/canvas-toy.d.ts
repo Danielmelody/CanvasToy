@@ -206,7 +206,11 @@ declare namespace CanvasToy {
         protected _centerVector: Vec3Array;
         protected _rightVector: Vec3Array;
         protected _projectionMatrix: Mat4Array;
+        protected _near: number;
+        protected _far: number;
         constructor();
+        readonly near: number;
+        readonly far: number;
         readonly eyeVector: GLM.IArray;
         readonly upVector: GLM.IArray;
         readonly centerVector: GLM.IArray;
@@ -214,6 +218,8 @@ declare namespace CanvasToy {
         readonly projectionMatrix: GLM.IArray;
         lookAt(eye: Vec3Array, center: Vec3Array, up: Vec3Array): this;
         setProjectionMatrix(projectionMatrix: Mat4Array): this;
+        setNear(near: number): this;
+        setFar(far: number): this;
         abstract compuseProjectionMatrix(): any;
         abstract deCompuseProjectionMatrix(): any;
         abstract adaptTargetRadio(target: {
@@ -228,8 +234,6 @@ declare namespace CanvasToy {
         protected _right: number;
         protected _bottom: number;
         protected _top: number;
-        protected _near: number;
-        protected _far: number;
         constructor(parameters?: {
             left?: number;
             right?: number;
@@ -243,8 +247,6 @@ declare namespace CanvasToy {
         readonly right: number;
         readonly top: number;
         readonly bottom: number;
-        readonly near: number;
-        readonly far: number;
         compuseProjectionMatrix(): void;
         deCompuseProjectionMatrix(): void;
         genOtherMatrixs(): void;
@@ -258,8 +260,6 @@ declare namespace CanvasToy {
     class PerspectiveCamera extends Camera {
         protected _aspect: number;
         protected _fovy: number;
-        protected _near: number;
-        protected _far: number;
         constructor(parameter?: {
             aspect?: number;
             fovy?: number;
@@ -269,12 +269,8 @@ declare namespace CanvasToy {
         compuseProjectionMatrix(): void;
         readonly aspect: number;
         readonly fovy: number;
-        readonly near: number;
-        readonly far: number;
         setAspect(aspect: number): this;
         setFovy(fovy: number): this;
-        setNear(near: number): this;
-        setFar(far: number): this;
         deCompuseProjectionMatrix(): void;
         genOtherMatrixs(): void;
         adaptTargetRadio(target: {
@@ -323,7 +319,7 @@ declare module CanvasToy {
     const calculators__blinn_phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec3 lightPos, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec3 lightPos, vec3 spotDir, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
     const calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 + 1.0;;\n    return 2.0 * near * far / (near + far - NDRDepth * (far - near));\n}\n";
     const calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-    const definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
+    const definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    vec3 direction;\n};\n\n#endif // light declaration\n";
     const env_map_vert = "";
     const interploters__deferred__geometry_frag = "uniform vec3 ambient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    // normal, position, color\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#else\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#endif\n    gl_FragData[1] = vPosition;\n#ifdef _MAIN_TEXTURE\n    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);\n#else\n    gl_FragData[2] = vec4(ambient, 1.0);\n#endif\n#endif\n}\n";
     const interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
@@ -343,7 +339,7 @@ declare namespace CanvasToy {
         readonly glTexture: WebGLTexture;
         isReadyToUpdate: boolean;
         protected _asyncFinished: Promise<Texture>;
-        protected readonly _image: HTMLImageElement;
+        protected _image: HTMLImageElement;
         private _target;
         private _format;
         private _wrapS;
@@ -444,14 +440,22 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
+    interface BoundingBox {
+        top: number;
+        bottom: number;
+        left: number;
+        right: number;
+    }
+}
+declare namespace CanvasToy {
     abstract class Light extends Object3d {
+        volume: Geometry;
         protected _color: GLM.IArray;
         protected _idensity: number;
-        protected _position: Vec3Array;
-        protected _volume: Geometry;
         protected _shadowRtt: Texture;
         protected _projectCamera: Camera;
         constructor();
+        abstract getProjecttionBoundingBox(camera: Camera): BoundingBox;
         setColor(color: Vec3Array): this;
         setIdensity(idensity: number): this;
         readonly color: GLM.IArray;
@@ -460,14 +464,20 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class DirectionalLight extends Light {
-        private _direction;
-        direction: Vec3Array;
-        constructor();
+        protected _direction: Vec3Array;
+        readonly direction: Vec3Array;
+        getProjecttionBoundingBox(camera: Camera): BoundingBox;
+        setDirection(_direction: Vec3Array): this;
     }
 }
 declare namespace CanvasToy {
     class PointLight extends Light {
+        protected _position: Vec3Array;
+        protected _radius: number;
         constructor(gl: WebGLRenderingContext);
+        getProjecttionBoundingBox(camera: Camera): BoundingBox;
+        setRadius(radius: number): this;
+        readonly radius: number;
     }
 }
 declare namespace CanvasToy {
@@ -582,14 +592,26 @@ declare namespace CanvasToy {
 }
 declare namespace CanvasToy {
     class DeferredProcessor implements IProcessor {
+        static tile: TileGeometry;
+        readonly tileSize: number;
+        readonly horizontalTileNum: any;
+        readonly verticalTileNum: any;
+        readonly tileCount: any;
         readonly gBuffer: FrameBuffer;
         readonly geometryPass: {};
         readonly gl: WebGLRenderingContext;
         readonly ext: WebGLExtension;
+        private tileLightIndexMap;
+        private tileLightOffsetMap;
+        private lightPositionMap;
+        private lightColorMap;
+        private tileLight2DIndex;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
         process(scene: Scene, camera: Camera, materials: Material[]): void;
         private initGeometryProcess(scene);
-        private gBufferProcess();
+        private passLightInfoToTexture(scene, camera);
+        private initTiledPass();
+        private fillTileWithBoundingBox(box, lightIndex);
     }
 }
 declare namespace CanvasToy {
@@ -722,6 +744,16 @@ declare namespace CanvasToy {
     class Texture2D extends Texture {
         constructor(gl: WebGLRenderingContext, url?: string);
         setUpTextureData(gl: WebGLRenderingContext): void;
+    }
+}
+declare namespace CanvasToy {
+    class DataTexture<TypeArray extends ArrayBufferView> extends Texture {
+        readonly width: number;
+        readonly height: number;
+        private data;
+        constructor(gl: WebGLRenderingContext, data: TypeArray, width: number, height: number);
+        resetData(gl: WebGLRenderingContext, data: TypeArray): this;
+        setUpTextureData(gl: WebGLRenderingContext): this;
     }
 }
 declare namespace CanvasToy {

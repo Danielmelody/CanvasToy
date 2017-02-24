@@ -25,5 +25,16 @@ namespace CanvasToy {
             this._coneAngle = coneAngle;
             return this;
         }
+
+        public getProjecttionBoundingBox(camera: Camera): BoundingBox {
+            // TODO: implements bounding box for spot light.
+            console.error("function getProjecttionBoundingBox has not been init");
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
+        }
     }
 }

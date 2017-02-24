@@ -12,7 +12,7 @@ namespace CanvasToy {
         public isReadyToUpdate: boolean = false;
 
         protected _asyncFinished: Promise<Texture>;
-        protected readonly _image: HTMLImageElement;
+        protected _image: HTMLImageElement;
 
         private _target: number;
         private _format: number;
