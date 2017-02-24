@@ -18,7 +18,7 @@ namespace CanvasToy {
 
         public depredations: string[];
 
-        public worldToObjectMatrix: Mat4Array = mat4.create();
+        protected _worldToObjectMatrix: Mat4Array = mat4.create();
 
         // @uniform("modelViewProjectionMatrix", DataType.mat4, (mesh: Object3d, camera: Camera) => {
         //     return mat4.multiply(
@@ -88,6 +88,17 @@ namespace CanvasToy {
          */
         public get matrix(): Mat4Array {
             return this._matrix;
+        }
+
+        public get worldToObjectMatrix(): Mat4Array {
+            return this._worldToObjectMatrix;
+        }
+
+        public setWorldToObjectMatrix(worldToObjectMatrix: Mat4Array) {
+            this._worldToObjectMatrix = worldToObjectMatrix;
+            mat4.invert(this._matrix, this._worldToObjectMatrix);
+            this.composeFromGlobalMatrix();
+            return this;
         }
 
         /**
@@ -344,7 +355,7 @@ namespace CanvasToy {
         }
 
         protected genOtherMatrixs() {
-            mat4.invert(this.worldToObjectMatrix, this.matrix);
+            mat4.invert(this._worldToObjectMatrix, this.matrix);
         }
 
         private composeFromLocalMatrix() {
@@ -371,7 +382,7 @@ namespace CanvasToy {
             );
             this.genOtherMatrixs();
             if (!!this._parent) {
-                mat4.mul(this._localMatrix, this._parent.worldToObjectMatrix, this.matrix);
+                mat4.mul(this._localMatrix, this._parent._worldToObjectMatrix, this.matrix);
             } else {
                 this._localMatrix = mat4.clone(this._matrix);
             }
