@@ -687,8 +687,24 @@ var CanvasToy;
             _this._centerVector = vec3.fromValues(0, 0, -1);
             _this._rightVector = vec3.fromValues(1, 0, 0);
             _this._projectionMatrix = mat4.create();
+            _this._near = 0.001;
+            _this._far = 1000;
             return _this;
         }
+        Object.defineProperty(Camera.prototype, "near", {
+            get: function () {
+                return this._near;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Camera.prototype, "far", {
+            get: function () {
+                return this._far;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Camera.prototype, "eyeVector", {
             get: function () {
                 return this._centerVector;
@@ -737,6 +753,20 @@ var CanvasToy;
             this._projectionMatrix = projectionMatrix;
             return this;
         };
+        Camera.prototype.setNear = function (near) {
+            if (near !== this._near) {
+                this.compuseProjectionMatrix();
+                this._near = near;
+            }
+            return this;
+        };
+        Camera.prototype.setFar = function (far) {
+            if (far !== this._far) {
+                this.compuseProjectionMatrix();
+                this._far = far;
+            }
+            return this;
+        };
         return Camera;
     }(CanvasToy.Object3d));
     CanvasToy.Camera = Camera;
@@ -752,8 +782,6 @@ var CanvasToy;
             _this._right = 1;
             _this._bottom = -1;
             _this._top = 1;
-            _this._near = 0.001;
-            _this._far = 1000;
             _this._left = parameters.left || _this._left;
             _this._right = parameters.right || _this._right;
             _this._bottom = parameters.bottom || _this._bottom;
@@ -797,20 +825,6 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(OrthoCamera.prototype, "near", {
-            get: function () {
-                return this._near;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(OrthoCamera.prototype, "far", {
-            get: function () {
-                return this._far;
-            },
-            enumerable: true,
-            configurable: true
-        });
         OrthoCamera.prototype.compuseProjectionMatrix = function () {
             mat4.ortho(this._projectionMatrix, this._left, this._right, this._bottom, this._top, this._near, this._far);
         };
@@ -840,8 +854,6 @@ var CanvasToy;
             var _this = _super.call(this) || this;
             _this._aspect = 1;
             _this._fovy = 45;
-            _this._near = 0.01;
-            _this._far = 10000;
             _this._aspect = parameter.aspect || _this._aspect;
             _this._fovy = parameter.fovy || _this._fovy;
             _this._near = parameter.near || _this._near;
@@ -865,20 +877,6 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(PerspectiveCamera.prototype, "near", {
-            get: function () {
-                return this._near;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(PerspectiveCamera.prototype, "far", {
-            get: function () {
-                return this._far;
-            },
-            enumerable: true,
-            configurable: true
-        });
         PerspectiveCamera.prototype.setAspect = function (aspect) {
             if (aspect !== this._aspect) {
                 this.compuseProjectionMatrix();
@@ -890,20 +888,6 @@ var CanvasToy;
             if (fovy !== this._fovy) {
                 this.compuseProjectionMatrix();
                 this._fovy = fovy;
-            }
-            return this;
-        };
-        PerspectiveCamera.prototype.setNear = function (near) {
-            if (near !== this._near) {
-                this.compuseProjectionMatrix();
-                this._near = near;
-            }
-            return this;
-        };
-        PerspectiveCamera.prototype.setFar = function (far) {
-            if (far !== this._far) {
-                this.compuseProjectionMatrix();
-                this._far = far;
             }
             return this;
         };
@@ -1036,7 +1020,7 @@ var CanvasToy;
     CanvasToy.calculators__blinn_phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec3 lightPos, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec3 lightPos, vec3 spotDir, vec4 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
     CanvasToy.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 + 1.0;;\n    return 2.0 * near * far / (near + far - NDRDepth * (far - near));\n}\n";
     CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec4 position, vec3 normal, vec4 lightPos, vec4 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize((lightPos - position).xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize((eyePos - position).xyz);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-    CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct Light {\n    vec3 color;\n    float idensity;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    vec3 direction;\n    vec3 position;\n};\n\n#endif // light declaration\n";
+    CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    vec3 direction;\n};\n\n#endif // light declaration\n";
     CanvasToy.env_map_vert = "";
     CanvasToy.interploters__deferred__geometry_frag = "uniform vec3 ambient;\n\n#ifdef OPEN_LIGHT\nuniform vec4 eyePos;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    // normal, position, color\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#else\n    gl_FragData[0] = vec4(normalize(vNormal.xyz), 1.0);\n#endif\n    gl_FragData[1] = vPosition;\n#ifdef _MAIN_TEXTURE\n    gl_FragData[2] = vec4(texture2D(uMainTexture, vMainUV).xyz + ambient, 1.0);\n#else\n    gl_FragData[2] = vec4(ambient, 1.0);\n#endif\n#endif\n}\n";
     CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec4 vPosition;\nvarying float vDepth;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vPosition = gl_Position;\n    vDepth = gl_Position.z / gl_Position.w;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
@@ -1509,7 +1493,6 @@ var CanvasToy;
             var _this = _super.call(this) || this;
             _this._color = vec3.fromValues(1, 1, 1);
             _this._idensity = 1.0;
-            _this._position = vec3.create();
             return _this;
         }
         Light.prototype.setColor = function (color) {
@@ -1542,9 +1525,6 @@ var CanvasToy;
     __decorate([
         CanvasToy.uniform("idensity", CanvasToy.DataType.float)
     ], Light.prototype, "_idensity", void 0);
-    __decorate([
-        CanvasToy.uniform("position", CanvasToy.DataType.vec3)
-    ], Light.prototype, "_position", void 0);
     CanvasToy.Light = Light;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1552,7 +1532,7 @@ var CanvasToy;
     var DirectionalLight = (function (_super) {
         __extends(DirectionalLight, _super);
         function DirectionalLight() {
-            var _this = _super.call(this) || this;
+            var _this = _super.apply(this, arguments) || this;
             _this._direction = vec3.fromValues(1, 1, 1);
             return _this;
         }
@@ -1560,14 +1540,26 @@ var CanvasToy;
             get: function () {
                 return this._direction;
             },
-            set: function (_direction) {
-                vec3.normalize(this._direction, _direction);
-            },
             enumerable: true,
             configurable: true
         });
+        DirectionalLight.prototype.getProjecttionBoundingBox = function (camera) {
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
+        };
+        DirectionalLight.prototype.setDirection = function (_direction) {
+            vec3.normalize(this._direction, _direction);
+            return this;
+        };
         return DirectionalLight;
     }(CanvasToy.Light));
+    __decorate([
+        CanvasToy.uniform("direction", CanvasToy.DataType.vec3)
+    ], DirectionalLight.prototype, "_direction", void 0);
     CanvasToy.DirectionalLight = DirectionalLight;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1576,12 +1568,46 @@ var CanvasToy;
         __extends(PointLight, _super);
         function PointLight(gl) {
             var _this = _super.call(this) || this;
+            _this._position = vec3.create();
+            _this._radius = 100;
+            _this.volume = new CanvasToy.SphereGeometry(gl).setRadius(_this._radius).build();
             _this._projectCamera = new CanvasToy.PerspectiveCamera();
-            _this._volume = new CanvasToy.SphereGeometry(gl).setRadius(100).build();
             return _this;
         }
+        PointLight.prototype.getProjecttionBoundingBox = function (camera) {
+            var mvpMatrix = mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.worldToObjectMatrix, this.matrix));
+            var upSide = vec3.normalize(vec3.create(), camera.upVector);
+            vec3.scale(upSide, upSide, this.radius);
+            upSide = vec3.transformMat4(vec3.create(), upSide, mvpMatrix);
+            var screenLength = vec3.len(upSide);
+            var screenPos = vec3.transformMat4(vec3.create(), this._position, mvpMatrix);
+            return {
+                left: screenPos[0] - screenLength,
+                right: screenPos[0] + screenLength,
+                top: screenPos[1] + screenLength,
+                bottom: screenPos[1] - screenLength,
+            };
+        };
+        PointLight.prototype.setRadius = function (radius) {
+            this._radius = radius;
+            this.volume.setRadius(this._radius).build();
+            return this;
+        };
+        Object.defineProperty(PointLight.prototype, "radius", {
+            get: function () {
+                return this._radius;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return PointLight;
     }(CanvasToy.Light));
+    __decorate([
+        CanvasToy.uniform("position", CanvasToy.DataType.vec3)
+    ], PointLight.prototype, "_position", void 0);
+    __decorate([
+        CanvasToy.uniform("radius", CanvasToy.DataType.float)
+    ], PointLight.prototype, "_radius", void 0);
     CanvasToy.PointLight = PointLight;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1611,6 +1637,15 @@ var CanvasToy;
         SpotLight.prototype.setConeAngle = function (coneAngle) {
             this._coneAngle = coneAngle;
             return this;
+        };
+        SpotLight.prototype.getProjecttionBoundingBox = function (camera) {
+            console.error("function getProjecttionBoundingBox has not been init");
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
         };
         return SpotLight;
     }(CanvasToy.Light));
@@ -2034,10 +2069,15 @@ var CanvasToy;
 (function (CanvasToy) {
     var DeferredProcessor = (function () {
         function DeferredProcessor(gl, ext, scene, camera) {
+            this.tileSize = 32;
             this.geometryPass = {};
+            this.tileLight2DIndex = [];
             this.gl = gl;
             this.ext = ext;
             this.gBuffer = new CanvasToy.FrameBuffer(gl);
+            this.horizontalTileNum = Math.floor(this.gl.canvas.width / this.tileSize);
+            this.verticalTileNum = Math.floor(this.gl.canvas.height / this.tileSize);
+            this.tileCount = this.horizontalTileNum * this.verticalTileNum;
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
                 if (object instanceof CanvasToy.Mesh) {
@@ -2045,6 +2085,7 @@ var CanvasToy;
                 }
             }
             this.initGeometryProcess(scene);
+            this.initTiledPass();
             scene.programSetUp = true;
         }
         DeferredProcessor.prototype.process = function (scene, camera, materials) {
@@ -2134,7 +2175,63 @@ var CanvasToy;
                 }
             }
         };
-        DeferredProcessor.prototype.gBufferProcess = function () {
+        DeferredProcessor.prototype.passLightInfoToTexture = function (scene, camera) {
+            var lightColors = [];
+            var lightPosition = [];
+            for (var _i = 0, _a = scene.lights; _i < _a.length; _i++) {
+                var light = _a[_i];
+                lightColors.push(light.color[0], light.color[1], light.color[2]);
+                lightPosition.push(light.position[0], light.position[1], light.position[2]);
+            }
+            this.lightColorMap.resetData(this.gl, new Float32Array(lightColors));
+            for (var i = 0; i < this.tileCount; ++i) {
+                this.tileLight2DIndex[i] = [];
+            }
+            for (var i = 0; i < scene.lights.length; ++i) {
+                var light = scene.lights[i];
+                var box = light.getProjecttionBoundingBox(camera);
+                this.fillTileWithBoundingBox(box, i);
+            }
+            var linearLightIndex = [];
+            var lightOffset = [];
+            var offset = 0;
+            for (var _b = 0, _c = this.tileLight2DIndex; _b < _c.length; _b++) {
+                var indices = _c[_b];
+                lightOffset.push(offset);
+                offset += indices.length;
+                for (var _d = 0, indices_1 = indices; _d < indices_1.length; _d++) {
+                    var index = indices_1[_d];
+                    linearLightIndex.push(index);
+                }
+            }
+            this.tileLightOffsetMap.resetData(this.gl, new Uint8Array(lightOffset));
+            this.tileLightIndexMap.resetData(this.gl, new Uint8Array(linearLightIndex));
+        };
+        DeferredProcessor.prototype.initTiledPass = function () {
+            if (DeferredProcessor.tile === undefined) {
+                DeferredProcessor.tile = new CanvasToy.TileGeometry(this.gl).build();
+            }
+            for (var i = 0; i < this.tileCount; ++i) {
+                this.tileLight2DIndex.push([]);
+            }
+            this.tileLightIndexMap = new CanvasToy.DataTexture(this.gl, new Uint8Array([]), this.horizontalTileNum, this.verticalTileNum);
+            this.tileLightOffsetMap = new CanvasToy.DataTexture(this.gl, new Uint8Array([]), this.horizontalTileNum, this.verticalTileNum);
+            this.lightColorMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]), this.horizontalTileNum, this.verticalTileNum);
+            this.lightPositionMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]), this.horizontalTileNum, this.verticalTileNum);
+        };
+        DeferredProcessor.prototype.fillTileWithBoundingBox = function (box, lightIndex) {
+            var leftTile = Math.max(Math.floor(box.left / this.tileSize), 0);
+            var topTile = Math.min(Math.ceil(box.top / this.tileSize), this.gl.canvas.height / this.tileSize);
+            var rightTile = Math.min(Math.ceil(box.right / this.tileSize), this.gl.canvas.width / this.tileSize);
+            var bottomTile = Math.max(Math.floor(box.bottom / this.tileSize), 0);
+            for (var i = leftTile; i < rightTile; i++) {
+                for (var j = bottomTile; j < topTile; j++) {
+                    var tileIndex = i + j * this.horizontalTileNum;
+                    if (tileIndex < this.tileCount && tileIndex >= 0) {
+                        this.tileLight2DIndex[tileIndex].push(lightIndex);
+                    }
+                }
+            }
         };
         return DeferredProcessor;
     }());
@@ -2647,6 +2744,44 @@ var CanvasToy;
         return Texture2D;
     }(CanvasToy.Texture));
     CanvasToy.Texture2D = Texture2D;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var DataTexture = (function (_super) {
+        __extends(DataTexture, _super);
+        function DataTexture(gl, data, width, height) {
+            var _this = _super.call(this, gl) || this;
+            _this.data = data;
+            _this.width = width;
+            _this.height = height;
+            _this.setAsyncFinished(Promise.resolve(_this));
+            if (data instanceof Float32Array) {
+                _this.setType(gl.FLOAT);
+            }
+            if (data instanceof Uint32Array) {
+                _this.setType(gl.UNSIGNED_INT);
+            }
+            return _this;
+        }
+        DataTexture.prototype.resetData = function (gl, data) {
+            this.data = data;
+            gl.texImage2D(this.target, 0, this.format, this.width, 0, this.height, this.format, this.type, this.data);
+            return this;
+        };
+        DataTexture.prototype.setUpTextureData = function (gl) {
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.bindTexture(this.target, this.glTexture);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
+            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
+            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
+            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
+            _super.prototype.setUpTextureData.call(this, gl);
+            gl.texImage2D(this.target, 0, this.format, this.width, 0, this.height, this.format, this.type, this.data);
+            return this;
+        };
+        return DataTexture;
+    }(CanvasToy.Texture));
+    CanvasToy.DataTexture = DataTexture;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {

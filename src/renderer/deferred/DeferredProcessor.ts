@@ -8,24 +8,38 @@
 namespace CanvasToy {
     export class DeferredProcessor implements IProcessor {
 
+        public static tile: TileGeometry;
+        public readonly tileSize: number = 32;
+
+        public readonly horizontalTileNum;
+        public readonly verticalTileNum;
+        public readonly tileCount;
         public readonly gBuffer: FrameBuffer;
-
         public readonly geometryPass: {} = {};
-
         public readonly gl: WebGLRenderingContext;
-
         public readonly ext: WebGLExtension;
+
+        private tileLightIndexMap: DataTexture<Uint8Array>;
+        private tileLightOffsetMap: DataTexture<Uint8Array>;
+        private lightPositionMap: DataTexture<Float32Array>;
+        private lightColorMap: DataTexture<Float32Array>;
+
+        private tileLight2DIndex: number[][] = [];
 
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
             this.gl = gl;
             this.ext = ext;
             this.gBuffer = new FrameBuffer(gl);
+            this.horizontalTileNum = Math.floor(this.gl.canvas.width / this.tileSize);
+            this.verticalTileNum = Math.floor(this.gl.canvas.height / this.tileSize);
+            this.tileCount = this.horizontalTileNum * this.verticalTileNum;
             for (const object of scene.objects) {
                 if (object instanceof Mesh) {
                     Graphics.copyDataToVertexBuffer(this.gl, (object as Mesh).geometry);
                 }
             }
             this.initGeometryProcess(scene);
+            this.initTiledPass();
             scene.programSetUp = true;
         }
 
@@ -159,7 +173,97 @@ namespace CanvasToy {
             }
         }
 
-        private gBufferProcess() {
+        private passLightInfoToTexture(scene: Scene, camera: Camera) {
+            const lightColors = [];
+            const lightPosition = [];
+            for (const light of scene.lights) {
+                lightColors.push(
+                    light.color[0],
+                    light.color[1],
+                    light.color[2],
+                );
+                lightPosition.push(
+                    light.position[0],
+                    light.position[1],
+                    light.position[2],
+                );
+            }
+            this.lightColorMap.resetData(this.gl, new Float32Array(lightColors));
+
+            for (let i = 0; i < this.tileCount; ++i) {
+                this.tileLight2DIndex[i] = [];
+            }
+            for (let i = 0; i < scene.lights.length; ++i) {
+                const light = scene.lights[i];
+                const box = light.getProjecttionBoundingBox(camera);
+                this.fillTileWithBoundingBox(box, i);
+            }
+            const linearLightIndex = [];
+            const lightOffset = [];
+            let offset = 0;
+            for (const indices of this.tileLight2DIndex) {
+                lightOffset.push(offset);
+                offset += indices.length;
+                for (const index of indices) {
+                    linearLightIndex.push(index);
+                }
+            }
+            this.tileLightOffsetMap.resetData(this.gl, new Uint8Array(lightOffset));
+            this.tileLightIndexMap.resetData(this.gl, new Uint8Array(linearLightIndex));
+        }
+
+        private initTiledPass() {
+            if (DeferredProcessor.tile === undefined) {
+                DeferredProcessor.tile = new TileGeometry(this.gl).build();
+            }
+            for (let i = 0; i < this.tileCount; ++i) {
+                this.tileLight2DIndex.push([]);
+            }
+            this.tileLightIndexMap = new DataTexture(
+                this.gl,
+                new Uint8Array([]),
+                this.horizontalTileNum,
+                this.verticalTileNum,
+            );
+            this.tileLightOffsetMap = new DataTexture(
+                this.gl,
+                new Uint8Array([]),
+                this.horizontalTileNum,
+                this.verticalTileNum,
+            );
+            this.lightColorMap = new DataTexture(
+                this.gl,
+                new Float32Array([]),
+                this.horizontalTileNum,
+                this.verticalTileNum,
+            );
+            this.lightPositionMap = new DataTexture(
+                this.gl,
+                new Float32Array([]),
+                this.horizontalTileNum,
+                this.verticalTileNum,
+            );
+        }
+
+        private fillTileWithBoundingBox(box: BoundingBox, lightIndex: number) {
+            const leftTile = Math.max(Math.floor(box.left / this.tileSize), 0);
+            const topTile = Math.min(
+                Math.ceil(box.top / this.tileSize),
+                this.gl.canvas.height / this.tileSize,
+            );
+            const rightTile = Math.min(
+                Math.ceil(box.right / this.tileSize),
+                this.gl.canvas.width / this.tileSize,
+            );
+            const bottomTile = Math.max(Math.floor(box.bottom / this.tileSize), 0);
+            for (let i = leftTile; i < rightTile; i++) {
+                for (let j = bottomTile; j < topTile; j++) {
+                    const tileIndex = i + j * this.horizontalTileNum;
+                    if (tileIndex < this.tileCount && tileIndex >= 0) {
+                        this.tileLight2DIndex[tileIndex].push(lightIndex);
+                    }
+                }
+            }
         }
     }
 }

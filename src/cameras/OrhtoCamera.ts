@@ -8,8 +8,6 @@ namespace CanvasToy {
         protected _right: number = 1;
         protected _bottom: number = -1;
         protected _top: number = 1;
-        protected _near: number = 0.001;
-        protected _far: number = 1000;
         constructor(parameters: {
             left?: number,
             right?: number,
@@ -57,14 +55,6 @@ namespace CanvasToy {
 
         public get bottom() {
             return this._bottom;
-        }
-
-        public get near() {
-            return this._near;
-        }
-
-        public get far() {
-            return this._far;
         }
 
         public compuseProjectionMatrix() {
