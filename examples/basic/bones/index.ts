@@ -6,15 +6,11 @@ examples.push((canvas: HTMLCanvasElement) => {
     const renderer = new CanvasToy.Renderer(canvas);
 
     const scene = new CanvasToy.Scene();
-    scene.ambientLight = [0.1, 0.1, 0.1];
     const camera = new CanvasToy.PerspectiveCamera();
 
     const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
 
-    const material = new CanvasToy.StandardMaterial(renderer.gl, {
-        mainTexture,
-        specular: [1, 1, 1],
-    });
+    const material = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture });
 
     const meshes: CanvasToy.Object3d[] = [];
 

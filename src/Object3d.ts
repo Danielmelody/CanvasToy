@@ -20,17 +20,8 @@ namespace CanvasToy {
 
         protected _worldToObjectMatrix: Mat4Array = mat4.create();
 
-        // @uniform("modelViewProjectionMatrix", DataType.mat4, (mesh: Object3d, camera: Camera) => {
-        //     return mat4.multiply(
-        //         mat4.create(),
-        //         camera.projectionMatrix,
-        //         mat4.multiply(mat4.create(),
-        //             camera.worldToObjectMatrix,
-        //             mesh.matrix),
-        //     );
-        // })
-        //
         protected _asyncFinished: Promise<Object3d> = Promise.resolve(this);
+
         protected _matrix: Mat4Array = mat4.create();
 
         protected _parent: Object3d = null;

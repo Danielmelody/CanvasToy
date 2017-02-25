@@ -1,7 +1,7 @@
 uniform vec3 ambient;
 
 #ifdef OPEN_LIGHT
-uniform vec4 eyePos;
+uniform vec3 eyePos;
 varying vec3 vNormal;
 varying vec4 vPosition;
 varying float vDepth;
