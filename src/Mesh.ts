@@ -11,7 +11,6 @@ namespace CanvasToy {
 
         public maps: Texture[] = [];
 
-        // @uniform("normalMatrix", DataType.mat4)
         public normalMatrix: Mat4Array = mat4.create();
 
         constructor(geometry: Geometry, materials: Material[]) {

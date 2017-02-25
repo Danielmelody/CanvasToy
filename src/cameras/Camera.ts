@@ -7,7 +7,11 @@ namespace CanvasToy {
         protected _centerVector: Vec3Array = vec3.fromValues(0, 0, -1);
         protected _rightVector: Vec3Array = vec3.fromValues(1, 0, 0);
         protected _projectionMatrix: Mat4Array = mat4.create();
+
+        @uniform("cameraNear", DataType.float)
         protected _near: number = 0.001;
+
+        @uniform("cameraFar", DataType.float)
         protected _far: number = 1000;
 
         constructor() {

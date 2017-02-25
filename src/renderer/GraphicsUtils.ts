@@ -3,6 +3,21 @@
 namespace CanvasToy {
     export namespace Graphics {
 
+        export function addRootUniformContainer(program: Program, uniformContainer: any) {
+            if (uniformContainer.uniforms instanceof Array) {
+                for (const uniformProperty of uniformContainer.uniforms) {
+                    if (uniformProperty.updator(uniformContainer) !== undefined) {
+                        program.addUniform(uniformProperty.name, {
+                            type: uniformProperty.type,
+                            updator: () => {
+                                return uniformProperty.updator(uniformContainer);
+                            },
+                        });
+                    }
+                }
+            }
+        }
+
         export function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,

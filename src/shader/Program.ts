@@ -63,7 +63,7 @@ namespace CanvasToy {
             location: WebGLUniformLocation,
         }> = [];
         public vertexPrecision: string = "highp";
-        public fragmentPrecision: string = "mediump";
+        public fragmentPrecision: string = "highp";
 
         public extensionStatements: string[] = [];
 
@@ -336,45 +336,19 @@ namespace CanvasToy {
                     );
                 },
             },
-            materialDiff: {
-                type: DataType.vec3, updator: (mesh, camera, material) => {
-                    return material.diffuse;
-                },
-            },
-            materialSpec: {
-                type: DataType.vec3, updator: (mesh, camera, material) => {
-                    return material.specular;
-                },
-            },
-            materialSpecExp: {
-                type: DataType.float, updator: (mesh, camera, material) => {
-                    return material.specularExponent;
-                },
-            },
-            ambient: {
-                type: DataType.vec3,
-                updator: (mesh) => { return mesh.scene.ambientLight; },
-            },
-            normalMatrix: {
+            modelViewMatrix: {
                 type: DataType.mat4,
-                updator: (mesh) => { return new Float32Array(mesh.normalMatrix); },
-            },
-            eyePos: {
-                type: DataType.vec4,
-                updator: (object3d: Object3d, camera: Camera) => {
-                    return vec4.fromValues(
-                        camera.position[0],
-                        camera.position[1],
-                        camera.position[2],
-                        1,
-                    );
+                updator: (mesh: Mesh, camera: Camera) => {
+                    return mat4.multiply(mat4.create(),
+                            camera.worldToObjectMatrix,
+                            mesh.matrix,
+                        );
                 },
             },
-            reflectivity: {
-                type: DataType.float,
-                updator: (mesh, camera, material) => {
-                    return material.reflectivity;
-                },
+            normalViewMatrix: {
+                type: DataType.mat4,
+                updator: (mesh: Mesh, camera: Camera) =>
+                    mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.normalMatrix),
             },
         },
         attributes: {

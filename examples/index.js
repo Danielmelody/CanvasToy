@@ -13,13 +13,9 @@ function createSkyBox(renderer, cubeTexture) {
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
-    scene.ambientLight = [0.1, 0.1, 0.1];
     var camera = new CanvasToy.PerspectiveCamera();
     var mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
-    var material = new CanvasToy.StandardMaterial(renderer.gl, {
-        mainTexture: mainTexture,
-        specular: [1, 1, 1],
-    });
+    var material = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: mainTexture });
     var meshes = [];
     for (var i = 0; i < 4; ++i) {
         var mesh = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(20).setHeightSegments(20).build(), [material]);
@@ -49,21 +45,6 @@ examples.push(function (canvas) {
     scene.addLight(light);
     renderer.render(scene, camera);
     console.log(scene);
-    return renderer;
-});
-examples.push(function (canvas) {
-    var renderer = new CanvasToy.Renderer(canvas);
-    var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.PerspectiveCamera();
-    var material = new CanvasToy.StandardMaterial(renderer.gl, {
-        mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
-    });
-    var tile = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [material])
-        .setPosition([0, 0, -3]);
-    scene.addObject(tile).addObject(camera);
-    scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]));
-    scene.ambientLight = [0.2, 0.2, 0.2];
-    renderer.render(scene, camera);
     return renderer;
 });
 examples.push(function (canvas) {
@@ -102,9 +83,23 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    scene.ambientLight = [0.4, 0.4, 0.4];
+    var material = new CanvasToy.StandardMaterial(renderer.gl, {
+        mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
+    });
+    var tile = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [material])
+        .setPosition([0, 0, -3]);
+    scene.addObject(tile).addObject(camera);
+    scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]));
+    scene.ambientLight = [0.2, 0.2, 0.2];
+    renderer.render(scene, camera);
+    return renderer;
+});
+examples.push(function (canvas) {
+    var renderer = new CanvasToy.Renderer(canvas);
+    var scene = new CanvasToy.Scene();
+    var camera = new CanvasToy.PerspectiveCamera();
     var light = new CanvasToy.PointLight(renderer.gl);
-    light.setPosition([30, 0, 200]).setColor([1, 1, 1]).setIdensity(2);
+    light.setPosition([100, 300, 100]).setColor([1, 1, 1]).setIdensity(3);
     scene.addLight(light);
     var skyTexture = new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/arid2_rt.jpg", "resources/images/skybox/arid2_lf.jpg", "resources/images/skybox/arid2_up.jpg", "resources/images/skybox/arid2_dn.jpg", "resources/images/skybox/arid2_bk.jpg", "resources/images/skybox/arid2_ft.jpg");
     createSkyBox(renderer, skyTexture).setParent(camera);
@@ -121,45 +116,12 @@ examples.push(function (canvas) {
         return Promise.resolve(teapot);
     }));
     scene.addObject(teapot);
-    camera.translate([0, -8, 0]);
-    teapot.translate([0, -10, -40]);
+    teapot.translate([0, -2, -40]);
     var time = 0;
     teapot.registUpdate(function () {
         time += 1 / 60;
-        light.translate([0, 10 * Math.cos(time * 4), 0]);
         teapot.rotateX(0.01);
     });
     renderer.render(scene, camera);
-    return renderer;
-});
-examples.push(function (canvas) {
-    var renderer = new CanvasToy.Renderer(canvas);
-    var scenes = Array(2, 0).map(function () { return new CanvasToy.Scene(); });
-    var cameras = Array(2, 0).map(function () { return new CanvasToy.PerspectiveCamera(); });
-    var light = new CanvasToy.PointLight(renderer.gl);
-    var cubes = [
-        new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl)]),
-    ];
-    cubes[0].materials[0]
-        .mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png")
-        .setFormat(renderer.gl.RGBA);
-    cameras[0].setPosition([0, 0, 5]);
-    scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-    scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-    light.setPosition([100, 0, 100]);
-    scenes[0].addLight(light).addObject(cameras[0]).addObject(cubes[0]);
-    var fbo = renderer.createFrameBuffer();
-    var rttTexture = fbo.attachments.color.targetTexture;
-    cubes.push(new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: rttTexture })]));
-    cubes[0].registUpdate(function () {
-        cubes.forEach(function (cube) {
-            cube.rotateY(0.01);
-        });
-    });
-    cameras[1].setPosition([0, 0, 5]);
-    scenes[1].addLight(light).addObject(cameras[1]).addObject(cubes[1]);
-    scenes[0].addLight(light);
-    renderer.renderFBO(scenes[0], cameras[0]);
-    renderer.render(scenes[1], cameras[1]);
     return renderer;
 });

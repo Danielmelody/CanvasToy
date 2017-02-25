@@ -52,6 +52,9 @@ namespace CanvasToy {
                     if (material.dirty) {
                         program.resetMaterialDefines(material);
                         program.make(mesh.scene);
+                        Graphics.addRootUniformContainer(material.program, mesh);
+                        Graphics.addRootUniformContainer(material.program, material);
+                        Graphics.addRootUniformContainer(material.program, camera);
                         this.setUpLights(mesh.scene, material, mesh, camera);
                         material.dirty = false;
                     }
@@ -70,12 +73,14 @@ namespace CanvasToy {
                 // light properties pass
                 console.assert(light.uniforms !== undefined);
                 for (const uniformProperty of light.uniforms) {
-                    material.program.addUniform(`lights[${index}].${uniformProperty.name}`, {
-                        type: uniformProperty.type,
-                        updator: () => {
-                            return uniformProperty.updator(light);
-                        },
-                    });
+                    if (uniformProperty.updator(light, camera) !== undefined) {
+                        material.program.addUniform(`lights[${index}].${uniformProperty.name}`, {
+                            type: uniformProperty.type,
+                            updator: (obj, camera) => {
+                                return uniformProperty.updator(light, camera);
+                            },
+                        });
+                    }
                 }
                 // light.shadowRtt = new Texture(this.gl);
             }
@@ -106,6 +111,10 @@ namespace CanvasToy {
                 }
 
                 material.program.make(scene);
+
+                Graphics.addRootUniformContainer(material.program, mesh);
+                Graphics.addRootUniformContainer(material.program, material);
+                Graphics.addRootUniformContainer(material.program, camera);
 
                 if (scene.openLight) {
                     this.setUpLights(scene, material, mesh, camera);

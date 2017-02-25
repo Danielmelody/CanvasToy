@@ -2,7 +2,11 @@
 namespace CanvasToy {
     export class PointLight extends Light {
 
-        @uniform("position", DataType.vec3)
+        @uniform("position", DataType.vec3, (light, camera) => {
+            return vec3.transformMat4(vec3.create(), light.position,
+                mat4.mul(mat4.create(), camera.worldToObjectMatrix, light.matrix),
+            );
+        })
         protected _position: Vec3Array = vec3.create();
 
         @uniform("radius", DataType.float)

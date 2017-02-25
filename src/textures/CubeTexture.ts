@@ -21,7 +21,9 @@ namespace CanvasToy {
             this.setAsyncFinished(Promise.all(this.images.map((image) => this.createLoadPromise(image))).then(() => {
                 return Promise.resolve(this);
             }));
-            this.setTarget(gl.TEXTURE_CUBE_MAP);
+            this.setTarget(gl.TEXTURE_CUBE_MAP)
+                .setMinFilter(gl.LINEAR)
+                .setMagFilter(gl.LINEAR);
             this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
             this.images[0].src = xposUrl;
             this.images[1].src = xnegUrl;
