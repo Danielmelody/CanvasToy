@@ -125,3 +125,28 @@ examples.push(function (canvas) {
     renderer.render(scene, camera);
     return renderer;
 });
+examples.push(function (canvas) {
+    var renderer = new CanvasToy.Renderer(canvas);
+    var scene = new CanvasToy.Scene();
+    var camera = new CanvasToy.PerspectiveCamera().setFar(50);
+    var light = new CanvasToy.PointLight(renderer.gl);
+    light.setPosition([100, 300, 100]).setIdensity(2);
+    scene.addLight(light);
+    scene.addObject(camera);
+    var test = new Promise(function (resolve, reject) {
+        resolve(100);
+    }).then(function (num) {
+        console.log("promise resolve " + num);
+    });
+    var teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
+    scene.addObject(teapot);
+    teapot.translate([0, -2, -40]);
+    var time = 0;
+    teapot.registUpdate(function () {
+        time += 1 / 60;
+        teapot.rotateX(0.01);
+    });
+    renderer.forceDeferred();
+    renderer.render(scene, camera);
+    return renderer;
+});

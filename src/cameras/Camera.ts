@@ -9,7 +9,7 @@ namespace CanvasToy {
         protected _projectionMatrix: Mat4Array = mat4.create();
 
         @uniform("cameraNear", DataType.float)
-        protected _near: number = 0.001;
+        protected _near: number = 0.1;
 
         @uniform("cameraFar", DataType.float)
         protected _far: number = 1000;

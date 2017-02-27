@@ -38,6 +38,7 @@ namespace CanvasToy {
 
         public build() {
             // empty here
+            return this;
         }
 
         public setAttribute(name, attribute: Attribute) {
