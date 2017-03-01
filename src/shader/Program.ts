@@ -340,15 +340,16 @@ namespace CanvasToy {
                 type: DataType.mat4,
                 updator: (mesh: Mesh, camera: Camera) => {
                     return mat4.multiply(mat4.create(),
-                            camera.worldToObjectMatrix,
-                            mesh.matrix,
-                        );
+                        camera.worldToObjectMatrix,
+                        mesh.matrix,
+                    );
                 },
             },
             normalViewMatrix: {
                 type: DataType.mat4,
                 updator: (mesh: Mesh, camera: Camera) =>
-                    mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.normalMatrix),
+                    mat4.transpose(mat4.create(), mat4.invert(mat4.create(),
+                        mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix))),
             },
         },
         attributes: {

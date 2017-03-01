@@ -88,7 +88,7 @@ namespace CanvasToy {
         public setWorldToObjectMatrix(worldToObjectMatrix: Mat4Array) {
             this._worldToObjectMatrix = worldToObjectMatrix;
             mat4.invert(this._matrix, this._worldToObjectMatrix);
-            this.composeFromGlobalMatrix();
+            this.deComposeGlobalMatrix();
             return this;
         }
 
@@ -107,7 +107,7 @@ namespace CanvasToy {
         public setLocalPosition(_localPosition: Vec3Array) {
             console.assert(_localPosition && _localPosition.length === 3, "invalid object position paramter");
             this._localPosition = _localPosition;
-            this.composeFromLocalMatrix();
+            this.composeFromLocalTransform();
             if (!!this._parent) {
                 mat4.getTranslation(this._position, this.matrix);
             } else {
@@ -131,7 +131,7 @@ namespace CanvasToy {
         public setPosition(_position: Vec3Array) {
             console.assert(_position && _position.length === 3, "invalid object position paramter");
             this._position = _position;
-            this.composeFromGlobalMatrix();
+            this.composeFromGlobalTransform();
             if (!!this._parent) {
                 mat4.getTranslation(this._localPosition, this._localMatrix);
             } else {
@@ -157,7 +157,7 @@ namespace CanvasToy {
             console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
             quat.normalize(_localRotation, quat.clone(_localRotation));
             this._localRotation = _localRotation;
-            this.composeFromLocalMatrix();
+            this.composeFromLocalTransform();
             if (!!this._parent) {
                 mat4.getRotation(this._rotation, this.matrix);
             } else {
@@ -179,7 +179,7 @@ namespace CanvasToy {
             console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
             quat.normalize(_rotation, quat.clone(_rotation));
             this._rotation = _rotation;
-            this.composeFromGlobalMatrix();
+            this.composeFromGlobalTransform();
             if (!!this._parent) {
                 mat4.getRotation(this._localRotation, this.localMatrix);
             } else {
@@ -228,7 +228,7 @@ namespace CanvasToy {
         public setScaling(_scaling: Vec3Array) {
             console.assert(_scaling && _scaling.length === 3, "invalid object scale paramter");
             this._scaling = _scaling;
-            this.composeFromGlobalMatrix();
+            this.composeFromGlobalTransform();
             if (!!this._parent) {
                 vec3.div(this._localScaling, this.scaling, this._parent.scaling);
             } else {
@@ -349,7 +349,23 @@ namespace CanvasToy {
             mat4.invert(this._worldToObjectMatrix, this.matrix);
         }
 
-        private composeFromLocalMatrix() {
+        protected deComposeLocalMatrix() {
+            mat4.getTranslation(this._localPosition, this._localMatrix);
+            mat4.getRotation(this._localRotation, this._localMatrix);
+            if (!!this._parent) {
+                mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
+            } else {
+                this._matrix = mat4.clone(this._localMatrix);
+            }
+            mat4.fromRotationTranslationScale(
+                this._matrix,
+                this.rotation,
+                this.position,
+                this.scaling,
+            );
+        }
+
+        protected composeFromLocalTransform() {
             mat4.fromRotationTranslationScale(
                 this.localMatrix,
                 this.localRotation,
@@ -364,7 +380,23 @@ namespace CanvasToy {
             this.genOtherMatrixs();
         }
 
-        private composeFromGlobalMatrix() {
+        protected deComposeGlobalMatrix() {
+            mat4.getTranslation(this._position, this._matrix);
+            mat4.getRotation(this._rotation, this._matrix);
+            if (!!this._parent) {
+                mat4.mul(this._localMatrix, this._parent._worldToObjectMatrix, this.matrix);
+            } else {
+                this._localMatrix = mat4.clone(this._matrix);
+            }
+            mat4.fromRotationTranslationScale(
+                this.localMatrix,
+                this.localRotation,
+                this.localPosition,
+                this.localScaling,
+            );
+        }
+
+        private composeFromGlobalTransform() {
             mat4.fromRotationTranslationScale(
                 this._matrix,
                 this.rotation,

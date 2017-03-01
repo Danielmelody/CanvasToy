@@ -26,9 +26,9 @@ namespace CanvasToy {
             return this;
         }
 
-        public getProjecttionBoundingBox(camera: Camera): BoundingBox {
+        public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {
             // TODO: implements bounding box for spot light.
-            console.error("function getProjecttionBoundingBox has not been init");
+            console.error("function getProjecttionBoundingBox2D has not been init");
             return {
                 left: -1,
                 right: 1,

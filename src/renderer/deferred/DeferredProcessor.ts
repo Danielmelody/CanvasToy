@@ -195,23 +195,23 @@ namespace CanvasToy {
             const lightPositionRadius = [];
             for (const light of scene.lights) {
                 if (light instanceof PointLight) {
-                lightColors.push(
-                    light.color[0],
-                    light.color[1],
-                    light.color[2],
-                    light.idensity,
-                );
-                const lightPosInViewSpace = vec3.transformMat4(
-                    vec3.create(),
-                    light.position,
-                    camera.worldToObjectMatrix,
-                );
-                lightPositionRadius.push(
-                    lightPosInViewSpace[0],
-                    lightPosInViewSpace[1],
-                    lightPosInViewSpace[2],
-                    (light as PointLight).radius,
-                );
+                    lightColors.push(
+                        light.color[0],
+                        light.color[1],
+                        light.color[2],
+                        light.idensity,
+                    );
+                    const lightPosInViewSpace = vec3.transformMat4(
+                        vec3.create(),
+                        light.position,
+                        camera.worldToObjectMatrix,
+                    );
+                    lightPositionRadius.push(
+                        lightPosInViewSpace[0],
+                        lightPosInViewSpace[1],
+                        lightPosInViewSpace[2],
+                        (light as PointLight).radius,
+                    );
                 }
             }
             this.lightColorIdensityMap.resetData(this.gl, new Float32Array(lightColors), lightColors.length / 4, 1);
@@ -228,8 +228,8 @@ namespace CanvasToy {
             }
             for (let i = 0; i < scene.lights.length; ++i) {
                 const light = scene.lights[i];
-                const box = light.getProjecttionBoundingBox(camera);
-                this.fillTileWithBoundingBox(box, i);
+                const box = light.getProjecttionBoundingBox2D(camera);
+                this.fillTileWithBoundingBox2D(box, i);
             }
             const linearLightIndex = [];
             const lightOffset = [];
@@ -237,14 +237,24 @@ namespace CanvasToy {
             let offset = 0;
             for (const indices of this.tileLightIndex) {
                 lightOffset.push(offset);
-                lightCount.push(indices.length);
+                lightCount.push(2);
                 offset += indices.length;
                 for (const index of indices) {
                     linearLightIndex.push(index);
                 }
             }
-            this.tileLightCountMap.resetData(this.gl, new Uint8Array(lightCount), lightCount.length, 1);
-            this.tileLightOffsetMap.resetData(this.gl, new Uint8Array(lightOffset), lightOffset.length, 1);
+            this.tileLightCountMap.resetData(
+                this.gl,
+                new Uint8Array(lightCount),
+                this.horizontalTileNum,
+                this.verticalTileNum,
+            );
+            this.tileLightOffsetMap.resetData(
+                this.gl,
+                new Uint8Array(lightOffset),
+                this.horizontalTileNum,
+                this.verticalTileNum,
+            );
             this.tileLightIndexMap.resetData(this.gl, new Uint8Array(linearLightIndex), linearLightIndex.length, 1);
             this.tilePass.pass(null, camera, null);
         }
@@ -255,7 +265,9 @@ namespace CanvasToy {
                 this.tile = new RectGeometry(this.gl).build();
             }
             for (let i = 0; i < this.horizontalTileNum; ++i) {
-                this.tileLightIndex.push([]);
+                for (let j = 0; j < this.verticalTileNum; ++j) {
+                    this.tileLightIndex.push([]);
+                }
             }
             this.tileLightIndexMap = new DataTexture(
                 this.gl,
@@ -288,8 +300,8 @@ namespace CanvasToy {
                 {
                     vertexShader: interploters__deferred__tiledLight_vert,
                     fragmentShader:
-                        calculators__blinn_phong_glsl +
-                        interploters__deferred__tiledLight_frag,
+                    calculators__blinn_phong_glsl +
+                    interploters__deferred__tiledLight_frag,
                 },
                 {
                     faces: () => this.tile.faces,
@@ -302,30 +314,30 @@ namespace CanvasToy {
                             type: DataType.float,
                             updator: (mesh, camera: Camera) => camera.near,
                         },
-                        inverseProjection : {
+                        inverseProjection: {
                             type: DataType.mat4,
-                            updator: (mesh, camera: Camera) => mat4.invert(mat4.create() ,camera.projectionMatrix),
+                            updator: (mesh, camera: Camera) => mat4.invert(mat4.create(), camera.projectionMatrix),
                         },
-                        uHorizontalTileNum:  {
+                        uHorizontalTileNum: {
                             type: DataType.float,
                             updator: () => this.horizontalTileNum,
                         },
-                        uVerticalTileNum:  {
+                        uVerticalTileNum: {
                             type: DataType.float,
                             updator: () => this.verticalTileNum,
                         },
                     },
                     textures: {
-                        uNormalDepthSE : () => this.gBuffer.extras[0].targetTexture,
-                        uDiffSpec : () => this.gBuffer.extras[1].targetTexture,
-                        uLightIndex : () => this.tileLightIndexMap,
-                        uLightCount : () => this.tileLightCountMap,
-                        uLightOffset : () => this.tileLightOffsetMap,
-                        uLightPositionRadius : () => this.lightPositionRadiusMap,
-                        uLightColorIdensity : () => this.lightColorIdensityMap,
+                        uNormalDepthSE: () => this.gBuffer.extras[0].targetTexture,
+                        uDiffSpec: () => this.gBuffer.extras[1].targetTexture,
+                        // uLightIndex: () => this.tileLightIndexMap,
+                        uLightCount: () => this.tileLightCountMap,
+                        uLightOffset: () => this.tileLightOffsetMap,
+                        uLightPositionRadius: () => this.lightPositionRadiusMap,
+                        uLightColorIdensity: () => this.lightColorIdensityMap,
                     },
-                    attributes : {
-                        position : () => this.tile.attributes.position,
+                    attributes: {
+                        position: () => this.tile.attributes.position,
                     },
                 },
             );
@@ -333,17 +345,23 @@ namespace CanvasToy {
             this.tilePass.make(scene);
         }
 
-        private fillTileWithBoundingBox(box: BoundingBox, lightIndex: number) {
-            const leftTile = Math.max(Math.floor(box.left * this.gl.canvas.width / this.tilePixelSize), 0);
+        private fillTileWithBoundingBox2D(box: BoundingBox2D, lightIndex: number) {
+            const leftTile = Math.max(
+                Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum),
+                0,
+            );
             const topTile = Math.min(
-                Math.ceil(box.top * this.gl.canvas.height / this.tilePixelSize),
-                this.gl.canvas.height / this.tilePixelSize,
+                Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum),
+                this.verticalTileNum,
             );
             const rightTile = Math.min(
-                Math.ceil(box.right * this.gl.canvas.width / this.tilePixelSize),
-                this.gl.canvas.width / this.tilePixelSize,
+                Math.ceil((box.right / 2.0 + 0.5) * this.horizontalTileNum),
+                this.horizontalTileNum,
             );
-            const bottomTile = Math.max(Math.floor(box.bottom * this.gl.canvas.height / this.tilePixelSize), 0);
+            const bottomTile = Math.max(
+                Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum),
+                0,
+            );
             for (let i = leftTile; i < rightTile; i++) {
                 for (let j = bottomTile; j < topTile; j++) {
                     const tileIndex = i + j * this.horizontalTileNum;

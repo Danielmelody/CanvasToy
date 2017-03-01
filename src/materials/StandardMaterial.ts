@@ -4,7 +4,7 @@ namespace CanvasToy {
 
     export interface IStandardMaterial {
         mainTexture?: Texture;
-        color?: Vec3Array;
+        ambient?: Vec3Array;
         diffuse?: Vec3Array;
         specular?: Vec3Array;
         interplotationMethod?: InterplotationMethod;

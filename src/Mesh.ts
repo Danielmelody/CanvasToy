@@ -11,8 +11,6 @@ namespace CanvasToy {
 
         public maps: Texture[] = [];
 
-        public normalMatrix: Mat4Array = mat4.create();
-
         constructor(geometry: Geometry, materials: Material[]) {
             super();
             this.materials = materials;
@@ -23,9 +21,5 @@ namespace CanvasToy {
             return gl.STATIC_DRAW;
         }
 
-        public genOtherMatrixs() {
-            super.genOtherMatrixs();
-            mat4.transpose(this.normalMatrix, mat4.invert(mat4.create(), this.matrix));
-        }
     }
 }

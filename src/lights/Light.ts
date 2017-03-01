@@ -21,7 +21,7 @@ namespace CanvasToy {
             super();
         }
 
-        public abstract getProjecttionBoundingBox(camera: Camera): BoundingBox;
+        public abstract getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D;
 
         public setColor(color: Vec3Array) {
             this._color = color;

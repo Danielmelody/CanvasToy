@@ -175,8 +175,10 @@ declare namespace CanvasToy {
         asyncFinished(): Promise<Object3d>;
         setAsyncFinished(promise: Promise<Object3d>): void;
         protected genOtherMatrixs(): void;
-        private composeFromLocalMatrix();
-        private composeFromGlobalMatrix();
+        protected deComposeLocalMatrix(): void;
+        protected composeFromLocalTransform(): void;
+        protected deComposeGlobalMatrix(): void;
+        private composeFromGlobalTransform();
         private applyToChildren();
     }
 }
@@ -196,7 +198,7 @@ declare namespace CanvasToy {
         readonly centerVector: GLM.IArray;
         readonly rightVector: GLM.IArray;
         readonly projectionMatrix: GLM.IArray;
-        lookAt(eye: Vec3Array, center: Vec3Array, up: Vec3Array): this;
+        lookAt(center: Vec3Array, up: Vec3Array): this;
         setProjectionMatrix(projectionMatrix: Mat4Array): this;
         setNear(near: number): this;
         setFar(far: number): this;
@@ -266,6 +268,7 @@ declare namespace CanvasToy {
         constructor(gl: WebGLRenderingContext, data: number[]);
     }
     class Geometry {
+        dirty: boolean;
         attributes: {
             position: Attribute;
             uv: Attribute;
@@ -289,10 +292,8 @@ declare namespace CanvasToy {
         geometry: Geometry;
         materials: Material[];
         maps: Texture[];
-        normalMatrix: Mat4Array;
         constructor(geometry: Geometry, materials: Material[]);
         drawMode(gl: WebGLRenderingContext): number;
-        genOtherMatrixs(): void;
     }
 }
 declare module CanvasToy {
@@ -303,7 +304,7 @@ declare module CanvasToy {
     const env_map_vert = "";
     const interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
     const interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
-    const interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffset;\nuniform sampler2D uLightCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main()\n{\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum));\n    int lightStartIndex = int(texture2D(uLightOffset, gridIndex).x);\n    int lightNum = int(texture2D(uLightCount, gridIndex).x);\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (i > lightNum) {\n            break;\n        }\n        int lightId = 0;// int(texture2D(uLightIndex, vec2(lightStartIndex + i, 0.5)).x);\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(lightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(lightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        //if (dist < lightR) {\n            // vec3 fixLightColor = lightColor / ((dist / lightR) * (dist / lightR));\n            totalColor += calculate_light(\n                viewPosition,\n                normal,\n                lightPos,\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n            // totalColor = vec3(specularAngle);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
+    const interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffset;\nuniform sampler2D uLightCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    int lightStartIndex = int(texture2D(uLightOffset, gridIndex).x);\n    int lightNum = int(texture2D(uLightCount, uv * 2.0).x);\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (i >= lightNum) {\n            break;\n        }\n        int lightId = 0;// int(texture2D(uLightIndex, vec2(lightStartIndex + i, 0.5)).x);\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(lightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(lightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        //if (dist < lightR) {\n            // vec3 fixLightColor = lightColor / ((dist / lightR) * (dist / lightR));\n            totalColor += calculate_light(\n                viewPosition,\n                normal,\n                lightPos,\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n            // totalColor = vec3(specularAngle);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    float lightWeight = float(lightNum) / 4.0;\n    gl_FragColor = vec4(texture2D(uLightCount, uv).xyz, 1.0);\n}\n";
     const interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
     const interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     const interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
@@ -421,7 +422,7 @@ declare namespace CanvasToy {
     }
 }
 declare namespace CanvasToy {
-    interface BoundingBox {
+    interface BoundingBox2D {
         top: number;
         bottom: number;
         left: number;
@@ -436,7 +437,7 @@ declare namespace CanvasToy {
         protected _shadowRtt: Texture;
         protected _projectCamera: Camera;
         constructor();
-        abstract getProjecttionBoundingBox(camera: Camera): BoundingBox;
+        abstract getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D;
         setColor(color: Vec3Array): this;
         setIdensity(idensity: number): this;
         readonly color: GLM.IArray;
@@ -447,7 +448,7 @@ declare namespace CanvasToy {
     class DirectionalLight extends Light {
         protected _direction: Vec3Array;
         readonly direction: Vec3Array;
-        getProjecttionBoundingBox(camera: Camera): BoundingBox;
+        getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D;
         setDirection(_direction: Vec3Array): this;
     }
 }
@@ -456,7 +457,7 @@ declare namespace CanvasToy {
         protected _position: Vec3Array;
         protected _radius: number;
         constructor(gl: WebGLRenderingContext);
-        getProjecttionBoundingBox(camera: Camera): BoundingBox;
+        getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D;
         setRadius(radius: number): this;
         readonly radius: number;
     }
@@ -471,7 +472,7 @@ declare namespace CanvasToy {
 declare namespace CanvasToy {
     interface IStandardMaterial {
         mainTexture?: Texture;
-        color?: Vec3Array;
+        ambient?: Vec3Array;
         diffuse?: Vec3Array;
         specular?: Vec3Array;
         interplotationMethod?: InterplotationMethod;
@@ -596,7 +597,7 @@ declare namespace CanvasToy {
         private initGeometryProcess(scene);
         private passLightInfoToTexture(scene, camera);
         private initTiledPass(scene);
-        private fillTileWithBoundingBox(box, lightIndex);
+        private fillTileWithBoundingBox2D(box, lightIndex);
     }
 }
 declare namespace CanvasToy {

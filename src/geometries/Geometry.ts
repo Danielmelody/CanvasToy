@@ -14,6 +14,8 @@ namespace CanvasToy {
 
     export class Geometry {
 
+        public dirty = true;
+
         public attributes: {
             position: Attribute,
             uv: Attribute,

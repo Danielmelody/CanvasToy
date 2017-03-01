@@ -18,24 +18,33 @@ namespace CanvasToy {
             this._projectCamera = new PerspectiveCamera();
         }
 
-        public getProjecttionBoundingBox(camera: Camera): BoundingBox {
-            const mvpMatrix = mat4.multiply(
+        public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {
+            const viewMatrix = mat4.multiply(
                 mat4.create(),
                 camera.projectionMatrix,
-                mat4.multiply(mat4.create(),
-                    camera.worldToObjectMatrix,
-                    this.matrix),
+                camera.worldToObjectMatrix,
             );
-            let upSide = vec3.normalize(vec3.create(), camera.upVector);
+            const viewDir = vec3.sub(vec3.create(), this.position, camera.position);
+            const upSide = vec3.normalize(vec3.create(), camera.upVector);
+            const rightSide = vec3.create();
+            vec3.cross(rightSide, upSide, viewDir);
+            vec3.normalize(rightSide, rightSide);
             vec3.scale(upSide, upSide, this.radius);
-            upSide = vec3.transformMat4(vec3.create(), upSide, mvpMatrix);
-            const screenLength = vec3.len(upSide);
-            const screenPos = vec3.transformMat4(vec3.create(), this._position, mvpMatrix);
+            vec3.scale(rightSide, rightSide, this.radius);
+
+            let lightUpPoint = vec3.add(vec3.create(), this.position, upSide);
+            let lightRightPoint = vec3.add(vec3.create(), this.position, rightSide);
+            const screenPos = vec3.transformMat4(vec3.create(), this._position, viewMatrix);
+
+            lightUpPoint = vec3.transformMat4(vec3.create(), upSide, viewMatrix);
+            lightRightPoint = vec3.transformMat4(vec3.create(), rightSide, viewMatrix);
+            const screenH = Math.abs(vec3.len(vec3.sub(vec3.create(), lightUpPoint, screenPos)));
+            const screenW = Math.abs(vec3.len(vec3.sub(vec3.create(), lightRightPoint, screenPos)));
             return {
-                left: screenPos[0] - screenLength,
-                right: screenPos[0] + screenLength,
-                top: screenPos[1] + screenLength,
-                bottom: screenPos[1] - screenLength,
+                left: screenPos[0] - screenW,
+                right: screenPos[0] + screenW,
+                top: screenPos[1] + screenH,
+                bottom: screenPos[1] - screenH,
             };
         }
 

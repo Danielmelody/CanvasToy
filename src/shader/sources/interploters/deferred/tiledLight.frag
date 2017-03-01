@@ -36,12 +36,11 @@ vec3 decodePosition(float depth) {
     return homogenous.xyz / homogenous.w;
 }
 
-void main()
-{
+void main() {
     vec2 uv = vPosition.xy * 0.5 + vec2(0.5);
-    vec2 gridIndex = floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum));
+    vec2 gridIndex = uv;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);
     int lightStartIndex = int(texture2D(uLightOffset, gridIndex).x);
-    int lightNum = int(texture2D(uLightCount, gridIndex).x);
+    int lightNum = int(texture2D(uLightCount, uv * 2.0).x);
     vec4 tex1 = texture2D(uNormalDepthSE, uv);
     vec4 tex2 = texture2D(uDiffSpec, uv);
 
@@ -53,7 +52,7 @@ void main()
     vec3 viewPosition = decodePosition(tex1.z);
     vec3 totalColor = vec3(0.0);
     for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {
-        if (i > lightNum) {
+        if (i >= lightNum) {
             break;
         }
         int lightId = 0;// int(texture2D(uLightIndex, vec2(lightStartIndex + i, 0.5)).x);
@@ -89,5 +88,6 @@ void main()
     }
     // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));
     // vec3 depth = vec3(tex1.z);
-    gl_FragColor = vec4(totalColor, 1.0);
+    float lightWeight = float(lightNum) / 4.0;
+    gl_FragColor = vec4(texture2D(uLightCount, uv).xyz, 1.0);
 }

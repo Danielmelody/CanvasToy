@@ -13,13 +13,6 @@ namespace CanvasToy {
             this.data = data;
             this.width = width;
             this.height = height;
-            this.setAsyncFinished(Promise.resolve(this));
-            if (data instanceof Float32Array) {
-                this.setType(gl.FLOAT);
-            }
-            if (data instanceof Uint32Array) {
-                this.setType(gl.UNSIGNED_INT);
-            }
         }
 
         public resetData(gl: WebGLRenderingContext, data: TypeArray, width?: number, height?: number) {

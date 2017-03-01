@@ -10,7 +10,7 @@ namespace CanvasToy {
             return this._direction;
         }
 
-        public getProjecttionBoundingBox(camera: Camera): BoundingBox {
+        public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {
             return {
                 left: -1,
                 right: 1,

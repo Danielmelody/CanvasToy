@@ -18,10 +18,10 @@ namespace CanvasToy {
                 1.0, 1.0,
             ];
             this.attributes.normal.data = [
-                1, 0, 0,
-                0, 1, 0,
                 0, 0, 1,
-                0, 1, 1,
+                0, 0, 1,
+                0, 0, 1,
+                0, 0, 1,
             ];
             this.faces.data = [
                 0, 1, 2,

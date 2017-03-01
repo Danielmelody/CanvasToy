@@ -46,12 +46,11 @@ namespace CanvasToy {
             return this._projectionMatrix;
         }
 
-        public lookAt(eye: Vec3Array, center: Vec3Array, up: Vec3Array) {
-            this.setPosition(eye);
+        public lookAt(center: Vec3Array, up: Vec3Array) {
             this._centerVector = center;
             this._upVector = up;
             vec3.cross(this._rightVector, up, center);
-            mat4.lookAt(this._worldToObjectMatrix, eye, center, up);
+            mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
             this.setWorldToObjectMatrix(this._worldToObjectMatrix);
             return this;
         }
