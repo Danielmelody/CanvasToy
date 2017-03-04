@@ -4,12 +4,12 @@ precision highp float;
 
 uniform float uHorizontalTileNum;
 uniform float uVerticalTileNum;
+uniform float uLightListLengthSqrt;
 
 uniform mat4 inverseProjection;
 
 uniform sampler2D uLightIndex;
-uniform sampler2D uLightOffset;
-uniform sampler2D uLightCount;
+uniform sampler2D uLightOffsetCount;
 uniform sampler2D uLightPositionRadius;
 uniform sampler2D uLightColorIdensity;
 
@@ -38,9 +38,10 @@ vec3 decodePosition(float depth) {
 
 void main() {
     vec2 uv = vPosition.xy * 0.5 + vec2(0.5);
-    vec2 gridIndex = uv;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);
-    int lightStartIndex = int(texture2D(uLightOffset, gridIndex).x);
-    int lightNum = int(texture2D(uLightCount, uv * 2.0).x);
+    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);
+    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);
+    float lightStartIndex = lightIndexInfo.r;
+    float lightNum = lightIndexInfo.w;
     vec4 tex1 = texture2D(uNormalDepthSE, uv);
     vec4 tex2 = texture2D(uDiffSpec, uv);
 
@@ -51,21 +52,28 @@ void main() {
     vec3 normal = decodeNormal(tex1.xy);
     vec3 viewPosition = decodePosition(tex1.z);
     vec3 totalColor = vec3(0.0);
+    int realCount = 0;
     for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {
-        if (i >= lightNum) {
+        if (float(i) > lightNum - 0.5) {
             break;
         }
-        int lightId = 0;// int(texture2D(uLightIndex, vec2(lightStartIndex + i, 0.5)).x);
-        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(lightId, 0.5));
+        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;
+        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;
+        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;
+        // listX = 1.0;
+        // listY = 0.0;
+        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;
+        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));
         vec3 lightPos = lightPosR.xyz;
         float lightR = lightPosR.w;
-        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(lightId, 0.5));
+        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));
         vec3 lightColor = lightColorIden.xyz;
         float lightIdensity = lightColorIden.w;
 
         float dist = distance(lightPos, viewPosition);
-        //if (dist < lightR) {
-            // vec3 fixLightColor = lightColor / ((dist / lightR) * (dist / lightR));
+        if (dist < lightR) {
+            realCount++;
+            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));
             totalColor += calculate_light(
                 viewPosition,
                 normal,
@@ -76,18 +84,20 @@ void main() {
                 materialSpecExp,
                 lightIdensity
             );
+            // totalColor += vec3(listX, listY, 0.0);
+        }
             // vec3 lightDir = normalize(lightPos - viewPosition);
             // vec3 reflectDir = normalize(reflect(lightDir, normal));
             // vec3 viewDir = normalize( - viewPosition);
             // vec3 H = normalize(lightDir + viewDir);
             // float specularAngle = max(dot(H, normal), 0.0);
             // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);
-            // totalColor = vec3(specularAngle);
+        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);
         //}
         //}
     }
     // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));
     // vec3 depth = vec3(tex1.z);
-    float lightWeight = float(lightNum) / 4.0;
-    gl_FragColor = vec4(texture2D(uLightCount, uv).xyz, 1.0);
+    vec3 test = vec3(float(realCount) / 32.0);
+    gl_FragColor = vec4(totalColor, 1.0);
 }

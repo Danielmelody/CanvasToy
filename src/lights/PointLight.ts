@@ -36,15 +36,15 @@ namespace CanvasToy {
             let lightRightPoint = vec3.add(vec3.create(), this.position, rightSide);
             const screenPos = vec3.transformMat4(vec3.create(), this._position, viewMatrix);
 
-            lightUpPoint = vec3.transformMat4(vec3.create(), upSide, viewMatrix);
-            lightRightPoint = vec3.transformMat4(vec3.create(), rightSide, viewMatrix);
+            lightUpPoint = vec3.transformMat4(vec3.create(), lightUpPoint, viewMatrix);
+            lightRightPoint = vec3.transformMat4(vec3.create(), lightRightPoint, viewMatrix);
             const screenH = Math.abs(vec3.len(vec3.sub(vec3.create(), lightUpPoint, screenPos)));
             const screenW = Math.abs(vec3.len(vec3.sub(vec3.create(), lightRightPoint, screenPos)));
             return {
                 left: screenPos[0] - screenW,
                 right: screenPos[0] + screenW,
-                top: screenPos[1] + screenH,
-                bottom: screenPos[1] - screenH,
+                top: -screenPos[1] + screenH,
+                bottom: -screenPos[1] - screenH,
             };
         }
 

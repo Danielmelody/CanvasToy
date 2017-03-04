@@ -128,32 +128,37 @@ examples.push(function (canvas) {
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
-    var light = new CanvasToy.PointLight(renderer.gl).setPosition([0, 5, -40]).setIdensity(2).setRadius(1000);
     var up = vec3.cross(vec3.create(), [1, 0, 0], [0, 0, -40]);
     var camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40], up);
-    scene.addLight(light);
     scene.addObject(camera);
     var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
         })]).translate([0, -10, -40]).rotateX(-Math.PI / 2).setScaling([200, 200, 200]);
     scene.addObject(tile);
-    tile.registUpdate(function () {
-    });
     var teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(function () {
+        var material = teapotProto.children[0].materials[0];
+        material.diffuse = [1, 0.8, 0.2];
         var _loop_1 = function (i) {
             var teapot = new CanvasToy.Mesh(teapotProto.children[0].geometry, teapotProto.children[0].materials);
             scene.addObject(teapot);
             teapot.translate([(i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40]);
             var time = 0;
             var spin = 0.03 * (Math.random() - 0.5);
+            var light = new CanvasToy.PointLight(renderer.gl)
+                .setPosition([Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150])
+                .setIdensity(0.5)
+                .setRadius(50);
+            scene.addLight(light);
+            var vx = Math.random() * 3;
+            var vy = Math.random() * 3;
             teapot.registUpdate(function () {
                 time += 1 / 60;
                 teapot.rotateY(spin);
+                light.translate([-Math.sin(time * vx), 0, -Math.cos(time * vy)]);
             });
-            var material = teapot.materials[0];
         };
-        for (var i = 0; i < 100; ++i) {
+        for (var i = 0; i < 40; ++i) {
             _loop_1(i);
         }
         renderer.forceDeferred();

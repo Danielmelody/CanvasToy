@@ -1028,7 +1028,7 @@ var CanvasToy;
     CanvasToy.env_map_vert = "";
     CanvasToy.interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
     CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
-    CanvasToy.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffset;\nuniform sampler2D uLightCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    int lightStartIndex = int(texture2D(uLightOffset, gridIndex).x);\n    int lightNum = int(texture2D(uLightCount, uv * 2.0).x);\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (i >= lightNum) {\n            break;\n        }\n        int lightId = 0;// int(texture2D(uLightIndex, vec2(lightStartIndex + i, 0.5)).x);\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(lightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(lightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        //if (dist < lightR) {\n            // vec3 fixLightColor = lightColor / ((dist / lightR) * (dist / lightR));\n            totalColor += calculate_light(\n                viewPosition,\n                normal,\n                lightPos,\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n            // totalColor = vec3(specularAngle);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    float lightWeight = float(lightNum) / 4.0;\n    gl_FragColor = vec4(texture2D(uLightCount, uv).xyz, 1.0);\n}\n";
+    CanvasToy.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculate_light(\n                viewPosition,\n                normal,\n                lightPos,\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
     CanvasToy.interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
     CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
     CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
@@ -1599,15 +1599,15 @@ var CanvasToy;
             var lightUpPoint = vec3.add(vec3.create(), this.position, upSide);
             var lightRightPoint = vec3.add(vec3.create(), this.position, rightSide);
             var screenPos = vec3.transformMat4(vec3.create(), this._position, viewMatrix);
-            lightUpPoint = vec3.transformMat4(vec3.create(), upSide, viewMatrix);
-            lightRightPoint = vec3.transformMat4(vec3.create(), rightSide, viewMatrix);
+            lightUpPoint = vec3.transformMat4(vec3.create(), lightUpPoint, viewMatrix);
+            lightRightPoint = vec3.transformMat4(vec3.create(), lightRightPoint, viewMatrix);
             var screenH = Math.abs(vec3.len(vec3.sub(vec3.create(), lightUpPoint, screenPos)));
             var screenW = Math.abs(vec3.len(vec3.sub(vec3.create(), lightRightPoint, screenPos)));
             return {
                 left: screenPos[0] - screenW,
                 right: screenPos[0] + screenW,
-                top: screenPos[1] + screenH,
-                bottom: screenPos[1] - screenH,
+                top: -screenPos[1] + screenH,
+                bottom: -screenPos[1] - screenH,
             };
         };
         PointLight.prototype.setRadius = function (radius) {
@@ -1697,7 +1697,7 @@ var CanvasToy;
             _this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
             _this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
             _this.specular = vec3.fromValues(0.3, 0.3, 0.3);
-            _this.specularExponent = 16;
+            _this.specularExponent = 64;
             _this.transparency = 0;
             _this.reflectivity = 0.5;
             _this.program = new CanvasToy.StandardShaderBuilder().build(gl);
@@ -2130,9 +2130,9 @@ var CanvasToy;
 (function (CanvasToy) {
     var DeferredProcessor = (function () {
         function DeferredProcessor(gl, ext, scene, camera) {
-            this.tilePixelSize = 32;
-            this.geometryPasses = {};
+            this.tilePixelSize = 128;
             this.tileLightIndex = [];
+            this.linearLightIndex = [];
             this.gl = gl;
             this.ext = ext;
             this.gBuffer = new CanvasToy.FrameBuffer(gl);
@@ -2162,19 +2162,20 @@ var CanvasToy;
                 var object = _a[_i];
                 if (object instanceof CanvasToy.Mesh) {
                     var mesh = object;
-                    this.gl.useProgram(this.geometryPasses[mesh].webGlProgram);
                     for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
                         var material = _c[_b];
-                        if (material.dirty) {
-                            this.geometryPasses[mesh].resetMaterialDefines(material);
-                            this.geometryPasses[mesh].make(mesh.scene);
-                            CanvasToy.Graphics.addRootUniformContainer(this.geometryPasses[mesh], object);
-                            CanvasToy.Graphics.addRootUniformContainer(this.geometryPasses[mesh], material);
-                            material.dirty = false;
+                        if (material instanceof CanvasToy.StandardMaterial) {
+                            if (material.dirty) {
+                                material.geometryProgram.resetMaterialDefines(material);
+                                material.geometryProgram.make(mesh.scene);
+                                CanvasToy.Graphics.addRootUniformContainer(material.geometryProgram, object);
+                                CanvasToy.Graphics.addRootUniformContainer(material.geometryProgram, material);
+                                material.dirty = false;
+                            }
+                            material.geometryProgram.pass(mesh, camera, material);
+                            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
+                            this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                         }
-                        this.geometryPasses[mesh].pass(mesh, camera, material);
-                        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                        this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                     }
                 }
             }
@@ -2235,11 +2236,13 @@ var CanvasToy;
                     }, CanvasToy.defaultProgramPass);
                     for (var _f = 0, _g = object.materials; _f < _g.length; _f++) {
                         var material = _g[_f];
-                        geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                        geometryProgram.make(scene);
-                        CanvasToy.Graphics.addRootUniformContainer(geometryProgram, object);
-                        CanvasToy.Graphics.addRootUniformContainer(geometryProgram, material);
-                        this.geometryPasses[object] = geometryProgram;
+                        if (material instanceof CanvasToy.StandardMaterial) {
+                            geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
+                            geometryProgram.make(scene);
+                            CanvasToy.Graphics.addRootUniformContainer(geometryProgram, object);
+                            CanvasToy.Graphics.addRootUniformContainer(geometryProgram, material);
+                            material.geometryProgram = geometryProgram;
+                        }
                     }
                 }
             }
@@ -2260,28 +2263,26 @@ var CanvasToy;
             for (var i = 0; i < this.tileCount; ++i) {
                 this.tileLightIndex[i] = [];
             }
+            this.linearLightIndex = [];
             for (var i = 0; i < scene.lights.length; ++i) {
                 var light = scene.lights[i];
                 var box = light.getProjecttionBoundingBox2D(camera);
-                this.fillTileWithBoundingBox2D(box, i);
+                this.fillTileWithBoundingBox2D(camera, box, i);
             }
-            var linearLightIndex = [];
-            var lightOffset = [];
-            var lightCount = [];
+            var lightOffsetCount = [];
             var offset = 0;
             for (var _b = 0, _c = this.tileLightIndex; _b < _c.length; _b++) {
                 var indices = _c[_b];
-                lightOffset.push(offset);
-                lightCount.push(2);
+                lightOffsetCount.push(offset);
+                lightOffsetCount.push(indices.length);
                 offset += indices.length;
                 for (var _d = 0, indices_1 = indices; _d < indices_1.length; _d++) {
                     var index = indices_1[_d];
-                    linearLightIndex.push(index);
+                    this.linearLightIndex.push(index / scene.lights.length);
                 }
             }
-            this.tileLightCountMap.resetData(this.gl, new Uint8Array(lightCount), this.horizontalTileNum, this.verticalTileNum);
-            this.tileLightOffsetMap.resetData(this.gl, new Uint8Array(lightOffset), this.horizontalTileNum, this.verticalTileNum);
-            this.tileLightIndexMap.resetData(this.gl, new Uint8Array(linearLightIndex), linearLightIndex.length, 1);
+            this.tileLightIndexMap.resetData(this.gl, new Float32Array(this.linearLightIndex), this.linearLightIndex.length, 1);
+            this.tileLightOffsetCountMap.resetData(this.gl, new Float32Array(lightOffsetCount), this.horizontalTileNum, this.verticalTileNum);
             this.tilePass.pass(null, camera, null);
         };
         DeferredProcessor.prototype.initTiledPass = function (scene) {
@@ -2294,11 +2295,19 @@ var CanvasToy;
                     this.tileLightIndex.push([]);
                 }
             }
-            this.tileLightIndexMap = new CanvasToy.DataTexture(this.gl, new Uint8Array([])).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
-            this.tileLightOffsetMap = new CanvasToy.DataTexture(this.gl, new Uint8Array([]), this.horizontalTileNum, this.verticalTileNum).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
+            this.tileLightIndexMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
+                .setFormat(this.gl.LUMINANCE)
+                .setType(this.gl.FLOAT);
+            this.tileLightOffsetCountMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]), this.horizontalTileNum, this.verticalTileNum)
+                .setFormat(this.gl.LUMINANCE_ALPHA)
+                .setType(this.gl.FLOAT);
             this.tileLightCountMap = new CanvasToy.DataTexture(this.gl, new Uint8Array([]), this.horizontalTileNum, this.verticalTileNum).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
-            this.lightColorIdensityMap = new CanvasToy.DataTexture(this.gl, new Float32Array([])).setType(this.gl.FLOAT).setFormat(this.gl.RGBA);
-            this.lightPositionRadiusMap = new CanvasToy.DataTexture(this.gl, new Float32Array([])).setType(this.gl.FLOAT).setFormat(this.gl.RGBA);
+            this.lightColorIdensityMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA);
+            this.lightPositionRadiusMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA);
             this.tilePass = new CanvasToy.Program(this.gl, {
                 vertexShader: CanvasToy.interploters__deferred__tiledLight_vert,
                 fragmentShader: CanvasToy.calculators__blinn_phong_glsl +
@@ -2318,6 +2327,10 @@ var CanvasToy;
                         type: CanvasToy.DataType.mat4,
                         updator: function (mesh, camera) { return mat4.invert(mat4.create(), camera.projectionMatrix); },
                     },
+                    uLightListLengthSqrt: {
+                        type: CanvasToy.DataType.float,
+                        updator: function () { return _this.linearLightIndex.length; },
+                    },
                     uHorizontalTileNum: {
                         type: CanvasToy.DataType.float,
                         updator: function () { return _this.horizontalTileNum; },
@@ -2326,14 +2339,18 @@ var CanvasToy;
                         type: CanvasToy.DataType.float,
                         updator: function () { return _this.verticalTileNum; },
                     },
+                    uTotalLightNum: {
+                        type: CanvasToy.DataType.float,
+                        updator: function () { return scene.lights.length; },
+                    },
                 },
                 textures: {
                     uNormalDepthSE: function () { return _this.gBuffer.extras[0].targetTexture; },
                     uDiffSpec: function () { return _this.gBuffer.extras[1].targetTexture; },
-                    uLightCount: function () { return _this.tileLightCountMap; },
-                    uLightOffset: function () { return _this.tileLightOffsetMap; },
+                    uLightOffsetCount: function () { return _this.tileLightOffsetCountMap; },
                     uLightPositionRadius: function () { return _this.lightPositionRadiusMap; },
                     uLightColorIdensity: function () { return _this.lightColorIdensityMap; },
+                    uLightIndex: function () { return _this.tileLightIndexMap; },
                 },
                 attributes: {
                     position: function () { return _this.tile.attributes.position; },
@@ -2342,11 +2359,11 @@ var CanvasToy;
             CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, this.tile);
             this.tilePass.make(scene);
         };
-        DeferredProcessor.prototype.fillTileWithBoundingBox2D = function (box, lightIndex) {
-            var leftTile = Math.max(Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum), 0);
-            var topTile = Math.min(Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum), this.verticalTileNum);
-            var rightTile = Math.min(Math.ceil((box.right / 2.0 + 0.5) * this.horizontalTileNum), this.horizontalTileNum);
-            var bottomTile = Math.max(Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum), 0);
+        DeferredProcessor.prototype.fillTileWithBoundingBox2D = function (camera, box, lightIndex) {
+            var leftTile = Math.max(Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum) - 1, 0);
+            var topTile = Math.min(Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum) + 1, this.verticalTileNum);
+            var rightTile = Math.min(Math.ceil((box.right / 2.0 + 0.5) * this.horizontalTileNum) + 1, this.horizontalTileNum);
+            var bottomTile = Math.max(Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum) - 1, 0);
             for (var i = leftTile; i < rightTile; i++) {
                 for (var j = bottomTile; j < topTile; j++) {
                     var tileIndex = i + j * this.horizontalTileNum;

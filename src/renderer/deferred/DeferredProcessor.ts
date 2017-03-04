@@ -9,26 +9,25 @@ namespace CanvasToy {
     export class DeferredProcessor implements IProcessor {
 
         public tile: RectGeometry;
-        public readonly tilePixelSize: number = 32;
+        public readonly tilePixelSize: number = 128;
 
         public readonly horizontalTileNum;
         public readonly verticalTileNum;
         public readonly tileCount;
         public readonly gBuffer: FrameBuffer;
-        public readonly geometryPasses: {} = {};
         public readonly gl: WebGLRenderingContext;
         public readonly ext: WebGLExtension;
 
         public tilePass: Program;
 
         private tileLightIndexMap: DataTexture<Uint8Array>;
-        private tileLightOffsetMap: DataTexture<Uint8Array>;
-        private tileLightOffMap: DataTexture<Uint8Array>;
+        private tileLightOffsetCountMap: DataTexture<Float32Array>;
         private tileLightCountMap: DataTexture<Uint8Array>;
         private lightPositionRadiusMap: DataTexture<Float32Array>;
         private lightColorIdensityMap: DataTexture<Float32Array>;
 
         private tileLightIndex: number[][] = [];
+        private linearLightIndex: number[] = [];
 
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
             this.gl = gl;
@@ -59,23 +58,24 @@ namespace CanvasToy {
             for (const object of scene.objects) {
                 if (object instanceof Mesh) {
                     const mesh = object as Mesh;
-                    this.gl.useProgram(this.geometryPasses[mesh as any].webGlProgram);
                     for (const material of mesh.materials) {
-                        if (material.dirty) {
-                            this.geometryPasses[mesh as any].resetMaterialDefines(material);
-                            this.geometryPasses[mesh as any].make(mesh.scene);
-                            Graphics.addRootUniformContainer(this.geometryPasses[mesh as any], (object as Mesh));
-                            Graphics.addRootUniformContainer(this.geometryPasses[mesh as any], material);
-                            material.dirty = false;
+                        if (material instanceof StandardMaterial) {
+                            if (material.dirty) {
+                                material.geometryProgram.resetMaterialDefines(material);
+                                material.geometryProgram.make(mesh.scene);
+                                Graphics.addRootUniformContainer(material.geometryProgram, (object as Mesh));
+                                Graphics.addRootUniformContainer(material.geometryProgram, material);
+                                material.dirty = false;
+                            }
+                            material.geometryProgram.pass(mesh, camera, material);
+                            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
+                            this.gl.drawElements(
+                                this.gl.TRIANGLES,
+                                mesh.geometry.faces.data.length,
+                                this.gl.UNSIGNED_SHORT,
+                                0,
+                            );
                         }
-                        this.geometryPasses[mesh as any].pass(mesh, camera, material);
-                        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                        this.gl.drawElements(
-                            this.gl.TRIANGLES,
-                            mesh.geometry.faces.data.length,
-                            this.gl.UNSIGNED_SHORT,
-                            0,
-                        );
                     }
                 }
             }
@@ -180,11 +180,13 @@ namespace CanvasToy {
                         defaultProgramPass,
                     );
                     for (const material of (object as Mesh).materials) {
-                        geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                        geometryProgram.make(scene);
-                        Graphics.addRootUniformContainer(geometryProgram, (object as Mesh));
-                        Graphics.addRootUniformContainer(geometryProgram, material);
-                        this.geometryPasses[(object as any)] = geometryProgram;
+                        if (material instanceof StandardMaterial) {
+                            geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
+                            geometryProgram.make(scene);
+                            Graphics.addRootUniformContainer(geometryProgram, (object as Mesh));
+                            Graphics.addRootUniformContainer(geometryProgram, material);
+                            material.geometryProgram = geometryProgram;
+                        }
                     }
                 }
             }
@@ -226,36 +228,40 @@ namespace CanvasToy {
             for (let i = 0; i < this.tileCount; ++i) {
                 this.tileLightIndex[i] = [];
             }
+
+            this.linearLightIndex = [];
             for (let i = 0; i < scene.lights.length; ++i) {
                 const light = scene.lights[i];
                 const box = light.getProjecttionBoundingBox2D(camera);
-                this.fillTileWithBoundingBox2D(box, i);
+                this.fillTileWithBoundingBox2D(camera, box, i);
             }
-            const linearLightIndex = [];
-            const lightOffset = [];
-            const lightCount = [];
+
+            const lightOffsetCount = [];
             let offset = 0;
             for (const indices of this.tileLightIndex) {
-                lightOffset.push(offset);
-                lightCount.push(2);
+                lightOffsetCount.push(offset);
+                lightOffsetCount.push(indices.length);
                 offset += indices.length;
                 for (const index of indices) {
-                    linearLightIndex.push(index);
+                    this.linearLightIndex.push(index / scene.lights.length);
                 }
             }
-            this.tileLightCountMap.resetData(
+            // const lightIndexWidth = Math.ceil(Math.sqrt(this.linearLightIndex.length));
+            // while(this.linearLightIndex.length < lightIndexWidth * lightIndexWidth) {
+            //     this.linearLightIndex.push(0);
+            // }
+            this.tileLightIndexMap.resetData(
                 this.gl,
-                new Uint8Array(lightCount),
+                new Float32Array(this.linearLightIndex),
+                this.linearLightIndex.length,
+                1,
+            );
+            this.tileLightOffsetCountMap.resetData(
+                this.gl,
+                new Float32Array(lightOffsetCount),
                 this.horizontalTileNum,
                 this.verticalTileNum,
             );
-            this.tileLightOffsetMap.resetData(
-                this.gl,
-                new Uint8Array(lightOffset),
-                this.horizontalTileNum,
-                this.verticalTileNum,
-            );
-            this.tileLightIndexMap.resetData(this.gl, new Uint8Array(linearLightIndex), linearLightIndex.length, 1);
             this.tilePass.pass(null, camera, null);
         }
 
@@ -271,14 +277,21 @@ namespace CanvasToy {
             }
             this.tileLightIndexMap = new DataTexture(
                 this.gl,
-                new Uint8Array([]),
-            ).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
-            this.tileLightOffsetMap = new DataTexture(
+                new Float32Array([]))
+                .setFormat(this.gl.LUMINANCE)
+                .setType(this.gl.FLOAT);
+            // .setMinFilter(this.gl.LINEAR)
+            // .setMagFilter(this.gl.LINEAR);
+            this.tileLightOffsetCountMap = new DataTexture(
                 this.gl,
-                new Uint8Array([]),
+                new Float32Array([]),
                 this.horizontalTileNum,
                 this.verticalTileNum,
-            ).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
+            )
+                .setFormat(this.gl.LUMINANCE_ALPHA)
+                .setType(this.gl.FLOAT)
+            // .setMinFilter(this.gl.LINEAR)
+            // .setMagFilter(this.gl.LINEAR);
             this.tileLightCountMap = new DataTexture(
                 this.gl,
                 new Uint8Array([]),
@@ -287,13 +300,19 @@ namespace CanvasToy {
             ).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
             this.lightColorIdensityMap = new DataTexture(
                 this.gl,
-                new Float32Array([]),
-            ).setType(this.gl.FLOAT).setFormat(this.gl.RGBA);
+                new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA)
+            // .setMinFilter(this.gl.LINEAR)
+            // .setMagFilter(this.gl.LINEAR);
 
             this.lightPositionRadiusMap = new DataTexture(
                 this.gl,
-                new Float32Array([]),
-            ).setType(this.gl.FLOAT).setFormat(this.gl.RGBA);
+                new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA)
+            // .setMinFilter(this.gl.LINEAR)
+            // .setMagFilter(this.gl.LINEAR);
 
             this.tilePass = new Program(
                 this.gl,
@@ -318,6 +337,10 @@ namespace CanvasToy {
                             type: DataType.mat4,
                             updator: (mesh, camera: Camera) => mat4.invert(mat4.create(), camera.projectionMatrix),
                         },
+                        uLightListLengthSqrt: {
+                            type: DataType.float,
+                            updator: () => this.linearLightIndex.length,
+                        },
                         uHorizontalTileNum: {
                             type: DataType.float,
                             updator: () => this.horizontalTileNum,
@@ -326,15 +349,18 @@ namespace CanvasToy {
                             type: DataType.float,
                             updator: () => this.verticalTileNum,
                         },
+                        uTotalLightNum: {
+                            type: DataType.float,
+                            updator: () => scene.lights.length,
+                        },
                     },
                     textures: {
                         uNormalDepthSE: () => this.gBuffer.extras[0].targetTexture,
                         uDiffSpec: () => this.gBuffer.extras[1].targetTexture,
-                        // uLightIndex: () => this.tileLightIndexMap,
-                        uLightCount: () => this.tileLightCountMap,
-                        uLightOffset: () => this.tileLightOffsetMap,
+                        uLightOffsetCount: () => this.tileLightOffsetCountMap,
                         uLightPositionRadius: () => this.lightPositionRadiusMap,
                         uLightColorIdensity: () => this.lightColorIdensityMap,
+                        uLightIndex: () => this.tileLightIndexMap,
                     },
                     attributes: {
                         position: () => this.tile.attributes.position,
@@ -345,21 +371,22 @@ namespace CanvasToy {
             this.tilePass.make(scene);
         }
 
-        private fillTileWithBoundingBox2D(box: BoundingBox2D, lightIndex: number) {
+        private fillTileWithBoundingBox2D(camera: Camera, box: BoundingBox2D, lightIndex: number) {
             const leftTile = Math.max(
-                Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum),
+                Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum) - 1,
                 0,
             );
             const topTile = Math.min(
-                Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum),
+                Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum) + 1,
                 this.verticalTileNum,
             );
             const rightTile = Math.min(
-                Math.ceil((box.right / 2.0 + 0.5) * this.horizontalTileNum),
+                Math.ceil(
+                    (box.right / 2.0 + 0.5) * this.horizontalTileNum) + 1,
                 this.horizontalTileNum,
             );
             const bottomTile = Math.max(
-                Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum),
+                Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum) - 1,
                 0,
             );
             for (let i = leftTile; i < rightTile; i++) {

@@ -28,7 +28,7 @@ namespace CanvasToy {
         public specular: Vec3Array = vec3.fromValues(0.3, 0.3, 0.3);
 
         @uniform("materialSpecExp", DataType.float)
-        public specularExponent: number = 16;
+        public specularExponent: number = 64;
 
         @readyRequire
         public specularMap: Texture;
@@ -53,6 +53,8 @@ namespace CanvasToy {
         @asDefine("_ENVIRONMENT_MAP")
         @readyRequire
         public reflectionMap: CubeTexture;
+
+        public geometryProgram: Program;
 
         constructor(gl: WebGLRenderingContext, paramter: IStandardMaterial = {}) {
             super();
