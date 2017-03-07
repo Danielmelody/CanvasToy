@@ -11,7 +11,7 @@ namespace CanvasToy {
             const container: Object3d = new Object3d();
             container.setAsyncFinished(fetchRes(url).then((content: string) => {
                 // remove comment of .obj file
-                content = content.replace(OBJLoader.commentPattern, "");
+                content = content.replace(patterns.commentPattern, "");
 
                 const home = url.substr(0, url.lastIndexOf("/") + 1);
 
@@ -43,7 +43,6 @@ namespace CanvasToy {
             return container;
         }
 
-        protected static commentPattern = /#.*/mg;
         protected static faceSplitVertPattern = /([0-9]|\/|\-)+/g;
         protected static facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
         protected static objectSplitPattern = /[o|g]\s+.+/mg;

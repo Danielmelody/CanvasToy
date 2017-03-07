@@ -7,20 +7,6 @@ namespace Testing {
                 beforeEach(() => {
                     pattern = OBJLoaderIm.commentPattern;
                 });
-                it("should match '#' comments", () => {
-                    str =
-                        `# comment
-                    not-comment
-                    `;
-                    expect(str.match(pattern)[0]).toBe("# comment");
-                });
-                it("should not match no-'#' comments", () => {
-                    str =
-                        `not-comment
-                    not-comment
-                    `;
-                    expect(str.match(pattern)).toBe(null);
-                });
             });
             describe("faceSplitVertPattern", () => {
                 beforeEach(() => {
