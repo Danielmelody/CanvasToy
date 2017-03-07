@@ -19,9 +19,7 @@ before_script:
   - sleep 3
 
 install:
-    - npm install -g typescript bower
-    - npm install
-    - bower install
+    - bash ./install-dependency.sh
 
 script:
-    - npm run testci
+    - npm run testci && bash ./deploy.sh

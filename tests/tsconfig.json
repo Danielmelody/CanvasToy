@@ -11,7 +11,7 @@
     },
     "include": [
         "../typings/index.d.ts",
-        "../bower_components/gl-matrix/dist/gl-matrix.js",
+        "../node_modules/gl-matrix/dist/gl-matrix.js",
         "../src/**/*.ts",
         "typings/index.d.ts",
         "Util.ts",
