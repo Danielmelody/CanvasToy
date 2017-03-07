@@ -3,11 +3,6 @@ namespace Testing {
     class OBJLoaderIm extends CanvasToy.OBJLoader {
         public static testRegulars() {
             let pattern: RegExp, str: string;
-            describe("commentPattern", () => {
-                beforeEach(() => {
-                    pattern = OBJLoaderIm.commentPattern;
-                });
-            });
             describe("faceSplitVertPattern", () => {
                 beforeEach(() => {
                     pattern = OBJLoaderIm.faceSplitVertPattern;

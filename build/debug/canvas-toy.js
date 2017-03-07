@@ -1685,6 +1685,7 @@ var CanvasToy;
     var patterns;
     (function (patterns) {
         patterns.num = /[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/mg;
+        patterns.commentPattern = /#.*/mg;
     })(patterns = CanvasToy.patterns || (CanvasToy.patterns = {}));
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1760,6 +1761,7 @@ var CanvasToy;
             var currentMaterial = null;
             var home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
             return CanvasToy.fetchRes(baseurl).then(function (content) {
+                content = content.replace(CanvasToy.patterns.commentPattern, "");
                 content.split("\n").forEach(function (line) {
                     currentMaterial = MTLLoader.handleSingleLine(gl, home, line, materials, currentMaterial);
                 });
@@ -1839,7 +1841,6 @@ var CanvasToy;
         };
         return MTLLoader;
     }());
-    MTLLoader.removeCommentPattern = /#.*/mg;
     MTLLoader.newmtlPattern = /newmtl\s(.+)/m;
     MTLLoader.ambientPattern = /Ka\s(.+)/m;
     MTLLoader.diffusePattern = /Kd\s(.+)/m;
@@ -1858,7 +1859,7 @@ var CanvasToy;
         OBJLoader.load = function (gl, url) {
             var container = new CanvasToy.Object3d();
             container.setAsyncFinished(CanvasToy.fetchRes(url).then(function (content) {
-                content = content.replace(OBJLoader.commentPattern, "");
+                content = content.replace(CanvasToy.patterns.commentPattern, "");
                 var home = url.substr(0, url.lastIndexOf("/") + 1);
                 var materialLibs = content.match(OBJLoader.mtlLibPattern);
                 var materialsMixin = {};
@@ -1949,7 +1950,6 @@ var CanvasToy;
         };
         return OBJLoader;
     }());
-    OBJLoader.commentPattern = /#.*/mg;
     OBJLoader.faceSplitVertPattern = /([0-9]|\/|\-)+/g;
     OBJLoader.facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
     OBJLoader.objectSplitPattern = /[o|g]\s+.+/mg;
@@ -2130,7 +2130,7 @@ var CanvasToy;
 (function (CanvasToy) {
     var DeferredProcessor = (function () {
         function DeferredProcessor(gl, ext, scene, camera) {
-            this.tilePixelSize = 128;
+            this.tilePixelSize = 32;
             this.tileLightIndex = [];
             this.linearLightIndex = [];
             this.gl = gl;

@@ -4,11 +4,13 @@
   "keywords": [
     "webgl",
     "glsl",
-    "canvas"
+    "rendering",
+    "deferred",
+    "tbdr"
   ],
   "main": "build/canvas-toy.js",
   "description": "lightweight webgl rendering tool",
-  "version": "0.2.2",
+  "version": "0.4.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -36,5 +38,8 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "dependencies": {
+    "gl-matrix": "^2.3.2"
   }
 }

@@ -467,6 +467,7 @@ declare namespace CanvasToy {
 declare namespace CanvasToy {
     namespace patterns {
         const num: RegExp;
+        const commentPattern: RegExp;
     }
 }
 declare namespace CanvasToy {
@@ -500,7 +501,6 @@ declare namespace CanvasToy {
 declare namespace CanvasToy {
     class MTLLoader {
         static load(gl: WebGLRenderingContext, baseurl: string): Promise<{}>;
-        protected static removeCommentPattern: RegExp;
         protected static newmtlPattern: RegExp;
         protected static ambientPattern: RegExp;
         protected static diffusePattern: RegExp;
@@ -518,7 +518,6 @@ declare namespace CanvasToy {
 declare namespace CanvasToy {
     class OBJLoader {
         static load(gl: WebGLRenderingContext, url: string): Object3d;
-        protected static commentPattern: RegExp;
         protected static faceSplitVertPattern: RegExp;
         protected static facePerVertPattern: RegExp;
         protected static objectSplitPattern: RegExp;

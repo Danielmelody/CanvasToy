@@ -9,7 +9,7 @@ namespace CanvasToy {
     export class DeferredProcessor implements IProcessor {
 
         public tile: RectGeometry;
-        public readonly tilePixelSize: number = 128;
+        public readonly tilePixelSize: number = 32;
 
         public readonly horizontalTileNum;
         public readonly verticalTileNum;
