@@ -348,9 +348,10 @@ namespace CanvasToy {
             normalViewMatrix: {
                 type: DataType.mat4,
                 updator: (mesh: Mesh, camera: Camera) =>
+
                     mat4.transpose(mat4.create(), mat4.invert(mat4.create(),
                         mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix))),
-            },
+                    },
         },
         attributes: {
             position: (mesh) => mesh.geometry.attributes.position,

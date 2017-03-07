@@ -29,6 +29,12 @@ namespace CanvasToy {
         private tileLightIndex: number[][] = [];
         private linearLightIndex: number[] = [];
 
+        private tileLightOffsetMap: DataTexture<Uint8Array>;
+        private lightPositionMap: DataTexture<Float32Array>;
+        private lightColorMap: DataTexture<Float32Array>;
+
+        private tileLight2DIndex: number[][] = [];
+
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
             this.gl = gl;
             this.ext = ext;

@@ -592,6 +592,10 @@ declare namespace CanvasToy {
         private lightColorIdensityMap;
         private tileLightIndex;
         private linearLightIndex;
+        private tileLightOffsetMap;
+        private lightPositionMap;
+        private lightColorMap;
+        private tileLight2DIndex;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
         process(scene: Scene, camera: Camera, materials: Material[]): void;
         private initGeometryProcess(scene);

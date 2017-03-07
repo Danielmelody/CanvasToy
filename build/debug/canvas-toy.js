@@ -2133,6 +2133,7 @@ var CanvasToy;
             this.tilePixelSize = 128;
             this.tileLightIndex = [];
             this.linearLightIndex = [];
+            this.tileLight2DIndex = [];
             this.gl = gl;
             this.ext = ext;
             this.gBuffer = new CanvasToy.FrameBuffer(gl);

@@ -2,13 +2,13 @@
 
 namespace CanvasToy {
     export class DataTexture<TypeArray extends ArrayBufferView> extends Texture {
-
         public width: number;
         public height: number;
 
         private data: TypeArray;
 
         constructor(gl: WebGLRenderingContext, data: TypeArray, width: number = 16, height: number = 16) {
+
             super(gl);
             this.data = data;
             this.width = width;
