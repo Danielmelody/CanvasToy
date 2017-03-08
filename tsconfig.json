@@ -1,0 +1,25 @@
+{
+    "compilerOptions":{
+        "module": "amd",
+        "removeComments": true,
+        "lib":["es5", "es2015.promise", "dom"],
+        "outFile":"build/debug/canvas-toy.js",
+        "noLib": false,
+        "target": "es5",
+        "sourceMap": true,
+        "declaration": true,
+        "experimentalDecorators": true
+    },
+    "include":[
+        "node_modules/reflect-metadata/Reflect.ts",
+        "bower_components/gl-matrix/dist/gl-matrix.js",
+        "typings/**/*.ts",
+        "src/**/*.ts"
+    ],
+    "exclude":[
+        "examples/**/*.ts",
+        "tests/**/*.ts",
+        "build/**/*.ts"
+    ],
+   "compileOnSave": false
+}

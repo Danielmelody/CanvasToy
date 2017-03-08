@@ -1,0 +1,27 @@
+{
+  "name": "canvas-toy",
+  "description": "lightweight webgl rendering tool",
+  "main": "build/release/canvas-toy-min.js",
+  "authors": [
+    "Daniel hu <yimingdz@gmail.com>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "webgl",
+    "glsl",
+    "canvas"
+  ],
+  "homepage": "https://github.com/Danielhu229/CanvasToy",
+  "private": false,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "examples"
+  ],
+  "dependencies": {
+    "gl-matrix": "^2.3.2"
+  }
+}

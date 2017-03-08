@@ -1,0 +1,32 @@
+# ignore node.js dependency
+node_modules/
+
+# ignore bower dependency
+bower_components/
+
+# User-specific stuff:
+.idea/
+
+
+## Plugin-specific files:
+
+# IntelliJ
+/out/
+
+# mpeltonen/sbt-idea plugin
+.idea_modules/
+
+# JIRA plugin
+atlassian-ide-plugin.xml
+
+# Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+/tests/npm-debug.log
+npm-debug.log
+/tests/npm-debug.log.*
+npm-debug.log.*
+/tests/build/

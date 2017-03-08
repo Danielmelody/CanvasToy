@@ -1,0 +1,95 @@
+/// <reference path="./Camera.ts"/>
+
+namespace CanvasToy {
+
+    export class PerspectiveCamera extends Camera {
+        protected _aspect: number = 1;
+        protected _fovy: number = 45;
+        protected _near: number = 0.01;
+        protected _far: number = 10000;
+        constructor(parameter: {
+            aspect?: number,
+            fovy?: number,
+            near?: number,
+            far?: number,
+        } = {}) {
+            super();
+            this._aspect = parameter.aspect || this._aspect;
+            this._fovy = parameter.fovy || this._fovy;
+            this._near = parameter.near || this._near;
+            this._far = parameter.far || this._far;
+        }
+
+        public compuseProjectionMatrix() {
+            mat4.perspective(
+                mat4.create(),
+                this.fovy,
+                this.aspect,
+                this.near,
+                this.far,
+            );
+        }
+
+        public get aspect() {
+            return this._aspect;
+        }
+
+        public get fovy() {
+            return this._fovy;
+        }
+
+        public get near() {
+            return this._near;
+        }
+
+        public get far() {
+            return this._far;
+        }
+
+        public setAspect(aspect: number) {
+            if (aspect !== this._aspect) {
+                this.compuseProjectionMatrix();
+                this._aspect = aspect;
+            }
+            return this;
+        }
+
+        public setFovy(fovy: number) {
+            if (fovy !== this._fovy) {
+                this.compuseProjectionMatrix();
+                this._fovy = fovy;
+            }
+            return this;
+        }
+
+        public setNear(near: number) {
+            if (near !== this._near) {
+                this.compuseProjectionMatrix();
+                this._near = near;
+            }
+            return this;
+        }
+
+        public setFar(far: number) {
+            if (far !== this._far) {
+                this.compuseProjectionMatrix();
+                this._far = far;
+            }
+            return this;
+        }
+
+        public deCompuseProjectionMatrix() {
+            // TODO: decompuse perspective camera
+        }
+
+        public genOtherMatrixs() {
+            super.genOtherMatrixs();
+            this._projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
+        }
+
+        public adaptTargetRadio(target: { width: number, height: number }) {
+            this._aspect = target.width / target.height;
+            this.genOtherMatrixs();
+        }
+    }
+}

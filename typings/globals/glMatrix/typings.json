@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/3fbffb91e3837db19fa35ee4617317f9ed3e9370/gl-matrix/gl-matrix-legacy.d.ts",
+    "raw": "registry:dt/gl-matrix/gl-matrix-legacy#2.2.2+20160815161326",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/3fbffb91e3837db19fa35ee4617317f9ed3e9370/gl-matrix/gl-matrix-legacy.d.ts"
+  }
+}

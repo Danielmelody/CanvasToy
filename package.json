@@ -1,0 +1,40 @@
+{
+  "name": "canvas-toy",
+  "author": "danielhu",
+  "keywords": [
+    "webgl",
+    "glsl",
+    "canvas"
+  ],
+  "main": "build/canvas-toy.js",
+  "description": "lightweight webgl rendering tool",
+  "version": "0.2.2",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UniqueStudio/CanvasToy"
+  },
+  "bugs": {
+    "url": "https://github.com/UniqueStudio/CanvasToy/issues"
+  },
+  "devDependencies": {
+    "cz-conventional-changelog": "latest",
+    "gl": "latest",
+    "jasmine-core": "latest",
+    "karma": "latest",
+    "karma-chrome-launcher": "latest",
+    "karma-firefox-launcher": "latest",
+    "karma-jasmine": "latest"
+  },
+  "scripts": {
+    "test": "cd tests && sh testing.sh",
+    "testci": "cd tests && sh testingci.sh",
+    "build": "sh building.sh",
+    "example": "cd examples && sh runExample.sh"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}
