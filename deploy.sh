@@ -5,11 +5,11 @@ SOURCE_BRANCH="master"
 TARGET_BRANCH="gh-pages"
 
 # Pull requests and commits to other branches shouldn't try to deploy, just build to verify
-# if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
-#    echo "Skipping deploy; just doing a build."
-#    ./building.sh
-#    exit 0
-# fi
+ if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
+    echo "Skipping deploy; just doing a build."
+    bash ./building.sh
+    exit 0
+fi
 
 # Save some useful information
 REPO=`git config remote.origin.url`
@@ -18,19 +18,21 @@ SHA=`git rev-parse --verify HEAD`
 
 # Clone the existing gh-pages for this repo into out/
 # Create a new empty branch if gh-pages doesn't exist yet (should only happen on first deply)
-git clone $REPO out
-cd out
+git clone $REPO site
+cd site
 git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 cd ..
 
-# Clean out existing contents
-rm -rf out/**/* || exit 0
 
 # Run our compile script
 bash ./building.sh
 
+cp -r examples/ site/examples
+cp -r build/ site/build
+cp package.json site/package.json
 # Now let's go have some fun with the cloned repo
-cd out
+cd site
+npm install --production
 git config user.name "Travis CI"
 git config user.email "yimingdz@gmail.com"
 
@@ -50,4 +52,4 @@ eval `ssh-agent -s`
 ssh-add deploy_key
 
 # Now that we're all set up, we can push.
-git push $SSH_REPO $TARGET_BRANCH --force
+git push $SSH_REPO $TARGET_BRANCH
