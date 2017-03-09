@@ -1,0 +1,16 @@
+{
+    "compilerOptions":{
+        "removeComments": true,
+        "target": "es5",
+        "allowJs": false,
+        "outFile": "index.js",
+        "lib":["es5", "es2015.promise", "dom"],
+        "experimentalDecorators": true
+    },
+    "include":[
+        "../typings/index.d.ts",
+        "../build/debug/canvas-toy.d.ts",
+        "**/*.ts"
+    ],
+   "compileOnSave": true
+}
