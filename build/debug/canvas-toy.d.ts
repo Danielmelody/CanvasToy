@@ -141,8 +141,6 @@ declare namespace CanvasToy {
         protected _position: Vec3Array;
         protected _scaling: Vec3Array;
         protected _rotation: QuatArray;
-        protected updateEvents: Function[];
-        protected startEvents: Function[];
         constructor(tag?: string);
         readonly parent: Object3d;
         setParent(_parent: Object3d): this;
@@ -163,10 +161,6 @@ declare namespace CanvasToy {
         readonly scaling: Vec3Array;
         setScaling(_scaling: Vec3Array): this;
         setTransformFromParent(): this;
-        registUpdate(updateFunction: Function): this;
-        registStart(updateFunction: Function): this;
-        start(): void;
-        update(dt: number): void;
         translate(delta: Vec3Array): this;
         rotateX(angle: number): this;
         rotateY(angle: number): this;
@@ -554,10 +548,13 @@ declare namespace CanvasToy {
         enableShadowMap: boolean;
         clearColor: number[];
         programSetUp: boolean;
+        protected updateEvents: Function[];
         update(dt: number): void;
-        addObject(...objects: Array<Object3d>): this;
+        addOnUpdateListener(listener: (deltaTime: number) => void): this;
+        removeOnUpdateListener(listener: (deltaTime: number) => void): this;
+        addObject(...objects: Object3d[]): this;
         removeObject(object: Object3d): this;
-        addLight(...lights: Array<Light>): this;
+        addLight(...lights: Light[]): this;
     }
 }
 declare namespace CanvasToy {

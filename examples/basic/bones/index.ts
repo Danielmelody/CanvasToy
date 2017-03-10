@@ -34,7 +34,7 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     meshes[0].translate([0, -2, -10]);
 
-    meshes[0].registUpdate(() => {
+    scene.addOnUpdateListener(() => {
         meshes[0].rotateY(-0.005);
         meshes[1].rotateY(0.01);
         meshes[2].rotateX(0.05);

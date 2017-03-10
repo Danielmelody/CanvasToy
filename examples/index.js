@@ -33,7 +33,7 @@ examples.push(function (canvas) {
         meshes.push(mesh);
     }
     meshes[0].translate([0, -2, -10]);
-    meshes[0].registUpdate(function () {
+    scene.addOnUpdateListener(function () {
         meshes[0].rotateY(-0.005);
         meshes[1].rotateY(0.01);
         meshes[2].rotateX(0.05);
@@ -92,7 +92,7 @@ examples.push(function (canvas) {
     scene.addObject(teapot);
     teapot.translate([0, -2, -40]);
     var time = 0;
-    teapot.registUpdate(function () {
+    scene.addOnUpdateListener(function () {
         time += 1 / 60;
         teapot.rotateX(0.01);
     });
@@ -104,11 +104,10 @@ examples.push(function (canvas) {
     var scene = new CanvasToy.Scene();
     var up = vec3.cross(vec3.create(), [1, 0, 0], [0, 0, -40]);
     var camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40], up);
-    scene.addObject(camera);
     var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
         })]).translate([0, -10, -40]).rotateX(-Math.PI / 2).setScaling([200, 200, 200]);
-    scene.addObject(tile);
+    scene.addObject(tile, camera);
     var teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(function () {
         var material = teapotProto.children[0].materials[0];
@@ -126,7 +125,7 @@ examples.push(function (canvas) {
             scene.addLight(light);
             var vx = Math.random() * 3;
             var vy = Math.random() * 3;
-            teapot.registUpdate(function () {
+            scene.addOnUpdateListener(function () {
                 time += 1 / 60;
                 teapot.rotateY(spin);
                 light.translate([-Math.sin(time * vx), 0, -Math.cos(time * vy)]);

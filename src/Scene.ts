@@ -19,15 +19,31 @@ namespace CanvasToy {
 
         public programSetUp: boolean = false;
 
+        protected updateEvents: Function[] = [];
+
         public update(dt: number) {
-            for (const object of this.objects) {
-                if (!object.parent) {
-                    object.update(dt);
+            for (const event of this.updateEvents) {
+                if (!!event) {
+                    event(dt);
                 }
             }
         }
 
-        public addObject(...objects: Array<Object3d>) {
+        public addOnUpdateListener(listener: (deltaTime: number) => void) {
+            this.updateEvents.push(listener);
+            return this;
+        }
+
+        public removeOnUpdateListener(listener: (deltaTime: number) => void) {
+            const index = this.updateEvents.indexOf(listener);
+            if (index !== -1) {
+                // lazy delete
+                this.updateEvents[index] = undefined;
+            }
+            return this;
+        }
+
+        public addObject(...objects: Object3d[]) {
             for (const object of objects) {
                 if (this.objects.indexOf(object) === -1) {
                     this.objects.push(object);
@@ -49,7 +65,7 @@ namespace CanvasToy {
             return this;
         }
 
-        public addLight(...lights: Array<Light>) {
+        public addLight(...lights: Light[]) {
             for (const light of lights) {
                 this.openLight = true;
                 this.lights.push(light);

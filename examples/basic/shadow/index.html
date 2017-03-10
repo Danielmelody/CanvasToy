@@ -33,7 +33,7 @@
     light.position[2] = 10;
     scene.addLight(light);
 
-    cube.registUpdate(function() {
+    scene.addOnUpdateListener(function() {
         camera.translate(0, 0, 0.01);
     })
 
