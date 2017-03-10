@@ -7,13 +7,12 @@ examples.push((canvas: HTMLCanvasElement) => {
     const scene = new CanvasToy.Scene();
     const up = vec3.cross(vec3.create(), [1, 0, 0], [0, 0, -40]);
     const camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40], up);
-    scene.addObject(camera);
     const tile = new CanvasToy.Mesh(
         new CanvasToy.RectGeometry(renderer.gl),
         [new CanvasToy.StandardMaterial(renderer.gl, {
             mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
         })]).translate([0, -10, -40]).rotateX(-Math.PI / 2).setScaling([200, 200, 200]);
-    scene.addObject(tile);
+    scene.addObject(tile, camera);
     const teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(() => {
         const material = (teapotProto.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;

@@ -38,8 +38,7 @@ examples.push(function (canvas) {
         meshes[1].rotateY(0.01);
         meshes[2].rotateX(0.05);
     });
-    scene.addObject(meshes[0]);
-    scene.addObject(camera);
+    scene.addObject(meshes[0], camera);
     camera.rotateX(-0.2);
     var light = new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]);
     scene.addLight(light);
@@ -63,7 +62,7 @@ examples.push(function (canvas) {
         .setHeightSegments(50)
         .build(), [objectMaterial])
         .setPosition([0, 0, -5]).setScaling([0.5, 0.5, 0.5]);
-    scene.addObject(tile).addObject(box).addObject(sphere).addObject(camera);
+    scene.addObject(tile, box, sphere, camera);
     scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([10, 10, 0]));
     scene.ambientLight = [0.2, 0.2, 0.2];
     renderer.render(scene, camera);
