@@ -27,13 +27,15 @@ namespace CanvasToy {
             }
         }
 
-        public addObject(object: Object3d) {
-            if (this.objects.indexOf(object) === -1) {
-                this.objects.push(object);
-                object.scene = this;
-                object.children.forEach((child) => {
-                    this.addObject(child);
-                });
+        public addObject(...objects: Array<Object3d>) {
+            for (const object of objects) {
+                if (this.objects.indexOf(object) === -1) {
+                    this.objects.push(object);
+                    object.scene = this;
+                    object.children.forEach((child) => {
+                        this.addObject(child);
+                    });
+                }
             }
             return this;
         }
@@ -47,10 +49,12 @@ namespace CanvasToy {
             return this;
         }
 
-        public addLight(light: Light) {
-            this.openLight = true;
-            this.lights.push(light);
-            light.scene = this;
+        public addLight(...lights: Array<Light>) {
+            for (const light of lights) {
+                this.openLight = true;
+                this.lights.push(light);
+                light.scene = this;
+            }
             return this;
         }
     }

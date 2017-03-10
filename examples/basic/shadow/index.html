@@ -26,8 +26,7 @@
           color : vec3.fromValues(1, 1, 1)
       })]);
 
-    scene.addObject(cube);
-    scene.addObject(camera);
+    scene.addObject(cube, camera);
 
     scene.ambientLight = vec3.fromValues(0.3, 0.3, 0.3);
     var light = new CanvasToy.PointLight();

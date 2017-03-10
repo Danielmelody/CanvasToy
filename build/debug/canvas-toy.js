@@ -2040,14 +2040,21 @@ var CanvasToy;
                 }
             }
         };
-        Scene.prototype.addObject = function (object) {
+        Scene.prototype.addObject = function () {
             var _this = this;
-            if (this.objects.indexOf(object) === -1) {
-                this.objects.push(object);
-                object.scene = this;
-                object.children.forEach(function (child) {
-                    _this.addObject(child);
-                });
+            var objects = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                objects[_i] = arguments[_i];
+            }
+            for (var _a = 0, objects_1 = objects; _a < objects_1.length; _a++) {
+                var object = objects_1[_a];
+                if (this.objects.indexOf(object) === -1) {
+                    this.objects.push(object);
+                    object.scene = this;
+                    object.children.forEach(function (child) {
+                        _this.addObject(child);
+                    });
+                }
             }
             return this;
         };
@@ -2059,10 +2066,17 @@ var CanvasToy;
             this.objects.splice(this.objects.indexOf(object));
             return this;
         };
-        Scene.prototype.addLight = function (light) {
-            this.openLight = true;
-            this.lights.push(light);
-            light.scene = this;
+        Scene.prototype.addLight = function () {
+            var lights = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                lights[_i] = arguments[_i];
+            }
+            for (var _a = 0, lights_1 = lights; _a < lights_1.length; _a++) {
+                var light = lights_1[_a];
+                this.openLight = true;
+                this.lights.push(light);
+                light.scene = this;
+            }
             return this;
         };
         return Scene;

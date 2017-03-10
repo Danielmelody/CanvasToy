@@ -555,9 +555,9 @@ declare namespace CanvasToy {
         clearColor: number[];
         programSetUp: boolean;
         update(dt: number): void;
-        addObject(object: Object3d): this;
+        addObject(...objects: Array<Object3d>): this;
         removeObject(object: Object3d): this;
-        addLight(light: Light): this;
+        addLight(...lights: Array<Light>): this;
     }
 }
 declare namespace CanvasToy {
