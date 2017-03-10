@@ -14,6 +14,9 @@ namespace CanvasToy {
 
     export class StandardMaterial extends Material {
 
+        @asDefine("_DEBUG")
+        public debug: boolean = false;
+
         @readyRequire
         @asDefine("_MAIN_TEXTURE")
         public mainTexture: Texture;
