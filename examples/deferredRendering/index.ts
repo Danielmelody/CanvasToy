@@ -33,7 +33,7 @@ examples.push((canvas: HTMLCanvasElement) => {
             scene.addLight(light);
             const vx = Math.random() * 3;
             const vy = Math.random() * 3;
-            teapot.registUpdate(() => {
+            scene.addOnUpdateListener(() => {
                 time += 1 / 60;
                 teapot.rotateY(spin);
                 light.translate([-Math.sin(time * vx), 0, -Math.cos(time * vy)]);

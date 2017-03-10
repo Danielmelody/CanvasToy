@@ -399,8 +399,6 @@ var CanvasToy;
             this._position = vec3.create();
             this._scaling = vec3.fromValues(1, 1, 1);
             this._rotation = quat.create();
-            this.updateEvents = [];
-            this.startEvents = [];
             this.tag = tag;
             this.handleUniformProperty();
         }
@@ -573,30 +571,6 @@ var CanvasToy;
                 vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
             }
             return this;
-        };
-        Object3d.prototype.registUpdate = function (updateFunction) {
-            this.updateEvents.push(updateFunction);
-            return this;
-        };
-        Object3d.prototype.registStart = function (updateFunction) {
-            this.startEvents.push(updateFunction);
-            return this;
-        };
-        Object3d.prototype.start = function () {
-            for (var _i = 0, _a = this.startEvents; _i < _a.length; _i++) {
-                var event_1 = _a[_i];
-                event_1();
-            }
-        };
-        Object3d.prototype.update = function (dt) {
-            for (var _i = 0, _a = this.updateEvents; _i < _a.length; _i++) {
-                var event_2 = _a[_i];
-                event_2(dt);
-            }
-            for (var _b = 0, _c = this.children; _b < _c.length; _b++) {
-                var child = _c[_b];
-                child.update(dt);
-            }
         };
         Object3d.prototype.translate = function (delta) {
             console.assert(delta instanceof Array && delta.length === 3, "invalid delta translate");
@@ -2031,14 +2005,26 @@ var CanvasToy;
             this.enableShadowMap = false;
             this.clearColor = [0, 0, 0, 0];
             this.programSetUp = false;
+            this.updateEvents = [];
         }
         Scene.prototype.update = function (dt) {
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                if (!object.parent) {
-                    object.update(dt);
+            for (var _i = 0, _a = this.updateEvents; _i < _a.length; _i++) {
+                var event_1 = _a[_i];
+                if (!!event_1) {
+                    event_1(dt);
                 }
             }
+        };
+        Scene.prototype.addOnUpdateListener = function (listener) {
+            this.updateEvents.push(listener);
+            return this;
+        };
+        Scene.prototype.removeOnUpdateListener = function (listener) {
+            var index = this.updateEvents.indexOf(listener);
+            if (index !== -1) {
+                this.updateEvents[index] = undefined;
+            }
+            return this;
         };
         Scene.prototype.addObject = function () {
             var _this = this;

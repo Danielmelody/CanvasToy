@@ -37,7 +37,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     scene.addObject(teapot);
     teapot.translate([0, -2, -40]);
     let time = 0;
-    teapot.registUpdate(() => {
+    scene.addOnUpdateListener(() => {
         time += 1 / 60;
         teapot.rotateX(0.01);
     });

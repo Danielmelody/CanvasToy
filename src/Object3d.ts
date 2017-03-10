@@ -36,9 +36,6 @@ namespace CanvasToy {
         protected _scaling: Vec3Array = vec3.fromValues(1, 1, 1);
         protected _rotation: QuatArray = quat.create();
 
-        protected updateEvents: Function[] = [];
-        protected startEvents: Function[] = [];
-
         /**
          * Create a Object3d instance
          * @param  {string} tag tag of this object
@@ -253,45 +250,11 @@ namespace CanvasToy {
             return this;
         }
 
-        /**
-         * Add on update function, which will be called at update time;
-         * @param  {Function} updateFunction
-         */
-        public registUpdate(updateFunction: Function) {
-            this.updateEvents.push(updateFunction);
-            return this;
-        }
-
-        /**
-         * Add on start function, which will be called at start time;
-         * @param  {Function} updateFunction
-         */
-        public registStart(updateFunction: Function) {
-            this.startEvents.push(updateFunction);
-            return this;
-        }
-
-        /**
-         * Start Animating object by keep calling update per frame
-         */
-        public start() {
-            for (const event of this.startEvents) {
-                event();
-            }
-        }
 
         /**
          * Update object status after next delta time
          * @param  {number} dt delta time
          */
-        public update(dt: number) {
-            for (const event of this.updateEvents) {
-                event(dt);
-            }
-            for (const child of this.children) {
-                child.update(dt);
-            }
-        }
 
         /**
          * Translate object by the given vector
