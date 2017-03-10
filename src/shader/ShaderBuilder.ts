@@ -23,6 +23,7 @@ namespace CanvasToy {
 
         private _definitions = [
             definitions__light_glsl,
+
         ];
 
         private _interplotationMethod: InterplotationMethod = InterplotationMethod.Phong;
@@ -76,6 +77,7 @@ namespace CanvasToy {
                 this._interplotationVert,
                 fragmentShader:
                 this._definitions.join("\n") +
+                debug__checkBox_glsl +
                 calculators__linearlize_depth_glsl +
                 this._lightingModeSource +
                 this._interplotationFrag,

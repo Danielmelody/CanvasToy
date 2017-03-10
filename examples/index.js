@@ -51,45 +51,20 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    var cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
-            specular: [0.1, 0.1, 0.1],
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png"),
-        })]);
-    cube.translate([-2, 0, -6]);
+    var checkerBoard = new CanvasToy.StandardMaterial(renderer.gl);
+    checkerBoard.debug = true;
+    var objectMaterial = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg") });
+    var tile = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
+        .setPosition([0, -1, -3]).rotateX(-Math.PI / 2).setScaling([5, 5, 5]);
+    var box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
+        .setPosition([-2, 0, -5]).setScaling([0.5, 0.5, 0.5]);
     var sphere = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl)
-        .setRadius(1.5)
-        .setWidthSegments(100)
-        .setHeightSegments(100)
-        .build(), [new CanvasToy.StandardMaterial(renderer.gl, {
-            specular: [0.1, 0.1, 0.1],
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
-        })]);
-    sphere.translate([2, 0, -6]);
-    scene.addObject(cube).addObject(sphere).addObject(camera);
-    scene.ambientLight = [0.1, 0.1, 0.1];
-    var light = new CanvasToy.PointLight(renderer.gl);
-    scene.addLight(light);
-    var time = 0;
-    cube.registUpdate(function (delta) {
-        time += delta;
-        cube.rotateY(0.01);
-        sphere.rotateX(0.01);
-        light.setPosition([-10, 30 * Math.sin(time / 200), 100]);
-    });
-    renderer.render(scene, camera);
-    return renderer;
-});
-examples.push(function (canvas) {
-    var renderer = new CanvasToy.Renderer(canvas);
-    var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.PerspectiveCamera();
-    var material = new CanvasToy.StandardMaterial(renderer.gl, {
-        mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
-    });
-    var tile = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [material])
-        .setPosition([0, 0, -3]);
-    scene.addObject(tile).addObject(camera);
-    scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]));
+        .setWidthSegments(50)
+        .setHeightSegments(50)
+        .build(), [objectMaterial])
+        .setPosition([0, 0, -5]).setScaling([0.5, 0.5, 0.5]);
+    scene.addObject(tile).addObject(box).addObject(sphere).addObject(camera);
+    scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([10, 10, 0]));
     scene.ambientLight = [0.2, 0.2, 0.2];
     renderer.render(scene, camera);
     return renderer;
