@@ -12,6 +12,15 @@ namespace CanvasToy {
         @uniform("radius", DataType.float)
         protected _radius: number = 100;
 
+        @uniform("squareAtten", DataType.float)
+        protected _squareAttenuation: number = 1;
+
+        @uniform("linearAtten", DataType.float)
+        protected _linearAttenuation: number = 0.001;
+
+        @uniform("constantAtten", DataType.float)
+        protected _constantAttenuation: number = 1;
+
         constructor(gl: WebGLRenderingContext) {
             super();
             this.volume = new SphereGeometry(gl).setRadius(this._radius).build();

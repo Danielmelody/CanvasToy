@@ -2,7 +2,7 @@
 
 namespace CanvasToy {
 
-    class SpotLight extends Light {
+    export class SpotLight extends Light {
 
         @uniform("coneAngle", DataType.float)
         protected _coneAngle: number = 1;

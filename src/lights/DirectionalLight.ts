@@ -6,6 +6,11 @@ namespace CanvasToy {
         @uniform("direction", DataType.vec3)
         protected _direction: Vec3Array = vec3.fromValues(1, 1, 1);
 
+        constructor(gl: WebGLRenderingContext) {
+            super();
+            this._projectCamera = new OrthoCamera();
+        }
+
         public get direction(): Vec3Array {
             return this._direction;
         }

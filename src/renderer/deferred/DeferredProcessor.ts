@@ -27,7 +27,7 @@ namespace CanvasToy {
         private lightColorIdensityMap: DataTexture<Float32Array>;
 
         private tileLightIndex: number[][] = [];
-        private linearLightIndex: number[] = []
+        private linearLightIndex: number[] = [];
 
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
             this.gl = gl;
@@ -171,14 +171,11 @@ namespace CanvasToy {
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
             for (const object of scene.objects) {
                 if (object instanceof Mesh) {
-                    const geometryProgram = new Program(
-                        this.gl,
-                        {
-                            vertexShader: interploters__deferred__geometry_vert,
-                            fragmentShader: interploters__deferred__geometry_frag,
-                        },
-                        defaultProgramPass,
-                    );
+                    const geometryProgram = new ShaderBuilder()
+                        .resetShaderLib()
+                        .setShadingVert(ShaderSource.interploters__deferred__geometry_vert)
+                        .setShadingFrag(ShaderSource.interploters__deferred__geometry_frag)
+                        .build(this.gl);
                     for (const material of (object as Mesh).materials) {
                         if (material instanceof StandardMaterial) {
                             geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
@@ -193,10 +190,11 @@ namespace CanvasToy {
         }
 
         private passLightInfoToTexture(scene: Scene, camera: Camera) {
+
+            // TODO: add spot light and dirctional light support
             const lightColors = [];
             const lightPositionRadius = [];
-            for (const light of scene.lights) {
-                if (light instanceof PointLight) {
+            for (const light of scene.pointLights) {
                     lightColors.push(
                         light.color[0],
                         light.color[1],
@@ -214,7 +212,6 @@ namespace CanvasToy {
                         lightPosInViewSpace[2],
                         (light as PointLight).radius,
                     );
-                }
             }
             this.lightColorIdensityMap.resetData(this.gl, new Float32Array(lightColors), lightColors.length / 4, 1);
 
@@ -229,9 +226,10 @@ namespace CanvasToy {
                 this.tileLightIndex[i] = [];
             }
 
+            // TODO: add spot light and dirctional light support
             this.linearLightIndex = [];
-            for (let i = 0; i < scene.lights.length; ++i) {
-                const light = scene.lights[i];
+            for (let i = 0; i < scene.pointLights.length; ++i) {
+                const light = scene.pointLights[i];
                 const box = light.getProjecttionBoundingBox2D(camera);
                 this.fillTileWithBoundingBox2D(camera, box, i);
             }
@@ -243,7 +241,7 @@ namespace CanvasToy {
                 lightOffsetCount.push(indices.length);
                 offset += indices.length;
                 for (const index of indices) {
-                    this.linearLightIndex.push(index / scene.lights.length);
+                    this.linearLightIndex.push(index / scene.pointLights.length);
                 }
             }
             // const lightIndexWidth = Math.ceil(Math.sqrt(this.linearLightIndex.length));
@@ -289,7 +287,7 @@ namespace CanvasToy {
                 this.verticalTileNum,
             )
                 .setFormat(this.gl.LUMINANCE_ALPHA)
-                .setType(this.gl.FLOAT)
+                .setType(this.gl.FLOAT);
             // .setMinFilter(this.gl.LINEAR)
             // .setMagFilter(this.gl.LINEAR);
             this.tileLightCountMap = new DataTexture(
@@ -302,7 +300,7 @@ namespace CanvasToy {
                 this.gl,
                 new Float32Array([]))
                 .setType(this.gl.FLOAT)
-                .setFormat(this.gl.RGBA)
+                .setFormat(this.gl.RGBA);
             // .setMinFilter(this.gl.LINEAR)
             // .setMagFilter(this.gl.LINEAR);
 
@@ -310,19 +308,16 @@ namespace CanvasToy {
                 this.gl,
                 new Float32Array([]))
                 .setType(this.gl.FLOAT)
-                .setFormat(this.gl.RGBA)
+                .setFormat(this.gl.RGBA);
             // .setMinFilter(this.gl.LINEAR)
             // .setMagFilter(this.gl.LINEAR);
 
-            this.tilePass = new Program(
-                this.gl,
-                {
-                    vertexShader: interploters__deferred__tiledLight_vert,
-                    fragmentShader:
-                    calculators__blinn_phong_glsl +
-                    interploters__deferred__tiledLight_frag,
-                },
-                {
+            this.tilePass = new ShaderBuilder()
+                .resetShaderLib()
+                .addShaderLibFrag(ShaderSource.calculators__blinn_phong_glsl)
+                .setShadingVert(ShaderSource.interploters__deferred__tiledLight_vert)
+                .setShadingFrag(ShaderSource.interploters__deferred__tiledLight_frag)
+                .setPass({
                     faces: () => this.tile.faces,
                     uniforms: {
                         cameraFar: {
@@ -351,7 +346,7 @@ namespace CanvasToy {
                         },
                         uTotalLightNum: {
                             type: DataType.float,
-                            updator: () => scene.lights.length,
+                            updator: () => scene.pointLights.length,
                         },
                     },
                     textures: {
@@ -365,8 +360,8 @@ namespace CanvasToy {
                     attributes: {
                         position: () => this.tile.attributes.position,
                     },
-                },
-            );
+                })
+                .build(this.gl);
             Graphics.copyDataToVertexBuffer(this.gl, this.tile);
             this.tilePass.make(scene);
         }

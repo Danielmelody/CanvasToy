@@ -7,8 +7,6 @@ namespace CanvasToy {
         ambient?: Vec3Array;
         diffuse?: Vec3Array;
         specular?: Vec3Array;
-        interplotationMethod?: InterplotationMethod;
-        lightingMode?: LightingMode;
         program?: Program;
     }
 
@@ -61,7 +59,7 @@ namespace CanvasToy {
 
         constructor(gl: WebGLRenderingContext, paramter: IStandardMaterial = {}) {
             super();
-            this.program = new StandardShaderBuilder().build(gl);
+            this.program = new ShaderBuilder().build(gl);
             if (!!paramter) {
                 for (const name in paramter) {
                     this[name] = paramter[name];

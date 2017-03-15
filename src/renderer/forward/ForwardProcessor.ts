@@ -55,7 +55,7 @@ namespace CanvasToy {
                         Graphics.addRootUniformContainer(material.program, mesh);
                         Graphics.addRootUniformContainer(material.program, material);
                         Graphics.addRootUniformContainer(material.program, camera);
-                        this.setUpLights(mesh.scene, material, mesh, camera);
+                        this.setupLights(mesh.scene, material, mesh, camera);
                         material.dirty = false;
                     }
                     this.gl.useProgram(program.webGlProgram);
@@ -66,23 +66,30 @@ namespace CanvasToy {
             }
         }
 
-        private setUpLights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
-            for (const index in scene.lights) {
-                const light: any = scene.lights[index];
-
-                // light properties pass
-                console.assert(light.uniforms !== undefined);
-                for (const uniformProperty of light.uniforms) {
-                    if (uniformProperty.updator(light, camera) !== undefined) {
-                        material.program.addUniform(`lights[${index}].${uniformProperty.name}`, {
-                            type: uniformProperty.type,
-                            updator: (obj, camera) => {
-                                return uniformProperty.updator(light, camera);
-                            },
-                        });
-                    }
+        private setupLight(light: Light, camera: Camera, program: Program, index: string, lightArrayName: string) {
+            console.assert(light.uniforms !== undefined);
+            for (const uniformProperty of light.uniforms) {
+                if (uniformProperty.updator(light, camera) !== undefined) {
+                    program.addUniform(`${lightArrayName}[${index}].${uniformProperty.name}`, {
+                        type: uniformProperty.type,
+                        updator: (obj, camera) => {
+                            // console.log("update light property " + uniformProperty.name);
+                            return uniformProperty.updator(light, camera);
+                        },
+                    });
                 }
-                // light.shadowRtt = new Texture(this.gl);
+            }
+        }
+
+        private setupLights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
+            for (const index in scene.dirctionLights) {
+                this.setupLight(scene.dirctionLights[index], camera, material.program, index, "directLights");
+            }
+            for (const index in scene.pointLights) {
+                this.setupLight(scene.pointLights[index], camera, material.program, index, "pointLights");
+            }
+            for (const index in scene.spotLights) {
+                this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
             }
         }
 
@@ -117,7 +124,7 @@ namespace CanvasToy {
                 Graphics.addRootUniformContainer(material.program, camera);
 
                 if (scene.openLight) {
-                    this.setUpLights(scene, material, mesh, camera);
+                    this.setupLights(scene, material, mesh, camera);
                 }
             }
         }
