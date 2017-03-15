@@ -23,7 +23,16 @@ examples.push((canvas: HTMLCanvasElement) => {
         [objectMaterial])
         .setPosition([0, 0, -5]).setScaling([0.5, 0.5, 0.5]);
     scene.addObject(tile, box, sphere, camera);
-    scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([10, 10, 0]));
+    scene.addLight(new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, 0]));
+    const pointLight = new CanvasToy.PointLight(renderer.gl)
+        .setPosition([-1, 0, 0]).setIdensity(40).setRadius(8); // .setRadius(1);
+    scene.addLight(pointLight);
+    let time = 0;
+    scene.addOnUpdateListener((delta) => {
+        time += delta;
+        pointLight.setPosition(vec3.add(vec3.create(), pointLight.position,
+        [0, 0.05 * Math.sin(time / 600), 0]));
+    });
     scene.ambientLight = [0.2, 0.2, 0.2];
     renderer.render(scene, camera);
     return renderer;

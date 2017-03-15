@@ -9,13 +9,11 @@ namespace CanvasToy {
         constructor(gl: WebGLRenderingContext, cubeTexture: CubeTexture) {
             super();
             this.cubeTexture = cubeTexture;
-            this.program = new Program(
-                gl,
-                {
-                    vertexShader: interploters__skybox_vert,
-                    fragmentShader: interploters__skybox_frag,
-                },
-                {
+            this.program = new ShaderBuilder()
+                .resetShaderLib()
+                .setShadingVert(ShaderSource.interploters__forward__skybox_vert)
+                .setShadingFrag(ShaderSource.interploters__forward__skybox_frag)
+                .setPass({
                     faces: (mesh) => mesh.geometry.faces,
                     textures: {
                         uMainTexture: (mesh, camera, material) => material.mainTexture,
@@ -37,8 +35,8 @@ namespace CanvasToy {
                     attributes: {
                         position: (mesh) => mesh.geometry.attributes.position,
                     },
-                },
-            );
+                })
+                .build(gl);
         }
     }
 }

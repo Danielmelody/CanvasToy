@@ -18,6 +18,8 @@ namespace CanvasToy {
 
         public depredations: string[];
 
+        public uniforms: IUniform[] = [];
+
         protected _worldToObjectMatrix: Mat4Array = mat4.create();
 
         protected _asyncFinished: Promise<Object3d> = Promise.resolve(this);

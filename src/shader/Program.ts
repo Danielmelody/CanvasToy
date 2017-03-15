@@ -68,6 +68,7 @@ namespace CanvasToy {
         public extensionStatements: string[] = [];
 
         public definesFromMaterial: string[] = [];
+        public definesFromProcesser: string[] = [];
 
         private passFunctions: IProgramPass;
 
@@ -82,7 +83,7 @@ namespace CanvasToy {
             this.passFunctions = passFunctions;
         }
 
-        public drawMode = (gl: WebGLRenderingContext) => { return gl.STATIC_DRAW; };
+        public drawMode = (gl: WebGLRenderingContext) => gl.STATIC_DRAW;
 
         public setFragmentShader(fragmentShader: string) {
             this.source.fragmentShader = fragmentShader;
@@ -104,7 +105,13 @@ namespace CanvasToy {
         }
 
         public make(scene: Scene) {
-            const defines = ["#define OPEN_LIGHT", "#define LIGHT_NUM " + scene.lights.length];
+            const defines = [
+                "#define OPEN_LIGHT",
+                "#define LIGHT_NUM " + scene.lights.length,
+                "#define DIR_LIGHT_NUM " + scene.dirctionLights.length,
+                "#define SPOT_LIGHT_NUM " + scene.spotLights.length,
+                "#define POINT_LIGHT_NUM " + scene.pointLights.length,
+            ];
             for (const define of this.definesFromMaterial) {
                 defines.push("#define " + define);
                 console.log("#define " + define);

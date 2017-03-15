@@ -40,7 +40,7 @@ examples.push(function (canvas) {
     });
     scene.addObject(meshes[0], camera);
     camera.rotateX(-0.2);
-    var light = new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]);
+    var light = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, -1]);
     scene.addLight(light);
     renderer.render(scene, camera);
     console.log(scene);
@@ -63,7 +63,15 @@ examples.push(function (canvas) {
         .build(), [objectMaterial])
         .setPosition([0, 0, -5]).setScaling([0.5, 0.5, 0.5]);
     scene.addObject(tile, box, sphere, camera);
-    scene.addLight(new CanvasToy.PointLight(renderer.gl).setPosition([10, 10, 0]));
+    scene.addLight(new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, 0]));
+    var pointLight = new CanvasToy.PointLight(renderer.gl)
+        .setPosition([-1, 0, 0]).setIdensity(40).setRadius(8);
+    scene.addLight(pointLight);
+    var time = 0;
+    scene.addOnUpdateListener(function (delta) {
+        time += delta;
+        pointLight.setPosition(vec3.add(vec3.create(), pointLight.position, [0, 0.05 * Math.sin(time / 600), 0]));
+    });
     scene.ambientLight = [0.2, 0.2, 0.2];
     renderer.render(scene, camera);
     return renderer;
@@ -72,8 +80,7 @@ examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
-    var light = new CanvasToy.PointLight(renderer.gl);
-    light.setPosition([100, 300, 100]).setColor([1, 1, 1]).setIdensity(3);
+    var light = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, -1]).setIdensity(3);
     scene.addLight(light);
     var skyTexture = new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/arid2_rt.jpg", "resources/images/skybox/arid2_lf.jpg", "resources/images/skybox/arid2_up.jpg", "resources/images/skybox/arid2_dn.jpg", "resources/images/skybox/arid2_bk.jpg", "resources/images/skybox/arid2_ft.jpg");
     createSkyBox(renderer, skyTexture).setParent(camera);
@@ -97,46 +104,5 @@ examples.push(function (canvas) {
         teapot.rotateX(0.01);
     });
     renderer.render(scene, camera);
-    return renderer;
-});
-examples.push(function (canvas) {
-    var renderer = new CanvasToy.Renderer(canvas);
-    var scene = new CanvasToy.Scene();
-    var up = vec3.cross(vec3.create(), [1, 0, 0], [0, 0, -40]);
-    var camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40], up);
-    var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
-        })]).translate([0, -10, -40]).rotateX(-Math.PI / 2).setScaling([200, 200, 200]);
-    scene.addObject(tile, camera);
-    var teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
-    teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(function () {
-        var material = teapotProto.children[0].materials[0];
-        material.diffuse = [1, 0.8, 0.2];
-        var _loop_1 = function (i) {
-            var teapot = new CanvasToy.Mesh(teapotProto.children[0].geometry, teapotProto.children[0].materials);
-            scene.addObject(teapot);
-            teapot.translate([(i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40]);
-            var time = 0;
-            var spin = 0.03 * (Math.random() - 0.5);
-            var light = new CanvasToy.PointLight(renderer.gl)
-                .setPosition([Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150])
-                .setIdensity(0.5)
-                .setRadius(50);
-            scene.addLight(light);
-            var vx = Math.random() * 3;
-            var vy = Math.random() * 3;
-            scene.addOnUpdateListener(function () {
-                time += 1 / 60;
-                teapot.rotateY(spin);
-                light.translate([-Math.sin(time * vx), 0, -Math.cos(time * vy)]);
-            });
-        };
-        for (var i = 0; i < 40; ++i) {
-            _loop_1(i);
-        }
-        renderer.forceDeferred();
-        renderer.render(scene, camera);
-        return Promise.resolve(teapotProto);
-    }));
     return renderer;
 });

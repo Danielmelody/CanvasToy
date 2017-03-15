@@ -77,7 +77,7 @@ void main() {
             totalColor += calculate_light(
                 viewPosition,
                 normal,
-                lightPos,
+                normalize(lightPos - viewPosition),
                 vec3(0.0),
                 materialSpec * lightColor,
                 materialDiff * lightColor,

@@ -9,6 +9,12 @@ namespace CanvasToy {
 
         public lights: Light[] = [];
 
+        public pointLights: PointLight[] = [];
+
+        public spotLights: SpotLight[] = [];
+
+        public dirctionLights: DirectionalLight[] = [];
+
         public ambientLight: Vec3Array = vec3.fromValues(0, 0, 0);
 
         public openLight: boolean = false;
@@ -66,12 +72,20 @@ namespace CanvasToy {
         }
 
         public addLight(...lights: Light[]) {
+            this.openLight = true;
             for (const light of lights) {
-                this.openLight = true;
                 this.lights.push(light);
+                if (light instanceof DirectionalLight) {
+                    this.dirctionLights.push(light);
+                } else if (light instanceof PointLight) {
+                    this.pointLights.push(light);
+                } else if (light instanceof SpotLight) {
+                    this.spotLights.push(light);
+                } else {
+                    console.assert(false, "un-recognize light type: " + light);
+                }
                 light.scene = this;
             }
-            return this;
         }
     }
 }

@@ -5,84 +5,67 @@
 
 namespace CanvasToy {
 
-    export enum InterplotationMethod {
-        Flat,
-        Gouraud,
-        Phong,
-        DepthPhong,
-    }
+    export class ShaderBuilder {
 
-    export enum LightingMode {
-        Phong,
-        Cell,
-        Blinn_Phong,
-        Physical,
-    }
+        private vertLibs: ShaderLib[] = [];
 
-    export class StandardShaderBuilder {
-
-        private _definitions = [
-            definitions__light_glsl,
-
+        private fragLibs: ShaderLib[] = [
+            ShaderSource.definitions__light_glsl,
+            ShaderSource.calculators__linearlize_depth_glsl,
+            ShaderSource.calculators__blinn_phong_glsl,
+            ShaderSource.calculators__types_glsl,
+            ShaderSource.debug__checkBox_glsl,
         ];
 
-        private _interplotationMethod: InterplotationMethod = InterplotationMethod.Phong;
-        private _interplotationVert: string = interploters__phong_vert;
-        private _interplotationFrag: string = interploters__phong_frag;
+        private shadingVert: ShadingVert = ShaderSource.interploters__forward__phong_vert;
 
-        private _lightingMode: LightingMode = LightingMode.Blinn_Phong;
-        private _lightingModeSource: string = calculators__blinn_phong_glsl;
+        private shadingFrag: ShadingFrag = ShaderSource.interploters__forward__phong_frag;
 
-        public setInterplotationMethod(method: InterplotationMethod) {
-            switch (method) {
-                case (InterplotationMethod.Flat):
-                    this._interplotationVert = interploters__gouraud_vert;
-                    this._interplotationFrag = interploters__gouraud_frag;
-                    break;
-                case (InterplotationMethod.Gouraud):
-                    this._interplotationVert = interploters__gouraud_vert;
-                    this._interplotationFrag = interploters__gouraud_frag;
-                    break;
-                case (InterplotationMethod.Phong):
-                    this._interplotationVert = interploters__phong_vert;
-                    this._interplotationFrag = interploters__phong_frag;
-                    break;
-                case (InterplotationMethod.DepthPhong):
-                    this._interplotationVert = interploters__depth_phong_vert;
-                    this._interplotationFrag = interploters__depth_phong_frag;
-                    break;
-                default: break;
-            }
+        private pass: IProgramPass = defaultProgramPass;
+
+        public resetShaderLib() {
+            this.vertLibs = [];
+            this.fragLibs = [];
             return this;
         }
 
-        public setLightingMode(lightingMode: LightingMode) {
-            switch (lightingMode) {
-                case (LightingMode.Blinn_Phong):
-                    this._lightingModeSource = calculators__blinn_phong_glsl;
-                    break;
-                case (LightingMode.Phong):
-                    this._lightingModeSource = calculators__phong_glsl;
-                    break;
-                default: break;
-            }
+        public addShaderLib(...lib: ShaderLib[]) {
+            this.vertLibs.push(...lib);
+            this.fragLibs.push(...lib);
+            return this;
+        }
+
+        public addShaderLibVert(...lib: ShaderLib[]) {
+            this.vertLibs.push(...lib);
+            return this;
+        }
+
+        public addShaderLibFrag(...lib: ShaderLib[]) {
+            this.fragLibs.push(...lib);
+            return this;
+        }
+
+        public setShadingVert(vert: ShadingVert) {
+            this.shadingVert = vert;
+            return this;
+        }
+
+        public setShadingFrag(frag: ShadingFrag) {
+            this.shadingFrag = frag;
+            return this;
+        }
+
+        public setPass(pass: IProgramPass) {
+            this.pass = pass;
             return this;
         }
 
         public build(gl: WebGLRenderingContext): Program {
             return new Program(gl, {
-                vertexShader:
-                this._definitions.join("\n") +
-                this._lightingModeSource +
-                this._interplotationVert,
-                fragmentShader:
-                this._definitions.join("\n") +
-                debug__checkBox_glsl +
-                calculators__linearlize_depth_glsl +
-                this._lightingModeSource +
-                this._interplotationFrag,
+                vertexShader: this.vertLibs.join("\n") + this.shadingVert,
+                fragmentShader: this.fragLibs.join("\n") + this.shadingFrag,
             },
-                defaultProgramPass,
+                this.pass,
             );
         }
     }

@@ -11,7 +11,7 @@ namespace CanvasToy {
         protected _color = vec3.fromValues(1, 1, 1);
 
         @uniform("idensity", DataType.float)
-        protected _idensity = 1.0;
+        protected _idensity = 1;
 
         protected _shadowRtt: Texture;
 

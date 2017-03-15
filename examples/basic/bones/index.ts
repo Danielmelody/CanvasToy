@@ -42,7 +42,7 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     scene.addObject(meshes[0], camera);
     camera.rotateX(-0.2);
-    const light = new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]);
+    const light = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, -1]);
     scene.addLight(light);
     renderer.render(scene, camera);
     console.log(scene);

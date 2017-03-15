@@ -136,6 +136,7 @@ var CanvasToy;
             this.fragmentPrecision = "highp";
             this.extensionStatements = [];
             this.definesFromMaterial = [];
+            this.definesFromProcesser = [];
             this.drawMode = function (gl) { return gl.STATIC_DRAW; };
             this.gl = gl;
             this.source = source;
@@ -159,7 +160,13 @@ var CanvasToy;
             }
         };
         Program.prototype.make = function (scene) {
-            var defines = ["#define OPEN_LIGHT", "#define LIGHT_NUM " + scene.lights.length];
+            var defines = [
+                "#define OPEN_LIGHT",
+                "#define LIGHT_NUM " + scene.lights.length,
+                "#define DIR_LIGHT_NUM " + scene.dirctionLights.length,
+                "#define SPOT_LIGHT_NUM " + scene.spotLights.length,
+                "#define POINT_LIGHT_NUM " + scene.pointLights.length,
+            ];
             for (var _i = 0, _a = this.definesFromMaterial; _i < _a.length; _i++) {
                 var define = _a[_i];
                 defines.push("#define " + define);
@@ -388,6 +395,7 @@ var CanvasToy;
     var Object3d = (function () {
         function Object3d(tag) {
             this.children = [];
+            this.uniforms = [];
             this._worldToObjectMatrix = mat4.create();
             this._asyncFinished = Promise.resolve(this);
             this._matrix = mat4.create();
@@ -995,24 +1003,27 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    CanvasToy.calculators__blinn_phong_glsl = "vec3 calculate_light(vec3 position, vec3 normal, vec3 lightPos, vec3 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec3 position, vec3 normal, vec3 lightPos, vec3 spotDir, vec3 eyePos, vec3 specular, vec3 diffuse, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position.xyz);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-    CanvasToy.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 - 1.0;;\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n}\n";
-    CanvasToy.calculators__phong_glsl = "vec3 calculate_light(vec3 position, vec3 normal, vec3 lightPos, vec3 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n\nvec3 calculate_spot_light(vec3 position, vec3 normal, vec3 lightPos, vec3 eyePos, vec3 specularLight, vec3 diffuseLight, float shiness, float idensity) {\n    vec3 lightDir = normalize(lightPos - position);\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-    CanvasToy.debug__checkBox_glsl = "float checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
-    CanvasToy.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    vec3 direction;\n};\n\n#endif // light declaration\n";
-    CanvasToy.env_map_vert = "";
-    CanvasToy.interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
-    CanvasToy.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
-    CanvasToy.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculate_light(\n                viewPosition,\n                normal,\n                lightPos,\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
-    CanvasToy.interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
-    CanvasToy.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
-    CanvasToy.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
-    CanvasToy.interploters__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
-    CanvasToy.interploters__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-    CanvasToy.interploters__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\nvarying vec2 vMainUV;\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n#endif\n\nuniform sampler2D uMainTexture;\n\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n\nuniform PointLight lights[LIGHT_NUM];\nuniform SpotLight spotLights[LIGHT_NUM];\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color;\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(\n            vPosition,\n            normal,\n            lights[index].position,\n            vec3(0.0),\n            materialSpec * lights[index].color,\n            materialDiff * lights[index].color,\n            materialSpecExp,\n            lights[index].idensity\n        );\n    }\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
-    CanvasToy.interploters__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n}\n";
-    CanvasToy.interploters__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
-    CanvasToy.interploters__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
+    var ShaderSource;
+    (function (ShaderSource) {
+        ShaderSource.calculators__blinn_phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specular,\n    vec3 diffuse,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
+        ShaderSource.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 - 1.0;;\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n}\n";
+        ShaderSource.calculators__phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specularLight,\n    vec3 diffuseLight,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
+        ShaderSource.calculators__types_glsl = "vec3 calculateDirLight(\n    DirectLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        position,\n        normal,\n        -light.direction,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity *= step(lightDis, light.radius);\n    return calculateLight(\n        position,\n        normal,\n        normalize(light.position - position),\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        position,\n        normal,\n        normalize(light.position - position),\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        light.idensity\n    );\n}\n";
+        ShaderSource.debug__checkBox_glsl = "float checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
+        ShaderSource.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\n\nstruct DirectLight\n{\n    vec3 color;\n    float idensity;\n    vec3 direction;\n};\n\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    vec3 direction;\n};\n\n#endif // light declaration\n";
+        ShaderSource.interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
+        ShaderSource.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+        ShaderSource.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculate_light(\n                viewPosition,\n                normal,\n                normalize(lightPos - viewPosition),\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
+        ShaderSource.interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
+        ShaderSource.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
+        ShaderSource.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
+        ShaderSource.interploters__forward__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
+        ShaderSource.interploters__forward__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
+        ShaderSource.interploters__forward__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\nvarying vec2 vMainUV;\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n#endif\n\nuniform sampler2D uMainTexture;\n\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n\n#if (DIR_LIGHT_NUM > 0)\nuniform DirectLight directLights[DIR_LIGHT_NUM];\n#endif\n\n#if (POINT_LIGHT_NUM > 0)\nuniform PointLight pointLights[POINT_LIGHT_NUM];\n#endif\n\n#if (SPOT_LIGHT_NUM)\nuniform SpotLight spotLights[SPOT_LIGHT_NUM];\n#endif\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    #if (DIR_LIGHT_NUM > 0)\n    for (int index = 0; index < DIR_LIGHT_NUM; index++) {\n        totalLighting += calculateDirLight(\n            directLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n    }\n    #endif\n    #if (POINT_LIGHT_NUM > 0)\n    for (int index = 0; index < POINT_LIGHT_NUM; index++) {\n        totalLighting += calculatePointLight(\n            pointLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n    }\n    #endif\n    #if (SPOT_LIGHT_NUM > 0)\n    for (int index = 0; index < SPOT_LIGHT_NUM; index++) {\n        totalLighting += calculateLight(\n            spotLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n    }\n    #endif\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+        ShaderSource.interploters__forward__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n}\n";
+        ShaderSource.interploters__forward__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
+        ShaderSource.interploters__forward__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
+    })(ShaderSource = CanvasToy.ShaderSource || (CanvasToy.ShaderSource = {}));
 })(CanvasToy || (CanvasToy = {}));
 function builder(_thisArg) {
     return _thisArg;
@@ -1480,7 +1491,7 @@ var CanvasToy;
         function Light() {
             var _this = _super.call(this) || this;
             _this._color = vec3.fromValues(1, 1, 1);
-            _this._idensity = 1.0;
+            _this._idensity = 1;
             return _this;
         }
         Light.prototype.setColor = function (color) {
@@ -1519,9 +1530,10 @@ var CanvasToy;
 (function (CanvasToy) {
     var DirectionalLight = (function (_super) {
         __extends(DirectionalLight, _super);
-        function DirectionalLight() {
-            var _this = _super.apply(this, arguments) || this;
+        function DirectionalLight(gl) {
+            var _this = _super.call(this) || this;
             _this._direction = vec3.fromValues(1, 1, 1);
+            _this._projectCamera = new CanvasToy.OrthoCamera();
             return _this;
         }
         Object.defineProperty(DirectionalLight.prototype, "direction", {
@@ -1558,6 +1570,9 @@ var CanvasToy;
             var _this = _super.call(this) || this;
             _this._position = vec3.create();
             _this._radius = 100;
+            _this._squareAttenuation = 1;
+            _this._linearAttenuation = 0.001;
+            _this._constantAttenuation = 1;
             _this.volume = new CanvasToy.SphereGeometry(gl).setRadius(_this._radius).build();
             _this._projectCamera = new CanvasToy.PerspectiveCamera();
             return _this;
@@ -1607,6 +1622,15 @@ var CanvasToy;
     __decorate([
         CanvasToy.uniform("radius", CanvasToy.DataType.float)
     ], PointLight.prototype, "_radius", void 0);
+    __decorate([
+        CanvasToy.uniform("squareAtten", CanvasToy.DataType.float)
+    ], PointLight.prototype, "_squareAttenuation", void 0);
+    __decorate([
+        CanvasToy.uniform("linearAtten", CanvasToy.DataType.float)
+    ], PointLight.prototype, "_linearAttenuation", void 0);
+    __decorate([
+        CanvasToy.uniform("constantAtten", CanvasToy.DataType.float)
+    ], PointLight.prototype, "_constantAttenuation", void 0);
     CanvasToy.PointLight = PointLight;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -1654,6 +1678,7 @@ var CanvasToy;
     __decorate([
         CanvasToy.uniform("direction", CanvasToy.DataType.vec3)
     ], SpotLight.prototype, "_direction", void 0);
+    CanvasToy.SpotLight = SpotLight;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1677,7 +1702,7 @@ var CanvasToy;
             _this.specularExponent = 64;
             _this.transparency = 0;
             _this.reflectivity = 0.5;
-            _this.program = new CanvasToy.StandardShaderBuilder().build(gl);
+            _this.program = new CanvasToy.ShaderBuilder().build(gl);
             if (!!paramter) {
                 for (var name_1 in paramter) {
                     _this[name_1] = paramter[name_1];
@@ -1965,10 +1990,11 @@ var CanvasToy;
         function SkyMaterial(gl, cubeTexture) {
             var _this = _super.call(this) || this;
             _this.cubeTexture = cubeTexture;
-            _this.program = new CanvasToy.Program(gl, {
-                vertexShader: CanvasToy.interploters__skybox_vert,
-                fragmentShader: CanvasToy.interploters__skybox_frag,
-            }, {
+            _this.program = new CanvasToy.ShaderBuilder()
+                .resetShaderLib()
+                .setShadingVert(CanvasToy.ShaderSource.interploters__forward__skybox_vert)
+                .setShadingFrag(CanvasToy.ShaderSource.interploters__forward__skybox_frag)
+                .setPass({
                 faces: function (mesh) { return mesh.geometry.faces; },
                 textures: {
                     uMainTexture: function (mesh, camera, material) { return material.mainTexture; },
@@ -1984,7 +2010,8 @@ var CanvasToy;
                 attributes: {
                     position: function (mesh) { return mesh.geometry.attributes.position; },
                 },
-            });
+            })
+                .build(gl);
             return _this;
         }
         return SkyMaterial;
@@ -2000,6 +2027,9 @@ var CanvasToy;
         function Scene() {
             this.objects = [];
             this.lights = [];
+            this.pointLights = [];
+            this.spotLights = [];
+            this.dirctionLights = [];
             this.ambientLight = vec3.fromValues(0, 0, 0);
             this.openLight = false;
             this.enableShadowMap = false;
@@ -2057,13 +2087,24 @@ var CanvasToy;
             for (var _i = 0; _i < arguments.length; _i++) {
                 lights[_i] = arguments[_i];
             }
+            this.openLight = true;
             for (var _a = 0, lights_1 = lights; _a < lights_1.length; _a++) {
                 var light = lights_1[_a];
-                this.openLight = true;
                 this.lights.push(light);
+                if (light instanceof CanvasToy.DirectionalLight) {
+                    this.dirctionLights.push(light);
+                }
+                else if (light instanceof CanvasToy.PointLight) {
+                    this.pointLights.push(light);
+                }
+                else if (light instanceof CanvasToy.SpotLight) {
+                    this.spotLights.push(light);
+                }
+                else {
+                    console.assert(false, "un-recognize light type: " + light);
+                }
                 light.scene = this;
             }
-            return this;
         };
         return Scene;
     }());
@@ -2235,10 +2276,11 @@ var CanvasToy;
             for (var _d = 0, _e = scene.objects; _d < _e.length; _d++) {
                 var object = _e[_d];
                 if (object instanceof CanvasToy.Mesh) {
-                    var geometryProgram = new CanvasToy.Program(this.gl, {
-                        vertexShader: CanvasToy.interploters__deferred__geometry_vert,
-                        fragmentShader: CanvasToy.interploters__deferred__geometry_frag,
-                    }, CanvasToy.defaultProgramPass);
+                    var geometryProgram = new CanvasToy.ShaderBuilder()
+                        .resetShaderLib()
+                        .setShadingVert(CanvasToy.ShaderSource.interploters__deferred__geometry_vert)
+                        .setShadingFrag(CanvasToy.ShaderSource.interploters__deferred__geometry_frag)
+                        .build(this.gl);
                     for (var _f = 0, _g = object.materials; _f < _g.length; _f++) {
                         var material = _g[_f];
                         if (material instanceof CanvasToy.StandardMaterial) {
@@ -2255,13 +2297,11 @@ var CanvasToy;
         DeferredProcessor.prototype.passLightInfoToTexture = function (scene, camera) {
             var lightColors = [];
             var lightPositionRadius = [];
-            for (var _i = 0, _a = scene.lights; _i < _a.length; _i++) {
+            for (var _i = 0, _a = scene.pointLights; _i < _a.length; _i++) {
                 var light = _a[_i];
-                if (light instanceof CanvasToy.PointLight) {
-                    lightColors.push(light.color[0], light.color[1], light.color[2], light.idensity);
-                    var lightPosInViewSpace = vec3.transformMat4(vec3.create(), light.position, camera.worldToObjectMatrix);
-                    lightPositionRadius.push(lightPosInViewSpace[0], lightPosInViewSpace[1], lightPosInViewSpace[2], light.radius);
-                }
+                lightColors.push(light.color[0], light.color[1], light.color[2], light.idensity);
+                var lightPosInViewSpace = vec3.transformMat4(vec3.create(), light.position, camera.worldToObjectMatrix);
+                lightPositionRadius.push(lightPosInViewSpace[0], lightPosInViewSpace[1], lightPosInViewSpace[2], light.radius);
             }
             this.lightColorIdensityMap.resetData(this.gl, new Float32Array(lightColors), lightColors.length / 4, 1);
             this.lightPositionRadiusMap.resetData(this.gl, new Float32Array(lightPositionRadius), lightPositionRadius.length / 4, 1);
@@ -2269,8 +2309,8 @@ var CanvasToy;
                 this.tileLightIndex[i] = [];
             }
             this.linearLightIndex = [];
-            for (var i = 0; i < scene.lights.length; ++i) {
-                var light = scene.lights[i];
+            for (var i = 0; i < scene.pointLights.length; ++i) {
+                var light = scene.pointLights[i];
                 var box = light.getProjecttionBoundingBox2D(camera);
                 this.fillTileWithBoundingBox2D(camera, box, i);
             }
@@ -2283,7 +2323,7 @@ var CanvasToy;
                 offset += indices.length;
                 for (var _d = 0, indices_1 = indices; _d < indices_1.length; _d++) {
                     var index = indices_1[_d];
-                    this.linearLightIndex.push(index / scene.lights.length);
+                    this.linearLightIndex.push(index / scene.pointLights.length);
                 }
             }
             this.tileLightIndexMap.resetData(this.gl, new Float32Array(this.linearLightIndex), this.linearLightIndex.length, 1);
@@ -2313,11 +2353,12 @@ var CanvasToy;
             this.lightPositionRadiusMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
                 .setType(this.gl.FLOAT)
                 .setFormat(this.gl.RGBA);
-            this.tilePass = new CanvasToy.Program(this.gl, {
-                vertexShader: CanvasToy.interploters__deferred__tiledLight_vert,
-                fragmentShader: CanvasToy.calculators__blinn_phong_glsl +
-                    CanvasToy.interploters__deferred__tiledLight_frag,
-            }, {
+            this.tilePass = new CanvasToy.ShaderBuilder()
+                .resetShaderLib()
+                .addShaderLibFrag(CanvasToy.ShaderSource.calculators__blinn_phong_glsl)
+                .setShadingVert(CanvasToy.ShaderSource.interploters__deferred__tiledLight_vert)
+                .setShadingFrag(CanvasToy.ShaderSource.interploters__deferred__tiledLight_frag)
+                .setPass({
                 faces: function () { return _this.tile.faces; },
                 uniforms: {
                     cameraFar: {
@@ -2346,7 +2387,7 @@ var CanvasToy;
                     },
                     uTotalLightNum: {
                         type: CanvasToy.DataType.float,
-                        updator: function () { return scene.lights.length; },
+                        updator: function () { return scene.pointLights.length; },
                     },
                 },
                 textures: {
@@ -2360,7 +2401,8 @@ var CanvasToy;
                 attributes: {
                     position: function () { return _this.tile.attributes.position; },
                 },
-            });
+            })
+                .build(this.gl);
             CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, this.tile);
             this.tilePass.make(scene);
         };
@@ -2429,7 +2471,7 @@ var CanvasToy;
                         CanvasToy.Graphics.addRootUniformContainer(material.program, mesh);
                         CanvasToy.Graphics.addRootUniformContainer(material.program, material);
                         CanvasToy.Graphics.addRootUniformContainer(material.program, camera);
-                        this.setUpLights(mesh.scene, material, mesh, camera);
+                        this.setupLights(mesh.scene, material, mesh, camera);
                         material.dirty = false;
                     }
                     this.gl.useProgram(program.webGlProgram);
@@ -2439,27 +2481,32 @@ var CanvasToy;
                 }
             }
         };
-        ForwardProcessor.prototype.setUpLights = function (scene, material, mesh, camera) {
-            var _loop_2 = function (index) {
-                var light = scene.lights[index];
-                console.assert(light.uniforms !== undefined);
-                var _loop_3 = function (uniformProperty) {
-                    if (uniformProperty.updator(light, camera) !== undefined) {
-                        material.program.addUniform("lights[" + index + "]." + uniformProperty.name, {
-                            type: uniformProperty.type,
-                            updator: function (obj, camera) {
-                                return uniformProperty.updator(light, camera);
-                            },
-                        });
-                    }
-                };
-                for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
-                    var uniformProperty = _a[_i];
-                    _loop_3(uniformProperty);
+        ForwardProcessor.prototype.setupLight = function (light, camera, program, index, lightArrayName) {
+            console.assert(light.uniforms !== undefined);
+            var _loop_2 = function (uniformProperty) {
+                if (uniformProperty.updator(light, camera) !== undefined) {
+                    program.addUniform(lightArrayName + "[" + index + "]." + uniformProperty.name, {
+                        type: uniformProperty.type,
+                        updator: function (obj, camera) {
+                            return uniformProperty.updator(light, camera);
+                        },
+                    });
                 }
             };
-            for (var index in scene.lights) {
-                _loop_2(index);
+            for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
+                var uniformProperty = _a[_i];
+                _loop_2(uniformProperty);
+            }
+        };
+        ForwardProcessor.prototype.setupLights = function (scene, material, mesh, camera) {
+            for (var index in scene.dirctionLights) {
+                this.setupLight(scene.dirctionLights[index], camera, material.program, index, "directLights");
+            }
+            for (var index in scene.pointLights) {
+                this.setupLight(scene.pointLights[index], camera, material.program, index, "pointLights");
+            }
+            for (var index in scene.spotLights) {
+                this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
             }
         };
         ForwardProcessor.prototype.makeMeshPrograms = function (scene, mesh, camera) {
@@ -2487,7 +2534,7 @@ var CanvasToy;
                 CanvasToy.Graphics.addRootUniformContainer(material.program, material);
                 CanvasToy.Graphics.addRootUniformContainer(material.program, camera);
                 if (scene.openLight) {
-                    this.setUpLights(scene, material, mesh, camera);
+                    this.setupLights(scene, material, mesh, camera);
                 }
             }
         };
@@ -2648,7 +2695,7 @@ var CanvasToy;
         Renderer.prototype.handleResource = function (scene) {
             var _this = this;
             var objectPromises = [];
-            var _loop_4 = function (object) {
+            var _loop_3 = function (object) {
                 var promise = object.asyncFinished();
                 if (!!promise) {
                     objectPromises.push(promise.then(function () {
@@ -2661,7 +2708,7 @@ var CanvasToy;
             };
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
-                _loop_4(object);
+                _loop_3(object);
             }
             return Promise.all(objectPromises).then(function () {
                 var texturePromises = [];
@@ -2739,80 +2786,74 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
-    var InterplotationMethod;
-    (function (InterplotationMethod) {
-        InterplotationMethod[InterplotationMethod["Flat"] = 0] = "Flat";
-        InterplotationMethod[InterplotationMethod["Gouraud"] = 1] = "Gouraud";
-        InterplotationMethod[InterplotationMethod["Phong"] = 2] = "Phong";
-        InterplotationMethod[InterplotationMethod["DepthPhong"] = 3] = "DepthPhong";
-    })(InterplotationMethod = CanvasToy.InterplotationMethod || (CanvasToy.InterplotationMethod = {}));
-    var LightingMode;
-    (function (LightingMode) {
-        LightingMode[LightingMode["Phong"] = 0] = "Phong";
-        LightingMode[LightingMode["Cell"] = 1] = "Cell";
-        LightingMode[LightingMode["Blinn_Phong"] = 2] = "Blinn_Phong";
-        LightingMode[LightingMode["Physical"] = 3] = "Physical";
-    })(LightingMode = CanvasToy.LightingMode || (CanvasToy.LightingMode = {}));
-    var StandardShaderBuilder = (function () {
-        function StandardShaderBuilder() {
-            this._definitions = [
-                CanvasToy.definitions__light_glsl,
+    var ShaderBuilder = (function () {
+        function ShaderBuilder() {
+            this.vertLibs = [];
+            this.fragLibs = [
+                CanvasToy.ShaderSource.definitions__light_glsl,
+                CanvasToy.ShaderSource.calculators__linearlize_depth_glsl,
+                CanvasToy.ShaderSource.calculators__blinn_phong_glsl,
+                CanvasToy.ShaderSource.calculators__types_glsl,
+                CanvasToy.ShaderSource.debug__checkBox_glsl,
             ];
-            this._interplotationMethod = InterplotationMethod.Phong;
-            this._interplotationVert = CanvasToy.interploters__phong_vert;
-            this._interplotationFrag = CanvasToy.interploters__phong_frag;
-            this._lightingMode = LightingMode.Blinn_Phong;
-            this._lightingModeSource = CanvasToy.calculators__blinn_phong_glsl;
+            this.shadingVert = CanvasToy.ShaderSource.interploters__forward__phong_vert;
+            this.shadingFrag = CanvasToy.ShaderSource.interploters__forward__phong_frag;
+            this.pass = CanvasToy.defaultProgramPass;
         }
-        StandardShaderBuilder.prototype.setInterplotationMethod = function (method) {
-            switch (method) {
-                case (InterplotationMethod.Flat):
-                    this._interplotationVert = CanvasToy.interploters__gouraud_vert;
-                    this._interplotationFrag = CanvasToy.interploters__gouraud_frag;
-                    break;
-                case (InterplotationMethod.Gouraud):
-                    this._interplotationVert = CanvasToy.interploters__gouraud_vert;
-                    this._interplotationFrag = CanvasToy.interploters__gouraud_frag;
-                    break;
-                case (InterplotationMethod.Phong):
-                    this._interplotationVert = CanvasToy.interploters__phong_vert;
-                    this._interplotationFrag = CanvasToy.interploters__phong_frag;
-                    break;
-                case (InterplotationMethod.DepthPhong):
-                    this._interplotationVert = CanvasToy.interploters__depth_phong_vert;
-                    this._interplotationFrag = CanvasToy.interploters__depth_phong_frag;
-                    break;
-                default: break;
-            }
+        ShaderBuilder.prototype.resetShaderLib = function () {
+            this.vertLibs = [];
+            this.fragLibs = [];
             return this;
         };
-        StandardShaderBuilder.prototype.setLightingMode = function (lightingMode) {
-            switch (lightingMode) {
-                case (LightingMode.Blinn_Phong):
-                    this._lightingModeSource = CanvasToy.calculators__blinn_phong_glsl;
-                    break;
-                case (LightingMode.Phong):
-                    this._lightingModeSource = CanvasToy.calculators__phong_glsl;
-                    break;
-                default: break;
+        ShaderBuilder.prototype.addShaderLib = function () {
+            var lib = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                lib[_i] = arguments[_i];
             }
+            (_a = this.vertLibs).push.apply(_a, lib);
+            (_b = this.fragLibs).push.apply(_b, lib);
+            return this;
+            var _a, _b;
+        };
+        ShaderBuilder.prototype.addShaderLibVert = function () {
+            var lib = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                lib[_i] = arguments[_i];
+            }
+            (_a = this.vertLibs).push.apply(_a, lib);
+            return this;
+            var _a;
+        };
+        ShaderBuilder.prototype.addShaderLibFrag = function () {
+            var lib = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                lib[_i] = arguments[_i];
+            }
+            (_a = this.fragLibs).push.apply(_a, lib);
+            return this;
+            var _a;
+        };
+        ShaderBuilder.prototype.setShadingVert = function (vert) {
+            this.shadingVert = vert;
             return this;
         };
-        StandardShaderBuilder.prototype.build = function (gl) {
+        ShaderBuilder.prototype.setShadingFrag = function (frag) {
+            this.shadingFrag = frag;
+            return this;
+        };
+        ShaderBuilder.prototype.setPass = function (pass) {
+            this.pass = pass;
+            return this;
+        };
+        ShaderBuilder.prototype.build = function (gl) {
             return new CanvasToy.Program(gl, {
-                vertexShader: this._definitions.join("\n") +
-                    this._lightingModeSource +
-                    this._interplotationVert,
-                fragmentShader: this._definitions.join("\n") +
-                    CanvasToy.debug__checkBox_glsl +
-                    CanvasToy.calculators__linearlize_depth_glsl +
-                    this._lightingModeSource +
-                    this._interplotationFrag,
-            }, CanvasToy.defaultProgramPass);
+                vertexShader: this.vertLibs.join("\n") + this.shadingVert,
+                fragmentShader: this.fragLibs.join("\n") + this.shadingFrag,
+            }, this.pass);
         };
-        return StandardShaderBuilder;
+        return ShaderBuilder;
     }());
-    CanvasToy.StandardShaderBuilder = StandardShaderBuilder;
+    CanvasToy.ShaderBuilder = ShaderBuilder;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
