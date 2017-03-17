@@ -22,7 +22,11 @@ struct SpotLight {
     float idensity;
     float radius;
     vec3 position;
-    vec3 direction;
+    float squareAtten;
+    float linearAtten;
+    float constantAtten;
+    vec3 spotDir;
+    float coneAngleCos;
 };
 
 #endif // light declaration

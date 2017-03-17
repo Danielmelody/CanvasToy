@@ -68,7 +68,7 @@ void main () {
     #endif
     #if (SPOT_LIGHT_NUM > 0)
     for (int index = 0; index < SPOT_LIGHT_NUM; index++) {
-        totalLighting += calculateLight(
+        totalLighting += calculateSpotLight(
             spotLights[index],
             materialDiff,
             materialSpec,

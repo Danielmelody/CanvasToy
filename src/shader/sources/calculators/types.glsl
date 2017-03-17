@@ -52,14 +52,23 @@ vec3 calculateSpotLight(
     vec3 normal,
     vec3 eyePos
     ) {
+    vec3 lightDir = normalize(light.position - position);
+    float spotFactor = dot(-lightDir, light.spotDir);
+    if (spotFactor < light.coneAngleCos) {
+        return vec3(0.0);
+    }
+    float lightDis = length(light.position - position);
+    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);
+    idensity = (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);
+    // idensity *= step(light.radius, lightDis);
     return calculateLight(
         position,
         normal,
-        normalize(light.position - position),
+        lightDir,
         eyePos,
         light.color * materialSpec,
         light.color * materialDiff,
         materialSpecExp,
-        light.idensity
+        idensity
     );
 }

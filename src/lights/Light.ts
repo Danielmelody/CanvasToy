@@ -5,6 +5,10 @@ namespace CanvasToy {
 
     export abstract class Light extends Object3d {
 
+        public get typename(): string {
+            return "Light";
+        }
+
         public volume: Geometry;
 
         @uniform("color", DataType.vec3)

@@ -75,12 +75,12 @@ namespace CanvasToy {
             this.openLight = true;
             for (const light of lights) {
                 this.lights.push(light);
-                if (light instanceof DirectionalLight) {
-                    this.dirctionLights.push(light);
-                } else if (light instanceof PointLight) {
-                    this.pointLights.push(light);
-                } else if (light instanceof SpotLight) {
-                    this.spotLights.push(light);
+                if (light.typename === "DirectionalLight") {
+                    this.dirctionLights.push(light as DirectionalLight);
+                } else if (light.typename === "PointLight") {
+                    this.pointLights.push(light as PointLight);
+                } else if (light.typename === "SpotLight") {
+                    this.spotLights.push(light as SpotLight);
                 } else {
                     console.assert(false, "un-recognize light type: " + light);
                 }
