@@ -1,0 +1,35 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>CanvasToy Examples</title>
+  <meta name="description" content="The HTML5 Herald">
+  <meta name="author" content="SitePoint">
+
+  <script src="../node_modules/gl-matrix/dist/gl-matrix.js" type="text/javascript"></script>
+  <script src="../build/debug/canvas-toy.js" type="text/javascript"></script>
+  <script src="index.js" type="text/javascript"></script>
+</head>
+
+<div class="table" id="table">
+
+</div>
+
+<body>
+  <script type="text/javascript">
+  var table = document.getElementById("table");
+  for (var i in examples) {
+      var newCanvas = document.createElement("canvas");
+      newCanvas.width = 960;
+      newCanvas.height = 540;
+      newCanvas.style.background = "black";
+      table.appendChild(newCanvas);
+      var renderer = examples[i](newCanvas);
+      renderer.stop();
+      onMouseOnStart(renderer);
+  }
+  </script>
+</body>
+</html>
