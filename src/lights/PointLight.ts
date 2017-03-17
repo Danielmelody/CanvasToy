@@ -13,10 +13,10 @@ namespace CanvasToy {
         protected _radius: number = 100;
 
         @uniform("squareAtten", DataType.float)
-        protected _squareAttenuation: number = 1;
+        protected _squareAttenuation: number = 0.01;
 
         @uniform("linearAtten", DataType.float)
-        protected _linearAttenuation: number = 0.001;
+        protected _linearAttenuation: number = 0.1;
 
         @uniform("constantAtten", DataType.float)
         protected _constantAttenuation: number = 1;
@@ -61,6 +61,10 @@ namespace CanvasToy {
             this._radius = radius;
             (this.volume as SphereGeometry).setRadius(this._radius).build();
             return this;
+        }
+
+        public get typename(): string {
+            return "PointLight";
         }
 
         public get radius() {

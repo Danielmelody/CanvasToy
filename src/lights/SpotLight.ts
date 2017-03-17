@@ -2,27 +2,41 @@
 
 namespace CanvasToy {
 
-    export class SpotLight extends Light {
+    export class SpotLight extends PointLight {
 
-        @uniform("coneAngle", DataType.float)
-        protected _coneAngle: number = 1;
+        @uniform("coneAngleCos", DataType.float)
+        protected _coneAngleCos: number;
 
-        @uniform("direction", DataType.vec3)
-        protected _direction: Vec3Array = vec3.fromValues(1, 1, 1);
-        constructor() {
-            super();
+        @uniform("spotDir", DataType.vec3)
+        protected _spotDirection: Vec3Array = vec3.fromValues(0, 0, 1);
+
+        protected _coneAngle: number;
+
+        constructor(gl: WebGLRenderingContext) {
+            super(gl);
+            this.setConeAngle(Math.PI / 4);
+        }
+
+        public get typename(): string {
+            return "SpotLight";
         }
 
         public get coneAngle() {
             return this._coneAngle;
         }
 
-        public get direction() {
-            return this._direction;
+        public get spotDirection() {
+            return this._spotDirection;
         }
 
         public setConeAngle(coneAngle: number) {
             this._coneAngle = coneAngle;
+            this._coneAngleCos = Math.cos(coneAngle);
+            return this;
+        }
+
+        public setSpotDirection(spotDirection: Vec3Array) {
+            vec3.normalize(this._spotDirection, spotDirection);
             return this;
         }
 

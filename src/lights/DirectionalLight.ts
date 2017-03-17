@@ -11,6 +11,10 @@ namespace CanvasToy {
             this._projectCamera = new OrthoCamera();
         }
 
+        public get typename(): string {
+            return "DirectionalLight";
+        }
+
         public get direction(): Vec3Array {
             return this._direction;
         }
