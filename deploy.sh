@@ -27,6 +27,9 @@ cd ..
 # Run our compile script
 bash ./building.sh
 
+rm -rf site/examples
+rm -rf site/build
+
 cp -r examples/ site/examples
 cp -r build/ site/build
 cp package.json site/package.json

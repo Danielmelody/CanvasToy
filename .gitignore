@@ -30,3 +30,5 @@ npm-debug.log
 /tests/npm-debug.log.*
 npm-debug.log.*
 /tests/build/
+
+.ruby-version

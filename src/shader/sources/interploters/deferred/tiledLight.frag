@@ -74,7 +74,7 @@ void main() {
         if (dist < lightR) {
             realCount++;
             vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));
-            totalColor += calculate_light(
+            totalColor += calculateLight(
                 viewPosition,
                 normal,
                 normalize(lightPos - viewPosition),
