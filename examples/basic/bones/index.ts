@@ -34,16 +34,15 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     meshes[0].translate([0, -2, -10]);
 
-    meshes[0].registUpdate(() => {
+    scene.addOnUpdateListener(() => {
         meshes[0].rotateY(-0.005);
         meshes[1].rotateY(0.01);
         meshes[2].rotateX(0.05);
     });
 
-    scene.addObject(meshes[0]);
-    scene.addObject(camera);
+    scene.addObject(meshes[0], camera);
     camera.rotateX(-0.2);
-    const light = new CanvasToy.PointLight(renderer.gl).setPosition([100, 0, 100]);
+    const light = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, -1]);
     scene.addLight(light);
     renderer.render(scene, camera);
     console.log(scene);

@@ -6,8 +6,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     const renderer = new CanvasToy.Renderer(canvas);
     const scene = new CanvasToy.Scene();
     const camera = new CanvasToy.PerspectiveCamera();
-    const light = new CanvasToy.PointLight(renderer.gl);
-    light.setPosition([100, 300, 100]).setColor([1, 1, 1]).setIdensity(3);
+    const light = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, -1]).setIdensity(3);
     scene.addLight(light);
 
     const skyTexture = new CanvasToy.CubeTexture(
@@ -37,7 +36,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     scene.addObject(teapot);
     teapot.translate([0, -2, -40]);
     let time = 0;
-    teapot.registUpdate(() => {
+    scene.addOnUpdateListener(() => {
         time += 1 / 60;
         teapot.rotateX(0.01);
     });
