@@ -8,7 +8,7 @@ Lightweight WebGL/WenGL2 rendering engine
 ### roadmap before 1.0:
 
 #### About advanced rendering:
-+ [ ] Both TBDR(Tile Based Deferred Rendering) and Common Forward Rendering pipeline
++ [x] Both TBDR(Tile Based Deferred Rendering) and Common Forward Rendering pipeline
 + [ ] BRDF distribution via StandardMaterial
 + [ ] Fully WebGL2 support.
 + [ ] Read and display .gltf files
@@ -19,7 +19,8 @@ Lightweight WebGL/WenGL2 rendering engine
     * [x] Directional lights
     * [x] Spot lights
 + Shadow
-    * [ ] Shadow mapping
+    * [ ] Shadow mapping (forward approach)
+    * [ ] Screen-space shadow mapping (deferred approach)
 + Transforms
     * [x] Basic object transforms
     * [x] Bones system
