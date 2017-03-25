@@ -30,11 +30,11 @@ namespace CanvasToy {
             );
             this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
             for (const object of scene.objects) {
-                this.renderObject(camera, object);
+                this.renderObject(scene, camera, object);
             }
         }
 
-        private renderObject(camera: Camera, object: Object) {
+        private renderObject(scene: Scene, camera: Camera, object: Object) {
             if (object instanceof Mesh) {
                 const mesh = object as Mesh;
                 for (const material of mesh.materials) {
@@ -52,10 +52,16 @@ namespace CanvasToy {
                     if (material.dirty) {
                         program.resetMaterialDefines(material);
                         program.make(mesh.scene);
-                        Graphics.addRootUniformContainer(material.program, mesh);
-                        Graphics.addRootUniformContainer(material.program, material);
-                        Graphics.addRootUniformContainer(material.program, camera);
-                        this.setupLights(mesh.scene, material, mesh, camera);
+                        Graphics.addUniformContainer(material.program, mesh);
+                        Graphics.addUniformContainer(material.program, material);
+                        Graphics.addUniformContainer(material.program, camera);
+                        if (material instanceof StandardMaterial) {
+                            this.setupLights(mesh.scene, material, mesh, camera);
+                        }
+
+                        Graphics.addTextureContainer(material.program, material);
+                        Graphics.addTextureContainer(material.program, scene);
+
                         material.dirty = false;
                     }
                     this.gl.useProgram(program.webGlProgram);
@@ -81,7 +87,7 @@ namespace CanvasToy {
             }
         }
 
-        private setupLights(scene: Scene, material: Material, mesh: Mesh, camera: Camera) {
+        private setupLights(scene: Scene, material: StandardMaterial, mesh: Mesh, camera: Camera) {
             for (const index in scene.dirctionLights) {
                 this.setupLight(scene.dirctionLights[index], camera, material.program, index, "directLights");
             }
@@ -91,11 +97,23 @@ namespace CanvasToy {
             for (const index in scene.spotLights) {
                 this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
             }
+            if (material.castShadow) {
+                scene.pointShadowMaps = [];
+                for (const index in scene.dirctionLights) {
+                    if (scene.dirctionLights[index].shadowType !== ShadowType.None) {
+                        this.setupLight(scene.dirctionLights[index], camera, material.program, index, "directLights");
+                    }
+                }
+                for (const index in scene.pointLights) {
+                    this.setupLight(scene.pointLights[index], camera, material.program, index, "pointLights");
+                }
+                for (const index in scene.spotLights) {
+                    this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
+                }
+            }
         }
 
         private makeMeshPrograms(scene: Scene, mesh: Mesh, camera: Camera) {
-
-            Graphics.copyDataToVertexBuffer(this.gl, mesh.geometry);
 
             if (mesh.materials.length > 1) {
                 this.gl.enable(this.gl.BLEND);
@@ -119,11 +137,11 @@ namespace CanvasToy {
 
                 material.program.make(scene);
 
-                Graphics.addRootUniformContainer(material.program, mesh);
-                Graphics.addRootUniformContainer(material.program, material);
-                Graphics.addRootUniformContainer(material.program, camera);
+                Graphics.addUniformContainer(material.program, mesh);
+                Graphics.addUniformContainer(material.program, material);
+                Graphics.addUniformContainer(material.program, camera);
 
-                if (scene.openLight) {
+                if (scene.openLight && material instanceof StandardMaterial) {
                     this.setupLights(scene, material, mesh, camera);
                 }
             }

@@ -212,6 +212,14 @@ namespace CanvasToy {
                         }
                     }
 
+                    for (const object of scene.objects) {
+                        if (object instanceof Mesh) {
+                            Graphics.copyDataToVertexBuffer(this.gl, (object as Mesh).geometry);
+                        }
+                    }
+
+                    const shadowPreProcess = new ShadowPreProcess(this.gl, this.ext);
+
                     let processor;
                     // TODO: Dynamic processor strategy
                     if (this.isDeferred) {
@@ -222,6 +230,7 @@ namespace CanvasToy {
                     scene.programSetUp = true;
                     this.renderQueue.push((deltaTime: number) => {
                         scene.update(deltaTime);
+                        shadowPreProcess.process(scene, camera, materials);
                         processor.process(scene, camera, materials);
                     });
                 })

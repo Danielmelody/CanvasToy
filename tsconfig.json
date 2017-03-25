@@ -11,8 +11,6 @@
         "experimentalDecorators": true
     },
     "include":[
-        "node_modules/reflect-metadata/Reflect.ts",
-        "bower_components/gl-matrix/dist/gl-matrix.js",
         "typings/**/*.ts",
         "src/**/*.ts"
     ],

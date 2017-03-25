@@ -72,6 +72,7 @@ namespace CanvasToy {
     }
 
     export class FrameBuffer {
+
         public glFramebuffer: WebGLFramebuffer;
 
         public attachments = {
@@ -82,6 +83,8 @@ namespace CanvasToy {
 
         public extras: Attachment[] = [];
 
+        private _attached = false;
+
         constructor(gl: WebGLRenderingContext) {
             this.glFramebuffer = gl.createFramebuffer();
             this.attachments.color.setType(gl, AttachmentType.Texture)
@@ -91,6 +94,67 @@ namespace CanvasToy {
             this.attachments.stencil.setType(gl, AttachmentType.RenderBuffer)
                 .setInnerFormatForBuffer(gl.STENCIL_INDEX8)
                 .disable();
+        }
+
+        public get attached(): boolean {
+            return this._attached;
+        }
+
+        public attach(gl: WebGLRenderingContext, drawBuffer: WebGLDrawBuffers) {
+            for (const index in this.attachments) {
+                const attachment: Attachment = this.attachments[index];
+                if (attachment.isAble) {
+                    this.linkAttachment(attachment, gl, gl);
+                }
+            }
+            for (const attachment of this.extras) {
+                this.linkAttachment(attachment, gl, drawBuffer);
+            }
+            this._attached = Graphics.logIfFrameBufferInvalid(gl, this.glFramebuffer);
+        }
+
+        private linkAttachment(
+            attachment: Attachment,
+            gl: WebGLRenderingContext,
+            context: WebGLRenderingContext | WebGLDrawBuffers) {
+
+            switch (attachment.type) {
+                case AttachmentType.Texture:
+                    gl.bindTexture(attachment.targetTexture.target, attachment.targetTexture.glTexture);
+                    gl.texImage2D(gl.TEXTURE_2D,
+                        0,
+                        attachment.targetTexture.format,
+                        gl.canvas.width,
+                        gl.canvas.height,
+                        0,
+                        attachment.targetTexture.format,
+                        attachment.targetTexture.type,
+                        null,
+                    );
+                    gl.framebufferTexture2D(
+                        gl.FRAMEBUFFER,
+                        attachment.attachmentCode(context),
+                        attachment.targetTexture.target,
+                        attachment.targetTexture.glTexture,
+                        0);
+                    gl.bindTexture(gl.TEXTURE_2D, null);
+                case AttachmentType.RenderBuffer:
+                    gl.bindRenderbuffer(gl.RENDERBUFFER, attachment.glRenderBuffer);
+                    gl.renderbufferStorage(
+                        gl.RENDERBUFFER,
+                        attachment.innerFormatForBuffer,
+                        gl.canvas.width,
+                        gl.canvas.height,
+                    );
+                    gl.framebufferRenderbuffer(
+                        gl.FRAMEBUFFER,
+                        attachment.attachmentCode(gl),
+                        gl.RENDERBUFFER,
+                        attachment.glRenderBuffer,
+                    );
+                    break;
+                default: break;
+            }
         }
     }
 }

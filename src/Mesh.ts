@@ -9,8 +9,6 @@ namespace CanvasToy {
 
         public materials: Material[] = [];
 
-        public maps: Texture[] = [];
-
         constructor(geometry: Geometry, materials: Material[]) {
             super();
             this.materials = materials;

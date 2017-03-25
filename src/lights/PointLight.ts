@@ -22,7 +22,7 @@ namespace CanvasToy {
         protected _constantAttenuation: number = 1;
 
         constructor(gl: WebGLRenderingContext) {
-            super();
+            super(gl);
             this.volume = new SphereGeometry(gl).setRadius(this._radius).build();
             this._projectCamera = new PerspectiveCamera();
         }

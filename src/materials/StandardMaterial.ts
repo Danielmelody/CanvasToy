@@ -12,11 +12,14 @@ namespace CanvasToy {
 
     export class StandardMaterial extends Material {
 
-        @asDefine("_DEBUG")
+        @linkdef("_DEBUG")
         public debug: boolean = false;
 
-        @readyRequire
-        @asDefine("_MAIN_TEXTURE")
+        @linkdef("USE_SHADOW")
+        public castShadow: boolean = true;
+
+        @linkdef("_MAIN_TEXTURE")
+        @texture("uMainTexture")
         public mainTexture: Texture;
 
         @uniform("ambient", DataType.vec3)
@@ -31,12 +34,12 @@ namespace CanvasToy {
         @uniform("materialSpecExp", DataType.float)
         public specularExponent: number = 64;
 
-        @readyRequire
+        // @texture("specularTexture")
         public specularMap: Texture;
 
         public transparency: number = 0;
 
-        @readyRequire
+        // @texture("alphaTexture")
         public alphaMap: Texture;
 
         @readyRequire
@@ -51,8 +54,8 @@ namespace CanvasToy {
         @uniform("reflectivity", DataType.float)
         public reflectivity: number = 0.5;
 
-        @asDefine("_ENVIRONMENT_MAP")
-        @readyRequire
+        @linkdef("_ENVIRONMENT_MAP")
+        @texture("uCubeTexture")
         public reflectionMap: CubeTexture;
 
         public geometryProgram: Program;

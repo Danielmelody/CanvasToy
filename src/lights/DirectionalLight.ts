@@ -7,7 +7,7 @@ namespace CanvasToy {
         protected _direction: Vec3Array = vec3.fromValues(1, 1, 1);
 
         constructor(gl: WebGLRenderingContext) {
-            super();
+            super(gl);
             this._projectCamera = new OrthoCamera();
         }
 

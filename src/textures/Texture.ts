@@ -123,7 +123,6 @@ namespace CanvasToy {
         public bindTextureData(gl: WebGLRenderingContext) {
             gl.bindTexture(this.target, this.glTexture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-            gl.bindTexture(this.target, this.glTexture);
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
             gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
