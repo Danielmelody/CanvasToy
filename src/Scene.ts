@@ -1,4 +1,5 @@
 /// <reference path="./Object3d.ts"/>
+/// <reference path="./Decorators.ts"/>
 
 namespace CanvasToy {
 
@@ -15,11 +16,18 @@ namespace CanvasToy {
 
         public dirctionLights: DirectionalLight[] = [];
 
+        @textureArray("pointShadow")
+        public pointShadowMaps: CubeTexture[] = [];
+
+        @textureArray("spotShadow")
+        public spotShadowMaps: Texture2D[] = [];
+
+        @textureArray("directionShadow")
+        public dirctionShadowMaps: Texture2D[] = [];
+
         public ambientLight: Vec3Array = vec3.fromValues(0, 0, 0);
 
         public openLight: boolean = false;
-
-        public enableShadowMap: boolean = false;
 
         public clearColor: number[] = [0, 0, 0, 0];
 

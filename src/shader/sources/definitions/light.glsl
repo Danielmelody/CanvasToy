@@ -5,6 +5,8 @@ struct DirectLight
     vec3 color;
     float idensity;
     vec3 direction;
+
+    int shadowIndex;
 };
 
 struct PointLight {
@@ -15,6 +17,8 @@ struct PointLight {
     float squareAtten;
     float linearAtten;
     float constantAtten;
+
+    int shadowIndex;
 };
 
 struct SpotLight {
@@ -27,6 +31,8 @@ struct SpotLight {
     float constantAtten;
     vec3 spotDir;
     float coneAngleCos;
+
+    int shadowIndex;
 };
 
 #endif // light declaration

@@ -3,7 +3,7 @@
 namespace CanvasToy {
     export class SkyMaterial extends Material {
 
-        @readyRequire
+        @texture("uCubeTexture")
         public cubeTexture: CubeTexture;
 
         constructor(gl: WebGLRenderingContext, cubeTexture: CubeTexture) {
@@ -15,9 +15,6 @@ namespace CanvasToy {
                 .setShadingFrag(ShaderSource.interploters__forward__skybox_frag)
                 .setPass({
                     faces: (mesh) => mesh.geometry.faces,
-                    textures: {
-                        uMainTexture: (mesh, camera, material) => material.mainTexture,
-                    },
                     uniforms: {
                         modelViewProjectionMatrix: {
                             type: DataType.mat4,

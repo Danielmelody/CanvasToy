@@ -1,4 +1,7 @@
 /// <reference path="../CanvasToy.ts"/>
+/// <reference path="../Mesh.ts"/>
+/// <reference path="../materials/Material.ts"/>
+/// <reference path="../geometries/Geometry.ts"/>
 
 namespace CanvasToy {
 
@@ -16,6 +19,12 @@ namespace CanvasToy {
     }
 
     export interface IUniform {
+        name?: string;
+        type: DataType;
+        updator: (object?: Object3d, camera?: Camera, material?: Material) => any;
+    }
+
+    export interface IUniformArray {
         name?: string;
         type: DataType;
         updator: (object?: Object3d, camera?: Camera, material?: Material) => any;
@@ -52,16 +61,23 @@ namespace CanvasToy {
         public enableDepthTest: boolean = true;
         public enableStencilTest: boolean = true;
         public uniforms = {};
-        public uniformLocationCache = {};
+        public uniformArrays = {};
         public attributes = {};
         public attributeLocations = {};
         public attribute0: string;
         public webGlProgram: WebGLProgram;
+
         public textures: Array<{
             sampler: string,
             getter: (mesh: Mesh, camera: Camera, material) => Texture,
             location: WebGLUniformLocation,
         }> = [];
+
+        public textureArrays: Array<{
+            samplerArray: string,
+            arrayGetter: (mesh: Mesh, camera: Camera, material) => Texture[],
+        }> = [];
+
         public vertexPrecision: string = "highp";
         public fragmentPrecision: string = "highp";
 
@@ -125,22 +141,32 @@ namespace CanvasToy {
                 + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
                 + this.source.fragmentShader);
 
+            this.gl.useProgram(this.webGlProgram);
+
             const componets = this.passFunctions;
             this.faces = (componets.faces === undefined ? this.faces : componets.faces);
             this.uniforms = {};
             this.textures = [];
-            for (const nameInShader in componets.uniforms) {
-                if (componets.uniforms[nameInShader] !== undefined) {
-                    this.addUniform(nameInShader, componets.uniforms[nameInShader]);
+            if (!!componets.uniforms) {
+                for (const nameInShader in componets.uniforms) {
+                    if (componets.uniforms[nameInShader] !== undefined) {
+                        this.addUniform(nameInShader, componets.uniforms[nameInShader]);
+                    }
                 }
             }
-            for (const sampler in componets.textures) {
-                this.addTexture(sampler, componets.textures[sampler]);
+            if (!!componets.textures) {
+                for (const sampler in componets.textures) {
+                    const target = componets.textures[sampler];
+                    if (target.isArray) {
+                        this.addTextureArray(sampler, componets.textures[sampler]);
+                    } else {
+                        this.addTexture(sampler, componets.textures[sampler]);
+                    }
+                }
             }
             for (const nameInShader in componets.attributes) {
                 this.addAttribute(nameInShader, componets.attributes[nameInShader]);
             }
-            // this.checkState(mesh);
             return this;
         }
 
@@ -151,12 +177,25 @@ namespace CanvasToy {
                     this.uniforms[uniformName](mesh, camera, materiel);
                 }
             }
-            for (let unit = 0; unit < this.textures.length; ++unit) {
-                const texture = this.textures[unit].getter(mesh, camera, materiel);
+            let unit = 0;
+            for (const textureDiscriptor of this.textures) {
+                const texture = textureDiscriptor.getter(mesh, camera, materiel);
                 if (!!texture) {
                     this.gl.activeTexture(this.gl.TEXTURE0 + unit);
                     this.gl.bindTexture(texture.target, texture.glTexture);
                     this.gl.uniform1i(this.textures[unit].location, unit);
+                }
+                unit++;
+            }
+            for (const textureArrayDiscriptor of this.textureArrays) {
+                const textureArray = textureArrayDiscriptor.arrayGetter(mesh, camera, materiel);
+                for (const texture of textureArray) {
+                    if (!!texture) {
+                        this.gl.activeTexture(this.gl.TEXTURE0 + unit);
+                        this.gl.bindTexture(texture.target, texture.glTexture);
+                        this.gl.uniform1i(this.textures[unit].location, unit);
+                    }
+                    unit++;
                 }
             }
             for (const attributeName in this.attributes) {
@@ -197,10 +236,27 @@ namespace CanvasToy {
             return this;
         }
 
+        public addTextureArray(samplerArray: string, array: Texture[]) {
+            this.textureArrays.push({
+                samplerArray,
+                arrayGetter: () => array,
+            });
+            // for ()
+        }
+
         public addTexture(sampler: string, getter: (mesh, camera, material) => Texture) {
             const unit = this.textures.length;
-            this.addUniform(sampler, { type: DataType.int, updator: () => unit });
             this.textures.push({ sampler, getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
+        }
+
+        public addUniformArray(arrayNameInShader, uniforms: IUniformArray) {
+            for (const index in uniforms) {
+                this.addUniform(`${arrayNameInShader}[${index}]`, {
+                    name: `${uniforms.name}[${index}]`,
+                    type: uniforms.type,
+                    updator: (mesh, camera, material) => uniforms.updator(mesh, camera, material)[index],
+                });
+            }
         }
 
         public addUniform(nameInShader, uniform: IUniform) {
@@ -326,10 +382,6 @@ namespace CanvasToy {
 
     export const defaultProgramPass = {
         faces: (mesh) => mesh.geometry.faces,
-        textures: {
-            uMainTexture: (mesh, camera, material) => material.mainTexture,
-            uCubeTexture: (mesh, camera, material) => material.reflectionMap,
-        },
         uniforms: {
             modelViewProjectionMatrix: {
                 type: DataType.mat4,

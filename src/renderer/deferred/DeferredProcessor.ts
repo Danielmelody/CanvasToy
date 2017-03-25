@@ -36,18 +36,13 @@ namespace CanvasToy {
             this.horizontalTileNum = Math.floor(this.gl.canvas.width / this.tilePixelSize);
             this.verticalTileNum = Math.floor(this.gl.canvas.height / this.tilePixelSize);
             this.tileCount = this.horizontalTileNum * this.verticalTileNum;
-            for (const object of scene.objects) {
-                if (object instanceof Mesh) {
-                    Graphics.copyDataToVertexBuffer(this.gl, (object as Mesh).geometry);
-                }
-            }
             this.initGeometryProcess(scene);
             this.initTiledPass(scene);
             scene.programSetUp = true;
         }
 
         public process(scene: Scene, camera: Camera, materials: Material[]) {
-            Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer, this.ext);
+            Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer);
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.enable(this.gl.CULL_FACE);
@@ -63,8 +58,8 @@ namespace CanvasToy {
                             if (material.dirty) {
                                 material.geometryProgram.resetMaterialDefines(material);
                                 material.geometryProgram.make(mesh.scene);
-                                Graphics.addRootUniformContainer(material.geometryProgram, (object as Mesh));
-                                Graphics.addRootUniformContainer(material.geometryProgram, material);
+                                Graphics.addUniformContainer(material.geometryProgram, (object as Mesh));
+                                Graphics.addUniformContainer(material.geometryProgram, material);
                                 material.dirty = false;
                             }
                             material.geometryProgram.pass(mesh, camera, material);
@@ -162,7 +157,7 @@ namespace CanvasToy {
                     0);
                 this.gl.bindTexture(this.gl.TEXTURE_2D, null);
             }
-            Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer, this.ext);
+            Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer);
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
             this.ext.draw_buffer.drawBuffersWEBGL([
                 this.ext.draw_buffer.COLOR_ATTACHMENT0_WEBGL,
@@ -180,8 +175,8 @@ namespace CanvasToy {
                         if (material instanceof StandardMaterial) {
                             geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
                             geometryProgram.make(scene);
-                            Graphics.addRootUniformContainer(geometryProgram, (object as Mesh));
-                            Graphics.addRootUniformContainer(geometryProgram, material);
+                            Graphics.addUniformContainer(geometryProgram, (object as Mesh));
+                            Graphics.addUniformContainer(geometryProgram, material);
                             material.geometryProgram = geometryProgram;
                         }
                     }
@@ -195,23 +190,23 @@ namespace CanvasToy {
             const lightColors = [];
             const lightPositionRadius = [];
             for (const light of scene.pointLights) {
-                    lightColors.push(
-                        light.color[0],
-                        light.color[1],
-                        light.color[2],
-                        light.idensity,
-                    );
-                    const lightPosInViewSpace = vec3.transformMat4(
-                        vec3.create(),
-                        light.position,
-                        camera.worldToObjectMatrix,
-                    );
-                    lightPositionRadius.push(
-                        lightPosInViewSpace[0],
-                        lightPosInViewSpace[1],
-                        lightPosInViewSpace[2],
-                        (light as PointLight).radius,
-                    );
+                lightColors.push(
+                    light.color[0],
+                    light.color[1],
+                    light.color[2],
+                    light.idensity,
+                );
+                const lightPosInViewSpace = vec3.transformMat4(
+                    vec3.create(),
+                    light.position,
+                    camera.worldToObjectMatrix,
+                );
+                lightPositionRadius.push(
+                    lightPosInViewSpace[0],
+                    lightPosInViewSpace[1],
+                    lightPosInViewSpace[2],
+                    (light as PointLight).radius,
+                );
             }
             this.lightColorIdensityMap.resetData(this.gl, new Float32Array(lightColors), lightColors.length / 4, 1);
 

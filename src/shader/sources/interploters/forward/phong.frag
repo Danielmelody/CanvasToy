@@ -26,6 +26,22 @@ uniform PointLight pointLights[POINT_LIGHT_NUM];
 uniform SpotLight spotLights[SPOT_LIGHT_NUM];
 #endif
 
+#ifdef USE_SHADOW
+
+    #if (DIR_LIGHT_NUM > 0)
+    uniform sampler2D directShadow[DIR_LIGHT_NUM];
+    #endif
+
+    #if (POINT_LIGHT_NUM > 0)
+    uniform sampler2D pointShadow[POINT_LIGHT_NUM];
+    #endif
+
+    #if (SPOT_LIGHT_NUM)
+    uniform sampler2D spotShadow[SPOT_LIGHT_NUM];
+    #endif
+
+#endif
+
 void main () {
 #ifdef _MAIN_TEXTURE
     gl_FragColor = texture2D(uMainTexture, vMainUV);

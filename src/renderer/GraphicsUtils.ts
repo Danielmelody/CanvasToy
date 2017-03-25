@@ -3,7 +3,7 @@
 namespace CanvasToy {
     export namespace Graphics {
 
-        export function addRootUniformContainer(program: Program, uniformContainer: any) {
+        export function addUniformContainer(program: Program, uniformContainer: any) {
             if (uniformContainer.uniforms instanceof Array) {
                 for (const uniformProperty of uniformContainer.uniforms) {
                     if (uniformProperty.updator(uniformContainer) !== undefined) {
@@ -13,6 +13,26 @@ namespace CanvasToy {
                                 return uniformProperty.updator(uniformContainer);
                             },
                         });
+                    }
+                }
+            }
+        }
+
+        export function addTextureContainer(program: Program, textureContainer: any) {
+            if (Array.isArray(textureContainer.textures)) {
+                for (const textureDiscriptor of textureContainer.textures) {
+                    if (textureDiscriptor.getter(textureContainer) !== undefined) {
+                        program.addTexture(textureDiscriptor.name, () => textureDiscriptor.getter(textureContainer));
+                    }
+                }
+            }
+            if (Array.isArray(textureContainer.textureArrays)) {
+                for (const textureArrayDiscriptor of textureContainer.textureArrays) {
+                    if (textureArrayDiscriptor.arrayGetter(textureContainer) !== undefined) {
+                        program.addTextureArray(
+                            textureArrayDiscriptor.name,
+                            textureArrayDiscriptor.arrayGetter(textureContainer),
+                        );
                     }
                 }
             }
@@ -36,11 +56,17 @@ namespace CanvasToy {
             }
         }
 
+        export function logEnabledAttribute(gl: WebGLRenderingContext, program: WebGLProgram) {
+            for (let i = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES) - 1; i >= 0; i--) {
+                console.dir(gl.getActiveAttrib(program, i));
+            }
+        }
+
         export function logIfFrameBufferInvalid(
             gl: WebGLRenderingContext,
             frameBuffer: WebGLFramebuffer,
-            ext: WebGLExtension,
         ) {
+            let valid = false;
             gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
             const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
             switch (status) {
@@ -66,9 +92,12 @@ namespace CanvasToy {
                     or if depth and stencil attachments are not the same renderbuffer.`,
                     );
                     break;
-                default: break;
+                default:
+                    valid = true;
+                    break;
             }
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            return valid;
         }
     }
 }
