@@ -127,6 +127,7 @@ namespace CanvasToy {
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
             gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
             gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
+            return this;
         }
     }
 }

@@ -13,6 +13,8 @@ namespace CanvasToy {
 
         public readonly ext: WebGLExtension;
 
+        public debug: boolean = false;
+
         public preloadRes: any[] = [];
 
         public usedTextureNum: number = 0;
@@ -41,9 +43,10 @@ namespace CanvasToy {
 
         private isDeferred = false;
 
-        constructor(canvas: HTMLCanvasElement) {
+        constructor(canvas: HTMLCanvasElement, debug?: boolean) {
             this.canvas = canvas;
-            this.gl = initWebwebglContext(canvas);
+            this.debug = debug;
+            this.gl = initWebwebglContext(canvas, debug);
             this.ext = {
                 depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
                 draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),

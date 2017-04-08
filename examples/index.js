@@ -49,16 +49,18 @@ examples.push(function (canvas) {
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.PerspectiveCamera();
+    var camera = new CanvasToy.PerspectiveCamera()
+        .setPosition([0, 5, 5])
+        .lookAt([0, 0, -10]);
     var checkerBoard = new CanvasToy.StandardMaterial(renderer.gl);
     checkerBoard.debug = true;
     var objectMaterial = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg") });
-    var ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
-        .setPosition([0, -1, -3]).rotateX(-Math.PI / 2).setScaling([5, 5, 5]);
-    var back = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
+    var ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [objectMaterial])
+        .setPosition([0, -1, -3]).rotateX(-Math.PI / 2).setScaling([10, 10, 10]);
+    var back = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [objectMaterial])
         .setPosition([0, 2, -10]).setScaling([5, 5, 5]);
     var box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
-        .setPosition([-2, 0, -5]).setScaling([0.5, 0.5, 0.5]);
+        .setPosition([-2, -1, -5]).setScaling([0.5, 0.5, 0.5]);
     var sphere = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl)
         .setWidthSegments(50)
         .setHeightSegments(50)
@@ -69,16 +71,16 @@ examples.push(function (canvas) {
     var pointLight = new CanvasToy.PointLight(renderer.gl)
         .setPosition([0, 0, -3]).setIdensity(3).setRadius(8);
     var spotLight = new CanvasToy.SpotLight(renderer.gl)
-        .setIdensity(60)
-        .setPosition([0, 0, -3.5])
-        .setSpotDirection([0, -1, -0.3])
-        .setConeAngle(Math.PI / 6);
-    scene.addLight(spotLight, pointLight, directLight);
+        .setIdensity(600000)
+        .setSpotDirection([10, 0, 0])
+        .setConeAngle(Math.PI / 4);
+    scene.addLight(spotLight);
     var time = 0;
     scene.addOnUpdateListener(function (delta) {
         time += delta;
-        spotLight.setSpotDirection(vec3.rotateZ(vec3.create(), spotLight.spotDirection, [0, 0, 1], 0.02));
-        pointLight.translate([0, 0.05 * Math.sin(time / 1200), 0]);
+        spotLight.rotateY(0.02 * Math.cos(time / 600));
+        box.translate([0, 0.02 * Math.sin(time / 600), 0]);
+        sphere.translate([0, -0.02 * Math.sin(time / 600), 0]);
     });
     scene.ambientLight = [0.2, 0.2, 0.2];
     renderer.render(scene, camera);
@@ -93,11 +95,6 @@ examples.push(function (canvas) {
     var skyTexture = new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/arid2_rt.jpg", "resources/images/skybox/arid2_lf.jpg", "resources/images/skybox/arid2_up.jpg", "resources/images/skybox/arid2_dn.jpg", "resources/images/skybox/arid2_bk.jpg", "resources/images/skybox/arid2_ft.jpg");
     createSkyBox(renderer, skyTexture).setParent(camera);
     scene.addObject(camera);
-    var test = new Promise(function (resolve, reject) {
-        resolve(100);
-    }).then(function (num) {
-        console.log("promise resolve " + num);
-    });
     var teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapot.setAsyncFinished(teapot.asyncFinished().then(function () {
         var material = teapot.children[0].materials[0];
@@ -117,8 +114,7 @@ examples.push(function (canvas) {
 examples.push(function (canvas) {
     var renderer = new CanvasToy.Renderer(canvas);
     var scene = new CanvasToy.Scene();
-    var up = vec3.cross(vec3.create(), [1, 0, 0], [0, 0, -40]);
-    var camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40], up);
+    var camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40]);
     var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
             mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
         })]).translate([0, -10, -40]).rotateX(-Math.PI / 2).setScaling([200, 200, 200]);
@@ -127,6 +123,7 @@ examples.push(function (canvas) {
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(function () {
         var material = teapotProto.children[0].materials[0];
         material.diffuse = [1, 0.8, 0.2];
+        material.castShadow = false;
         var _loop_1 = function (i) {
             var teapot = new CanvasToy.Mesh(teapotProto.children[0].geometry, teapotProto.children[0].materials);
             scene.addObject(teapot);

@@ -6,17 +6,20 @@ examples.push((canvas: HTMLCanvasElement) => {
     const renderer = new CanvasToy.Renderer(canvas);
 
     const scene = new CanvasToy.Scene();
-    const camera = new CanvasToy.PerspectiveCamera();
+    const camera = new CanvasToy.PerspectiveCamera()
+        .setPosition([0, 5, 5])
+        .lookAt([0, 0, -10]);
     const checkerBoard = new CanvasToy.StandardMaterial(renderer.gl);
     checkerBoard.debug = true;
     const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl,
         { mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg") });
-    const ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
-        .setPosition([0, -1, -3]).rotateX(-Math.PI / 2).setScaling([5, 5, 5]);
-    const back = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
+    // objectMaterial.castShadow = false;
+    const ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [objectMaterial])
+        .setPosition([0, -1, -3]).rotateX(-Math.PI / 2).setScaling([10, 10, 10]);
+    const back = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [objectMaterial])
         .setPosition([0, 2, -10]).setScaling([5, 5, 5]);
     const box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
-        .setPosition([-2, 0, -5]).setScaling([0.5, 0.5, 0.5]);
+        .setPosition([-2, -1, -5]).setScaling([0.5, 0.5, 0.5]);
     const sphere = new CanvasToy.Mesh(
         new CanvasToy.SphereGeometry(renderer.gl)
             .setWidthSegments(50)
@@ -29,16 +32,16 @@ examples.push((canvas: HTMLCanvasElement) => {
     const pointLight = new CanvasToy.PointLight(renderer.gl)
         .setPosition([0, 0, -3]).setIdensity(3).setRadius(8);
     const spotLight = new CanvasToy.SpotLight(renderer.gl)
-        .setIdensity(60)
-        .setPosition([0, 0, -3.5])
-        .setSpotDirection([0, -1, -0.3])
-        .setConeAngle(Math.PI / 6);
-    scene.addLight(spotLight, pointLight, directLight);
+        .setIdensity(600000)
+        .setSpotDirection([10, 0, 0])
+        .setConeAngle(Math.PI / 4);
+    scene.addLight(spotLight);
     let time = 0;
     scene.addOnUpdateListener((delta) => {
         time += delta;
-        spotLight.setSpotDirection(vec3.rotateZ(vec3.create(), spotLight.spotDirection, [0, 0, 1], 0.02));
-        pointLight.translate([0, 0.05 * Math.sin(time / 1200), 0]);
+        spotLight.rotateY(0.02 * Math.cos(time / 600));
+        box.translate([0, 0.02 * Math.sin(time / 600), 0]);
+        sphere.translate([0, -0.02 * Math.sin(time / 600), 0]);
     });
     scene.ambientLight = [0.2, 0.2, 0.2];
     renderer.render(scene, camera);

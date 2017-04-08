@@ -12,13 +12,6 @@ namespace CanvasToy {
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
             this.gl = gl;
             this.ext = ext;
-            for (const object of scene.objects) {
-                if (object instanceof Mesh) {
-                    const mesh = object as Mesh;
-                    this.makeMeshPrograms(scene, mesh, camera);
-                }
-            }
-            scene.programSetUp = true;
         }
 
         public process(scene: Scene, camera: Camera, materials: Material[]) {
@@ -34,7 +27,7 @@ namespace CanvasToy {
             }
         }
 
-        private renderObject(scene: Scene, camera: Camera, object: Object) {
+        private renderObject(scene: Scene, camera: Camera, object: Object3d) {
             if (object instanceof Mesh) {
                 const mesh = object as Mesh;
                 for (const material of mesh.materials) {
@@ -55,6 +48,7 @@ namespace CanvasToy {
                         Graphics.addUniformContainer(material.program, mesh);
                         Graphics.addUniformContainer(material.program, material);
                         Graphics.addUniformContainer(material.program, camera);
+                        Graphics.addUniformContainer(material.program, scene);
                         if (material instanceof StandardMaterial) {
                             this.setupLights(mesh.scene, material, mesh, camera);
                         }
@@ -64,10 +58,13 @@ namespace CanvasToy {
 
                         material.dirty = false;
                     }
+
+                    if (material instanceof StandardMaterial) {
+                        this.passShadows(mesh, scene, material, camera);
+                    }
+
                     this.gl.useProgram(program.webGlProgram);
                     program.pass(mesh, camera, material);
-                    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                    this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                 }
             }
         }
@@ -75,7 +72,7 @@ namespace CanvasToy {
         private setupLight(light: Light, camera: Camera, program: Program, index: string, lightArrayName: string) {
             console.assert(light.uniforms !== undefined);
             for (const uniformProperty of light.uniforms) {
-                if (uniformProperty.updator(light, camera) !== undefined) {
+                if (!!uniformProperty.key && light[uniformProperty.key] !== undefined) {
                     program.addUniform(`${lightArrayName}[${index}].${uniformProperty.name}`, {
                         type: uniformProperty.type,
                         updator: (obj, camera) => {
@@ -97,54 +94,42 @@ namespace CanvasToy {
             for (const index in scene.spotLights) {
                 this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
             }
+        }
+
+        private passShadows(mesh: Mesh, scene: Scene, material: StandardMaterial, camera: Camera) {
             if (material.castShadow) {
+                const handleShadow = (lights: Light[], shadowMatrices: Float32Array, shadowMaps: Texture[]) => {
+                    let offset = 0;
+                    lights.forEach((light) => {
+                        shadowMaps.push(light.shadowMap);
+                        shadowMatrices.set(
+                            mat4.mul(
+                                mat4.create(),
+                                light.projectCamera.projectionMatrix,
+                                mat4.mul(
+                                    mat4.create(),
+                                    light.projectCamera.worldToObjectMatrix,
+                                    mesh.matrix,
+                                ),
+                            ),
+                            offset,
+                        );
+                        offset += 16;
+                    });
+                };
+                scene.directionShadowMaps = [];
+                scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
+                handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
+
                 scene.pointShadowMaps = [];
-                for (const index in scene.dirctionLights) {
-                    if (scene.dirctionLights[index].shadowType !== ShadowType.None) {
-                        this.setupLight(scene.dirctionLights[index], camera, material.program, index, "directLights");
-                    }
-                }
-                for (const index in scene.pointLights) {
-                    this.setupLight(scene.pointLights[index], camera, material.program, index, "pointLights");
-                }
-                for (const index in scene.spotLights) {
-                    this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
-                }
+                scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
+                handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
+
+                scene.spotShadowMaps = [];
+                scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
+                handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
             }
         }
 
-        private makeMeshPrograms(scene: Scene, mesh: Mesh, camera: Camera) {
-
-            if (mesh.materials.length > 1) {
-                this.gl.enable(this.gl.BLEND);
-                this.gl.blendFunc(this.gl.SRC_COLOR, this.gl.ONE_MINUS_SRC_COLOR);
-            }
-
-            for (const material of mesh.materials) {
-
-                let cameraInScene = false;
-                for (const object of scene.objects) {
-                    if (object === camera) {
-                        cameraInScene = true;
-                        break;
-                    }
-                }
-
-                if (!cameraInScene) {
-                    console.error("Camera has not been added in Scene. Rendering stopped");
-                    return;
-                }
-
-                material.program.make(scene);
-
-                Graphics.addUniformContainer(material.program, mesh);
-                Graphics.addUniformContainer(material.program, material);
-                Graphics.addUniformContainer(material.program, camera);
-
-                if (scene.openLight && material instanceof StandardMaterial) {
-                    this.setupLights(scene, material, mesh, camera);
-                }
-            }
-        }
     }
 }

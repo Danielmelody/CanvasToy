@@ -16,14 +16,20 @@ namespace CanvasToy {
 
         public dirctionLights: DirectionalLight[] = [];
 
-        @textureArray("pointShadow")
+        @textureArray("pointShadowMaps")
         public pointShadowMaps: CubeTexture[] = [];
+        @uniformArray("pointShadowMatrices", DataType.mat4)
+        public pointShadowMatrices: Float32Array = new Float32Array([]);
 
-        @textureArray("spotShadow")
+        @textureArray("spotShadowMaps")
         public spotShadowMaps: Texture2D[] = [];
+        @uniformArray("spotShadowMatrices", DataType.mat4)
+        public spotShadowMatrices: Float32Array = new Float32Array([]);
 
-        @textureArray("directionShadow")
-        public dirctionShadowMaps: Texture2D[] = [];
+        @textureArray("directionShadowMaps")
+        public directionShadowMaps: Texture2D[] = [];
+        @uniformArray("directShadowMatrices", DataType.mat4)
+        public directShadowMatrices: Float32Array = new Float32Array([]);
 
         public ambientLight: Vec3Array = vec3.fromValues(0, 0, 0);
 

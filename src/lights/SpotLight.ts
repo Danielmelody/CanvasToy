@@ -7,14 +7,22 @@ namespace CanvasToy {
         @uniform("coneAngleCos", DataType.float)
         protected _coneAngleCos: number;
 
-        @uniform("spotDir", DataType.vec3)
-        protected _spotDirection: Vec3Array = vec3.fromValues(0, 0, 1);
+        @uniform("spotDir", DataType.vec3, (light: SpotLight, camera: Camera) =>
+            vec3.transformQuat(vec3.create(), light._spotDirection,
+            mat4.getRotation(
+                quat.create(),
+                mat4.multiply(mat4.create(), camera.worldToObjectMatrix, light.matrix),
+            ),
+        ))
+        protected _spotDirection: Vec3Array = vec3.fromValues(0, 0, -1);
 
         protected _coneAngle: number;
 
         constructor(gl: WebGLRenderingContext) {
             super(gl);
             this.setConeAngle(Math.PI / 4);
+            this.setRadius(100);
+            this._shadowType = ShadowType.Hard;
         }
 
         public get typename(): string {
@@ -26,17 +34,27 @@ namespace CanvasToy {
         }
 
         public get spotDirection() {
-            return this._spotDirection;
+            return vec3.transformQuat(vec3.create(), this._spotDirection,
+                mat4.getRotation( quat.create(), this.matrix ),
+            );
+        }
+
+        public setRadius(radius: number) {
+            super.setRadius(radius);
+            this._projectCamera.setFar(radius);
+            return this;
         }
 
         public setConeAngle(coneAngle: number) {
             this._coneAngle = coneAngle;
             this._coneAngleCos = Math.cos(coneAngle);
+            (this._projectCamera as PerspectiveCamera).setFovy(coneAngle * 2);
             return this;
         }
 
         public setSpotDirection(spotDirection: Vec3Array) {
-            vec3.normalize(this._spotDirection, spotDirection);
+            const lookPoint = vec3.add(vec3.create(), this.position, spotDirection);
+            this._projectCamera.lookAt(lookPoint);
             return this;
         }
 
@@ -50,5 +68,13 @@ namespace CanvasToy {
                 bottom: -1,
             };
         }
+
+        protected setUpProjectionCamera() {
+            this._projectCamera = new PerspectiveCamera()
+                .setParent(this)
+                .setLocalPosition([0, 0, 0])
+                .adaptTargetRadio({width: 1024, height: 1024});
+        }
+
     }
 }

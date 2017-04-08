@@ -23,15 +23,7 @@ namespace CanvasToy {
         }
 
         public bindTextureData(gl: WebGLRenderingContext) {
-            gl.bindTexture(this.target, this.glTexture);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-            gl.bindTexture(this.target, this.glTexture);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
-            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
-            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
             super.bindTextureData(gl);
-
             gl.texImage2D(
                 this.target,
                 0,
@@ -43,7 +35,6 @@ namespace CanvasToy {
                 this.type,
                 this.data,
             );
-            gl.bindTexture(this.target, null);
             return this;
         }
     }

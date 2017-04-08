@@ -3,8 +3,8 @@
 namespace CanvasToy {
     export namespace Graphics {
 
-        export function addUniformContainer(program: Program, uniformContainer: any) {
-            if (uniformContainer.uniforms instanceof Array) {
+        export function addUniformContainer(program: Program, uniformContainer) {
+            if (Array.isArray(uniformContainer.uniforms)) {
                 for (const uniformProperty of uniformContainer.uniforms) {
                     if (uniformProperty.updator(uniformContainer) !== undefined) {
                         program.addUniform(uniformProperty.name, {
@@ -16,13 +16,29 @@ namespace CanvasToy {
                     }
                 }
             }
+            if (Array.isArray(uniformContainer.uniformArray)) {
+                for (const uniformArrayProperty of uniformContainer.uniformArray) {
+                    if (uniformArrayProperty.updator(uniformContainer) !== undefined) {
+                        program.addUniformArray(
+                            uniformArrayProperty.name,
+                            {
+                                type: uniformArrayProperty.type,
+                                updator: () => uniformArrayProperty.updator(uniformContainer),
+                            },
+                        );
+                    }
+                }
+            }
         }
 
-        export function addTextureContainer(program: Program, textureContainer: any) {
+        export function addTextureContainer(program: Program, textureContainer) {
             if (Array.isArray(textureContainer.textures)) {
                 for (const textureDiscriptor of textureContainer.textures) {
                     if (textureDiscriptor.getter(textureContainer) !== undefined) {
-                        program.addTexture(textureDiscriptor.name, () => textureDiscriptor.getter(textureContainer));
+                        program.addTexture(
+                            textureDiscriptor.name,
+                            () => textureDiscriptor.getter(textureContainer),
+                        );
                     }
                 }
             }
@@ -31,7 +47,7 @@ namespace CanvasToy {
                     if (textureArrayDiscriptor.arrayGetter(textureContainer) !== undefined) {
                         program.addTextureArray(
                             textureArrayDiscriptor.name,
-                            textureArrayDiscriptor.arrayGetter(textureContainer),
+                            () => textureArrayDiscriptor.arrayGetter(textureContainer),
                         );
                     }
                 }

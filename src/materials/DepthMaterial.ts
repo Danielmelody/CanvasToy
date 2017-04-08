@@ -10,6 +10,7 @@ namespace CanvasToy {
                 .setPass({
                     uniforms: {
                         modelViewProjectionMatrix: defaultProgramPass.uniforms.modelViewProjectionMatrix,
+                        modelViewMatrix: defaultProgramPass.uniforms.modelViewMatrix,
                         cameraFar: {
                             type: DataType.float,
                             updator: (mesh, lightCamera: Camera) => lightCamera.far,

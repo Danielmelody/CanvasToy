@@ -46,11 +46,10 @@ namespace CanvasToy {
             return this._projectionMatrix;
         }
 
-        public lookAt(center: Vec3Array, up: Vec3Array) {
+        public lookAt(center: Vec3Array) {
             this._centerVector = center;
-            this._upVector = up;
-            vec3.cross(this._rightVector, up, center);
-            mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
+            vec3.cross(this._rightVector, [0, 1, 0], center);
+            mat4.lookAt(this._worldToObjectMatrix, this.position, center, [0, 1, 0]);
             this.setWorldToObjectMatrix(this._worldToObjectMatrix);
             return this;
         }
@@ -80,6 +79,6 @@ namespace CanvasToy {
 
         public abstract deCompuseProjectionMatrix();
 
-        public abstract adaptTargetRadio(target: { width: number, height: number });
+        public abstract adaptTargetRadio(target: { width: number, height: number }): Camera;
     }
 }

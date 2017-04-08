@@ -15,6 +15,7 @@ namespace CanvasToy {
         public bindTextureData(gl: WebGLRenderingContext) {
             super.bindTextureData(gl);
             gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
+            return this;
         }
     }
 }

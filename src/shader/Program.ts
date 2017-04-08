@@ -20,6 +20,7 @@ namespace CanvasToy {
 
     export interface IUniform {
         name?: string;
+        key?: string;
         type: DataType;
         updator: (object?: Object3d, camera?: Camera, material?: Material) => any;
     }
@@ -67,6 +68,13 @@ namespace CanvasToy {
         public attribute0: string;
         public webGlProgram: WebGLProgram;
 
+        public viewport: {
+            x: number,
+            y: number,
+            width: number,
+            height: number,
+        };
+
         public textures: Array<{
             sampler: string,
             getter: (mesh: Mesh, camera: Camera, material) => Texture,
@@ -76,6 +84,7 @@ namespace CanvasToy {
         public textureArrays: Array<{
             samplerArray: string,
             arrayGetter: (mesh: Mesh, camera: Camera, material) => Texture[],
+            location: WebGLUniformLocation,
         }> = [];
 
         public vertexPrecision: string = "highp";
@@ -83,8 +92,8 @@ namespace CanvasToy {
 
         public extensionStatements: string[] = [];
 
-        public definesFromMaterial: string[] = [];
-        public definesFromProcesser: string[] = [];
+        public definesFromMaterial: Array<{ name: string, value: string }> = [];
+        // public definesFromProcesser: string[] = [];
 
         private passFunctions: IProgramPass;
 
@@ -97,6 +106,11 @@ namespace CanvasToy {
             this.gl = gl;
             this.source = source;
             this.passFunctions = passFunctions;
+            this.viewport = {
+                x: 0, y: 0,
+                width: gl.canvas.width,
+                height: gl.canvas.height,
+            };
         }
 
         public drawMode = (gl: WebGLRenderingContext) => gl.STATIC_DRAW;
@@ -114,7 +128,8 @@ namespace CanvasToy {
         public resetMaterialDefines(materiel: Material) {
             const _material: any = materiel;
             for (const subdefines in _material.defines) {
-                for (const define of _material.defines[subdefines](materiel)) {
+                const define = _material.defines[subdefines](materiel);
+                if (!!define) {
                     this.definesFromMaterial.push(define);
                 }
             }
@@ -129,8 +144,12 @@ namespace CanvasToy {
                 "#define POINT_LIGHT_NUM " + scene.pointLights.length,
             ];
             for (const define of this.definesFromMaterial) {
-                defines.push("#define " + define);
-                console.log("#define " + define);
+                let defineLine = `#define ${define.name}`;
+                if (!!define.value) {
+                    defineLine += ` ${define.value}`;
+                }
+                defines.push(defineLine);
+                console.log(defineLine);
             }
             this.webGlProgram = createEntileShader(
                 this.gl,
@@ -172,9 +191,15 @@ namespace CanvasToy {
 
         public pass(mesh: Mesh, camera: Camera, materiel: Material) {
             this.gl.useProgram(this.webGlProgram);
+            this.gl.viewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
             for (const uniformName in this.uniforms) {
                 if (this.uniforms[uniformName] !== undefined) {
                     this.uniforms[uniformName](mesh, camera, materiel);
+                }
+            }
+            for (const uniformArrayName in this.uniformArrays) {
+                if (this.uniformArrays[uniformArrayName] !== undefined) {
+                    this.uniformArrays[uniformArrayName](mesh, camera, materiel);
                 }
             }
             let unit = 0;
@@ -189,17 +214,20 @@ namespace CanvasToy {
             }
             for (const textureArrayDiscriptor of this.textureArrays) {
                 const textureArray = textureArrayDiscriptor.arrayGetter(mesh, camera, materiel);
-                for (const texture of textureArray) {
-                    if (!!texture) {
-                        this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                        this.gl.bindTexture(texture.target, texture.glTexture);
-                        this.gl.uniform1i(this.textures[unit].location, unit);
-                    }
-                    unit++;
+                const indices = [];
+                for (const index in textureArray) {
+                    const texture = textureArray[index];
+                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
+                    this.gl.bindTexture(texture.target, texture.glTexture);
+                    indices.push(unit++);
+                }
+                if (indices.length > 0) {
+                    this.gl.uniform1iv(textureArrayDiscriptor.location, indices);
                 }
             }
             for (const attributeName in this.attributes) {
                 const attribute = this.attributes[attributeName](mesh, camera, materiel);
+                this.gl.enableVertexAttribArray(this.attributeLocations[attributeName]);
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
                 this.gl.vertexAttribPointer(
                     this.attributeLocations[attributeName],
@@ -209,6 +237,12 @@ namespace CanvasToy {
                     0,
                     0,
                 );
+            }
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
+            this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
+            for (const attributeName in this.attributes) {
+                const attribute = this.attributes[attributeName](mesh, camera, materiel);
+                this.gl.disableVertexAttribArray(this.attributeLocations[attributeName]);
             }
             return this;
         }
@@ -236,12 +270,13 @@ namespace CanvasToy {
             return this;
         }
 
-        public addTextureArray(samplerArray: string, array: Texture[]) {
+        public addTextureArray(samplerArray: string, arrayGetter: () => Texture[]) {
+            const location = this.gl.getUniformLocation(this.webGlProgram, samplerArray);
             this.textureArrays.push({
                 samplerArray,
-                arrayGetter: () => array,
+                arrayGetter,
+                location,
             });
-            // for ()
         }
 
         public addTexture(sampler: string, getter: (mesh, camera, material) => Texture) {
@@ -249,14 +284,19 @@ namespace CanvasToy {
             this.textures.push({ sampler, getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
         }
 
-        public addUniformArray(arrayNameInShader, uniforms: IUniformArray) {
-            for (const index in uniforms) {
-                this.addUniform(`${arrayNameInShader}[${index}]`, {
-                    name: `${uniforms.name}[${index}]`,
-                    type: uniforms.type,
-                    updator: (mesh, camera, material) => uniforms.updator(mesh, camera, material)[index],
-                });
+        public addUniformArray(arrayNameInShader, uniformArrayDiscriptor: IUniformArray) {
+            this.gl.useProgram(this.webGlProgram);
+            const location = this.getUniformLocation(arrayNameInShader);
+            if (location == null) {
+                return this;
             }
+            this.uniformArrays[arrayNameInShader] = (mesh, camera, material) => {
+                this.updateUniformArray(
+                    location,
+                    uniformArrayDiscriptor.updator(mesh, camera, material), uniformArrayDiscriptor.type,
+                );
+            };
+            return this;
         }
 
         public addUniform(nameInShader, uniform: IUniform) {
@@ -265,49 +305,9 @@ namespace CanvasToy {
             if (location == null) {
                 return this;
             }
-            switch (uniform.type) {
-                case DataType.float:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        this.gl.uniform1f(location, uniform.updator(mesh, camera, material));
-                    };
-                    break;
-                case DataType.int:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        this.gl.uniform1i(location, uniform.updator(mesh, camera, material));
-                    };
-                    break;
-                case DataType.vec2:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        const value = uniform.updator(mesh, camera, material);
-                        this.gl.uniform2f(location, value[0], value[1]);
-                    };
-                    break;
-                case DataType.vec3:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        const value = uniform.updator(mesh, camera, material);
-                        this.gl.uniform3f(location, value[0], value[1], value[2]);
-                    };
-                    break;
-                case DataType.vec4:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        const value = uniform.updator(mesh, camera, material);
-                        this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
-                    };
-                    break;
-                case DataType.mat2:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        this.gl.uniformMatrix2fv(location, false, uniform.updator(mesh, camera, material));
-                    };
-                case DataType.mat3:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        this.gl.uniformMatrix3fv(location, false, uniform.updator(mesh, camera, material));
-                    }; case DataType.mat4:
-                    this.uniforms[nameInShader] = (mesh?, camera?, material?) => {
-                        this.gl.uniformMatrix4fv(location, false, uniform.updator(mesh, camera, material));
-                    };
-                    break;
-                default: break;
-            }
+            this.uniforms[nameInShader] = (mesh, camera, material) => {
+                this.updateUniform(location, uniform.updator(mesh, camera, material), uniform.type);
+            };
         }
 
         public deleteUniform(nameInShader) {
@@ -328,9 +328,69 @@ namespace CanvasToy {
             if (location !== null && location !== -1) {
                 this.attributes[nameInShader] = attributeFun;
                 this.attributeLocations[nameInShader] = location;
-                this.gl.enableVertexAttribArray(location);
             }
             return this;
+        }
+
+        public setViewPort(viewport: {x: number, y: number, width: number, height: number}) {
+            this.viewport = viewport;
+        }
+
+        private updateUniformArray(location, value: number[] | Float32Array | Uint32Array, type: DataType) {
+            switch (type) {
+                case DataType.float:
+                    this.gl.uniform1fv(location, value);
+                    break;
+                case DataType.int:
+                    this.gl.uniform1iv(location, value);
+                    break;
+                case DataType.vec2:
+                    this.gl.uniform2fv(location, value);
+                    break;
+                case DataType.vec3:
+                    this.gl.uniform3fv(location, value);
+                    break;
+                case DataType.vec4:
+                    this.gl.uniform4fv(location, value);
+                    break;
+                case DataType.mat2:
+                    this.gl.uniformMatrix2fv(location, false, value);
+                case DataType.mat3:
+                    this.gl.uniformMatrix3fv(location, false, value);
+                case DataType.mat4:
+                    this.gl.uniformMatrix4fv(location, false, value);
+                    break;
+                default: break;
+            }
+            return this;
+        }
+
+        private updateUniform(location, value, type: DataType) {
+            switch (type) {
+                case DataType.float:
+                    this.gl.uniform1f(location, value);
+                    break;
+                case DataType.int:
+                    this.gl.uniform1i(location, value);
+                    break;
+                case DataType.vec2:
+                    this.gl.uniform2f(location, value[0], value[1]);
+                    break;
+                case DataType.vec3:
+                    this.gl.uniform3f(location, value[0], value[1], value[2]);
+                    break;
+                case DataType.vec4:
+                    this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                    break;
+                case DataType.mat2:
+                    this.gl.uniformMatrix2fv(location, false, value);
+                case DataType.mat3:
+                    this.gl.uniformMatrix3fv(location, false, value);
+                case DataType.mat4:
+                    this.gl.uniformMatrix4fv(location, false, value);
+                    break;
+                default: break;
+            }
         }
 
         private getUniformLocation(name: string): WebGLUniformLocation {
@@ -378,6 +438,7 @@ namespace CanvasToy {
             }
             return result;
         }
+
     }
 
     export const defaultProgramPass = {

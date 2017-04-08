@@ -29,8 +29,8 @@ struct SpotLight {
     float squareAtten;
     float linearAtten;
     float constantAtten;
-    vec3 spotDir;
     float coneAngleCos;
+    vec3 spotDir;
 
     int shadowIndex;
 };

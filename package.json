@@ -26,7 +26,8 @@
     "karma": "latest",
     "karma-chrome-launcher": "latest",
     "karma-firefox-launcher": "latest",
-    "karma-jasmine": "latest"
+    "karma-jasmine": "latest",
+    "webgl-debug": "^1.0.2"
   },
   "scripts": {
     "test": "cd tests && sh testing.sh",

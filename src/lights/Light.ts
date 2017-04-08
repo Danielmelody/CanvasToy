@@ -27,6 +27,7 @@ namespace CanvasToy {
             super();
             this.gl = gl;
             this.setShadowType(this.shadowType);
+            this.setUpProjectionCamera();
         }
 
         public abstract getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D;
@@ -83,14 +84,24 @@ namespace CanvasToy {
             return this._idensity;
         }
 
-        private configShadowFrameBuffer() {
-            if (!this._shadowFrameBuffer) {
-                this._shadowFrameBuffer = new FrameBuffer(this.gl);
-                this._shadowFrameBuffer.attachments.color.disable();
-                this._shadowFrameBuffer.attachments.depth.toTexture(this.gl);
-                this._shadowMap = this._shadowFrameBuffer.attachments.depth.targetTexture;
-            }
-        }
+        protected abstract setUpProjectionCamera();
 
+        protected configShadowFrameBuffer() {
+            if (!this._shadowFrameBuffer) {
+                this._shadowFrameBuffer = new FrameBuffer(this.gl).setWidth(1024).setHeight(1024);
+                this._shadowFrameBuffer.attachments.color.disable();
+                this._shadowFrameBuffer.attachments.depth.setType(this.gl, AttachmentType.Texture);
+                this._shadowMap = this._shadowFrameBuffer.attachments.depth.targetTexture
+                    .setType(this.gl.UNSIGNED_SHORT)
+                    .setFormat(this.gl.DEPTH_COMPONENT)
+                    .setMinFilter(this.gl.LINEAR)
+                    .setMagFilter(this.gl.LINEAR)
+                    .setWrapS(this.gl.REPEAT)
+                    .setWrapT(this.gl.REPEAT)
+                    .bindTextureData(this.gl);
+                this._shadowFrameBuffer.attach(this.gl);
+            }
+            return this;
+        }
     }
 }
