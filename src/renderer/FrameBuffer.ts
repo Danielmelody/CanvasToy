@@ -65,10 +65,6 @@ namespace CanvasToy {
             return this;
         }
 
-        public toTexture(gl: WebGLRenderingContext): Texture {
-            this.targetTexture = new Texture(gl);
-            return this.targetTexture;
-        }
     }
 
     export class FrameBuffer {
@@ -85,8 +81,13 @@ namespace CanvasToy {
 
         private _attached = false;
 
+        private _width: number;
+        private _height: number;
+
         constructor(gl: WebGLRenderingContext) {
             this.glFramebuffer = gl.createFramebuffer();
+            this._width = gl.canvas.width;
+            this._height = gl.canvas.height;
             this.attachments.color.setType(gl, AttachmentType.Texture)
                 .setInnerFormatForBuffer(gl.RGBA4);
             this.attachments.depth.setType(gl, AttachmentType.RenderBuffer)
@@ -96,36 +97,63 @@ namespace CanvasToy {
                 .disable();
         }
 
+        public setWidth(_width: number) {
+            this._width = _width;
+            return this;
+        }
+
+        public setHeight(_height: number) {
+            this._height = _height;
+            return this;
+        }
+
         public get attached(): boolean {
             return this._attached;
         }
 
-        public attach(gl: WebGLRenderingContext, drawBuffer: WebGLDrawBuffers) {
+        public get width() {
+            return this._width;
+        }
+
+        public get height() {
+            return this._height;
+        }
+
+        // make all attachment settings take effect.
+        public attach(gl: WebGLRenderingContext, drawBuffer?: WebGLDrawBuffers) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.glFramebuffer);
             for (const index in this.attachments) {
                 const attachment: Attachment = this.attachments[index];
                 if (attachment.isAble) {
                     this.linkAttachment(attachment, gl, gl);
                 }
             }
-            for (const attachment of this.extras) {
-                this.linkAttachment(attachment, gl, drawBuffer);
+            if (!!drawBuffer) {
+                for (const attachment of this.extras) {
+                    this.linkAttachment(attachment, gl, drawBuffer);
+                }
+                drawBuffer.drawBuffersWEBGL([
+                    drawBuffer.COLOR_ATTACHMENT0_WEBGL,
+                    drawBuffer.COLOR_ATTACHMENT1_WEBGL,
+                ]);
             }
             this._attached = Graphics.logIfFrameBufferInvalid(gl, this.glFramebuffer);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
 
         private linkAttachment(
             attachment: Attachment,
             gl: WebGLRenderingContext,
             context: WebGLRenderingContext | WebGLDrawBuffers) {
-
             switch (attachment.type) {
                 case AttachmentType.Texture:
                     gl.bindTexture(attachment.targetTexture.target, attachment.targetTexture.glTexture);
-                    gl.texImage2D(gl.TEXTURE_2D,
+                    gl.texImage2D(
+                        attachment.targetTexture.target,
                         0,
                         attachment.targetTexture.format,
-                        gl.canvas.width,
-                        gl.canvas.height,
+                        this.width,
+                        this.height,
                         0,
                         attachment.targetTexture.format,
                         attachment.targetTexture.type,
@@ -137,7 +165,8 @@ namespace CanvasToy {
                         attachment.targetTexture.target,
                         attachment.targetTexture.glTexture,
                         0);
-                    gl.bindTexture(gl.TEXTURE_2D, null);
+                    gl.bindTexture(attachment.targetTexture.target, null);
+                    break;
                 case AttachmentType.RenderBuffer:
                     gl.bindRenderbuffer(gl.RENDERBUFFER, attachment.glRenderBuffer);
                     gl.renderbufferStorage(

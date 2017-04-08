@@ -22,8 +22,8 @@ namespace CanvasToy {
                 return Promise.resolve(this);
             }));
             this.setTarget(gl.TEXTURE_CUBE_MAP)
-                .setMinFilter(gl.LINEAR)
-                .setMagFilter(gl.LINEAR);
+                .setMinFilter(gl.NEAREST)
+                .setMagFilter(gl.NEAREST);
             this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
             this.images[0].src = xposUrl;
             this.images[1].src = xnegUrl;
@@ -55,6 +55,7 @@ namespace CanvasToy {
                     this.images[i],
                 );
             }
+            return this;
         }
 
         private createLoadPromise(image: HTMLImageElement) {

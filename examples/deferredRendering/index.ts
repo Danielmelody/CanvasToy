@@ -5,8 +5,7 @@
 examples.push((canvas: HTMLCanvasElement) => {
     const renderer = new CanvasToy.Renderer(canvas);
     const scene = new CanvasToy.Scene();
-    const up = vec3.cross(vec3.create(), [1, 0, 0], [0, 0, -40]);
-    const camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40], up);
+    const camera = new CanvasToy.PerspectiveCamera().setPosition([0, 100, 100]).lookAt([0, 0, -40]);
     const tile = new CanvasToy.Mesh(
         new CanvasToy.RectGeometry(renderer.gl),
         [new CanvasToy.StandardMaterial(renderer.gl, {
@@ -17,6 +16,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(() => {
         const material = (teapotProto.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
         material.diffuse = [1, 0.8, 0.2];
+        material.castShadow = false;
         for (let i = 0; i < 40; ++i) {
             const teapot = new CanvasToy.Mesh(
                 (teapotProto.children[0] as CanvasToy.Mesh).geometry,

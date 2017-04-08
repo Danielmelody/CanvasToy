@@ -24,7 +24,9 @@ namespace CanvasToy {
         constructor(gl: WebGLRenderingContext) {
             super(gl);
             this.volume = new SphereGeometry(gl).setRadius(this._radius).build();
-            this._projectCamera = new PerspectiveCamera();
+
+            // TODO: remove temporary diasable shadow of point light;
+            this._shadowType = ShadowType.None;
         }
 
         public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {
@@ -69,6 +71,10 @@ namespace CanvasToy {
 
         public get radius() {
             return this._radius;
+        }
+
+        protected setUpProjectionCamera() {
+            // TODO: implement cube camera
         }
     }
 }

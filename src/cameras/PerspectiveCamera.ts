@@ -4,7 +4,7 @@ namespace CanvasToy {
 
     export class PerspectiveCamera extends Camera {
         protected _aspect: number = 1;
-        protected _fovy: number = 45;
+        protected _fovy: number = Math.PI / 4;
         constructor(parameter: {
             aspect?: number,
             fovy?: number,
@@ -64,6 +64,7 @@ namespace CanvasToy {
         public adaptTargetRadio(target: { width: number, height: number }) {
             this._aspect = target.width / target.height;
             this.genOtherMatrixs();
+            return this;
         }
     }
 }

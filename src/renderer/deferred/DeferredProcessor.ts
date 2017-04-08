@@ -8,7 +8,7 @@
 namespace CanvasToy {
     export class DeferredProcessor implements IProcessor {
 
-        public tile: RectGeometry;
+        public tile: Mesh;
         public readonly tilePixelSize: number = 32;
 
         public readonly horizontalTileNum;
@@ -18,7 +18,7 @@ namespace CanvasToy {
         public readonly gl: WebGLRenderingContext;
         public readonly ext: WebGLExtension;
 
-        public tilePass: Program;
+        public tileProgram: Program;
 
         private tileLightIndexMap: DataTexture<Uint8Array>;
         private tileLightOffsetCountMap: DataTexture<Float32Array>;
@@ -63,13 +63,6 @@ namespace CanvasToy {
                                 material.dirty = false;
                             }
                             material.geometryProgram.pass(mesh, camera, material);
-                            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                            this.gl.drawElements(
-                                this.gl.TRIANGLES,
-                                mesh.geometry.faces.data.length,
-                                this.gl.UNSIGNED_SHORT,
-                                0,
-                            );
                         }
                     }
                 }
@@ -80,19 +73,17 @@ namespace CanvasToy {
             this.gl.enable(this.gl.BLEND);
             this.gl.depthFunc(this.gl.EQUAL);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
-            this.passLightInfoToTexture(scene, camera);
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.tile.faces.buffer);
-            this.gl.drawElements(
-                this.gl.TRIANGLES,
-                this.tile.faces.data.length,
-                this.gl.UNSIGNED_SHORT,
-                0,
-            );
+            this.tileLightPass(scene, camera);
         }
 
         private initGeometryProcess(scene: Scene) {
             this.gBuffer.attachments.color.disable();
-            this.gBuffer.attachments.depth.setType(this.gl, AttachmentType.Texture);
+            this.gBuffer.attachments.depth
+                .setType(this.gl, AttachmentType.Texture)
+                    .targetTexture
+                    .setType(this.gl.UNSIGNED_SHORT)
+                    .setFormat(this.gl.DEPTH_COMPONENT)
+                    .bindTextureData(this.gl);
             this.gBuffer.extras.push(
                 // first for normal, depth and materialSpecExp
                 new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT0_WEBGL)
@@ -101,10 +92,6 @@ namespace CanvasToy {
                 new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT1_WEBGL)
                     .setType(this.gl, AttachmentType.Texture),
             );
-            this.gBuffer.attachments.depth.targetTexture
-                .setType(this.gl.UNSIGNED_SHORT)
-                .setFormat(this.gl.DEPTH_COMPONENT)
-                .bindTextureData(this.gl);
             for (const colorAttach of this.gBuffer.extras) {
                 colorAttach.targetTexture
                     .setType(this.gl.FLOAT)
@@ -114,56 +101,8 @@ namespace CanvasToy {
                     .bindTextureData(this.gl);
             }
 
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
-            this.gl.bindTexture(
-                this.gl.TEXTURE_2D,
-                this.gBuffer.attachments.depth.targetTexture.glTexture,
-            );
-            this.gl.texImage2D(this.gl.TEXTURE_2D,
-                0,
-                this.gBuffer.attachments.depth.targetTexture.format,
-                this.gl.canvas.width,
-                this.gl.canvas.height,
-                0,
-                this.gBuffer.attachments.depth.targetTexture.format,
-                this.gBuffer.attachments.depth.targetTexture.type,
-                null,
-            );
-            this.gl.framebufferTexture2D(
-                this.gl.FRAMEBUFFER,
-                this.gBuffer.attachments.depth.attachmentCode(this.gl),
-                this.gl.TEXTURE_2D,
-                this.gBuffer.attachments.depth.targetTexture.glTexture,
-                0);
-            this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+            this.gBuffer.attach(this.gl, this.ext.draw_buffer);
 
-            for (const attachment of this.gBuffer.extras) {
-                this.gl.bindTexture(this.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
-                this.gl.texImage2D(this.gl.TEXTURE_2D,
-                    0,
-                    attachment.targetTexture.format,
-                    this.gl.canvas.width,
-                    this.gl.canvas.height,
-                    0,
-                    attachment.targetTexture.format,
-                    attachment.targetTexture.type,
-                    null,
-                );
-                this.gl.framebufferTexture2D(
-                    this.gl.FRAMEBUFFER,
-                    attachment.attachmentCode(this.ext.draw_buffer),
-                    this.gl.TEXTURE_2D,
-                    attachment.targetTexture.glTexture,
-                    0);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-            }
-            Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer);
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
-            this.ext.draw_buffer.drawBuffersWEBGL([
-                this.ext.draw_buffer.COLOR_ATTACHMENT0_WEBGL,
-                this.ext.draw_buffer.COLOR_ATTACHMENT1_WEBGL,
-            ]);
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
             for (const object of scene.objects) {
                 if (object instanceof Mesh) {
                     const geometryProgram = new ShaderBuilder()
@@ -184,7 +123,7 @@ namespace CanvasToy {
             }
         }
 
-        private passLightInfoToTexture(scene: Scene, camera: Camera) {
+        private tileLightPass(scene: Scene, camera: Camera) {
 
             // TODO: add spot light and dirctional light support
             const lightColors = [];
@@ -239,10 +178,7 @@ namespace CanvasToy {
                     this.linearLightIndex.push(index / scene.pointLights.length);
                 }
             }
-            // const lightIndexWidth = Math.ceil(Math.sqrt(this.linearLightIndex.length));
-            // while(this.linearLightIndex.length < lightIndexWidth * lightIndexWidth) {
-            //     this.linearLightIndex.push(0);
-            // }
+
             this.tileLightIndexMap.resetData(
                 this.gl,
                 new Float32Array(this.linearLightIndex),
@@ -255,13 +191,13 @@ namespace CanvasToy {
                 this.horizontalTileNum,
                 this.verticalTileNum,
             );
-            this.tilePass.pass(null, camera, null);
+            this.tileProgram.pass(this.tile, camera, null);
         }
 
         private initTiledPass(scene: Scene) {
 
             if (this.tile === undefined) {
-                this.tile = new RectGeometry(this.gl).build();
+                this.tile = new Mesh(new RectGeometry(this.gl).build(), []);
             }
             for (let i = 0; i < this.horizontalTileNum; ++i) {
                 for (let j = 0; j < this.verticalTileNum; ++j) {
@@ -307,13 +243,13 @@ namespace CanvasToy {
             // .setMinFilter(this.gl.LINEAR)
             // .setMagFilter(this.gl.LINEAR);
 
-            this.tilePass = new ShaderBuilder()
+            this.tileProgram = new ShaderBuilder()
                 .resetShaderLib()
                 .addShaderLibFrag(ShaderSource.calculators__blinn_phong_glsl)
                 .setShadingVert(ShaderSource.interploters__deferred__tiledLight_vert)
                 .setShadingFrag(ShaderSource.interploters__deferred__tiledLight_frag)
                 .setPass({
-                    faces: () => this.tile.faces,
+                    faces: () => this.tile.geometry.faces,
                     uniforms: {
                         cameraFar: {
                             type: DataType.float,
@@ -353,12 +289,12 @@ namespace CanvasToy {
                         uLightIndex: () => this.tileLightIndexMap,
                     },
                     attributes: {
-                        position: () => this.tile.attributes.position,
+                        position: () => this.tile.geometry.attributes.position,
                     },
                 })
                 .build(this.gl);
-            Graphics.copyDataToVertexBuffer(this.gl, this.tile);
-            this.tilePass.make(scene);
+            Graphics.copyDataToVertexBuffer(this.gl, this.tile.geometry);
+            this.tileProgram.make(scene);
         }
 
         private fillTileWithBoundingBox2D(camera: Camera, box: BoundingBox2D, lightIndex: number) {

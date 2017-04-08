@@ -3,16 +3,21 @@ uniform vec3 materialSpec;
 uniform float materialSpecExp;
 uniform vec3 materialDiff;
 varying vec2 vMainUV;
+varying vec4 screenPos;
 
 #ifdef OPEN_LIGHT
 varying vec3 vNormal;
 varying vec3 vPosition;
 #endif
 
+#ifdef _MAIN_TEXTURE
 uniform sampler2D uMainTexture;
+#endif
 
+#ifdef _ENVIRONMENT_MAP
 uniform float reflectivity;
 uniform samplerCube uCubeTexture;
+#endif
 
 #if (DIR_LIGHT_NUM > 0)
 uniform DirectLight directLights[DIR_LIGHT_NUM];
@@ -29,15 +34,18 @@ uniform SpotLight spotLights[SPOT_LIGHT_NUM];
 #ifdef USE_SHADOW
 
     #if (DIR_LIGHT_NUM > 0)
-    uniform sampler2D directShadow[DIR_LIGHT_NUM];
+    uniform sampler2D directShadowMaps[DIR_LIGHT_NUM];
+    varying vec4 directShadowCoord[DIR_LIGHT_NUM];
     #endif
 
     #if (POINT_LIGHT_NUM > 0)
-    uniform sampler2D pointShadow[POINT_LIGHT_NUM];
+    uniform sampler2D pointShadowMaps[POINT_LIGHT_NUM];
+    varying vec4 pointShadowCoord[POINT_LIGHT_NUM];
     #endif
 
-    #if (SPOT_LIGHT_NUM)
-    uniform sampler2D spotShadow[SPOT_LIGHT_NUM];
+    #if (SPOT_LIGHT_NUM > 0)
+    uniform sampler2D spotShadowMaps[SPOT_LIGHT_NUM];
+    varying vec4 spotShadowCoord[SPOT_LIGHT_NUM];
     #endif
 
 #endif
@@ -58,7 +66,7 @@ void main () {
     vec3 totalLighting = ambient;
     #if (DIR_LIGHT_NUM > 0)
     for (int index = 0; index < DIR_LIGHT_NUM; index++) {
-        totalLighting += calculateDirLight(
+        vec3 lighting = calculateDirLight(
             directLights[index],
             materialDiff,
             materialSpec,
@@ -67,11 +75,15 @@ void main () {
             normal,
             vec3(0.0)
         );
+        #ifdef USE_SHADOW
+        lighting = lighting * getSpotDirectionShadow(directShadowCoord[index], directShadowMaps[index]);
+        #endif
+        totalLighting += lighting;
     }
     #endif
     #if (POINT_LIGHT_NUM > 0)
     for (int index = 0; index < POINT_LIGHT_NUM; index++) {
-        totalLighting += calculatePointLight(
+        vec3 lighting = calculatePointLight(
             pointLights[index],
             materialDiff,
             materialSpec,
@@ -80,11 +92,12 @@ void main () {
             normal,
             vec3(0.0)
         );
+        totalLighting += lighting;
     }
     #endif
     #if (SPOT_LIGHT_NUM > 0)
     for (int index = 0; index < SPOT_LIGHT_NUM; index++) {
-        totalLighting += calculateSpotLight(
+        vec3 lighting = calculateSpotLight(
             spotLights[index],
             materialDiff,
             materialSpec,
@@ -93,6 +106,11 @@ void main () {
             normal,
             vec3(0.0)
         );
+        #ifdef USE_SHADOW
+        lighting = lighting * getSpotDirectionShadow(spotShadowCoord[index], spotShadowMaps[index]);
+        #endif
+        totalLighting += lighting;
+
     }
     #endif
     color = totalLighting;

@@ -15,6 +15,7 @@ namespace CanvasToy {
             this.gl = gl;
             this.ext = ext;
             this.depthMaterial = new DepthMaterial(gl);
+            this.depthMaterial.program.setViewPort({x: 0, y: 0, width: 1024, height: 1024});
         }
 
         public process(scene: Scene, camera: Camera, matriels: Material[]) {
@@ -25,14 +26,26 @@ namespace CanvasToy {
                 Graphics.addTextureContainer(this.depthMaterial.program, this.depthMaterial);
                 this.depthMaterial.dirty = false;
             }
-            this.gl.enable(this.gl.DEPTH_TEST);
             for (const light of scene.lights) {
                 if (light.shadowType !== ShadowType.None) {
                     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
-                    light.shadowFrameBuffer.attach(this.gl, this.ext.draw_buffer);
+                    this.gl.enable(this.gl.DEPTH_TEST);
+                    this.gl.depthFunc(this.gl.LEQUAL);
+                    this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
                     for (const object of scene.objects) {
                         if (object instanceof Mesh) {
-                            this.renderMeshDepth(object, light);
+                            let castShadow = false;
+                            for (const material of object.materials) {
+                                if (material instanceof StandardMaterial) {
+                                    if (material.castShadow) {
+                                        castShadow = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (castShadow) {
+                                this.renderMeshDepth(object, light);
+                            }
                         }
                     }
                 }
@@ -41,9 +54,8 @@ namespace CanvasToy {
         }
 
         private renderMeshDepth(mesh: Mesh, light: Light) {
+            this.gl.useProgram(this.depthMaterial.program.webGlProgram);
             this.depthMaterial.program.pass(mesh, light.projectCamera, this.depthMaterial);
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-            this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
         }
     }
 }

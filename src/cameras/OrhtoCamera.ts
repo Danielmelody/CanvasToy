@@ -84,6 +84,7 @@ namespace CanvasToy {
             this._top = target.height / 2;
             this._bottom = -target.height / 2;
             this.compuseProjectionMatrix();
+            return this;
         }
     }
 }

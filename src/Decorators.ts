@@ -12,6 +12,7 @@ namespace CanvasToy {
             }
             const uniforms = proto.uniforms;
             uniforms.push({
+                key,
                 name,
                 type,
                 updator: updator ? updator : (obj: DecoratorClass) => {
@@ -36,6 +37,7 @@ namespace CanvasToy {
             }
             const uniformArray = proto.uniformArray;
             uniformArray.push({
+                key,
                 name,
                 type,
                 updator: updator ? updator : (obj: DecoratorClass) => {
@@ -60,7 +62,8 @@ namespace CanvasToy {
             }
             const textureArrays = proto.textureArrays;
             textureArrays.push({
-                samplerArray: name,
+                key,
+                name,
                 arrayGetter: (obj: DecoratorClass) => {
                     if (obj.hasOwnProperty(key)) {
                         return obj[key];
@@ -84,6 +87,7 @@ namespace CanvasToy {
             }
             const textures = proto.textures;
             textures.push({
+                key,
                 name,
                 getter: (obj: DecoratorClass) => {
                     if (obj.hasOwnProperty(key)) {
@@ -95,7 +99,7 @@ namespace CanvasToy {
         };
     }
 
-    export function linkdef(...defineNames: string[]) {
+    export function linkdef(name: string, value?: string) {
         return (proto, key) => {
             if (!proto.hasOwnProperty("defines") && !proto.defines) {
                 Object.defineProperty(proto, "defines", {
@@ -108,9 +112,9 @@ namespace CanvasToy {
             const defines = proto.defines;
             defines[key] = (obj) => {
                 if (!!obj[key]) {
-                    return defineNames;
+                    return { name, value };
                 }
-                return [];
+                return undefined;
             };
         };
     }
