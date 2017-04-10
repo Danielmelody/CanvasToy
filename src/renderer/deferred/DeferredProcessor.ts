@@ -58,8 +58,12 @@ namespace CanvasToy {
                             if (material.dirty) {
                                 material.geometryProgram.resetMaterialDefines(material);
                                 material.geometryProgram.make(mesh.scene);
-                                Graphics.addUniformContainer(material.geometryProgram, (object as Mesh));
+                                Graphics.addUniformContainer(material.geometryProgram, object);
                                 Graphics.addUniformContainer(material.geometryProgram, material);
+                                Graphics.addUniformContainer(material.geometryProgram, camera);
+
+                                Graphics.addTextureContainer(material.geometryProgram, material);
+                                Graphics.addTextureContainer(material.geometryProgram, scene);
                                 material.dirty = false;
                             }
                             material.geometryProgram.pass(mesh, camera, material);
@@ -113,9 +117,6 @@ namespace CanvasToy {
                     for (const material of (object as Mesh).materials) {
                         if (material instanceof StandardMaterial) {
                             geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                            geometryProgram.make(scene);
-                            Graphics.addUniformContainer(geometryProgram, (object as Mesh));
-                            Graphics.addUniformContainer(geometryProgram, material);
                             material.geometryProgram = geometryProgram;
                         }
                     }

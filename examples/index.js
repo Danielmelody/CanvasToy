@@ -99,6 +99,7 @@ examples.push(function (canvas) {
     teapot.setAsyncFinished(teapot.asyncFinished().then(function () {
         var material = teapot.children[0].materials[0];
         material.reflectionMap = skyTexture;
+        material.castShadow = false;
         return Promise.resolve(teapot);
     }));
     scene.addObject(teapot);

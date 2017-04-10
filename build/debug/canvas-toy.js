@@ -2598,6 +2598,9 @@ var CanvasToy;
                                 material.geometryProgram.make(mesh.scene);
                                 CanvasToy.Graphics.addUniformContainer(material.geometryProgram, object);
                                 CanvasToy.Graphics.addUniformContainer(material.geometryProgram, material);
+                                CanvasToy.Graphics.addUniformContainer(material.geometryProgram, camera);
+                                CanvasToy.Graphics.addTextureContainer(material.geometryProgram, material);
+                                CanvasToy.Graphics.addTextureContainer(material.geometryProgram, scene);
                                 material.dirty = false;
                             }
                             material.geometryProgram.pass(mesh, camera, material);
@@ -2646,9 +2649,6 @@ var CanvasToy;
                         var material = _e[_d];
                         if (material instanceof CanvasToy.StandardMaterial) {
                             geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                            geometryProgram.make(scene);
-                            CanvasToy.Graphics.addUniformContainer(geometryProgram, object);
-                            CanvasToy.Graphics.addUniformContainer(geometryProgram, material);
                             material.geometryProgram = geometryProgram;
                         }
                     }
@@ -2832,7 +2832,7 @@ var CanvasToy;
                         CanvasToy.Graphics.addTextureContainer(material.program, scene);
                         material.dirty = false;
                     }
-                    if (material instanceof CanvasToy.StandardMaterial) {
+                    if (material instanceof CanvasToy.StandardMaterial && material.castShadow) {
                         this.passShadows(mesh, scene, material, camera);
                     }
                     this.gl.useProgram(program.webGlProgram);
@@ -2869,25 +2869,26 @@ var CanvasToy;
             }
         };
         ForwardProcessor.prototype.passShadows = function (mesh, scene, material, camera) {
-            if (material.castShadow) {
-                var handleShadow = function (lights, shadowMatrices, shadowMaps) {
-                    var offset = 0;
-                    lights.forEach(function (light) {
-                        shadowMaps.push(light.shadowMap);
-                        shadowMatrices.set(mat4.mul(mat4.create(), light.projectCamera.projectionMatrix, mat4.mul(mat4.create(), light.projectCamera.worldToObjectMatrix, mesh.matrix)), offset);
-                        offset += 16;
-                    });
-                };
-                scene.directionShadowMaps = [];
-                scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
-                handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
-                scene.pointShadowMaps = [];
-                scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
-                handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
-                scene.spotShadowMaps = [];
-                scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
-                handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
-            }
+            var handleShadow = function (lights, shadowMatrices, shadowMaps) {
+                var offset = 0;
+                lights.forEach(function (light) {
+                    if (light.shadowType === CanvasToy.ShadowType.None) {
+                        return;
+                    }
+                    shadowMaps.push(light.shadowMap);
+                    shadowMatrices.set(mat4.mul(mat4.create(), light.projectCamera.projectionMatrix, mat4.mul(mat4.create(), light.projectCamera.worldToObjectMatrix, mesh.matrix)), offset);
+                    offset += 16;
+                });
+            };
+            scene.directionShadowMaps = [];
+            scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
+            handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
+            scene.pointShadowMaps = [];
+            scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
+            handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
+            scene.spotShadowMaps = [];
+            scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
+            handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
         };
         return ForwardProcessor;
     }());
