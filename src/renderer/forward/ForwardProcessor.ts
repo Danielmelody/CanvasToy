@@ -59,7 +59,7 @@ namespace CanvasToy {
                         material.dirty = false;
                     }
 
-                    if (material instanceof StandardMaterial) {
+                    if (material instanceof StandardMaterial && material.castShadow) {
                         this.passShadows(mesh, scene, material, camera);
                     }
 
@@ -97,10 +97,12 @@ namespace CanvasToy {
         }
 
         private passShadows(mesh: Mesh, scene: Scene, material: StandardMaterial, camera: Camera) {
-            if (material.castShadow) {
                 const handleShadow = (lights: Light[], shadowMatrices: Float32Array, shadowMaps: Texture[]) => {
                     let offset = 0;
                     lights.forEach((light) => {
+                        if (light.shadowType === ShadowType.None) {
+                            return;
+                        }
                         shadowMaps.push(light.shadowMap);
                         shadowMatrices.set(
                             mat4.mul(
@@ -129,7 +131,5 @@ namespace CanvasToy {
                 scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
                 handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
             }
-        }
-
     }
 }

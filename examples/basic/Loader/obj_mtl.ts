@@ -26,6 +26,7 @@ examples.push((canvas: HTMLCanvasElement) => {
     teapot.setAsyncFinished(teapot.asyncFinished().then(() => {
         const material = (teapot.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
         material.reflectionMap = skyTexture;
+        material.castShadow = false;
         return Promise.resolve(teapot);
     }));
     scene.addObject(teapot);
