@@ -28,14 +28,19 @@ examples.push((canvas: HTMLCanvasElement) => {
         [objectMaterial])
         .setPosition([2, 0, -5]).setScaling([0.5, 0.5, 0.5]);
     scene.addObject(ground, back, box, sphere, camera);
-    const directLight = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, 0]);
+    const directLight = new CanvasToy.DirectionalLight(renderer.gl)
+        .translate([10, 0, 0])
+        .rotateX(-Math.PI / 2)
+        .rotateY(0.6);
+        // .rotateZ(Math.PI / 4);
     const pointLight = new CanvasToy.PointLight(renderer.gl)
         .setPosition([0, 0, -3]).setIdensity(3).setRadius(8);
     const spotLight = new CanvasToy.SpotLight(renderer.gl)
         .setIdensity(600000)
+        .rotateY(0.1)
         .setSpotDirection([10, 0, 0])
-        .setConeAngle(Math.PI / 4);
-    scene.addLight(spotLight);
+        .setConeAngle(Math.PI / 8);
+    scene.addLight(directLight, spotLight);
     let time = 0;
     scene.addOnUpdateListener((delta) => {
         time += delta;

@@ -15,7 +15,7 @@ namespace CanvasToy {
             this.gl = gl;
             this.ext = ext;
             this.depthMaterial = new DepthMaterial(gl);
-            this.depthMaterial.program.setViewPort({x: 0, y: 0, width: 1024, height: 1024});
+            this.depthMaterial.program.setViewPort({ x: 0, y: 0, width: 1024, height: 1024 });
         }
 
         public process(scene: Scene, camera: Camera, matriels: Material[]) {

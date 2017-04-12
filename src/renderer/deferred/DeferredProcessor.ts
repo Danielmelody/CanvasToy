@@ -84,10 +84,10 @@ namespace CanvasToy {
             this.gBuffer.attachments.color.disable();
             this.gBuffer.attachments.depth
                 .setType(this.gl, AttachmentType.Texture)
-                    .targetTexture
-                    .setType(this.gl.UNSIGNED_SHORT)
-                    .setFormat(this.gl.DEPTH_COMPONENT)
-                    .bindTextureData(this.gl);
+                .targetTexture
+                .setType(this.gl.UNSIGNED_SHORT)
+                .setFormat(this.gl.DEPTH_COMPONENT)
+                .bindTextureData(this.gl);
             this.gBuffer.extras.push(
                 // first for normal, depth and materialSpecExp
                 new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT0_WEBGL)

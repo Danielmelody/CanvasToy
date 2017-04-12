@@ -8,7 +8,8 @@ namespace Testing {
                 width: x,
                 height: y,
             });
-            expect((camera.right - camera.left) / (camera.top - camera.bottom)).toEqual(x / y);
+            (expect((camera.right - camera.left) / (camera.top - camera.bottom))as jasmine.ToyMatchers)
+                .toBeEqualish(x / y);
         })
     });
 }

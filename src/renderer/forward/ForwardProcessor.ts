@@ -97,39 +97,39 @@ namespace CanvasToy {
         }
 
         private passShadows(mesh: Mesh, scene: Scene, material: StandardMaterial, camera: Camera) {
-                const handleShadow = (lights: Light[], shadowMatrices: Float32Array, shadowMaps: Texture[]) => {
-                    let offset = 0;
-                    lights.forEach((light) => {
-                        if (light.shadowType === ShadowType.None) {
-                            return;
-                        }
-                        shadowMaps.push(light.shadowMap);
-                        shadowMatrices.set(
+            const handleShadow = (lights: Light[], shadowMatrices: Float32Array, shadowMaps: Texture[]) => {
+                let offset = 0;
+                lights.forEach((light) => {
+                    if (light.shadowType === ShadowType.None) {
+                        return;
+                    }
+                    shadowMaps.push(light.shadowMap);
+                    shadowMatrices.set(
+                        mat4.mul(
+                            mat4.create(),
+                            light.projectCamera.projectionMatrix,
                             mat4.mul(
                                 mat4.create(),
-                                light.projectCamera.projectionMatrix,
-                                mat4.mul(
-                                    mat4.create(),
-                                    light.projectCamera.worldToObjectMatrix,
-                                    mesh.matrix,
-                                ),
+                                light.projectCamera.worldToObjectMatrix,
+                                mesh.matrix,
                             ),
-                            offset,
-                        );
-                        offset += 16;
-                    });
-                };
-                scene.directionShadowMaps = [];
-                scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
-                handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
+                        ),
+                        offset,
+                    );
+                    offset += 16;
+                });
+            };
+            scene.directionShadowMaps = [];
+            scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
+            handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
 
-                scene.pointShadowMaps = [];
-                scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
-                handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
+            scene.pointShadowMaps = [];
+            scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
+            handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
 
-                scene.spotShadowMaps = [];
-                scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
-                handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
-            }
+            scene.spotShadowMaps = [];
+            scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
+            handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
+        }
     }
 }
