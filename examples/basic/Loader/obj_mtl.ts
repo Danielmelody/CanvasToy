@@ -22,15 +22,11 @@ examples.push((canvas: HTMLCanvasElement) => {
 
     scene.addObject(camera);
 
-    const test = new Promise((resolve, reject) => {
-        resolve(100);
-    }).then((num) => {
-        console.log(`promise resolve ${num}`);
-    });
     const teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapot.setAsyncFinished(teapot.asyncFinished().then(() => {
         const material = (teapot.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
         material.reflectionMap = skyTexture;
+        material.castShadow = false;
         return Promise.resolve(teapot);
     }));
     scene.addObject(teapot);

@@ -44,6 +44,7 @@ var CanvasToy;
             }
             var uniforms = proto.uniforms;
             uniforms.push({
+                key: key,
                 name: name,
                 type: type,
                 updator: updator ? updator : function (obj) {
@@ -56,11 +57,81 @@ var CanvasToy;
         };
     }
     CanvasToy.uniform = uniform;
-    function asDefine() {
-        var defineNames = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            defineNames[_i] = arguments[_i];
-        }
+    function uniformArray(name, type, updator) {
+        return function (proto, key) {
+            if (!proto.hasOwnProperty("uniformArray") && !proto.uniformArray) {
+                Object.defineProperty(proto, "uniformArray", {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: [],
+                });
+            }
+            var uniformArray = proto.uniformArray;
+            uniformArray.push({
+                key: key,
+                name: name,
+                type: type,
+                updator: updator ? updator : function (obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        return obj[key];
+                    }
+                    return undefined;
+                },
+            });
+        };
+    }
+    CanvasToy.uniformArray = uniformArray;
+    function textureArray(name) {
+        return function (proto, key) {
+            if (!proto.hasOwnProperty("textureArrays") && !proto.textureArrays) {
+                Object.defineProperty(proto, "textureArrays", {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: [],
+                });
+            }
+            var textureArrays = proto.textureArrays;
+            textureArrays.push({
+                key: key,
+                name: name,
+                arrayGetter: function (obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        return obj[key];
+                    }
+                    return undefined;
+                },
+            });
+        };
+    }
+    CanvasToy.textureArray = textureArray;
+    function texture(name) {
+        return function (proto, key) {
+            readyRequire(proto, key);
+            if (!proto.hasOwnProperty("textures") && !proto.textures) {
+                Object.defineProperty(proto, "textures", {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: [],
+                });
+            }
+            var textures = proto.textures;
+            textures.push({
+                key: key,
+                name: name,
+                getter: function (obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        return obj[key];
+                    }
+                    return undefined;
+                },
+            });
+        };
+    }
+    CanvasToy.texture = texture;
+    function linkdef(name, value) {
         return function (proto, key) {
             if (!proto.hasOwnProperty("defines") && !proto.defines) {
                 Object.defineProperty(proto, "defines", {
@@ -73,13 +144,13 @@ var CanvasToy;
             var defines = proto.defines;
             defines[key] = function (obj) {
                 if (!!obj[key]) {
-                    return defineNames;
+                    return { name: name, value: value };
                 }
-                return [];
+                return undefined;
             };
         };
     }
-    CanvasToy.asDefine = asDefine;
+    CanvasToy.linkdef = linkdef;
     function readyRequire(proto, key) {
         if (!proto.hasOwnProperty("asyncResources") && !proto.asyncResources) {
             Object.defineProperty(proto, "asyncResources", {
@@ -100,301 +171,6 @@ var CanvasToy;
     }
     CanvasToy.readyRequire = readyRequire;
 })(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Attribute = (function () {
-        function Attribute(gl, paramter) {
-            this.size = 3;
-            this.data = [];
-            this.index = 0;
-            this.stride = 0;
-            this.buffer = null;
-            this.gl = null;
-            this.buffer = gl.createBuffer();
-            this.gl = gl;
-            for (var attributeInfo in paramter) {
-                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
-            }
-            switch (paramter.type) {
-                case CanvasToy.DataType.float:
-                    this.type = gl.FLOAT;
-                    break;
-                case CanvasToy.DataType.int:
-                    this.type = gl.INT;
-                    break;
-                default: break;
-            }
-        }
-        return Attribute;
-    }());
-    CanvasToy.Attribute = Attribute;
-    var Program = (function () {
-        function Program(gl, source, passFunctions) {
-            this.enableDepthTest = true;
-            this.enableStencilTest = true;
-            this.uniforms = {};
-            this.uniformLocationCache = {};
-            this.attributes = {};
-            this.attributeLocations = {};
-            this.textures = [];
-            this.vertexPrecision = "highp";
-            this.fragmentPrecision = "highp";
-            this.extensionStatements = [];
-            this.definesFromMaterial = [];
-            this.definesFromProcesser = [];
-            this.drawMode = function (gl) { return gl.STATIC_DRAW; };
-            this.gl = gl;
-            this.source = source;
-            this.passFunctions = passFunctions;
-        }
-        Program.prototype.setFragmentShader = function (fragmentShader) {
-            this.source.fragmentShader = fragmentShader;
-            return this;
-        };
-        Program.prototype.setVertexShader = function (vertexShader) {
-            this.source.vertexShader = vertexShader;
-            return this;
-        };
-        Program.prototype.resetMaterialDefines = function (materiel) {
-            var _material = materiel;
-            for (var subdefines in _material.defines) {
-                for (var _i = 0, _a = _material.defines[subdefines](materiel); _i < _a.length; _i++) {
-                    var define = _a[_i];
-                    this.definesFromMaterial.push(define);
-                }
-            }
-        };
-        Program.prototype.make = function (scene) {
-            var defines = [
-                "#define OPEN_LIGHT",
-                "#define LIGHT_NUM " + scene.lights.length,
-                "#define DIR_LIGHT_NUM " + scene.dirctionLights.length,
-                "#define SPOT_LIGHT_NUM " + scene.spotLights.length,
-                "#define POINT_LIGHT_NUM " + scene.pointLights.length,
-            ];
-            for (var _i = 0, _a = this.definesFromMaterial; _i < _a.length; _i++) {
-                var define = _a[_i];
-                defines.push("#define " + define);
-                console.log("#define " + define);
-            }
-            this.webGlProgram = CanvasToy.createEntileShader(this.gl, this.extensionStatements.join("\n")
-                + "\nprecision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
-                + this.source.vertexShader, this.extensionStatements.join("\n")
-                + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
-                + this.source.fragmentShader);
-            var componets = this.passFunctions;
-            this.faces = (componets.faces === undefined ? this.faces : componets.faces);
-            this.uniforms = {};
-            this.textures = [];
-            for (var nameInShader in componets.uniforms) {
-                if (componets.uniforms[nameInShader] !== undefined) {
-                    this.addUniform(nameInShader, componets.uniforms[nameInShader]);
-                }
-            }
-            for (var sampler in componets.textures) {
-                this.addTexture(sampler, componets.textures[sampler]);
-            }
-            for (var nameInShader in componets.attributes) {
-                this.addAttribute(nameInShader, componets.attributes[nameInShader]);
-            }
-            return this;
-        };
-        Program.prototype.pass = function (mesh, camera, materiel) {
-            this.gl.useProgram(this.webGlProgram);
-            for (var uniformName in this.uniforms) {
-                if (this.uniforms[uniformName] !== undefined) {
-                    this.uniforms[uniformName](mesh, camera, materiel);
-                }
-            }
-            for (var unit = 0; unit < this.textures.length; ++unit) {
-                var texture = this.textures[unit].getter(mesh, camera, materiel);
-                if (!!texture) {
-                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                    this.gl.bindTexture(texture.target, texture.glTexture);
-                    this.gl.uniform1i(this.textures[unit].location, unit);
-                }
-            }
-            for (var attributeName in this.attributes) {
-                var attribute = this.attributes[attributeName](mesh, camera, materiel);
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
-                this.gl.vertexAttribPointer(this.attributeLocations[attributeName], attribute.size, attribute.type, false, 0, 0);
-            }
-            return this;
-        };
-        Program.prototype.checkState = function (mesh) {
-            var maxIndex = 0;
-            for (var _i = 0, _a = this.faces(mesh).data; _i < _a.length; _i++) {
-                var index = _a[_i];
-                maxIndex = Math.max(maxIndex, index);
-            }
-            for (var attributeName in this.attributes) {
-                console.assert(this.attributes[attributeName](mesh).size <= 4
-                    && this.attributes[attributeName](mesh).size >= 1, attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
-                console.assert((maxIndex + 1) * this.attributes[attributeName](mesh).stride <=
-                    this.attributes[attributeName](mesh).data.length, attributeName + " length error, now:" + this.attributes[attributeName](mesh).data.length
-                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName](mesh).stride);
-            }
-            return this;
-        };
-        Program.prototype.setAttribute0 = function (name) {
-            this.attribute0 = name;
-            this.gl.bindAttribLocation(this.webGlProgram, 0, name);
-            return this;
-        };
-        Program.prototype.addTexture = function (sampler, getter) {
-            var unit = this.textures.length;
-            this.addUniform(sampler, { type: CanvasToy.DataType.int, updator: function () { return unit; } });
-            this.textures.push({ sampler: sampler, getter: getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
-        };
-        Program.prototype.addUniform = function (nameInShader, uniform) {
-            var _this = this;
-            this.gl.useProgram(this.webGlProgram);
-            var location = this.getUniformLocation(nameInShader);
-            if (location == null) {
-                return this;
-            }
-            switch (uniform.type) {
-                case CanvasToy.DataType.float:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        _this.gl.uniform1f(location, uniform.updator(mesh, camera, material));
-                    };
-                    break;
-                case CanvasToy.DataType.int:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        _this.gl.uniform1i(location, uniform.updator(mesh, camera, material));
-                    };
-                    break;
-                case CanvasToy.DataType.vec2:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        var value = uniform.updator(mesh, camera, material);
-                        _this.gl.uniform2f(location, value[0], value[1]);
-                    };
-                    break;
-                case CanvasToy.DataType.vec3:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        var value = uniform.updator(mesh, camera, material);
-                        _this.gl.uniform3f(location, value[0], value[1], value[2]);
-                    };
-                    break;
-                case CanvasToy.DataType.vec4:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        var value = uniform.updator(mesh, camera, material);
-                        _this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
-                    };
-                    break;
-                case CanvasToy.DataType.mat2:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        _this.gl.uniformMatrix2fv(location, false, uniform.updator(mesh, camera, material));
-                    };
-                case CanvasToy.DataType.mat3:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        _this.gl.uniformMatrix3fv(location, false, uniform.updator(mesh, camera, material));
-                    };
-                case CanvasToy.DataType.mat4:
-                    this.uniforms[nameInShader] = function (mesh, camera, material) {
-                        _this.gl.uniformMatrix4fv(location, false, uniform.updator(mesh, camera, material));
-                    };
-                    break;
-                default: break;
-            }
-        };
-        Program.prototype.deleteUniform = function (nameInShader) {
-            this.uniforms[nameInShader] = undefined;
-            return this;
-        };
-        Program.prototype.deleteAttribute = function (nameInShader) {
-            this.attributes[nameInShader] = undefined;
-            this.attributeLocations[nameInShader] = undefined;
-            return this;
-        };
-        Program.prototype.addAttribute = function (nameInShader, attributeFun) {
-            var location = this.getAttribLocation(nameInShader);
-            if (location !== null && location !== -1) {
-                this.attributes[nameInShader] = attributeFun;
-                this.attributeLocations[nameInShader] = location;
-                this.gl.enableVertexAttribArray(location);
-            }
-            return this;
-        };
-        Program.prototype.getUniformLocation = function (name) {
-            if (this.gl === undefined || this.gl === null) {
-                console.error("WebGLRenderingContext has not been initialize!");
-                return null;
-            }
-            if (!this.webGlProgram) {
-                console.warn("program invalid");
-            }
-            var result = this.gl.getUniformLocation(this.webGlProgram, name);
-            if (result === null) {
-                console.log("uniform " + name + " not found!");
-                return null;
-            }
-            return result;
-        };
-        Program.prototype.addPassProcesser = function (parameter) {
-            this.faces = (parameter.faces === undefined ? this.faces : parameter.faces);
-            for (var nameInShader in parameter.uniforms) {
-                if (parameter.uniforms[nameInShader] !== undefined) {
-                    this.addUniform(nameInShader, parameter.uniforms[nameInShader]);
-                }
-            }
-            for (var sampler in parameter.textures) {
-                this.textures[sampler] = parameter.textures[sampler];
-            }
-            for (var nameInShader in parameter.attributes) {
-                this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
-            }
-            return this;
-        };
-        Program.prototype.getAttribLocation = function (name) {
-            if (this.gl === undefined || this.gl === null) {
-                console.error("WebGLRenderingContext has not been initialize!");
-                return null;
-            }
-            var result = this.gl.getAttribLocation(this.webGlProgram, name);
-            if (result === null) {
-                console.error("attribute " + name + " not found!");
-                return null;
-            }
-            return result;
-        };
-        return Program;
-    }());
-    CanvasToy.Program = Program;
-    CanvasToy.defaultProgramPass = {
-        faces: function (mesh) { return mesh.geometry.faces; },
-        textures: {
-            uMainTexture: function (mesh, camera, material) { return material.mainTexture; },
-            uCubeTexture: function (mesh, camera, material) { return material.reflectionMap; },
-        },
-        uniforms: {
-            modelViewProjectionMatrix: {
-                type: CanvasToy.DataType.mat4,
-                updator: function (mesh, camera) {
-                    return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix));
-                },
-            },
-            modelViewMatrix: {
-                type: CanvasToy.DataType.mat4,
-                updator: function (mesh, camera) {
-                    return mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix);
-                },
-            },
-            normalViewMatrix: {
-                type: CanvasToy.DataType.mat4,
-                updator: function (mesh, camera) {
-                    return mat4.transpose(mat4.create(), mat4.invert(mat4.create(), mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix)));
-                },
-            },
-        },
-        attributes: {
-            position: function (mesh) { return mesh.geometry.attributes.position; },
-            aMainUV: function (mesh) { return mesh.geometry.attributes.uv; },
-            aNormal: function (mesh) { return mesh.geometry.attributes.normal; },
-        },
-    };
-})(CanvasToy || (CanvasToy = {}));
-;
 var CanvasToy;
 (function (CanvasToy) {
     var Object3d = (function () {
@@ -673,7 +449,6 @@ var CanvasToy;
         function Mesh(geometry, materials) {
             var _this = _super.call(this) || this;
             _this.materials = [];
-            _this.maps = [];
             _this.materials = materials;
             _this.geometry = geometry;
             return _this;
@@ -694,9 +469,14 @@ var CanvasToy;
             this.pointLights = [];
             this.spotLights = [];
             this.dirctionLights = [];
+            this.pointShadowMaps = [];
+            this.pointShadowMatrices = new Float32Array([]);
+            this.spotShadowMaps = [];
+            this.spotShadowMatrices = new Float32Array([]);
+            this.directionShadowMaps = [];
+            this.directShadowMatrices = new Float32Array([]);
             this.ambientLight = vec3.fromValues(0, 0, 0);
             this.openLight = false;
-            this.enableShadowMap = false;
             this.clearColor = [0, 0, 0, 0];
             this.programSetUp = false;
             this.updateEvents = [];
@@ -772,6 +552,24 @@ var CanvasToy;
         };
         return Scene;
     }());
+    __decorate([
+        CanvasToy.textureArray("pointShadowMaps")
+    ], Scene.prototype, "pointShadowMaps", void 0);
+    __decorate([
+        CanvasToy.uniformArray("pointShadowMatrices", CanvasToy.DataType.mat4)
+    ], Scene.prototype, "pointShadowMatrices", void 0);
+    __decorate([
+        CanvasToy.textureArray("spotShadowMaps")
+    ], Scene.prototype, "spotShadowMaps", void 0);
+    __decorate([
+        CanvasToy.uniformArray("spotShadowMatrices", CanvasToy.DataType.mat4)
+    ], Scene.prototype, "spotShadowMatrices", void 0);
+    __decorate([
+        CanvasToy.textureArray("directionShadowMaps")
+    ], Scene.prototype, "directionShadowMaps", void 0);
+    __decorate([
+        CanvasToy.uniformArray("directShadowMatrices", CanvasToy.DataType.mat4)
+    ], Scene.prototype, "directShadowMatrices", void 0);
     CanvasToy.Scene = Scene;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
@@ -792,8 +590,8 @@ var CanvasToy;
         }
     }
     CanvasToy.mixin = mixin;
-    function initWebwebglContext(canvas) {
-        var gl = undefined;
+    function initWebwebglContext(canvas, debug) {
+        var gl;
         try {
             gl = canvas.getContext("experimental-webgl");
         }
@@ -923,11 +721,10 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
-        Camera.prototype.lookAt = function (center, up) {
+        Camera.prototype.lookAt = function (center) {
             this._centerVector = center;
-            this._upVector = up;
-            vec3.cross(this._rightVector, up, center);
-            mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
+            vec3.cross(this._rightVector, [0, 1, 0], center);
+            mat4.lookAt(this._worldToObjectMatrix, this.position, center, [0, 1, 0]);
             this.setWorldToObjectMatrix(this._worldToObjectMatrix);
             return this;
         };
@@ -966,10 +763,11 @@ var CanvasToy;
         function OrthoCamera(parameters) {
             if (parameters === void 0) { parameters = {}; }
             var _this = _super.call(this) || this;
-            _this._left = -1;
-            _this._right = 1;
-            _this._bottom = -1;
-            _this._top = 1;
+            _this._left = -32;
+            _this._right = 32;
+            _this._bottom = -32;
+            _this._top = 32;
+            _this._baseSize = 32;
             _this._left = parameters.left || _this._left;
             _this._right = parameters.right || _this._right;
             _this._bottom = parameters.bottom || _this._bottom;
@@ -1023,11 +821,13 @@ var CanvasToy;
             mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
         };
         OrthoCamera.prototype.adaptTargetRadio = function (target) {
-            this._left = -target.width / 2;
-            this._right = target.width / 2;
-            this._top = target.height / 2;
-            this._bottom = -target.height / 2;
+            var radio = target.height / target.width;
+            this._left = -this._baseSize / 2;
+            this._right = this._baseSize / 2;
+            this._top = radio * this._baseSize / 2;
+            this._bottom = -radio * this._baseSize / 2;
             this.compuseProjectionMatrix();
+            return this;
         };
         return OrthoCamera;
     }(CanvasToy.Camera));
@@ -1041,7 +841,7 @@ var CanvasToy;
             if (parameter === void 0) { parameter = {}; }
             var _this = _super.call(this) || this;
             _this._aspect = 1;
-            _this._fovy = 45;
+            _this._fovy = Math.PI / 4;
             _this._aspect = parameter.aspect || _this._aspect;
             _this._fovy = parameter.fovy || _this._fovy;
             _this._near = parameter.near || _this._near;
@@ -1088,98 +888,11 @@ var CanvasToy;
         PerspectiveCamera.prototype.adaptTargetRadio = function (target) {
             this._aspect = target.width / target.height;
             this.genOtherMatrixs();
+            return this;
         };
         return PerspectiveCamera;
     }(CanvasToy.Camera));
     CanvasToy.PerspectiveCamera = PerspectiveCamera;
-})(CanvasToy || (CanvasToy = {}));
-var CanvasToy;
-(function (CanvasToy) {
-    var Faces = (function () {
-        function Faces(gl, data) {
-            this.data = [];
-            this.data = data;
-            this.buffer = gl.createBuffer();
-        }
-        return Faces;
-    }());
-    CanvasToy.Faces = Faces;
-    var Geometry = (function () {
-        function Geometry(gl) {
-            this.dirty = true;
-            this.gl = gl;
-            this.attributes = {
-                position: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
-                uv: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 2, data: [] }),
-                normal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
-                flatNormal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
-            };
-            this.faces = { data: [], buffer: gl.createBuffer() };
-        }
-        Geometry.prototype.build = function () {
-            return this;
-        };
-        Geometry.prototype.setAttribute = function (name, attribute) {
-            this.attributes[name] = attribute;
-            return this;
-        };
-        Geometry.prototype.addVertex = function (vertex) {
-            for (var attributeName in this.attributes) {
-                if (this.attributes[attributeName] !== undefined) {
-                    if (vertex[attributeName] === undefined) {
-                        continue;
-                    }
-                    if (vertex[attributeName].length !== this.attributes[attributeName].size) {
-                        console.error("length " + attributeName + "wrong");
-                        continue;
-                    }
-                    for (var _i = 0, _a = vertex[attributeName]; _i < _a.length; _i++) {
-                        var comp = _a[_i];
-                        this.attributes[attributeName].data.push(comp);
-                    }
-                }
-            }
-            return this;
-        };
-        Geometry.prototype.removeAttribute = function (name) {
-            this.attributes[name] = undefined;
-            return this;
-        };
-        Geometry.prototype.getVertexByIndex = function (index) {
-            var vertex = {};
-            for (var attributeName in this.attributes) {
-                vertex[attributeName] = [];
-                for (var i = 0; i < this.attributes[attributeName].stride; ++i) {
-                    vertex[attributeName].push(this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i]);
-                }
-            }
-            return vertex;
-        };
-        Geometry.prototype.getTriangleByIndex = function (triangleIndex) {
-            return [
-                this.getVertexByIndex(triangleIndex * 3),
-                this.getVertexByIndex(triangleIndex * 3 + 1),
-                this.getVertexByIndex(triangleIndex * 3 + 2),
-            ];
-        };
-        Geometry.prototype.generateFlatNormal = function () {
-            for (var i = 0; i < this.faces.data.length; i += 3) {
-                var triangle = this.getTriangleByIndex(i / 3);
-                var flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
-                var flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
-                var flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
-                var flat = [
-                    flatX, flatY, flatZ,
-                    flatX, flatY, flatZ,
-                    flatX, flatY, flatZ,
-                ];
-                this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
-            }
-            return this;
-        };
-        return Geometry;
-    }());
-    CanvasToy.Geometry = Geometry;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1188,19 +901,20 @@ var CanvasToy;
         ShaderSource.calculators__blinn_phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specular,\n    vec3 diffuse,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
         ShaderSource.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 - 1.0;;\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n}\n";
         ShaderSource.calculators__phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specularLight,\n    vec3 diffuseLight,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-        ShaderSource.calculators__types_glsl = "vec3 calculateDirLight(\n    DirectLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        position,\n        normal,\n        -light.direction,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity *= step(lightDis, light.radius);\n    return calculateLight(\n        position,\n        normal,\n        normalize(light.position - position),\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity = (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        position,\n        normal,\n        lightDir,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n";
+        ShaderSource.calculators__shadow_factor_glsl = "float getSpotDirectionShadow(vec4 shadowCoord, sampler2D shadowMap)\n{\n    vec3 NDCoord = shadowCoord.xyz / shadowCoord.w;\n    vec2 uv = NDCoord.xy * 0.5 + 0.5;\n    if (uv.x >= 0.0 && uv.y >= 0.0 && uv.x <= 1.0 && uv.y <= 1.0) {\n        float z = 0.5 * NDCoord.z + 0.5;\n        float depth = texture2D(shadowMap, uv).x;\n        if (depth < (z - 0.0001)) {\n            return 0.5;\n        } else {\n            return 1.0;\n        }\n    } else {\n        return 1.0;\n    }\n}\n";
+        ShaderSource.calculators__types_glsl = "vec3 calculateDirLight(\n    DirectLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        position,\n        normal,\n        -light.direction,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity *= step(lightDis, light.radius);\n    return calculateLight(\n        position,\n        normal,\n        normalize(light.position - position),\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity = (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        position,\n        normal,\n        lightDir,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\n// float directAndSpotShadow(sampler2D shadowMap, vec4 shadowCoord) {\n//\n// }\n";
         ShaderSource.debug__checkBox_glsl = "float checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
-        ShaderSource.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\n\nstruct DirectLight\n{\n    vec3 color;\n    float idensity;\n    vec3 direction;\n};\n\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n    vec3 spotDir;\n    float coneAngleCos;\n};\n\n#endif // light declaration\n";
+        ShaderSource.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\n\nstruct DirectLight\n{\n    vec3 color;\n    float idensity;\n    vec3 direction;\n\n    int shadowIndex;\n};\n\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n\n    int shadowIndex;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n    float coneAngleCos;\n    vec3 spotDir;\n\n    int shadowIndex;\n};\n\n#endif // light declaration\n";
         ShaderSource.interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
         ShaderSource.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
         ShaderSource.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculateLight(\n                viewPosition,\n                normal,\n                normalize(lightPos - viewPosition),\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
         ShaderSource.interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
-        ShaderSource.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n\nvoid main () {\n    float originDepth = texture2D(uMainTexture, vMainUV).r;\n    float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth) / cameraFar;\n    gl_FragColor = vec4(vec3(originDepth * 2.0 - 1.0), 1.0);\n}\n";
-        ShaderSource.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vMainUV = aMainUV;\n}\n";
+        ShaderSource.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nvoid main () {\n    // float originDepth = 1.0 - (1.0 - gl_FragCoord.z) * 25.0;\n    //\n    // float linearDepth = linearlizeDepth(cameraFar, cameraNear, originDepth);\n    // gl_FragColor = vec4(vec3(linearDepth), 1.0);\n    // gl_FragColor = vec4(1.0);\n}\n";
+        ShaderSource.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n}\n";
         ShaderSource.interploters__forward__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
         ShaderSource.interploters__forward__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-        ShaderSource.interploters__forward__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\nvarying vec2 vMainUV;\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n#endif\n\nuniform sampler2D uMainTexture;\n\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n\n#if (DIR_LIGHT_NUM > 0)\nuniform DirectLight directLights[DIR_LIGHT_NUM];\n#endif\n\n#if (POINT_LIGHT_NUM > 0)\nuniform PointLight pointLights[POINT_LIGHT_NUM];\n#endif\n\n#if (SPOT_LIGHT_NUM)\nuniform SpotLight spotLights[SPOT_LIGHT_NUM];\n#endif\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    #if (DIR_LIGHT_NUM > 0)\n    for (int index = 0; index < DIR_LIGHT_NUM; index++) {\n        totalLighting += calculateDirLight(\n            directLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n    }\n    #endif\n    #if (POINT_LIGHT_NUM > 0)\n    for (int index = 0; index < POINT_LIGHT_NUM; index++) {\n        totalLighting += calculatePointLight(\n            pointLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n    }\n    #endif\n    #if (SPOT_LIGHT_NUM > 0)\n    for (int index = 0; index < SPOT_LIGHT_NUM; index++) {\n        totalLighting += calculateSpotLight(\n            spotLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n    }\n    #endif\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
-        ShaderSource.interploters__forward__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n}\n";
+        ShaderSource.interploters__forward__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\nvarying vec2 vMainUV;\nvarying vec4 screenPos;\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (DIR_LIGHT_NUM > 0)\nuniform DirectLight directLights[DIR_LIGHT_NUM];\n#endif\n\n#if (POINT_LIGHT_NUM > 0)\nuniform PointLight pointLights[POINT_LIGHT_NUM];\n#endif\n\n#if (SPOT_LIGHT_NUM)\nuniform SpotLight spotLights[SPOT_LIGHT_NUM];\n#endif\n\n#ifdef USE_SHADOW\n\n    #if (DIR_LIGHT_NUM > 0)\n    uniform sampler2D directionShadowMaps[DIR_LIGHT_NUM];\n    varying vec4 directShadowCoord[DIR_LIGHT_NUM];\n    #endif\n\n    #if (POINT_LIGHT_NUM > 0)\n    uniform sampler2D pointShadowMaps[POINT_LIGHT_NUM];\n    varying vec4 pointShadowCoord[POINT_LIGHT_NUM];\n    #endif\n\n    #if (SPOT_LIGHT_NUM > 0)\n    uniform sampler2D spotShadowMaps[SPOT_LIGHT_NUM];\n    varying vec4 spotShadowCoord[SPOT_LIGHT_NUM];\n    #endif\n\n#endif\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    #if (DIR_LIGHT_NUM > 0)\n    for (int index = 0; index < DIR_LIGHT_NUM; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n        #ifdef USE_SHADOW\n        lighting = lighting * getSpotDirectionShadow(directShadowCoord[index], directionShadowMaps[index]);\n        #endif\n        totalLighting += lighting;\n    }\n    #endif\n    #if (POINT_LIGHT_NUM > 0)\n    for (int index = 0; index < POINT_LIGHT_NUM; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n        totalLighting += lighting;\n    }\n    #endif\n    #if (SPOT_LIGHT_NUM > 0)\n    for (int index = 0; index < SPOT_LIGHT_NUM; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n        #ifdef USE_SHADOW\n        lighting = lighting * getSpotDirectionShadow(spotShadowCoord[index], spotShadowMaps[index]);\n        #endif\n        totalLighting += lighting;\n\n    }\n    #endif\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n    // #ifdef USE_SHADOW\n    // #if (DIR_LIGHT_NUM > 0)\n    // vec3 NDCoord = directShadowCoord[0].xyz / directShadowCoord[0].w;\n    // vec2 uv = NDCoord.xy * 0.5 + 0.5;\n    // uv = gl_FragCoord.xy / 1000.0;\n    // float shadow = texture2D(directionShadowMaps[0], uv).r;\n    // //shadow = 1.0 - (1.0 - shadow) * 5000.0;\n    // gl_FragColor = vec4(vec3(shadow), 1.0);\n    // #endif\n    // #endif\n}\n";
+        ShaderSource.interploters__forward__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\nvarying vec4 screenPos;\n\n\n#ifdef USE_SHADOW\n\n    #if (DIR_LIGHT_NUM > 0)\n    uniform mat4 directShadowMatrices[DIR_LIGHT_NUM];\n    varying vec4 directShadowCoord[DIR_LIGHT_NUM];\n    #endif\n\n    #if (POINT_LIGHT_NUM > 0)\n    uniform mat4 pointShadowMatrices[POINT_LIGHT_NUM];\n    varying vec4 pointShadowCoord[POINT_LIGHT_NUM];\n    #endif\n\n    #if (SPOT_LIGHT_NUM > 0)\n    uniform mat4 spotShadowMatrices[SPOT_LIGHT_NUM];\n    varying vec4 spotShadowCoord[SPOT_LIGHT_NUM];\n    #endif\n\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    screenPos = gl_Position;\n    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n\n    #ifdef USE_SHADOW\n        #if (DIR_LIGHT_NUM > 0)\n        for (int i = 0; i < DIR_LIGHT_NUM; ++i) {\n            directShadowCoord[i] = directShadowMatrices[i] * vec4(position, 1.0);\n        }\n        #endif\n\n        #if (POINT_LIGHT_NUM > 0)\n        for (int i = 0; i < POINT_LIGHT_NUM; ++i) {\n            pointShadowCoord[i] = pointShadowMatrices[i] * vec4(position, 1.0);\n        }\n        #endif\n\n        #if (SPOT_LIGHT_NUM > 0)\n        for (int i = 0; i < SPOT_LIGHT_NUM; ++i) {\n            spotShadowCoord[i] = spotShadowMatrices[i] * vec4(position, 1.0);\n        }\n        #endif\n    #endif\n}\n";
         ShaderSource.interploters__forward__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
         ShaderSource.interploters__forward__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
     })(ShaderSource = CanvasToy.ShaderSource || (CanvasToy.ShaderSource = {}));
@@ -1326,11 +1040,11 @@ var CanvasToy;
         Texture.prototype.bindTextureData = function (gl) {
             gl.bindTexture(this.target, this.glTexture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-            gl.bindTexture(this.target, this.glTexture);
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
             gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
             gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
+            return this;
         };
         return Texture;
     }());
@@ -1352,6 +1066,470 @@ var CanvasToy;
         return Material;
     }());
     CanvasToy.Material = Material;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
+    var Attribute = (function () {
+        function Attribute(gl, paramter) {
+            this.size = 3;
+            this.data = [];
+            this.index = 0;
+            this.stride = 0;
+            this.buffer = null;
+            this.gl = null;
+            this.buffer = gl.createBuffer();
+            this.gl = gl;
+            for (var attributeInfo in paramter) {
+                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
+            }
+            switch (paramter.type) {
+                case CanvasToy.DataType.float:
+                    this.type = gl.FLOAT;
+                    break;
+                case CanvasToy.DataType.int:
+                    this.type = gl.INT;
+                    break;
+                default: break;
+            }
+        }
+        return Attribute;
+    }());
+    CanvasToy.Attribute = Attribute;
+    var Program = (function () {
+        function Program(gl, source, passFunctions) {
+            this.enableDepthTest = true;
+            this.enableStencilTest = true;
+            this.uniforms = {};
+            this.uniformArrays = {};
+            this.attributes = {};
+            this.attributeLocations = {};
+            this.textures = [];
+            this.textureArrays = [];
+            this.vertexPrecision = "highp";
+            this.fragmentPrecision = "highp";
+            this.extensionStatements = [];
+            this.definesFromMaterial = [];
+            this.drawMode = function (gl) { return gl.STATIC_DRAW; };
+            this.gl = gl;
+            this.source = source;
+            this.passFunctions = passFunctions;
+            this.viewport = {
+                x: 0, y: 0,
+                width: gl.canvas.width,
+                height: gl.canvas.height,
+            };
+        }
+        Program.prototype.setFragmentShader = function (fragmentShader) {
+            this.source.fragmentShader = fragmentShader;
+            return this;
+        };
+        Program.prototype.setVertexShader = function (vertexShader) {
+            this.source.vertexShader = vertexShader;
+            return this;
+        };
+        Program.prototype.resetMaterialDefines = function (materiel) {
+            var _material = materiel;
+            for (var subdefines in _material.defines) {
+                var define = _material.defines[subdefines](materiel);
+                if (!!define) {
+                    this.definesFromMaterial.push(define);
+                }
+            }
+        };
+        Program.prototype.make = function (scene) {
+            var defines = [
+                "#define OPEN_LIGHT",
+                "#define LIGHT_NUM " + scene.lights.length,
+                "#define DIR_LIGHT_NUM " + scene.dirctionLights.length,
+                "#define SPOT_LIGHT_NUM " + scene.spotLights.length,
+                "#define POINT_LIGHT_NUM " + scene.pointLights.length,
+            ];
+            for (var _i = 0, _a = this.definesFromMaterial; _i < _a.length; _i++) {
+                var define = _a[_i];
+                var defineLine = "#define " + define.name;
+                if (!!define.value) {
+                    defineLine += " " + define.value;
+                }
+                defines.push(defineLine);
+                console.log(defineLine);
+            }
+            this.webGlProgram = CanvasToy.createEntileShader(this.gl, this.extensionStatements.join("\n")
+                + "\nprecision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
+                + this.source.vertexShader, this.extensionStatements.join("\n")
+                + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
+                + this.source.fragmentShader);
+            this.gl.useProgram(this.webGlProgram);
+            var componets = this.passFunctions;
+            this.faces = (componets.faces === undefined ? this.faces : componets.faces);
+            this.uniforms = {};
+            this.textures = [];
+            if (!!componets.uniforms) {
+                for (var nameInShader in componets.uniforms) {
+                    if (componets.uniforms[nameInShader] !== undefined) {
+                        this.addUniform(nameInShader, componets.uniforms[nameInShader]);
+                    }
+                }
+            }
+            if (!!componets.textures) {
+                for (var sampler in componets.textures) {
+                    var target = componets.textures[sampler];
+                    if (target.isArray) {
+                        this.addTextureArray(sampler, componets.textures[sampler]);
+                    }
+                    else {
+                        this.addTexture(sampler, componets.textures[sampler]);
+                    }
+                }
+            }
+            for (var nameInShader in componets.attributes) {
+                this.addAttribute(nameInShader, componets.attributes[nameInShader]);
+            }
+            return this;
+        };
+        Program.prototype.pass = function (mesh, camera, materiel) {
+            this.gl.useProgram(this.webGlProgram);
+            this.gl.viewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
+            for (var uniformName in this.uniforms) {
+                if (this.uniforms[uniformName] !== undefined) {
+                    this.uniforms[uniformName](mesh, camera, materiel);
+                }
+            }
+            for (var uniformArrayName in this.uniformArrays) {
+                if (this.uniformArrays[uniformArrayName] !== undefined) {
+                    this.uniformArrays[uniformArrayName](mesh, camera, materiel);
+                }
+            }
+            var unit = 0;
+            for (var _i = 0, _a = this.textures; _i < _a.length; _i++) {
+                var textureDiscriptor = _a[_i];
+                var texture_1 = textureDiscriptor.getter(mesh, camera, materiel);
+                if (!!texture_1) {
+                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
+                    this.gl.bindTexture(texture_1.target, texture_1.glTexture);
+                    this.gl.uniform1i(this.textures[unit].location, unit);
+                }
+                unit++;
+            }
+            for (var _b = 0, _c = this.textureArrays; _b < _c.length; _b++) {
+                var textureArrayDiscriptor = _c[_b];
+                var textureArray_1 = textureArrayDiscriptor.arrayGetter(mesh, camera, materiel);
+                var indices = [];
+                for (var index in textureArray_1) {
+                    var texture_2 = textureArray_1[index];
+                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
+                    this.gl.bindTexture(texture_2.target, texture_2.glTexture);
+                    indices.push(unit++);
+                }
+                if (indices.length > 0) {
+                    this.gl.uniform1iv(textureArrayDiscriptor.location, indices);
+                }
+            }
+            for (var attributeName in this.attributes) {
+                var attribute = this.attributes[attributeName](mesh, camera, materiel);
+                this.gl.enableVertexAttribArray(this.attributeLocations[attributeName]);
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
+                this.gl.vertexAttribPointer(this.attributeLocations[attributeName], attribute.size, attribute.type, false, 0, 0);
+            }
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
+            this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
+            for (var attributeName in this.attributes) {
+                var attribute = this.attributes[attributeName](mesh, camera, materiel);
+                this.gl.disableVertexAttribArray(this.attributeLocations[attributeName]);
+            }
+            return this;
+        };
+        Program.prototype.checkState = function (mesh) {
+            var maxIndex = 0;
+            for (var _i = 0, _a = this.faces(mesh).data; _i < _a.length; _i++) {
+                var index = _a[_i];
+                maxIndex = Math.max(maxIndex, index);
+            }
+            for (var attributeName in this.attributes) {
+                console.assert(this.attributes[attributeName](mesh).size <= 4
+                    && this.attributes[attributeName](mesh).size >= 1, attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
+                console.assert((maxIndex + 1) * this.attributes[attributeName](mesh).stride <=
+                    this.attributes[attributeName](mesh).data.length, attributeName + " length error, now:" + this.attributes[attributeName](mesh).data.length
+                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName](mesh).stride);
+            }
+            return this;
+        };
+        Program.prototype.setAttribute0 = function (name) {
+            this.attribute0 = name;
+            this.gl.bindAttribLocation(this.webGlProgram, 0, name);
+            return this;
+        };
+        Program.prototype.addTextureArray = function (samplerArray, arrayGetter) {
+            var location = this.gl.getUniformLocation(this.webGlProgram, samplerArray);
+            this.textureArrays.push({
+                samplerArray: samplerArray,
+                arrayGetter: arrayGetter,
+                location: location,
+            });
+        };
+        Program.prototype.addTexture = function (sampler, getter) {
+            var unit = this.textures.length;
+            this.textures.push({ sampler: sampler, getter: getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
+        };
+        Program.prototype.addUniformArray = function (arrayNameInShader, uniformArrayDiscriptor) {
+            var _this = this;
+            this.gl.useProgram(this.webGlProgram);
+            var location = this.getUniformLocation(arrayNameInShader);
+            if (location == null) {
+                return this;
+            }
+            this.uniformArrays[arrayNameInShader] = function (mesh, camera, material) {
+                _this.updateUniformArray(location, uniformArrayDiscriptor.updator(mesh, camera, material), uniformArrayDiscriptor.type);
+            };
+            return this;
+        };
+        Program.prototype.addUniform = function (nameInShader, uniform) {
+            var _this = this;
+            this.gl.useProgram(this.webGlProgram);
+            var location = this.getUniformLocation(nameInShader);
+            if (location == null) {
+                return this;
+            }
+            this.uniforms[nameInShader] = function (mesh, camera, material) {
+                _this.updateUniform(location, uniform.updator(mesh, camera, material), uniform.type);
+            };
+        };
+        Program.prototype.deleteUniform = function (nameInShader) {
+            this.uniforms[nameInShader] = undefined;
+            return this;
+        };
+        Program.prototype.deleteAttribute = function (nameInShader) {
+            this.attributes[nameInShader] = undefined;
+            this.attributeLocations[nameInShader] = undefined;
+            return this;
+        };
+        Program.prototype.addAttribute = function (nameInShader, attributeFun) {
+            var location = this.getAttribLocation(nameInShader);
+            if (location !== null && location !== -1) {
+                this.attributes[nameInShader] = attributeFun;
+                this.attributeLocations[nameInShader] = location;
+            }
+            return this;
+        };
+        Program.prototype.setViewPort = function (viewport) {
+            this.viewport = viewport;
+        };
+        Program.prototype.updateUniformArray = function (location, value, type) {
+            switch (type) {
+                case CanvasToy.DataType.float:
+                    this.gl.uniform1fv(location, value);
+                    break;
+                case CanvasToy.DataType.int:
+                    this.gl.uniform1iv(location, value);
+                    break;
+                case CanvasToy.DataType.vec2:
+                    this.gl.uniform2fv(location, value);
+                    break;
+                case CanvasToy.DataType.vec3:
+                    this.gl.uniform3fv(location, value);
+                    break;
+                case CanvasToy.DataType.vec4:
+                    this.gl.uniform4fv(location, value);
+                    break;
+                case CanvasToy.DataType.mat2:
+                    this.gl.uniformMatrix2fv(location, false, value);
+                case CanvasToy.DataType.mat3:
+                    this.gl.uniformMatrix3fv(location, false, value);
+                case CanvasToy.DataType.mat4:
+                    this.gl.uniformMatrix4fv(location, false, value);
+                    break;
+                default: break;
+            }
+            return this;
+        };
+        Program.prototype.updateUniform = function (location, value, type) {
+            switch (type) {
+                case CanvasToy.DataType.float:
+                    this.gl.uniform1f(location, value);
+                    break;
+                case CanvasToy.DataType.int:
+                    this.gl.uniform1i(location, value);
+                    break;
+                case CanvasToy.DataType.vec2:
+                    this.gl.uniform2f(location, value[0], value[1]);
+                    break;
+                case CanvasToy.DataType.vec3:
+                    this.gl.uniform3f(location, value[0], value[1], value[2]);
+                    break;
+                case CanvasToy.DataType.vec4:
+                    this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                    break;
+                case CanvasToy.DataType.mat2:
+                    this.gl.uniformMatrix2fv(location, false, value);
+                case CanvasToy.DataType.mat3:
+                    this.gl.uniformMatrix3fv(location, false, value);
+                case CanvasToy.DataType.mat4:
+                    this.gl.uniformMatrix4fv(location, false, value);
+                    break;
+                default: break;
+            }
+        };
+        Program.prototype.getUniformLocation = function (name) {
+            if (this.gl === undefined || this.gl === null) {
+                console.error("WebGLRenderingContext has not been initialize!");
+                return null;
+            }
+            if (!this.webGlProgram) {
+                console.warn("program invalid");
+            }
+            var result = this.gl.getUniformLocation(this.webGlProgram, name);
+            if (result === null) {
+                console.log("uniform " + name + " not found!");
+                return null;
+            }
+            return result;
+        };
+        Program.prototype.addPassProcesser = function (parameter) {
+            this.faces = (parameter.faces === undefined ? this.faces : parameter.faces);
+            for (var nameInShader in parameter.uniforms) {
+                if (parameter.uniforms[nameInShader] !== undefined) {
+                    this.addUniform(nameInShader, parameter.uniforms[nameInShader]);
+                }
+            }
+            for (var sampler in parameter.textures) {
+                this.textures[sampler] = parameter.textures[sampler];
+            }
+            for (var nameInShader in parameter.attributes) {
+                this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
+            }
+            return this;
+        };
+        Program.prototype.getAttribLocation = function (name) {
+            if (this.gl === undefined || this.gl === null) {
+                console.error("WebGLRenderingContext has not been initialize!");
+                return null;
+            }
+            var result = this.gl.getAttribLocation(this.webGlProgram, name);
+            if (result === null) {
+                console.error("attribute " + name + " not found!");
+                return null;
+            }
+            return result;
+        };
+        return Program;
+    }());
+    CanvasToy.Program = Program;
+    CanvasToy.defaultProgramPass = {
+        faces: function (mesh) { return mesh.geometry.faces; },
+        uniforms: {
+            modelViewProjectionMatrix: {
+                type: CanvasToy.DataType.mat4,
+                updator: function (mesh, camera) {
+                    return mat4.multiply(mat4.create(), camera.projectionMatrix, mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix));
+                },
+            },
+            modelViewMatrix: {
+                type: CanvasToy.DataType.mat4,
+                updator: function (mesh, camera) {
+                    return mat4.multiply(mat4.create(), camera.worldToObjectMatrix, mesh.matrix);
+                },
+            },
+            normalViewMatrix: {
+                type: CanvasToy.DataType.mat4,
+                updator: function (mesh, camera) {
+                    return mat4.transpose(mat4.create(), mat4.invert(mat4.create(), mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix)));
+                },
+            },
+        },
+        attributes: {
+            position: function (mesh) { return mesh.geometry.attributes.position; },
+            aMainUV: function (mesh) { return mesh.geometry.attributes.uv; },
+            aNormal: function (mesh) { return mesh.geometry.attributes.normal; },
+        },
+    };
+})(CanvasToy || (CanvasToy = {}));
+;
+var CanvasToy;
+(function (CanvasToy) {
+    var Faces = (function () {
+        function Faces(gl, data) {
+            this.data = [];
+            this.data = data;
+            this.buffer = gl.createBuffer();
+        }
+        return Faces;
+    }());
+    CanvasToy.Faces = Faces;
+    var Geometry = (function () {
+        function Geometry(gl) {
+            this.dirty = true;
+            this.gl = gl;
+            this.attributes = {
+                position: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
+                uv: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 2, data: [] }),
+                normal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
+                flatNormal: new CanvasToy.Attribute(gl, { type: CanvasToy.DataType.float, size: 3, data: [] }),
+            };
+            this.faces = { data: [], buffer: gl.createBuffer() };
+        }
+        Geometry.prototype.build = function () {
+            return this;
+        };
+        Geometry.prototype.setAttribute = function (name, attribute) {
+            this.attributes[name] = attribute;
+            return this;
+        };
+        Geometry.prototype.addVertex = function (vertex) {
+            for (var attributeName in this.attributes) {
+                if (this.attributes[attributeName] !== undefined) {
+                    if (vertex[attributeName] === undefined) {
+                        continue;
+                    }
+                    if (vertex[attributeName].length !== this.attributes[attributeName].size) {
+                        console.error("length " + attributeName + "wrong");
+                        continue;
+                    }
+                    for (var _i = 0, _a = vertex[attributeName]; _i < _a.length; _i++) {
+                        var comp = _a[_i];
+                        this.attributes[attributeName].data.push(comp);
+                    }
+                }
+            }
+            return this;
+        };
+        Geometry.prototype.removeAttribute = function (name) {
+            this.attributes[name] = undefined;
+            return this;
+        };
+        Geometry.prototype.getVertexByIndex = function (index) {
+            var vertex = {};
+            for (var attributeName in this.attributes) {
+                vertex[attributeName] = [];
+                for (var i = 0; i < this.attributes[attributeName].stride; ++i) {
+                    vertex[attributeName].push(this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i]);
+                }
+            }
+            return vertex;
+        };
+        Geometry.prototype.getTriangleByIndex = function (triangleIndex) {
+            return [
+                this.getVertexByIndex(triangleIndex * 3),
+                this.getVertexByIndex(triangleIndex * 3 + 1),
+                this.getVertexByIndex(triangleIndex * 3 + 2),
+            ];
+        };
+        Geometry.prototype.generateFlatNormal = function () {
+            for (var i = 0; i < this.faces.data.length; i += 3) {
+                var triangle = this.getTriangleByIndex(i / 3);
+                var flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
+                var flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
+                var flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
+                var flat = [
+                    flatX, flatY, flatZ,
+                    flatX, flatY, flatZ,
+                    flatX, flatY, flatZ,
+                ];
+                this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
+            }
+            return this;
+        };
+        return Geometry;
+    }());
+    CanvasToy.Geometry = Geometry;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
@@ -1668,19 +1846,16 @@ var CanvasToy;
 (function (CanvasToy) {
     var Light = (function (_super) {
         __extends(Light, _super);
-        function Light() {
+        function Light(gl) {
             var _this = _super.call(this) || this;
             _this._color = vec3.fromValues(1, 1, 1);
             _this._idensity = 1;
+            _this._shadowType = CanvasToy.ShadowType.Hard;
+            _this.gl = gl;
+            _this.setShadowType(_this.shadowType);
+            _this.setUpProjectionCamera();
             return _this;
         }
-        Object.defineProperty(Light.prototype, "typename", {
-            get: function () {
-                return "Light";
-            },
-            enumerable: true,
-            configurable: true
-        });
         Light.prototype.setColor = function (color) {
             this._color = color;
             return this;
@@ -1689,6 +1864,54 @@ var CanvasToy;
             this._idensity = idensity;
             return this;
         };
+        Light.prototype.setShadowType = function (shadowType) {
+            this._shadowType = shadowType;
+            switch (shadowType) {
+                case CanvasToy.ShadowType.Hard:
+                    this.configShadowFrameBuffer();
+                    break;
+                case CanvasToy.ShadowType.Soft:
+                    this.configShadowFrameBuffer();
+                    break;
+                default: break;
+            }
+            return this;
+        };
+        Object.defineProperty(Light.prototype, "shadowType", {
+            get: function () {
+                return this._shadowType;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "shadowMap", {
+            get: function () {
+                return this._shadowMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "shadowFrameBuffer", {
+            get: function () {
+                return this._shadowFrameBuffer;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "projectCamera", {
+            get: function () {
+                return this._projectCamera;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "typename", {
+            get: function () {
+                return "Light";
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Light.prototype, "color", {
             get: function () {
                 return this._color;
@@ -1703,6 +1926,23 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
+        Light.prototype.configShadowFrameBuffer = function () {
+            if (!this._shadowFrameBuffer) {
+                this._shadowFrameBuffer = new CanvasToy.FrameBuffer(this.gl).setWidth(1024).setHeight(1024);
+                this._shadowFrameBuffer.attachments.color.disable();
+                this._shadowFrameBuffer.attachments.depth.setType(this.gl, CanvasToy.AttachmentType.Texture);
+                this._shadowMap = this._shadowFrameBuffer.attachments.depth.targetTexture
+                    .setType(this.gl.UNSIGNED_SHORT)
+                    .setFormat(this.gl.DEPTH_COMPONENT)
+                    .setMinFilter(this.gl.LINEAR)
+                    .setMagFilter(this.gl.LINEAR)
+                    .setWrapS(this.gl.REPEAT)
+                    .setWrapT(this.gl.REPEAT)
+                    .bindTextureData(this.gl);
+                this._shadowFrameBuffer.attach(this.gl);
+            }
+            return this;
+        };
         return Light;
     }(CanvasToy.Object3d));
     __decorate([
@@ -1718,9 +1958,12 @@ var CanvasToy;
     var DirectionalLight = (function (_super) {
         __extends(DirectionalLight, _super);
         function DirectionalLight(gl) {
-            var _this = _super.call(this) || this;
-            _this._direction = vec3.fromValues(1, 1, 1);
+            var _this = _super.call(this, gl) || this;
+            _this._direction = vec3.fromValues(0, 0, -1);
             _this._projectCamera = new CanvasToy.OrthoCamera();
+            _this._projectCamera.setParent(_this)
+                .setLocalPosition([0, 0, 0])
+                .setFar(100);
             return _this;
         }
         Object.defineProperty(DirectionalLight.prototype, "typename", {
@@ -1732,7 +1975,7 @@ var CanvasToy;
         });
         Object.defineProperty(DirectionalLight.prototype, "direction", {
             get: function () {
-                return this._direction;
+                return vec3.transformQuat(vec3.create(), this._direction, mat4.getRotation(quat.create(), this.matrix));
             },
             enumerable: true,
             configurable: true
@@ -1746,13 +1989,22 @@ var CanvasToy;
             };
         };
         DirectionalLight.prototype.setDirection = function (_direction) {
-            vec3.normalize(this._direction, _direction);
+            var lookPoint = vec3.add(vec3.create(), this.position, _direction);
+            this._projectCamera.lookAt(lookPoint);
             return this;
+        };
+        DirectionalLight.prototype.setUpProjectionCamera = function () {
+            this._projectCamera = new CanvasToy.OrthoCamera()
+                .setParent(this)
+                .setLocalPosition([0, 0, 0])
+                .adaptTargetRadio({ width: 10, height: 10 });
         };
         return DirectionalLight;
     }(CanvasToy.Light));
     __decorate([
-        CanvasToy.uniform("direction", CanvasToy.DataType.vec3)
+        CanvasToy.uniform("direction", CanvasToy.DataType.vec3, function (light, camera) {
+            return vec3.transformQuat(vec3.create(), light._direction, mat4.getRotation(quat.create(), mat4.multiply(mat4.create(), camera.worldToObjectMatrix, light.matrix)));
+        })
     ], DirectionalLight.prototype, "_direction", void 0);
     CanvasToy.DirectionalLight = DirectionalLight;
 })(CanvasToy || (CanvasToy = {}));
@@ -1761,14 +2013,14 @@ var CanvasToy;
     var PointLight = (function (_super) {
         __extends(PointLight, _super);
         function PointLight(gl) {
-            var _this = _super.call(this) || this;
+            var _this = _super.call(this, gl) || this;
             _this._position = vec3.create();
             _this._radius = 100;
             _this._squareAttenuation = 0.01;
             _this._linearAttenuation = 0.1;
             _this._constantAttenuation = 1;
             _this.volume = new CanvasToy.SphereGeometry(gl).setRadius(_this._radius).build();
-            _this._projectCamera = new CanvasToy.PerspectiveCamera();
+            _this._shadowType = CanvasToy.ShadowType.None;
             return _this;
         }
         PointLight.prototype.getProjecttionBoundingBox2D = function (camera) {
@@ -1813,6 +2065,8 @@ var CanvasToy;
             enumerable: true,
             configurable: true
         });
+        PointLight.prototype.setUpProjectionCamera = function () {
+        };
         return PointLight;
     }(CanvasToy.Light));
     __decorate([
@@ -1836,12 +2090,24 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var ShadowType;
+    (function (ShadowType) {
+        ShadowType[ShadowType["None"] = 0] = "None";
+        ShadowType[ShadowType["Hard"] = 1] = "Hard";
+        ShadowType[ShadowType["Soft"] = 2] = "Soft";
+    })(ShadowType = CanvasToy.ShadowType || (CanvasToy.ShadowType = {}));
+    ;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var SpotLight = (function (_super) {
         __extends(SpotLight, _super);
         function SpotLight(gl) {
             var _this = _super.call(this, gl) || this;
-            _this._spotDirection = vec3.fromValues(0, 0, 1);
+            _this._spotDirection = vec3.fromValues(0, 0, -1);
             _this.setConeAngle(Math.PI / 4);
+            _this.setRadius(100);
+            _this._shadowType = CanvasToy.ShadowType.Hard;
             return _this;
         }
         Object.defineProperty(SpotLight.prototype, "typename", {
@@ -1860,18 +2126,25 @@ var CanvasToy;
         });
         Object.defineProperty(SpotLight.prototype, "spotDirection", {
             get: function () {
-                return this._spotDirection;
+                return vec3.transformQuat(vec3.create(), this._spotDirection, mat4.getRotation(quat.create(), this.matrix));
             },
             enumerable: true,
             configurable: true
         });
+        SpotLight.prototype.setRadius = function (radius) {
+            _super.prototype.setRadius.call(this, radius);
+            this._projectCamera.setFar(radius);
+            return this;
+        };
         SpotLight.prototype.setConeAngle = function (coneAngle) {
             this._coneAngle = coneAngle;
             this._coneAngleCos = Math.cos(coneAngle);
+            this._projectCamera.setFovy(coneAngle * 2);
             return this;
         };
         SpotLight.prototype.setSpotDirection = function (spotDirection) {
-            vec3.normalize(this._spotDirection, spotDirection);
+            var lookPoint = vec3.add(vec3.create(), this.position, spotDirection);
+            this._projectCamera.lookAt(lookPoint);
             return this;
         };
         SpotLight.prototype.getProjecttionBoundingBox2D = function (camera) {
@@ -1883,13 +2156,21 @@ var CanvasToy;
                 bottom: -1,
             };
         };
+        SpotLight.prototype.setUpProjectionCamera = function () {
+            this._projectCamera = new CanvasToy.PerspectiveCamera()
+                .setParent(this)
+                .setLocalPosition([0, 0, 0])
+                .adaptTargetRadio({ width: 1024, height: 1024 });
+        };
         return SpotLight;
     }(CanvasToy.PointLight));
     __decorate([
         CanvasToy.uniform("coneAngleCos", CanvasToy.DataType.float)
     ], SpotLight.prototype, "_coneAngleCos", void 0);
     __decorate([
-        CanvasToy.uniform("spotDir", CanvasToy.DataType.vec3)
+        CanvasToy.uniform("spotDir", CanvasToy.DataType.vec3, function (light, camera) {
+            return vec3.transformQuat(vec3.create(), light._spotDirection, mat4.getRotation(quat.create(), mat4.multiply(mat4.create(), camera.worldToObjectMatrix, light.matrix)));
+        })
     ], SpotLight.prototype, "_spotDirection", void 0);
     CanvasToy.SpotLight = SpotLight;
 })(CanvasToy || (CanvasToy = {}));
@@ -1909,6 +2190,7 @@ var CanvasToy;
             if (paramter === void 0) { paramter = {}; }
             var _this = _super.call(this) || this;
             _this.debug = false;
+            _this.castShadow = true;
             _this.ambient = vec3.fromValues(0.1, 0.1, 0.1);
             _this.diffuse = vec3.fromValues(0.8, 0.8, 0.8);
             _this.specular = vec3.fromValues(0.3, 0.3, 0.3);
@@ -1926,11 +2208,14 @@ var CanvasToy;
         return StandardMaterial;
     }(CanvasToy.Material));
     __decorate([
-        CanvasToy.asDefine("_DEBUG")
+        CanvasToy.linkdef("_DEBUG")
     ], StandardMaterial.prototype, "debug", void 0);
     __decorate([
-        CanvasToy.readyRequire,
-        CanvasToy.asDefine("_MAIN_TEXTURE")
+        CanvasToy.linkdef("USE_SHADOW")
+    ], StandardMaterial.prototype, "castShadow", void 0);
+    __decorate([
+        CanvasToy.linkdef("_MAIN_TEXTURE"),
+        CanvasToy.texture("uMainTexture")
     ], StandardMaterial.prototype, "mainTexture", void 0);
     __decorate([
         CanvasToy.uniform("ambient", CanvasToy.DataType.vec3)
@@ -1946,12 +2231,6 @@ var CanvasToy;
     ], StandardMaterial.prototype, "specularExponent", void 0);
     __decorate([
         CanvasToy.readyRequire
-    ], StandardMaterial.prototype, "specularMap", void 0);
-    __decorate([
-        CanvasToy.readyRequire
-    ], StandardMaterial.prototype, "alphaMap", void 0);
-    __decorate([
-        CanvasToy.readyRequire
     ], StandardMaterial.prototype, "bumpMap", void 0);
     __decorate([
         CanvasToy.readyRequire
@@ -1963,8 +2242,8 @@ var CanvasToy;
         CanvasToy.uniform("reflectivity", CanvasToy.DataType.float)
     ], StandardMaterial.prototype, "reflectivity", void 0);
     __decorate([
-        CanvasToy.asDefine("_ENVIRONMENT_MAP"),
-        CanvasToy.readyRequire
+        CanvasToy.linkdef("_ENVIRONMENT_MAP"),
+        CanvasToy.texture("uCubeTexture")
     ], StandardMaterial.prototype, "reflectionMap", void 0);
     CanvasToy.StandardMaterial = StandardMaterial;
 })(CanvasToy || (CanvasToy = {}));
@@ -2198,6 +2477,41 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var DepthMaterial = (function (_super) {
+        __extends(DepthMaterial, _super);
+        function DepthMaterial(gl) {
+            var _this = _super.call(this) || this;
+            _this.program = new CanvasToy.ShaderBuilder()
+                .resetShaderLib()
+                .addShaderLib(CanvasToy.ShaderSource.calculators__linearlize_depth_glsl)
+                .setShadingFrag(CanvasToy.ShaderSource.interploters__depth_phong_frag)
+                .setShadingVert(CanvasToy.ShaderSource.interploters__depth_phong_vert)
+                .setPass({
+                uniforms: {
+                    modelViewProjectionMatrix: CanvasToy.defaultProgramPass.uniforms.modelViewProjectionMatrix,
+                    modelViewMatrix: CanvasToy.defaultProgramPass.uniforms.modelViewMatrix,
+                    cameraFar: {
+                        type: CanvasToy.DataType.float,
+                        updator: function (mesh, lightCamera) { return lightCamera.far; },
+                    },
+                    cameraNear: {
+                        type: CanvasToy.DataType.float,
+                        updator: function (mesh, lightCamera) { return lightCamera.near; },
+                    },
+                },
+                attributes: {
+                    position: CanvasToy.defaultProgramPass.attributes.position,
+                },
+            })
+                .build(gl);
+            return _this;
+        }
+        return DepthMaterial;
+    }(CanvasToy.Material));
+    CanvasToy.DepthMaterial = DepthMaterial;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var SkyMaterial = (function (_super) {
         __extends(SkyMaterial, _super);
         function SkyMaterial(gl, cubeTexture) {
@@ -2209,9 +2523,6 @@ var CanvasToy;
                 .setShadingFrag(CanvasToy.ShaderSource.interploters__forward__skybox_frag)
                 .setPass({
                 faces: function (mesh) { return mesh.geometry.faces; },
-                textures: {
-                    uMainTexture: function (mesh, camera, material) { return material.mainTexture; },
-                },
                 uniforms: {
                     modelViewProjectionMatrix: {
                         type: CanvasToy.DataType.mat4,
@@ -2230,7 +2541,7 @@ var CanvasToy;
         return SkyMaterial;
     }(CanvasToy.Material));
     __decorate([
-        CanvasToy.readyRequire
+        CanvasToy.texture("uCubeTexture")
     ], SkyMaterial.prototype, "cubeTexture", void 0);
     CanvasToy.SkyMaterial = SkyMaterial;
 })(CanvasToy || (CanvasToy = {}));
@@ -2293,10 +2604,6 @@ var CanvasToy;
             }
             return this;
         };
-        Attachment.prototype.toTexture = function (gl) {
-            this.targetTexture = new CanvasToy.Texture(gl);
-            return this.targetTexture;
-        };
         return Attachment;
     }());
     CanvasToy.Attachment = Attachment;
@@ -2308,7 +2615,10 @@ var CanvasToy;
                 stencil: new Attachment(this, function (gl) { return gl.STENCIL_ATTACHMENT; }),
             };
             this.extras = [];
+            this._attached = false;
             this.glFramebuffer = gl.createFramebuffer();
+            this._width = gl.canvas.width;
+            this._height = gl.canvas.height;
             this.attachments.color.setType(gl, AttachmentType.Texture)
                 .setInnerFormatForBuffer(gl.RGBA4);
             this.attachments.depth.setType(gl, AttachmentType.RenderBuffer)
@@ -2317,6 +2627,72 @@ var CanvasToy;
                 .setInnerFormatForBuffer(gl.STENCIL_INDEX8)
                 .disable();
         }
+        FrameBuffer.prototype.setWidth = function (_width) {
+            this._width = _width;
+            return this;
+        };
+        FrameBuffer.prototype.setHeight = function (_height) {
+            this._height = _height;
+            return this;
+        };
+        Object.defineProperty(FrameBuffer.prototype, "attached", {
+            get: function () {
+                return this._attached;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(FrameBuffer.prototype, "width", {
+            get: function () {
+                return this._width;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(FrameBuffer.prototype, "height", {
+            get: function () {
+                return this._height;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        FrameBuffer.prototype.attach = function (gl, drawBuffer) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.glFramebuffer);
+            for (var index in this.attachments) {
+                var attachment = this.attachments[index];
+                if (attachment.isAble) {
+                    this.linkAttachment(attachment, gl, gl);
+                }
+            }
+            if (!!drawBuffer) {
+                for (var _i = 0, _a = this.extras; _i < _a.length; _i++) {
+                    var attachment = _a[_i];
+                    this.linkAttachment(attachment, gl, drawBuffer);
+                }
+                drawBuffer.drawBuffersWEBGL([
+                    drawBuffer.COLOR_ATTACHMENT0_WEBGL,
+                    drawBuffer.COLOR_ATTACHMENT1_WEBGL,
+                ]);
+            }
+            this._attached = CanvasToy.Graphics.logIfFrameBufferInvalid(gl, this.glFramebuffer);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        };
+        FrameBuffer.prototype.linkAttachment = function (attachment, gl, context) {
+            switch (attachment.type) {
+                case AttachmentType.Texture:
+                    gl.bindTexture(attachment.targetTexture.target, attachment.targetTexture.glTexture);
+                    gl.texImage2D(attachment.targetTexture.target, 0, attachment.targetTexture.format, this.width, this.height, 0, attachment.targetTexture.format, attachment.targetTexture.type, null);
+                    gl.framebufferTexture2D(gl.FRAMEBUFFER, attachment.attachmentCode(context), attachment.targetTexture.target, attachment.targetTexture.glTexture, 0);
+                    gl.bindTexture(attachment.targetTexture.target, null);
+                    break;
+                case AttachmentType.RenderBuffer:
+                    gl.bindRenderbuffer(gl.RENDERBUFFER, attachment.glRenderBuffer);
+                    gl.renderbufferStorage(gl.RENDERBUFFER, attachment.innerFormatForBuffer, gl.canvas.width, gl.canvas.height);
+                    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, attachment.attachmentCode(gl), gl.RENDERBUFFER, attachment.glRenderBuffer);
+                    break;
+                default: break;
+            }
+        };
         return FrameBuffer;
     }());
     CanvasToy.FrameBuffer = FrameBuffer;
@@ -2325,8 +2701,8 @@ var CanvasToy;
 (function (CanvasToy) {
     var Graphics;
     (function (Graphics) {
-        function addRootUniformContainer(program, uniformContainer) {
-            if (uniformContainer.uniforms instanceof Array) {
+        function addUniformContainer(program, uniformContainer) {
+            if (Array.isArray(uniformContainer.uniforms)) {
                 var _loop_1 = function (uniformProperty) {
                     if (uniformProperty.updator(uniformContainer) !== undefined) {
                         program.addUniform(uniformProperty.name, {
@@ -2342,8 +2718,47 @@ var CanvasToy;
                     _loop_1(uniformProperty);
                 }
             }
+            if (Array.isArray(uniformContainer.uniformArray)) {
+                var _loop_2 = function (uniformArrayProperty) {
+                    if (uniformArrayProperty.updator(uniformContainer) !== undefined) {
+                        program.addUniformArray(uniformArrayProperty.name, {
+                            type: uniformArrayProperty.type,
+                            updator: function () { return uniformArrayProperty.updator(uniformContainer); },
+                        });
+                    }
+                };
+                for (var _b = 0, _c = uniformContainer.uniformArray; _b < _c.length; _b++) {
+                    var uniformArrayProperty = _c[_b];
+                    _loop_2(uniformArrayProperty);
+                }
+            }
         }
-        Graphics.addRootUniformContainer = addRootUniformContainer;
+        Graphics.addUniformContainer = addUniformContainer;
+        function addTextureContainer(program, textureContainer) {
+            if (Array.isArray(textureContainer.textures)) {
+                var _loop_3 = function (textureDiscriptor) {
+                    if (textureDiscriptor.getter(textureContainer) !== undefined) {
+                        program.addTexture(textureDiscriptor.name, function () { return textureDiscriptor.getter(textureContainer); });
+                    }
+                };
+                for (var _i = 0, _a = textureContainer.textures; _i < _a.length; _i++) {
+                    var textureDiscriptor = _a[_i];
+                    _loop_3(textureDiscriptor);
+                }
+            }
+            if (Array.isArray(textureContainer.textureArrays)) {
+                var _loop_4 = function (textureArrayDiscriptor) {
+                    if (textureArrayDiscriptor.arrayGetter(textureContainer) !== undefined) {
+                        program.addTextureArray(textureArrayDiscriptor.name, function () { return textureArrayDiscriptor.arrayGetter(textureContainer); });
+                    }
+                };
+                for (var _b = 0, _c = textureContainer.textureArrays; _b < _c.length; _b++) {
+                    var textureArrayDiscriptor = _c[_b];
+                    _loop_4(textureArrayDiscriptor);
+                }
+            }
+        }
+        Graphics.addTextureContainer = addTextureContainer;
         function copyDataToVertexBuffer(gl, geometry) {
             if (geometry.dirty) {
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
@@ -2360,7 +2775,14 @@ var CanvasToy;
             }
         }
         Graphics.copyDataToVertexBuffer = copyDataToVertexBuffer;
-        function logIfFrameBufferInvalid(gl, frameBuffer, ext) {
+        function logEnabledAttribute(gl, program) {
+            for (var i = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES) - 1; i >= 0; i--) {
+                console.dir(gl.getActiveAttrib(program, i));
+            }
+        }
+        Graphics.logEnabledAttribute = logEnabledAttribute;
+        function logIfFrameBufferInvalid(gl, frameBuffer) {
+            var valid = false;
             gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
             var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
             switch (status) {
@@ -2376,9 +2798,12 @@ var CanvasToy;
                 case gl.FRAMEBUFFER_UNSUPPORTED:
                     console.error("gl.FRAMEBUFFER_UNSUPPORTED: The format of the attachment is not supported,\n                    or if depth and stencil attachments are not the same renderbuffer.");
                     break;
-                default: break;
+                default:
+                    valid = true;
+                    break;
             }
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            return valid;
         }
         Graphics.logIfFrameBufferInvalid = logIfFrameBufferInvalid;
     })(Graphics = CanvasToy.Graphics || (CanvasToy.Graphics = {}));
@@ -2390,10 +2815,11 @@ var CanvasToy;
 var CanvasToy;
 (function (CanvasToy) {
     var Renderer = (function () {
-        function Renderer(canvas) {
+        function Renderer(canvas, debug) {
             var _this = this;
             this.canvas = null;
             this.gl = null;
+            this.debug = false;
             this.preloadRes = [];
             this.usedTextureNum = 0;
             this.renderTargets = [];
@@ -2419,7 +2845,8 @@ var CanvasToy;
                 setTimeout(_this.main, _this.frameRate);
             };
             this.canvas = canvas;
-            this.gl = CanvasToy.initWebwebglContext(canvas);
+            this.debug = debug;
+            this.gl = CanvasToy.initWebwebglContext(canvas, debug);
             this.ext = {
                 depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
                 draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
@@ -2449,7 +2876,7 @@ var CanvasToy;
         Renderer.prototype.handleResource = function (scene) {
             var _this = this;
             var objectPromises = [];
-            var _loop_2 = function (object) {
+            var _loop_5 = function (object) {
                 var promise = object.asyncFinished();
                 if (!!promise) {
                     objectPromises.push(promise.then(function () {
@@ -2462,7 +2889,7 @@ var CanvasToy;
             };
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
-                _loop_2(object);
+                _loop_5(object);
             }
             return Promise.all(objectPromises).then(function () {
                 var texturePromises = [];
@@ -2513,6 +2940,13 @@ var CanvasToy;
                         }
                     }
                 }
+                for (var _d = 0, _e = scene.objects; _d < _e.length; _d++) {
+                    var object = _e[_d];
+                    if (object instanceof CanvasToy.Mesh) {
+                        CanvasToy.Graphics.copyDataToVertexBuffer(_this.gl, object.geometry);
+                    }
+                }
+                var shadowPreProcess = new CanvasToy.ShadowPreProcess(_this.gl, _this.ext);
                 var processor;
                 if (_this.isDeferred) {
                     processor = new CanvasToy.DeferredProcessor(_this.gl, _this.ext, scene, camera);
@@ -2523,6 +2957,7 @@ var CanvasToy;
                 scene.programSetUp = true;
                 _this.renderQueue.push(function (deltaTime) {
                     scene.update(deltaTime);
+                    shadowPreProcess.process(scene, camera, materials);
                     processor.process(scene, camera, materials);
                 });
             })
@@ -2540,6 +2975,60 @@ var CanvasToy;
 })(CanvasToy || (CanvasToy = {}));
 var CanvasToy;
 (function (CanvasToy) {
+    var ShadowPreProcess = (function () {
+        function ShadowPreProcess(gl, ext) {
+            this.gl = gl;
+            this.ext = ext;
+            this.depthMaterial = new CanvasToy.DepthMaterial(gl);
+            this.depthMaterial.program.setViewPort({ x: 0, y: 0, width: 1024, height: 1024 });
+        }
+        ShadowPreProcess.prototype.process = function (scene, camera, matriels) {
+            if (this.depthMaterial.dirty) {
+                this.depthMaterial.program.resetMaterialDefines(this.depthMaterial);
+                this.depthMaterial.program.make(scene);
+                CanvasToy.Graphics.addUniformContainer(this.depthMaterial.program, this.depthMaterial);
+                CanvasToy.Graphics.addTextureContainer(this.depthMaterial.program, this.depthMaterial);
+                this.depthMaterial.dirty = false;
+            }
+            for (var _i = 0, _a = scene.lights; _i < _a.length; _i++) {
+                var light = _a[_i];
+                if (light.shadowType !== CanvasToy.ShadowType.None) {
+                    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
+                    this.gl.enable(this.gl.DEPTH_TEST);
+                    this.gl.depthFunc(this.gl.LEQUAL);
+                    this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+                    for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
+                        var object = _c[_b];
+                        if (object instanceof CanvasToy.Mesh) {
+                            var castShadow = false;
+                            for (var _d = 0, _e = object.materials; _d < _e.length; _d++) {
+                                var material = _e[_d];
+                                if (material instanceof CanvasToy.StandardMaterial) {
+                                    if (material.castShadow) {
+                                        castShadow = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (castShadow) {
+                                this.renderMeshDepth(object, light);
+                            }
+                        }
+                    }
+                }
+            }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        };
+        ShadowPreProcess.prototype.renderMeshDepth = function (mesh, light) {
+            this.gl.useProgram(this.depthMaterial.program.webGlProgram);
+            this.depthMaterial.program.pass(mesh, light.projectCamera, this.depthMaterial);
+        };
+        return ShadowPreProcess;
+    }());
+    CanvasToy.ShadowPreProcess = ShadowPreProcess;
+})(CanvasToy || (CanvasToy = {}));
+var CanvasToy;
+(function (CanvasToy) {
     var DeferredProcessor = (function () {
         function DeferredProcessor(gl, ext, scene, camera) {
             this.tilePixelSize = 32;
@@ -2551,18 +3040,12 @@ var CanvasToy;
             this.horizontalTileNum = Math.floor(this.gl.canvas.width / this.tilePixelSize);
             this.verticalTileNum = Math.floor(this.gl.canvas.height / this.tilePixelSize);
             this.tileCount = this.horizontalTileNum * this.verticalTileNum;
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                if (object instanceof CanvasToy.Mesh) {
-                    CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, object.geometry);
-                }
-            }
             this.initGeometryProcess(scene);
             this.initTiledPass(scene);
             scene.programSetUp = true;
         }
         DeferredProcessor.prototype.process = function (scene, camera, materials) {
-            CanvasToy.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer, this.ext);
+            CanvasToy.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer);
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
             this.gl.enable(this.gl.DEPTH_TEST);
             this.gl.enable(this.gl.CULL_FACE);
@@ -2580,13 +3063,14 @@ var CanvasToy;
                             if (material.dirty) {
                                 material.geometryProgram.resetMaterialDefines(material);
                                 material.geometryProgram.make(mesh.scene);
-                                CanvasToy.Graphics.addRootUniformContainer(material.geometryProgram, object);
-                                CanvasToy.Graphics.addRootUniformContainer(material.geometryProgram, material);
+                                CanvasToy.Graphics.addUniformContainer(material.geometryProgram, object);
+                                CanvasToy.Graphics.addUniformContainer(material.geometryProgram, material);
+                                CanvasToy.Graphics.addUniformContainer(material.geometryProgram, camera);
+                                CanvasToy.Graphics.addTextureContainer(material.geometryProgram, material);
+                                CanvasToy.Graphics.addTextureContainer(material.geometryProgram, scene);
                                 material.dirty = false;
                             }
                             material.geometryProgram.pass(mesh, camera, material);
-                            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                            this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                         }
                     }
                 }
@@ -2597,20 +3081,19 @@ var CanvasToy;
             this.gl.enable(this.gl.BLEND);
             this.gl.depthFunc(this.gl.EQUAL);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
-            this.passLightInfoToTexture(scene, camera);
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.tile.faces.buffer);
-            this.gl.drawElements(this.gl.TRIANGLES, this.tile.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
+            this.tileLightPass(scene, camera);
         };
         DeferredProcessor.prototype.initGeometryProcess = function (scene) {
             this.gBuffer.attachments.color.disable();
-            this.gBuffer.attachments.depth.setType(this.gl, CanvasToy.AttachmentType.Texture);
-            this.gBuffer.extras.push(new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; })
-                .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT1_WEBGL; })
-                .setType(this.gl, CanvasToy.AttachmentType.Texture));
-            this.gBuffer.attachments.depth.targetTexture
+            this.gBuffer.attachments.depth
+                .setType(this.gl, CanvasToy.AttachmentType.Texture)
+                .targetTexture
                 .setType(this.gl.UNSIGNED_SHORT)
                 .setFormat(this.gl.DEPTH_COMPONENT)
                 .bindTextureData(this.gl);
+            this.gBuffer.extras.push(new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; })
+                .setType(this.gl, CanvasToy.AttachmentType.Texture), new CanvasToy.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT1_WEBGL; })
+                .setType(this.gl, CanvasToy.AttachmentType.Texture));
             for (var _i = 0, _a = this.gBuffer.extras; _i < _a.length; _i++) {
                 var colorAttach = _a[_i];
                 colorAttach.targetTexture
@@ -2620,47 +3103,26 @@ var CanvasToy;
                     .setMagFilter(this.gl.NEAREST)
                     .bindTextureData(this.gl);
             }
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
-            this.gl.bindTexture(this.gl.TEXTURE_2D, this.gBuffer.attachments.depth.targetTexture.glTexture);
-            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gBuffer.attachments.depth.targetTexture.format, this.gl.canvas.width, this.gl.canvas.height, 0, this.gBuffer.attachments.depth.targetTexture.format, this.gBuffer.attachments.depth.targetTexture.type, null);
-            this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gBuffer.attachments.depth.attachmentCode(this.gl), this.gl.TEXTURE_2D, this.gBuffer.attachments.depth.targetTexture.glTexture, 0);
-            this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-            for (var _b = 0, _c = this.gBuffer.extras; _b < _c.length; _b++) {
-                var attachment = _c[_b];
-                this.gl.bindTexture(this.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
-                this.gl.texImage2D(this.gl.TEXTURE_2D, 0, attachment.targetTexture.format, this.gl.canvas.width, this.gl.canvas.height, 0, attachment.targetTexture.format, attachment.targetTexture.type, null);
-                this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, attachment.attachmentCode(this.ext.draw_buffer), this.gl.TEXTURE_2D, attachment.targetTexture.glTexture, 0);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-            }
-            CanvasToy.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer, this.ext);
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
-            this.ext.draw_buffer.drawBuffersWEBGL([
-                this.ext.draw_buffer.COLOR_ATTACHMENT0_WEBGL,
-                this.ext.draw_buffer.COLOR_ATTACHMENT1_WEBGL,
-            ]);
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-            for (var _d = 0, _e = scene.objects; _d < _e.length; _d++) {
-                var object = _e[_d];
+            this.gBuffer.attach(this.gl, this.ext.draw_buffer);
+            for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
+                var object = _c[_b];
                 if (object instanceof CanvasToy.Mesh) {
                     var geometryProgram = new CanvasToy.ShaderBuilder()
                         .resetShaderLib()
                         .setShadingVert(CanvasToy.ShaderSource.interploters__deferred__geometry_vert)
                         .setShadingFrag(CanvasToy.ShaderSource.interploters__deferred__geometry_frag)
                         .build(this.gl);
-                    for (var _f = 0, _g = object.materials; _f < _g.length; _f++) {
-                        var material = _g[_f];
+                    for (var _d = 0, _e = object.materials; _d < _e.length; _d++) {
+                        var material = _e[_d];
                         if (material instanceof CanvasToy.StandardMaterial) {
                             geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                            geometryProgram.make(scene);
-                            CanvasToy.Graphics.addRootUniformContainer(geometryProgram, object);
-                            CanvasToy.Graphics.addRootUniformContainer(geometryProgram, material);
                             material.geometryProgram = geometryProgram;
                         }
                     }
                 }
             }
         };
-        DeferredProcessor.prototype.passLightInfoToTexture = function (scene, camera) {
+        DeferredProcessor.prototype.tileLightPass = function (scene, camera) {
             var lightColors = [];
             var lightPositionRadius = [];
             for (var _i = 0, _a = scene.pointLights; _i < _a.length; _i++) {
@@ -2694,12 +3156,12 @@ var CanvasToy;
             }
             this.tileLightIndexMap.resetData(this.gl, new Float32Array(this.linearLightIndex), this.linearLightIndex.length, 1);
             this.tileLightOffsetCountMap.resetData(this.gl, new Float32Array(lightOffsetCount), this.horizontalTileNum, this.verticalTileNum);
-            this.tilePass.pass(null, camera, null);
+            this.tileProgram.pass(this.tile, camera, null);
         };
         DeferredProcessor.prototype.initTiledPass = function (scene) {
             var _this = this;
             if (this.tile === undefined) {
-                this.tile = new CanvasToy.RectGeometry(this.gl).build();
+                this.tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(this.gl).build(), []);
             }
             for (var i = 0; i < this.horizontalTileNum; ++i) {
                 for (var j = 0; j < this.verticalTileNum; ++j) {
@@ -2719,13 +3181,13 @@ var CanvasToy;
             this.lightPositionRadiusMap = new CanvasToy.DataTexture(this.gl, new Float32Array([]))
                 .setType(this.gl.FLOAT)
                 .setFormat(this.gl.RGBA);
-            this.tilePass = new CanvasToy.ShaderBuilder()
+            this.tileProgram = new CanvasToy.ShaderBuilder()
                 .resetShaderLib()
                 .addShaderLibFrag(CanvasToy.ShaderSource.calculators__blinn_phong_glsl)
                 .setShadingVert(CanvasToy.ShaderSource.interploters__deferred__tiledLight_vert)
                 .setShadingFrag(CanvasToy.ShaderSource.interploters__deferred__tiledLight_frag)
                 .setPass({
-                faces: function () { return _this.tile.faces; },
+                faces: function () { return _this.tile.geometry.faces; },
                 uniforms: {
                     cameraFar: {
                         type: CanvasToy.DataType.float,
@@ -2765,12 +3227,12 @@ var CanvasToy;
                     uLightIndex: function () { return _this.tileLightIndexMap; },
                 },
                 attributes: {
-                    position: function () { return _this.tile.attributes.position; },
+                    position: function () { return _this.tile.geometry.attributes.position; },
                 },
             })
                 .build(this.gl);
-            CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, this.tile);
-            this.tilePass.make(scene);
+            CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, this.tile.geometry);
+            this.tileProgram.make(scene);
         };
         DeferredProcessor.prototype.fillTileWithBoundingBox2D = function (camera, box, lightIndex) {
             var leftTile = Math.max(Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum) - 1, 0);
@@ -2796,24 +3258,16 @@ var CanvasToy;
         function ForwardProcessor(gl, ext, scene, camera) {
             this.gl = gl;
             this.ext = ext;
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                if (object instanceof CanvasToy.Mesh) {
-                    var mesh = object;
-                    this.makeMeshPrograms(scene, mesh, camera);
-                }
-            }
-            scene.programSetUp = true;
         }
         ForwardProcessor.prototype.process = function (scene, camera, materials) {
             this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
             this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
             for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
                 var object = _a[_i];
-                this.renderObject(camera, object);
+                this.renderObject(scene, camera, object);
             }
         };
-        ForwardProcessor.prototype.renderObject = function (camera, object) {
+        ForwardProcessor.prototype.renderObject = function (scene, camera, object) {
             if (object instanceof CanvasToy.Mesh) {
                 var mesh = object;
                 for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
@@ -2834,23 +3288,29 @@ var CanvasToy;
                     if (material.dirty) {
                         program.resetMaterialDefines(material);
                         program.make(mesh.scene);
-                        CanvasToy.Graphics.addRootUniformContainer(material.program, mesh);
-                        CanvasToy.Graphics.addRootUniformContainer(material.program, material);
-                        CanvasToy.Graphics.addRootUniformContainer(material.program, camera);
-                        this.setupLights(mesh.scene, material, mesh, camera);
+                        CanvasToy.Graphics.addUniformContainer(material.program, mesh);
+                        CanvasToy.Graphics.addUniformContainer(material.program, material);
+                        CanvasToy.Graphics.addUniformContainer(material.program, camera);
+                        CanvasToy.Graphics.addUniformContainer(material.program, scene);
+                        if (material instanceof CanvasToy.StandardMaterial) {
+                            this.setupLights(mesh.scene, material, mesh, camera);
+                        }
+                        CanvasToy.Graphics.addTextureContainer(material.program, material);
+                        CanvasToy.Graphics.addTextureContainer(material.program, scene);
                         material.dirty = false;
+                    }
+                    if (material instanceof CanvasToy.StandardMaterial && material.castShadow) {
+                        this.passShadows(mesh, scene, material, camera);
                     }
                     this.gl.useProgram(program.webGlProgram);
                     program.pass(mesh, camera, material);
-                    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-                    this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
                 }
             }
         };
         ForwardProcessor.prototype.setupLight = function (light, camera, program, index, lightArrayName) {
             console.assert(light.uniforms !== undefined);
-            var _loop_3 = function (uniformProperty) {
-                if (uniformProperty.updator(light, camera) !== undefined) {
+            var _loop_6 = function (uniformProperty) {
+                if (!!uniformProperty.key && light[uniformProperty.key] !== undefined) {
                     program.addUniform(lightArrayName + "[" + index + "]." + uniformProperty.name, {
                         type: uniformProperty.type,
                         updator: function (obj, camera) {
@@ -2861,7 +3321,7 @@ var CanvasToy;
             };
             for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
                 var uniformProperty = _a[_i];
-                _loop_3(uniformProperty);
+                _loop_6(uniformProperty);
             }
         };
         ForwardProcessor.prototype.setupLights = function (scene, material, mesh, camera) {
@@ -2875,34 +3335,27 @@ var CanvasToy;
                 this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
             }
         };
-        ForwardProcessor.prototype.makeMeshPrograms = function (scene, mesh, camera) {
-            CanvasToy.Graphics.copyDataToVertexBuffer(this.gl, mesh.geometry);
-            if (mesh.materials.length > 1) {
-                this.gl.enable(this.gl.BLEND);
-                this.gl.blendFunc(this.gl.SRC_COLOR, this.gl.ONE_MINUS_SRC_COLOR);
-            }
-            for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
-                var material = _a[_i];
-                var cameraInScene = false;
-                for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
-                    var object = _c[_b];
-                    if (object === camera) {
-                        cameraInScene = true;
-                        break;
+        ForwardProcessor.prototype.passShadows = function (mesh, scene, material, camera) {
+            var handleShadow = function (lights, shadowMatrices, shadowMaps) {
+                var offset = 0;
+                lights.forEach(function (light) {
+                    if (light.shadowType === CanvasToy.ShadowType.None) {
+                        return;
                     }
-                }
-                if (!cameraInScene) {
-                    console.error("Camera has not been added in Scene. Rendering stopped");
-                    return;
-                }
-                material.program.make(scene);
-                CanvasToy.Graphics.addRootUniformContainer(material.program, mesh);
-                CanvasToy.Graphics.addRootUniformContainer(material.program, material);
-                CanvasToy.Graphics.addRootUniformContainer(material.program, camera);
-                if (scene.openLight) {
-                    this.setupLights(scene, material, mesh, camera);
-                }
-            }
+                    shadowMaps.push(light.shadowMap);
+                    shadowMatrices.set(mat4.mul(mat4.create(), light.projectCamera.projectionMatrix, mat4.mul(mat4.create(), light.projectCamera.worldToObjectMatrix, mesh.matrix)), offset);
+                    offset += 16;
+                });
+            };
+            scene.directionShadowMaps = [];
+            scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
+            handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
+            scene.pointShadowMaps = [];
+            scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
+            handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
+            scene.spotShadowMaps = [];
+            scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
+            handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
         };
         return ForwardProcessor;
     }());
@@ -2918,6 +3371,7 @@ var CanvasToy;
                 CanvasToy.ShaderSource.calculators__linearlize_depth_glsl,
                 CanvasToy.ShaderSource.calculators__blinn_phong_glsl,
                 CanvasToy.ShaderSource.calculators__types_glsl,
+                CanvasToy.ShaderSource.calculators__shadow_factor_glsl,
                 CanvasToy.ShaderSource.debug__checkBox_glsl,
             ];
             this.shadingVert = CanvasToy.ShaderSource.interploters__forward__phong_vert;
@@ -2991,8 +3445,8 @@ var CanvasToy;
                 return Promise.resolve(_this);
             }));
             _this.setTarget(gl.TEXTURE_CUBE_MAP)
-                .setMinFilter(gl.LINEAR)
-                .setMagFilter(gl.LINEAR);
+                .setMinFilter(gl.NEAREST)
+                .setMagFilter(gl.NEAREST);
             _this.images = [0, 0, 0, 0, 0, 0].map(function () { return new Image(); });
             _this.images[0].src = xposUrl;
             _this.images[1].src = xnegUrl;
@@ -3019,6 +3473,7 @@ var CanvasToy;
             for (var i = 0; i < this.images.length; ++i) {
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.format, this.format, this.type, this.images[i]);
             }
+            return this;
         };
         CubeTexture.prototype.createLoadPromise = function (image) {
             var _this = this;
@@ -3046,6 +3501,7 @@ var CanvasToy;
         Texture2D.prototype.bindTextureData = function (gl) {
             _super.prototype.bindTextureData.call(this, gl);
             gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
+            return this;
         };
         return Texture2D;
     }(CanvasToy.Texture));
@@ -3072,16 +3528,8 @@ var CanvasToy;
             return this;
         };
         DataTexture.prototype.bindTextureData = function (gl) {
-            gl.bindTexture(this.target, this.glTexture);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-            gl.bindTexture(this.target, this.glTexture);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
-            gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
-            gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
-            gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
             _super.prototype.bindTextureData.call(this, gl);
             gl.texImage2D(this.target, 0, this.format, this.width, this.height, 0, this.format, this.type, this.data);
-            gl.bindTexture(this.target, null);
             return this;
         };
         return DataTexture;
