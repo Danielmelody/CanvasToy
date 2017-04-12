@@ -67,14 +67,18 @@ examples.push(function (canvas) {
         .build(), [objectMaterial])
         .setPosition([2, 0, -5]).setScaling([0.5, 0.5, 0.5]);
     scene.addObject(ground, back, box, sphere, camera);
-    var directLight = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, 0]);
+    var directLight = new CanvasToy.DirectionalLight(renderer.gl)
+        .translate([10, 0, 0])
+        .rotateX(-Math.PI / 2)
+        .rotateY(0.6);
     var pointLight = new CanvasToy.PointLight(renderer.gl)
         .setPosition([0, 0, -3]).setIdensity(3).setRadius(8);
     var spotLight = new CanvasToy.SpotLight(renderer.gl)
         .setIdensity(600000)
+        .rotateY(0.1)
         .setSpotDirection([10, 0, 0])
-        .setConeAngle(Math.PI / 4);
-    scene.addLight(spotLight);
+        .setConeAngle(Math.PI / 8);
+    scene.addLight(directLight, spotLight);
     var time = 0;
     scene.addOnUpdateListener(function (delta) {
         time += delta;

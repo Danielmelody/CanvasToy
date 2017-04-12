@@ -332,7 +332,7 @@ namespace CanvasToy {
             return this;
         }
 
-        public setViewPort(viewport: {x: number, y: number, width: number, height: number}) {
+        public setViewPort(viewport: { x: number, y: number, width: number, height: number }) {
             this.viewport = viewport;
         }
 

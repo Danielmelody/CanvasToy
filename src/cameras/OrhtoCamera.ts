@@ -4,10 +4,12 @@ namespace CanvasToy {
 
     export class OrthoCamera extends Camera {
 
-        protected _left: number = -1;
-        protected _right: number = 1;
-        protected _bottom: number = -1;
-        protected _top: number = 1;
+        protected _left: number = -32;
+        protected _right: number = 32;
+        protected _bottom: number = -32;
+        protected _top: number = 32;
+        protected _baseSize: number = 32;
+
         constructor(parameters: {
             left?: number,
             right?: number,
@@ -79,10 +81,11 @@ namespace CanvasToy {
         }
 
         public adaptTargetRadio(target: { width: number, height: number }) {
-            this._left = -target.width / 2;
-            this._right = target.width / 2;
-            this._top = target.height / 2;
-            this._bottom = -target.height / 2;
+            const radio = target.height / target.width;
+            this._left = -this._baseSize / 2;
+            this._right = this._baseSize / 2;
+            this._top = radio * this._baseSize / 2;
+            this._bottom = -radio * this._baseSize / 2;
             this.compuseProjectionMatrix();
             return this;
         }

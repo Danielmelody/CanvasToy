@@ -9,11 +9,11 @@ namespace CanvasToy {
 
         @uniform("spotDir", DataType.vec3, (light: SpotLight, camera: Camera) =>
             vec3.transformQuat(vec3.create(), light._spotDirection,
-            mat4.getRotation(
-                quat.create(),
-                mat4.multiply(mat4.create(), camera.worldToObjectMatrix, light.matrix),
-            ),
-        ))
+                mat4.getRotation(
+                    quat.create(),
+                    mat4.multiply(mat4.create(), camera.worldToObjectMatrix, light.matrix),
+                ),
+            ))
         protected _spotDirection: Vec3Array = vec3.fromValues(0, 0, -1);
 
         protected _coneAngle: number;
@@ -35,7 +35,7 @@ namespace CanvasToy {
 
         public get spotDirection() {
             return vec3.transformQuat(vec3.create(), this._spotDirection,
-                mat4.getRotation( quat.create(), this.matrix ),
+                mat4.getRotation(quat.create(), this.matrix),
             );
         }
 
@@ -73,7 +73,7 @@ namespace CanvasToy {
             this._projectCamera = new PerspectiveCamera()
                 .setParent(this)
                 .setLocalPosition([0, 0, 0])
-                .adaptTargetRadio({width: 1024, height: 1024});
+                .adaptTargetRadio({ width: 1024, height: 1024 });
         }
 
     }
