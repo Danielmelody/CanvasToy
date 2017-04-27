@@ -1,5 +1,5 @@
 namespace jasmine {
-    export interface ToyMatchers extends Matchers {
+    export interface ToyMatchers extends Matchers<any> {
         toBeEqualish(expected: any, expectationFailOutput?: any): boolean;
     }
 }
@@ -7,7 +7,7 @@ namespace jasmine {
 namespace Testing {
     export const EPSILON = 0.00001;
     export function createCanvas(width: number, height: number) {
-        let canvas = document.createElement("canvas");
+        const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
         canvas.style.backgroundColor = "black";
@@ -16,10 +16,10 @@ namespace Testing {
     }
 }
 
-beforeEach(function() {
+beforeAll(() => {
     jasmine.addMatchers({
-        toBeEqualish: function() {
-            let result = {
+        toBeEqualish: () => {
+            const result = {
                 compare: (actual: any, expected: any) => {
                     if (typeof (actual) === "number") {
                         return {
@@ -50,8 +50,8 @@ beforeEach(function() {
             };
             return result;
         },
-        toBeNotEqualish: function() {
-            let result = {
+        toBeNotEqualish: () => {
+            const result = {
                 compare: (actual: any, expected: any) => {
                     if (typeof (actual) === "number") {
                         return {

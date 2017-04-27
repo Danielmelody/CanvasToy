@@ -1,13 +1,9 @@
-/// <reference path="../geometries/Geometry.ts"/>
-/// <reference path="../Mesh.ts"/>
-/// <reference path="../materials/Material.ts"/>
+import { Geometry } from "../geometries/Geometry";
+import { StandardMaterial } from "../materials/StandardMaterial";
+import { Mesh } from "../Mesh";
 
-namespace CanvasToy {
-
-    export class Water extends Mesh {
-        constructor(gl: WebGLRenderingContext) {
-            super(new Geometry(gl), [new StandardMaterial(gl)]);
-        }
+export class Water extends Mesh {
+    constructor(gl: WebGLRenderingContext) {
+        super(new Geometry(gl), [new StandardMaterial(gl)]);
     }
-
 }

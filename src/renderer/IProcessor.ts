@@ -1,8 +1,7 @@
-/// <reference path="../Scene.ts"/>
-/// <reference path="../cameras/Camera.ts"/>
+import { Camera } from "../cameras/Camera";
+import { Material } from "../materials/Material";
+import { Scene } from "../Scene";
 
-namespace CanvasToy {
-    export interface IProcessor {
-        process(scene: Scene, camera: Camera, matriels: Material[]);
-    };
+export interface IProcessor {
+    process(scene: Scene, camera: Camera, matriels: Material[]);
 }

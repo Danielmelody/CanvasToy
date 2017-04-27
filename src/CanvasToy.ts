@@ -1,25 +1,43 @@
-namespace CanvasToy {
+export { linkdef, texture, textureArray, uniform, uniformArray } from "./Decorators";
 
-    export let debug: boolean = true;
-    export type Vec2Array = GLM.IArray;
-    export type Vec3Array = GLM.IArray;
-    export type Vec4Array = GLM.IArray;
-    export type Mat2Array = GLM.IArray;
-    export type Mat2dArray = GLM.IArray;
-    export type Mat3Array = GLM.IArray;
-    export type Mat4Array = GLM.IArray;
-    export type QuatArray = GLM.IArray;
+export { IAsyncResource } from "./IAsyncResource";
 
-    export enum DataType {
-        float,
-        int,
-        vec2,
-        vec3,
-        vec4,
-        mat2,
-        mat3,
-        mat4,
-    }
+export { Renderer } from "./renderer/Renderer";
+export { FrameBuffer, Attachment, AttachmentType } from "./renderer/FrameBuffer";
 
-    export const resourcesCache = {};
-}
+export { Object3d } from "./Object3d";
+
+export { Scene } from "./Scene";
+
+export { DataType } from "./DataTypeEnum";
+export * from "./Util";
+
+export { Camera } from "./cameras/Camera";
+export { PerspectiveCamera } from "./cameras/PerspectiveCamera";
+export { OrthoCamera } from "./cameras/OrthoCamera";
+
+export { Geometry } from "./geometries/Geometry";
+export { CubeGeometry } from "./geometries/CubeGeometry";
+export { RectGeometry } from "./geometries/RectGeometry";
+export { SphereGeometry } from "./geometries/SphereGeometry";
+export { TileGeometry } from "./geometries/TileGeometry";
+
+export { Texture } from "./textures/Texture";
+export { Texture2D } from "./textures/Texture2D";
+export { CubeTexture } from "./textures/CubeTexture";
+export { DataTexture } from "./textures/DataTexture";
+
+export { Material } from "./materials/Material";
+export { StandardMaterial } from "./materials/StandardMaterial";
+export { SkyMaterial } from "./materials/SkyMaterial";
+export { DepthMaterial } from "./materials/DepthMaterial";
+
+export { Light } from "./lights/Light";
+export { PointLight } from "./lights/PointLight";
+export { SpotLight } from "./lights/SpotLight";
+export { DirectionalLight } from "./lights/DirectionalLight";
+
+export { OBJLoader } from "./loader/obj_mtl/ObJLoader";
+
+export { Mesh } from "./Mesh";
+export { Water } from "./extensions/Water";

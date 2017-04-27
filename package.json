@@ -8,7 +8,8 @@
     "deferred",
     "tbdr"
   ],
-  "main": "build/canvas-toy.js",
+  "main": "build/debug/canvas-toy.js",
+  "types": "build/debug/canvas-toy.d.ts",
   "description": "lightweight webgl rendering tool",
   "version": "0.4.0",
   "license": "MIT",
@@ -20,6 +21,10 @@
     "url": "https://github.com/UniqueStudio/CanvasToy/issues"
   },
   "devDependencies": {
+    "@types/gl-matrix": "^2.2.34",
+    "@types/jasmine": "^2.5.47",
+    "@types/webgl-ext": "0.0.28",
+    "awesome-typescript-loader": "^3.1.2",
     "cz-conventional-changelog": "latest",
     "gl": "latest",
     "jasmine-core": "latest",
@@ -27,13 +32,18 @@
     "karma-chrome-launcher": "latest",
     "karma-firefox-launcher": "latest",
     "karma-jasmine": "latest",
-    "webgl-debug": "^1.0.2"
+    "karma-requirejs": "^1.1.0",
+    "ts-loader": "^2.0.3",
+    "urequire": "^0.7.0-beta.33",
+    "webgl-debug": "^1.0.2",
+    "webpack": "^2.4.1"
   },
   "scripts": {
     "test": "cd tests && sh testing.sh",
     "testci": "cd tests && sh testingci.sh",
     "build": "sh building.sh",
-    "example": "cd examples && sh runExample.sh"
+    "build_example": "cd examples && tsc",
+    "bundle": "webpack --config webpack.config.js"
   },
   "config": {
     "commitizen": {

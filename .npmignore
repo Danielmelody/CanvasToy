@@ -1,3 +1,4 @@
 tests/
 examples/
-bower_components
+bower_components/
+*.sh
