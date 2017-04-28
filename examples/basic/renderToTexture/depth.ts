@@ -1,7 +1,4 @@
-/// <reference path="../../../build/debug/canvas-toy.d.ts"/>
-/// <reference path="../../../typings/index.d.ts"/>
-/// <reference path="../../index.ts"/>
-// 
+//
 // examples.push((canvas: HTMLCanvasElement) => {
 //     const renderer = new CanvasToy.Renderer(canvas);
 //     renderer.gl.enable(renderer.gl.CULL_FACE);
@@ -9,7 +6,7 @@
 //     const cameras = Array(2, 0).map(() => new CanvasToy.PerspectiveCamera());
 //     const light = new CanvasToy.PointLight();
 //     const cube = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl),
-//         [new CanvasToy.StandardMaterial(renderer.gl)]).rotateY(2).translate([0, 0, -3]);
+//         [new CanvasToy.StandardMaterial(renderer.gl)]).rotateY(2).translate(vec3.fromValues(0, 0, -3));
 //
 //     const image = new Image();
 //     cube.materials[0].mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/chrome.png")
@@ -17,7 +14,7 @@
 //
 //     scenes[0].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
 //     scenes[1].ambientLight = vec3.fromValues(0.1, 0.1, 0.1);
-//     light.setPosition([100, 0, 100]);
+//     light.setPosition(vec3.fromValues(100, 0, 100));
 //     scenes[0].addLight(light).addObject(cameras[0]).addObject(cube);
 //
 //     const fbo = renderer.createFrameBuffer();
@@ -37,12 +34,12 @@
 //
 //     const rect = new CanvasToy.Mesh(
 //         new CanvasToy.RectGeometry(renderer.gl),
-//         [depthMaterial]).setScaling([canvas.width / canvas.height, 1, 1]);
+//         [depthMaterial]).setScaling(vec3.fromValues(canvas.width / canvas.height, 1, 1));
 //     cube.registUpdate(() => {
 //         cube.rotateY(0.02);
 //     });
 //     cameras[0].setNear(1);
-//     cameras[1].setPosition([0, 0, 2]);
+//     cameras[1].setPosition(vec3.fromValues(0, 0, 2));
 //     scenes[1].addLight(light).addObject(cameras[1]).addObject(rect);
 //     scenes[0].addLight(light);
 //     renderer.renderFBO(scenes[0], cameras[0]);

@@ -3,6 +3,7 @@
   "rules": {
     "no-namespace": false,
     "no-reference": false,
+    "no-default-export": true,
     "no-shadowed-variable": false,
     "variable-name": [true, "allow-leading-underscore"],
     "no-bitwise": false,

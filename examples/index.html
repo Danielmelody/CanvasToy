@@ -5,31 +5,27 @@
   <meta charset="utf-8">
 
   <title>CanvasToy Examples</title>
-  <meta name="description" content="The HTML5 Herald">
+  <meta name="description" content="CanvasToy Examples">
   <meta name="author" content="SitePoint">
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.3.2/gl-matrix-min.js" type="text/javascript"></script>
-  <script src="../build/debug/canvas-toy.js" type="text/javascript"></script>
-  <script src="index.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.js" type="text/javascript"></script>
 </head>
-
-<div class="table" id="table">
-
-</div>
-
 <body>
-  <script type="text/javascript">
-  var table = document.getElementById("table");
-  for (var i in examples) {
-      var newCanvas = document.createElement("canvas");
-      newCanvas.width = 960;
-      newCanvas.height = 540;
-      newCanvas.style.background = "black";
-      table.appendChild(newCanvas);
-      var renderer = examples[i](newCanvas);
-      renderer.stop();
-      onMouseOnStart(renderer);
-  }
-  </script>
+    <table id="table">
+
+    </table>
+    <script type="text/javascript">
+    require.config({
+        baseUrl: ".",
+        paths: {
+            "gl-matrix": "../node_modules/gl-matrix/dist/gl-matrix",
+            "examples/*": "examples/*"
+        },
+        waitSeconds: 15
+    });
+    </script>
+    <script src="index.js" type="text/javascript"></script>
+    <script>
+      require(["examples/index"]);
+    </script>
 </body>
 </html>

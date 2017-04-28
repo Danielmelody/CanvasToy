@@ -1,18 +1,21 @@
 // Karma configuration
-// Generated on Thu Sep 01 2016 16:32:02 GMT+0800 (CST)
+// Generated on Wed Apr 26 2017 00:42:54 GMT+0800 (CST)
 
 module.exports = function(config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
-    basePath : '',
+    basePath : '.',
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks : [ 'jasmine' ],
+    frameworks : [ 'jasmine', 'requirejs' ],
 
     // list of files / patterns to load in the browser
-    files : [ 'build/canvas-toy-test.js' ],
+    files : [
+      {pattern : "build/tests/Util.js", included : true},
+      {pattern : "build/**/*.js", included : false}, 'test-main.js'
+    ],
 
     // list of files to exclude
     exclude : [],
@@ -40,12 +43,12 @@ module.exports = function(config) {
 
     // enable / disable watching file and executing tests whenever any file
     // changes
-    autoWatch : true,
+    autoWatch : false,
 
     // start these browsers
     // available browser launchers:
     // https://npmjs.org/browse/keyword/karma-launcher
-    browsers : [ 'Chrome', 'Firefox' ],
+    browsers : [ 'Chrome', 'Safari', 'Firefox', 'PhantomJS' ],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

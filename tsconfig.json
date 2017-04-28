@@ -3,21 +3,22 @@
         "module": "amd",
         "removeComments": true,
         "lib":["es5", "es2015.promise", "dom"],
-        "outFile":"build/debug/canvas-toy.js",
+        "outFile": "build/canvas-toy-amd.js",
         "noLib": false,
         "target": "es5",
         "sourceMap": true,
         "declaration": true,
+        "noImplicitUseStrict": true,
         "experimentalDecorators": true
     },
     "include":[
-        "typings/**/*.ts",
         "src/**/*.ts"
     ],
     "exclude":[
-        "examples/**/*.ts",
-        "tests/**/*.ts",
-        "build/**/*.ts"
+        "node_modules/",
+        "examples/",
+        "tests/",
+        "utils/"
     ],
    "compileOnSave": false
 }

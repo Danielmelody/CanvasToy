@@ -32,3 +32,6 @@ npm-debug.log.*
 /tests/build/
 
 .ruby-version
+
+/typings/
+/tests/typings/

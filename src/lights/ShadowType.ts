@@ -1,7 +1,5 @@
-namespace CanvasToy {
-    export enum ShadowType {
-        None,
-        Hard,
-        Soft,
-    };
+export enum ShadowType {
+    None,
+    Hard,
+    Soft,
 }
