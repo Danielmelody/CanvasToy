@@ -1,50 +1,48 @@
-/// <reference path="../../../build/debug/canvas-toy.d.ts"/>
-/// <reference path="../../../typings/index.d.ts"/>
-/// <reference path="../../index.ts"/>
+import * as CanvasToy from "CanvasToy";
+import { vec3 } from "gl-matrix";
+import { createCanvas, onMouseOnStart } from "global";
 
-examples.push((canvas: HTMLCanvasElement) => {
-    const renderer = new CanvasToy.Renderer(canvas);
+const renderer = new CanvasToy.Renderer(createCanvas());
 
-    const scene = new CanvasToy.Scene();
-    const camera = new CanvasToy.PerspectiveCamera();
+const scene = new CanvasToy.Scene();
+const camera = new CanvasToy.PerspectiveCamera();
 
-    const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
+const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
 
-    const material = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture });
+const material = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture });
 
-    const meshes: CanvasToy.Object3d[] = [];
+const meshes: CanvasToy.Object3d[] = [];
 
-    for (let i = 0; i < 4; ++i) {
-        const mesh = new CanvasToy.Mesh(
-            new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(20).setHeightSegments(20).build(),
-            [material],
-        );
-        if (i > 0) {
-            mesh.setParent(meshes[i - 1]);
-            if (i === 3) {
-                mesh.setLocalPosition([0, 2.5 - i / 4.0, 0]);
-            } else {
-                mesh.setLocalPosition([2.5 - i / 4.0, 0, 0]);
-            }
+for (let i = 0; i < 4; ++i) {
+    const mesh = new CanvasToy.Mesh(
+        new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(20).setHeightSegments(20).build(),
+        [material],
+    );
+    if (i > 0) {
+        mesh.setParent(meshes[i - 1]);
+        if (i === 3) {
+            mesh.setLocalPosition(vec3.fromValues(0, 2.5 - i / 4.0, 0));
+        } else {
+            mesh.setLocalPosition(vec3.fromValues(2.5 - i / 4.0, 0, 0));
         }
-        const scaleFactor = Math.pow(2, (1 - i));
-        mesh.setScaling([scaleFactor, scaleFactor, scaleFactor]);
-        meshes.push(mesh);
     }
+    const scaleFactor = Math.pow(2, (1 - i));
+    mesh.setScaling(vec3.fromValues(scaleFactor, scaleFactor, scaleFactor));
+    meshes.push(mesh);
+}
 
-    meshes[0].translate([0, -2, -10]);
+meshes[0].translate(vec3.fromValues(0, -2, -10));
 
-    scene.addOnUpdateListener(() => {
-        meshes[0].rotateY(-0.005);
-        meshes[1].rotateY(0.01);
-        meshes[2].rotateX(0.05);
-    });
-
-    scene.addObject(meshes[0], camera);
-    camera.rotateX(-0.2);
-    const light = new CanvasToy.DirectionalLight(renderer.gl).setDirection([-1, -1, -1]);
-    scene.addLight(light);
-    renderer.render(scene, camera);
-    console.log(scene);
-    return renderer;
+scene.addOnUpdateListener(() => {
+    meshes[0].rotateY(-0.005);
+    meshes[1].rotateY(0.01);
+    meshes[2].rotateX(0.05);
 });
+
+scene.addObject(meshes[0], camera);
+camera.rotateX(-0.2);
+const light = new CanvasToy.DirectionalLight(renderer.gl).setDirection(vec3.fromValues(-1, 0, -1));
+scene.addLight(light);
+renderer.render(scene, camera);
+renderer.stop();
+onMouseOnStart(renderer);
