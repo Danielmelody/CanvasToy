@@ -5,7 +5,7 @@ import { DataType } from "../DataTypeEnum";
 import { uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
-import { BoundingBox2D } from "../intersections/BoundingBox";
+import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
 import { Texture } from "../textures/Texture";
 import { PointLight } from "./PointLight";

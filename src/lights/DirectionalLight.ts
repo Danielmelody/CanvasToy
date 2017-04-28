@@ -5,7 +5,7 @@ import { DataType } from "../DataTypeEnum";
 import { uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
-import { BoundingBox2D } from "../intersections/BoundingBox";
+import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
 import { Texture } from "../textures/Texture";
 import { Light } from "./Light";
@@ -21,13 +21,8 @@ export class DirectionalLight extends Light {
         );
         const cameraRatation = mat4.getRotation(quat.create(), camera.worldToObjectMatrix);
         const lookDirView = vec3.transformQuat(vec3.create(), lookDirWorld, cameraRatation);
-        const transform = mat4.getTranslation(vec3.create(), light.matrix);
-        const transform2 = mat4.getTranslation(vec3.create(), light.projectCamera.matrix);
-        // console.log(transform);
-        console.log(transform2);
         return lookDirView;
-    },
-    )
+    })
     protected _direction: vec3 = vec3.fromValues(0, 0, -1);
 
     constructor(gl: WebGLRenderingContext) {

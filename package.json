@@ -33,6 +33,7 @@
     "karma-firefox-launcher": "latest",
     "karma-jasmine": "latest",
     "karma-requirejs": "^1.1.0",
+    "requirejs": "^2.3.3",
     "webgl-debug": "^1.0.2"
   },
   "scripts": {

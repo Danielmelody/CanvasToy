@@ -13,7 +13,7 @@
     },
    "compileOnSave": true,
    "include" : [
-       "../build/canvas-toy.d.ts",
+       "../build/canvas-toy-amd.d.ts",
        "../build/canvas-toy-amd.js",
        "**/*.ts"
    ]

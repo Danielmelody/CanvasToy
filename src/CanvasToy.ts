@@ -37,7 +37,7 @@ export { PointLight } from "./lights/PointLight";
 export { SpotLight } from "./lights/SpotLight";
 export { DirectionalLight } from "./lights/DirectionalLight";
 
-export { OBJLoader } from "./loader/obj_mtl/ObJLoader";
+export { OBJLoader } from "./loader/obj_mtl/OBJLoader";
 
 export { Mesh } from "./Mesh";
 export { Water } from "./extensions/Water";

@@ -20,17 +20,17 @@ export namespace Graphics {
                     });
                 }
             }
-            if (Array.isArray(uniformContainer.uniformArray)) {
-                for (const uniformArrayProperty of uniformContainer.uniformArray) {
-                    if (uniformArrayProperty.updator(uniformContainer) !== undefined) {
-                        program.addUniformArray(
-                            uniformArrayProperty.name,
-                            {
-                                type: uniformArrayProperty.type,
-                                updator: () => uniformArrayProperty.updator(uniformContainer),
-                            },
-                        );
-                    }
+        }
+        if (Array.isArray(uniformContainer.uniformArray)) {
+            for (const uniformArrayProperty of uniformContainer.uniformArray) {
+                if (uniformArrayProperty.updator(uniformContainer) !== undefined) {
+                    program.addUniformArray(
+                        uniformArrayProperty.name,
+                        {
+                            type: uniformArrayProperty.type,
+                            updator: () => uniformArrayProperty.updator(uniformContainer),
+                        },
+                    );
                 }
             }
         }
