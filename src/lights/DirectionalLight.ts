@@ -21,8 +21,10 @@ export class DirectionalLight extends Light {
         );
         const cameraRatation = mat4.getRotation(quat.create(), camera.worldToObjectMatrix);
         const lookDirView = vec3.transformQuat(vec3.create(), lookDirWorld, cameraRatation);
-        console.log("world:" + lookDirWorld);
-        console.log("view:" + lookDirView);
+        const transform = mat4.getTranslation(vec3.create(), light.matrix);
+        const transform2 = mat4.getTranslation(vec3.create(), light.projectCamera.matrix);
+        // console.log(transform);
+        console.log(transform2);
         return lookDirView;
     },
     )
@@ -30,7 +32,6 @@ export class DirectionalLight extends Light {
 
     constructor(gl: WebGLRenderingContext) {
         super(gl);
-        this._projectCamera = new OrthoCamera();
     }
 
     public get typename(): string {

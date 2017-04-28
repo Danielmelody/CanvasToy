@@ -1,0 +1,20 @@
+{
+    "compilerOptions":{
+        "baseUrl": ".",
+        "removeComments": true,
+        "outFile": "index.js",
+        "target": "es5",
+        "allowJs": true,
+        "module": "amd",
+        "lib":["es5", "es2015.promise", "dom"],
+        "sourceMap": true,
+        "experimentalDecorators": true,
+        "baseUrl": "."
+    },
+   "compileOnSave": true,
+   "include" : [
+       "../build/canvas-toy.d.ts",
+       "../build/canvas-toy-amd.js",
+       "**/*.ts"
+   ]
+}

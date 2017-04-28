@@ -6,7 +6,7 @@ float getSpotDirectionShadow(vec4 shadowCoord, sampler2D shadowMap)
         float z = 0.5 * NDCoord.z + 0.5;
         float depth = texture2D(shadowMap, uv).x;
         if (depth < (z - 0.0001)) {
-            return 0.5;
+            return 0.0;
         } else {
             return 1.0;
         }
