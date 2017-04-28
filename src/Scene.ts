@@ -45,7 +45,7 @@ export class Scene {
 
     public programSetUp: boolean = false;
 
-    protected updateEvents: Function[] = [];
+    protected updateEvents: Array<(deltaTime?: number) => void> = [];
 
     public update(dt: number) {
         for (const event of this.updateEvents) {

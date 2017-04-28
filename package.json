@@ -33,10 +33,7 @@
     "karma-firefox-launcher": "latest",
     "karma-jasmine": "latest",
     "karma-requirejs": "^1.1.0",
-    "ts-loader": "^2.0.3",
-    "urequire": "^0.7.0-beta.33",
-    "webgl-debug": "^1.0.2",
-    "webpack": "^2.4.1"
+    "webgl-debug": "^1.0.2"
   },
   "scripts": {
     "test": "cd tests && sh testing.sh",

@@ -68,12 +68,11 @@ export class ForwardProcessor implements IProcessor {
                     Graphics.addTextureContainer(material.program, scene);
 
                     material.dirty = false;
-                }
 
+                }
                 if (material instanceof StandardMaterial && material.castShadow) {
                     this.passShadows(mesh, scene, material, camera);
                 }
-
                 this.gl.useProgram(program.webGlProgram);
                 program.pass(mesh, camera, material);
             }

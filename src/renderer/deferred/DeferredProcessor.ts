@@ -34,7 +34,6 @@ export class DeferredProcessor implements IProcessor {
     public readonly ext: WebGLExtension;
 
     public tileProgram: Program;
-
     private tileLightIndexMap: DataTexture<Uint8Array>;
     private tileLightOffsetCountMap: DataTexture<Float32Array>;
     private tileLightCountMap: DataTexture<Uint8Array>;
