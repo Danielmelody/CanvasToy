@@ -7,6 +7,7 @@ import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
+import { Renderer} from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
 import { Light } from "./Light";
 import { ShadowType } from "./ShadowType";
@@ -25,8 +26,8 @@ export class DirectionalLight extends Light {
     })
     protected _direction: vec3 = vec3.fromValues(0, 0, -1);
 
-    constructor(gl: WebGLRenderingContext) {
-        super(gl);
+    constructor(renderer: Renderer) {
+        super(renderer);
     }
 
     public get typename(): string {
@@ -58,7 +59,6 @@ export class DirectionalLight extends Light {
         this._projectCamera = new OrthoCamera()
             .setParent(this)
             .setLocalPosition(vec3.create())
-            .adaptTargetRadio({ width: 10, height: 10 })
-            .setFar(100);
+            .adaptTargetRadio({ width: 10, height: 10 });
     }
 }

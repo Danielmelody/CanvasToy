@@ -27,21 +27,21 @@ const sphere = new CanvasToy.Mesh(
     [objectMaterial])
     .setPosition(vec3.fromValues(2, 0, -5)).setScaling(vec3.fromValues(0.5, 0.5, 0.5));
 scene.addObject(ground, back, box, sphere, camera);
-const directLight = new CanvasToy.DirectionalLight(renderer.gl)
-    .setPosition(vec3.fromValues(10, 5, 0))
-    .setDirection(vec3.fromValues(-1, -1, 0));
-const pointLight = new CanvasToy.PointLight(renderer.gl)
-    .setPosition(vec3.fromValues(0, 0, -3)).setIdensity(3).setRadius(8);
-const spotLight = new CanvasToy.SpotLight(renderer.gl)
+const directLight = new CanvasToy.DirectionalLight(renderer)
+    // .setPosition(vec3.fromValues(10, 5, 0))
+    .rotateX(-0.3)
+    .rotateY(1);
+    // const pointLight = new CanvasToy.PointLight(renderer)
+    // .setPosition(vec3.fromValues(0, 0, -3)).setIdensity(3).setRadius(8);
+const spotLight = new CanvasToy.SpotLight(renderer)
     .setIdensity(600000)
     .setSpotDirection(vec3.fromValues(10, 0, 0))
     .setConeAngle(Math.PI / 4);
-scene.addLight(spotLight, directLight);
+scene.addLight(directLight, spotLight);
 let time = 0;
 scene.addOnUpdateListener((delta) => {
     time += delta;
     spotLight.rotateY(0.02 * Math.cos(time / 600));
-    // directLight.translate(vec3.fromValues(0.01, 0, 0));
     box.translate(vec3.fromValues(0, 0.02 * Math.sin(time / 600), 0));
     sphere.translate(vec3.fromValues(0, -0.02 * Math.sin(time / 600), 0));
 });

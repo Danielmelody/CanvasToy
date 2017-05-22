@@ -10,6 +10,7 @@ export class ShaderBuilder {
         ShaderSource.calculators__linearlize_depth_glsl,
         ShaderSource.calculators__blinn_phong_glsl,
         ShaderSource.calculators__types_glsl,
+        ShaderSource.calculators__unpackFloat1x32_glsl,
         ShaderSource.calculators__shadow_factor_glsl,
         ShaderSource.debug__checkBox_glsl,
     ];

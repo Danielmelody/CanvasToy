@@ -30,12 +30,13 @@ export { DataTexture } from "./textures/DataTexture";
 export { Material } from "./materials/Material";
 export { StandardMaterial } from "./materials/StandardMaterial";
 export { SkyMaterial } from "./materials/SkyMaterial";
-export { DepthMaterial } from "./materials/DepthMaterial";
+export { DepthPackMaterial } from "./materials/ESM/DepthPackMaterial";
 
 export { Light } from "./lights/Light";
 export { PointLight } from "./lights/PointLight";
 export { SpotLight } from "./lights/SpotLight";
 export { DirectionalLight } from "./lights/DirectionalLight";
+export { ShadowType } from "./lights/ShadowType";
 
 export { OBJLoader } from "./loader/obj_mtl/OBJLoader";
 

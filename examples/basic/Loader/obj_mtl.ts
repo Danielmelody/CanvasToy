@@ -5,7 +5,7 @@ import { createCanvas, createSkyBox, onMouseOnStart } from "global";
 const renderer = new CanvasToy.Renderer(createCanvas());
 const scene = new CanvasToy.Scene();
 const camera = new CanvasToy.PerspectiveCamera();
-const light = new CanvasToy.DirectionalLight(renderer.gl).setDirection(vec3.fromValues(-1, -1, -1)).setIdensity(3);
+const light = new CanvasToy.DirectionalLight(renderer).setDirection(vec3.fromValues(-1, -1, -1)).setIdensity(3);
 scene.addLight(light);
 
 const skyTexture = new CanvasToy.CubeTexture(

@@ -14,7 +14,7 @@ export abstract class Camera extends Object3d {
     protected _near: number = 0.1;
 
     @uniform("cameraFar", DataType.float)
-    protected _far: number = 1000;
+    protected _far: number = 500;
 
     constructor() {
         super();

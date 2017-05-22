@@ -6,6 +6,8 @@ import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
 import { AttachmentType, FrameBuffer } from "../renderer/FrameBuffer";
+import { WebGLExtension } from "../renderer/IExtension";
+import { Renderer} from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
 import { ShadowType } from "./ShadowType";
 
@@ -29,10 +31,13 @@ export abstract class Light extends Object3d {
 
     protected gl: WebGLRenderingContext;
 
-    constructor(gl: WebGLRenderingContext) {
+    protected ext: WebGLExtension;
+
+    constructor(renderer: Renderer) {
         super();
-        this.gl = gl;
-        this.setShadowType(this.shadowType);
+        this.gl = renderer.gl;
+        this.ext = renderer.ext;
+        this.configShadowFrameBuffer();
         this.setUpProjectionCamera();
     }
 
@@ -50,15 +55,6 @@ export abstract class Light extends Object3d {
 
     public setShadowType(shadowType: ShadowType) {
         this._shadowType = shadowType;
-        switch (shadowType) {
-            case ShadowType.Hard:
-                this.configShadowFrameBuffer();
-                break;
-            case ShadowType.Soft:
-                this.configShadowFrameBuffer();
-                break;
-            default: break;
-        }
         return this;
     }
 
@@ -95,11 +91,9 @@ export abstract class Light extends Object3d {
     protected configShadowFrameBuffer() {
         if (!this._shadowFrameBuffer) {
             this._shadowFrameBuffer = new FrameBuffer(this.gl).setWidth(1024).setHeight(1024);
-            this._shadowFrameBuffer.attachments.color.disable();
-            this._shadowFrameBuffer.attachments.depth.setType(this.gl, AttachmentType.Texture);
-            this._shadowMap = this._shadowFrameBuffer.attachments.depth.targetTexture
-                .setType(this.gl.UNSIGNED_SHORT)
-                .setFormat(this.gl.DEPTH_COMPONENT)
+            this._shadowMap = this._shadowFrameBuffer.attachments.color.targetTexture
+                .setType(this.gl.UNSIGNED_BYTE)
+                .setFormat(this.gl.RGBA)
                 .setMinFilter(this.gl.LINEAR)
                 .setMagFilter(this.gl.LINEAR)
                 .setWrapS(this.gl.REPEAT)

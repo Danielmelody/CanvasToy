@@ -3,11 +3,11 @@ import { Camera } from "./Camera";
 
 export class OrthoCamera extends Camera {
 
-    protected _left: number = -32;
-    protected _right: number = 32;
-    protected _bottom: number = -32;
-    protected _top: number = 32;
-    protected _baseSize: number = 32;
+    protected _left: number = -8;
+    protected _right: number = 8;
+    protected _bottom: number = -8;
+    protected _top: number = 8;
+    protected _baseSize: number = 8;
 
     constructor(parameters: {
         left?: number,
@@ -81,10 +81,10 @@ export class OrthoCamera extends Camera {
 
     public adaptTargetRadio(target: { width: number, height: number }) {
         const radio = target.height / target.width;
-        this._left = -this._baseSize / 2;
-        this._right = this._baseSize / 2;
-        this._top = radio * this._baseSize / 2;
-        this._bottom = -radio * this._baseSize / 2;
+        this._left = -this._baseSize;
+        this._right = this._baseSize;
+        this._top = radio * this._baseSize;
+        this._bottom = -radio * this._baseSize;
         this.compuseProjectionMatrix();
         return this;
     }
