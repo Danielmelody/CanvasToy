@@ -170,8 +170,8 @@ export class FrameBuffer {
                 gl.renderbufferStorage(
                     gl.RENDERBUFFER,
                     attachment.innerFormatForBuffer,
-                    gl.canvas.width,
-                    gl.canvas.height,
+                    this.width,
+                    this.height,
                 );
                 gl.framebufferRenderbuffer(
                     gl.FRAMEBUFFER,

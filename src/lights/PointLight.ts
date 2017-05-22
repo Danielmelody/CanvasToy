@@ -6,6 +6,7 @@ import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
+import { Renderer} from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
 import { Light } from "./Light";
 import { ShadowType } from "./ShadowType";
@@ -31,9 +32,9 @@ export class PointLight extends Light {
     @uniform("constantAtten", DataType.float)
     protected _constantAttenuation: number = 1;
 
-    constructor(gl: WebGLRenderingContext) {
-        super(gl);
-        this.volume = new SphereGeometry(gl).setRadius(this._radius).build();
+    constructor(renderer: Renderer) {
+        super(renderer);
+        this.volume = new SphereGeometry(renderer.gl).setRadius(this._radius).build();
 
         // TODO: remove temporary diasable shadow of point light;
         this._shadowType = ShadowType.None;

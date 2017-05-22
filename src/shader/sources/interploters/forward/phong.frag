@@ -121,4 +121,10 @@ void main () {
     color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);
 #endif
     gl_FragColor *= vec4(color, 1.0);
+    // #ifdef USE_SHADOW
+    // #if (DIR_LIGHT_NUM > 0)
+    // vec2 uv = gl_FragCoord.xy / 640.0;
+    // gl_FragColor = vec4(vec3(unpackFloat1x32(texture2D(directionShadowMaps[0], uv))), 1.0);
+    // #endif
+    // #endif
 }

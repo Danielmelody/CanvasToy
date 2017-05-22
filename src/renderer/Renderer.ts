@@ -56,6 +56,7 @@ export class Renderer {
             depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
             draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
             texture_float: this.gl.getExtension("OES_texture_float"),
+            texture_half_float: this.gl.getExtension("OES_texture_half_float"),
             texture_float_linear: this.gl.getExtension("OES_texture_float_linear"),
         };
         this.initMatrix();
@@ -238,7 +239,9 @@ export class Renderer {
                 scene.programSetUp = true;
                 this.renderQueue.push((deltaTime: number) => {
                     scene.update(deltaTime);
-                    shadowPreProcess.process(scene, camera, materials);
+                    if (!this.isDeferred) {
+                        shadowPreProcess.process(scene, camera, materials);
+                    }
                     processor.process(scene, camera, materials);
                 });
             })

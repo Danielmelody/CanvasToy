@@ -1,6 +1,7 @@
 export interface WebGLExtension {
-    depth_texture: WEBGL_depth_texture;
+    depth_texture: WebGLDepthTexture;
     draw_buffer: WebGLDrawBuffers;
-    texture_float: OES_texture_float;
-    texture_float_linear: OES_texture_float_linear;
+    texture_float: OESTextureFloat;
+    texture_float_linear: OESTextureFloatLinear;
+    texture_half_float: OESTextureHalfFloat;
 }

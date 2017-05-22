@@ -2,7 +2,7 @@ import { mat4 } from "gl-matrix";
 import { Camera } from "../../cameras/Camera";
 import { Light } from "../../lights/Light";
 import { ShadowType } from "../../lights/ShadowType";
-import { DepthMaterial } from "../../materials/DepthMaterial";
+import { DepthPackMaterial } from "../../materials/ESM/DepthPackMaterial";
 import { Material } from "../../materials/Material";
 import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Mesh } from "../../Mesh";

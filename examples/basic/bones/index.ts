@@ -33,15 +33,19 @@ for (let i = 0; i < 4; ++i) {
 
 meshes[0].translate(vec3.fromValues(0, -2, -10));
 
+camera.rotateX(-0.2);
+
 scene.addOnUpdateListener(() => {
     meshes[0].rotateY(-0.005);
     meshes[1].rotateY(0.01);
     meshes[2].rotateX(0.05);
+    // camera.rotateY(0.01);
 });
 
 scene.addObject(meshes[0], camera);
-camera.rotateX(-0.2);
-const light = new CanvasToy.DirectionalLight(renderer.gl).setDirection(vec3.fromValues(-1, 0, -1));
+const light = new CanvasToy.DirectionalLight(renderer)
+    .rotateY(0.5)
+    .setPosition(vec3.fromValues(10, 5, 0));
 scene.addLight(light);
 renderer.render(scene, camera);
 renderer.stop();

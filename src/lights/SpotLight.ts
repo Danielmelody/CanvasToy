@@ -7,6 +7,7 @@ import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
+import { Renderer} from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
 import { PointLight } from "./PointLight";
 import { ShadowType } from "./ShadowType";
@@ -27,8 +28,8 @@ export class SpotLight extends PointLight {
 
     protected _coneAngle: number;
 
-    constructor(gl: WebGLRenderingContext) {
-        super(gl);
+    constructor(renderer: Renderer) {
+        super(renderer);
         this.setConeAngle(Math.PI / 4);
         this.setRadius(100);
         this._shadowType = ShadowType.Hard;
@@ -50,7 +51,7 @@ export class SpotLight extends PointLight {
 
     public setRadius(radius: number) {
         super.setRadius(radius);
-        this._projectCamera.setFar(radius);
+        // this._projectCamera.setFar(radius);
         return this;
     }
 

@@ -27,7 +27,7 @@ teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(() => {
         teapot.translate(vec3.fromValues((i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40));
         let time = 0;
         const spin = 0.03 * (Math.random() - 0.5);
-        const light = new CanvasToy.PointLight(renderer.gl)
+        const light = new CanvasToy.PointLight(renderer)
             .setPosition(vec3.fromValues(Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150))
             .setIdensity(0.5)
             .setRadius(50);
