@@ -3,11 +3,11 @@ import { Camera } from "./Camera";
 
 export class OrthoCamera extends Camera {
 
-    protected _left: number = -8;
-    protected _right: number = 8;
-    protected _bottom: number = -8;
-    protected _top: number = 8;
-    protected _baseSize: number = 8;
+    protected _left: number = -20;
+    protected _right: number = 20;
+    protected _bottom: number = -20;
+    protected _top: number = 20;
+    protected _baseSize: number = 20;
 
     constructor(parameters: {
         left?: number,

@@ -1,4 +1,4 @@
-import * as CanvasToy from "CanvasToy";
+import * as CanvasToy from 'CanvasToy';
 import { vec3 } from "gl-matrix";
 import { createCanvas, onMouseOnStart } from "global";
 
@@ -44,3 +44,5 @@ teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(() => {
     renderer.render(scene, camera);
     return Promise.resolve(teapotProto);
 }));
+renderer.stop();
+onMouseOnStart(renderer);

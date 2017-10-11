@@ -16,6 +16,7 @@ const meshes: CanvasToy.Object3d[] = [];
 for (let i = 0; i < 4; ++i) {
     const mesh = new CanvasToy.Mesh(
         new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(20).setHeightSegments(20).build(),
+        // new CanvasToy.CubeGeometry(renderer.gl),
         [material],
     );
     if (i > 0) {
@@ -35,17 +36,21 @@ meshes[0].translate(vec3.fromValues(0, -2, -10));
 
 camera.rotateX(-0.2);
 
-scene.addOnUpdateListener(() => {
-    meshes[0].rotateY(-0.005);
+const light = new CanvasToy.DirectionalLight(renderer)
+    .rotateY(Math.PI / 3)
+    .setPosition(vec3.fromValues(10, -2, -10));
+let t = 0;
+
+scene.addOnUpdateListener((dt) => {
+    // meshes[0].rotateZ(-0.005);
+    meshes[0].rotateY(-0.01);
     meshes[1].rotateY(0.01);
     meshes[2].rotateX(0.05);
-    // camera.rotateY(0.01);
+    t += dt;
+    // light.rotateZ(dt / 1000.0);
 });
 
 scene.addObject(meshes[0], camera);
-const light = new CanvasToy.DirectionalLight(renderer)
-    .rotateY(0.5)
-    .setPosition(vec3.fromValues(10, 5, 0));
 scene.addLight(light);
 renderer.render(scene, camera);
 renderer.stop();

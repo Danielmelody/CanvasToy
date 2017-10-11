@@ -2,7 +2,7 @@ import { mat4 } from "gl-matrix";
 import { Camera } from "../../cameras/Camera";
 import { Light } from "../../lights/Light";
 import { ShadowType } from "../../lights/ShadowType";
-import { DepthPackMaterial } from "../../materials/ESM/DepthPackMaterial";
+import { LinearDepthPackMaterial } from "../../materials/ESM/DepthPackMaterial";
 import { Material } from "../../materials/Material";
 import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Mesh } from "../../Mesh";
@@ -42,7 +42,7 @@ export class ForwardProcessor implements IProcessor {
         if (object instanceof Mesh) {
             const mesh = object as Mesh;
             for (const material of mesh.materials) {
-                const program = material.program;
+                const program = material.shader;
                 if (program.enableDepthTest) {
                     this.gl.enable(this.gl.DEPTH_TEST);
                 } else {
@@ -56,22 +56,22 @@ export class ForwardProcessor implements IProcessor {
                 if (material.dirty) {
                     program.resetMaterialDefines(material);
                     program.make(mesh.scene);
-                    Graphics.addUniformContainer(material.program, mesh);
-                    Graphics.addUniformContainer(material.program, material);
-                    Graphics.addUniformContainer(material.program, camera);
-                    Graphics.addUniformContainer(material.program, scene);
+                    Graphics.addUniformContainer(material.shader, mesh);
+                    Graphics.addUniformContainer(material.shader, material);
+                    Graphics.addUniformContainer(material.shader, camera);
+                    Graphics.addUniformContainer(material.shader, scene);
                     if (material instanceof StandardMaterial) {
                         this.setupLights(mesh.scene, material, mesh, camera);
                     }
 
-                    Graphics.addTextureContainer(material.program, material);
-                    Graphics.addTextureContainer(material.program, scene);
+                    Graphics.addTextureContainer(material.shader, material);
+                    Graphics.addTextureContainer(material.shader, scene);
 
                     material.dirty = false;
 
                 }
                 if (material instanceof StandardMaterial && material.castShadow) {
-                    this.passShadows(mesh, scene, material, camera);
+                    this.passShadowInfo(mesh, scene, material, camera);
                 }
                 this.gl.useProgram(program.webGlProgram);
                 program.pass(mesh, camera, material);
@@ -96,49 +96,87 @@ export class ForwardProcessor implements IProcessor {
 
     private setupLights(scene: Scene, material: StandardMaterial, mesh: Mesh, camera: Camera) {
         for (const index in scene.dirctionLights) {
-            this.setupLight(scene.dirctionLights[index], camera, material.program, index, "directLights");
+            this.setupLight(scene.dirctionLights[index], camera, material.shader, index, "directLights");
         }
         for (const index in scene.pointLights) {
-            this.setupLight(scene.pointLights[index], camera, material.program, index, "pointLights");
+            this.setupLight(scene.pointLights[index], camera, material.shader, index, "pointLights");
         }
         for (const index in scene.spotLights) {
-            this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
+            this.setupLight(scene.spotLights[index], camera, material.shader, index, "spotLights");
         }
     }
 
-    private passShadows(mesh: Mesh, scene: Scene, material: StandardMaterial, camera: Camera) {
-        const handleShadow = (lights: Light[], shadowMatrices: Float32Array, shadowMaps: Texture[]) => {
-            let offset = 0;
-            lights.forEach((light) => {
-                if (light.shadowType === ShadowType.None) {
-                    return;
-                }
-                shadowMaps.push(light.shadowMap);
-                shadowMatrices.set(
-                    mat4.mul(
-                        mat4.create(),
-                        light.projectCamera.projectionMatrix,
-                        mat4.mul(
-                            mat4.create(),
-                            light.projectCamera.worldToObjectMatrix,
-                            mesh.matrix,
-                        ),
-                    ),
-                    offset,
-                );
-                offset += 16;
-            });
-        };
-        scene.directionShadowMaps = [];
-        scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
-        handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
+    private passShadowInfo(mesh: Mesh, scene: Scene, material: StandardMaterial, camera: Camera) {
+        scene.directShadowMaps = [];
+        scene.directShadowMV = new Float32Array(scene.dirctionLights.length * 16);
+        scene.directShadowP = new Float32Array(scene.dirctionLights.length * 16);
+        scene.directShadowSize = new Float32Array(scene.dirctionLights.length);
+        this.passSpecificShadowArray(
+            mesh,
+            scene.dirctionLights,
+            scene.directShadowMV,
+            scene.directShadowP,
+            scene.directShadowMaps,
+            scene.directShadowSize,
+        );
 
         scene.pointShadowMaps = [];
-        scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
-        handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
+        scene.pointShadowMV = new Float32Array(scene.pointLights.length * 16);
+        scene.pointShadowP = new Float32Array(scene.pointLights.length * 16);
+        scene.pointShadowSize = new Float32Array(scene.pointLights.length);
+        this.passSpecificShadowArray(
+            mesh,
+            scene.pointLights,
+            scene.pointShadowMV,
+            scene.pointShadowP,
+            scene.pointShadowMaps,
+            scene.pointShadowSize,
+        );
 
         scene.spotShadowMaps = [];
-        scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
-        handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
+        scene.spotShadowMV = new Float32Array(scene.spotLights.length * 16);
+        scene.spotShadowP = new Float32Array(scene.spotLights.length * 16);
+        scene.spotShadowSize = new Float32Array(scene.spotLights.length);
+        this.passSpecificShadowArray(
+            mesh,
+            scene.spotLights,
+            scene.spotShadowMV,
+            scene.spotShadowP,
+            scene.spotShadowMaps,
+            scene.spotShadowSize,
+        );
+    }
+
+    private passSpecificShadowArray(
+        mesh: Mesh,
+        lights: Light[],
+        shadowMVArray:
+            Float32Array,
+        shadowPArray: Float32Array,
+        shadowMaps: Texture[],
+        shadowSizeArray: Float32Array,
+    ) {
+
+        let offset = 0;
+        lights.forEach((light) => {
+            if (light.shadowType === ShadowType.None) {
+                return;
+            }
+            shadowMaps.push(light.shadowMap);
+            shadowMVArray.set(
+                mat4.mul(
+                    mat4.create(),
+                    light.worldToObjectMatrix,
+                    mesh.matrix,
+                ),
+                offset,
+            );
+            shadowPArray.set(
+                light.projectionMatrix,
+                offset,
+            );
+            shadowSizeArray[offset / 16] = light.shadowFrameBuffer.width;
+            offset += 16;
+        });
     }
 }

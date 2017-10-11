@@ -7,7 +7,7 @@ import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
-import { Renderer} from "../renderer/Renderer";
+import { Renderer } from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
 import { PointLight } from "./PointLight";
 import { ShadowType } from "./ShadowType";
@@ -30,9 +30,9 @@ export class SpotLight extends PointLight {
 
     constructor(renderer: Renderer) {
         super(renderer);
-        this.setConeAngle(Math.PI / 4);
+        this.setConeAngle(Math.PI / 8);
         this.setRadius(100);
-        this._shadowType = ShadowType.Hard;
+        this._shadowType = ShadowType.Soft;
     }
 
     public get typename(): string {
@@ -82,8 +82,8 @@ export class SpotLight extends PointLight {
     protected setUpProjectionCamera() {
         this._projectCamera = new PerspectiveCamera()
             .setParent(this)
-            .setLocalPosition(vec3.fromValues(0, 0, 0))
-            .adaptTargetRadio({ width: 1024, height: 1024 });
+            .setLocalPosition(vec3.create())
+            .adaptTargetRadio({ width: 1, height: 1 });
     }
 
 }

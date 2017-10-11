@@ -11,5 +11,5 @@ export let colors = {
 export abstract class Material {
     public dirty = true;
     public defines: string[] = [];
-    public program: Program;
+    public shader: Program;
 }

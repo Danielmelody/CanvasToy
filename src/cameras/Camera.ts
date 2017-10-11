@@ -63,16 +63,16 @@ export abstract class Camera extends Object3d {
 
     public setNear(near: number) {
         if (near !== this._near) {
-            this.compuseProjectionMatrix();
             this._near = near;
+            this.compuseProjectionMatrix();
         }
         return this;
     }
 
     public setFar(far: number) {
         if (far !== this._far) {
-            this.compuseProjectionMatrix();
             this._far = far;
+            this.compuseProjectionMatrix();
         }
         return this;
     }

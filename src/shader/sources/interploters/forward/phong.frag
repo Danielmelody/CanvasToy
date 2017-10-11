@@ -2,8 +2,9 @@ uniform vec3 ambient;
 uniform vec3 materialSpec;
 uniform float materialSpecExp;
 uniform vec3 materialDiff;
+
 varying vec2 vMainUV;
-varying vec4 screenPos;
+varying vec4 clipPos;
 
 #ifdef OPEN_LIGHT
 varying vec3 vNormal;
@@ -34,23 +35,30 @@ uniform SpotLight spotLights[SPOT_LIGHT_NUM];
 #ifdef USE_SHADOW
 
     #if (DIR_LIGHT_NUM > 0)
-    uniform sampler2D directionShadowMaps[DIR_LIGHT_NUM];
+    uniform sampler2D directShadowMaps[DIR_LIGHT_NUM];
+    uniform float directShadowSize[DIR_LIGHT_NUM];
     varying vec4 directShadowCoord[DIR_LIGHT_NUM];
+    varying float directLightDepth[DIR_LIGHT_NUM];
     #endif
 
     #if (POINT_LIGHT_NUM > 0)
     uniform sampler2D pointShadowMaps[POINT_LIGHT_NUM];
+    uniform float pointShadowSize[POINT_LIGHT_NUM];
     varying vec4 pointShadowCoord[POINT_LIGHT_NUM];
+    varying float pointLightDepth[POINT_LIGHT_NUM];
     #endif
 
     #if (SPOT_LIGHT_NUM > 0)
     uniform sampler2D spotShadowMaps[SPOT_LIGHT_NUM];
+    uniform float spotShadowSize[SPOT_LIGHT_NUM];
     varying vec4 spotShadowCoord[SPOT_LIGHT_NUM];
+    varying float spotLightDepth[SPOT_LIGHT_NUM];
     #endif
 
 #endif
 
 void main () {
+
 #ifdef _MAIN_TEXTURE
     gl_FragColor = texture2D(uMainTexture, vMainUV);
 #else
@@ -76,7 +84,9 @@ void main () {
             vec3(0.0)
         );
         #ifdef USE_SHADOW
-        lighting = lighting * getSpotDirectionShadow(directShadowCoord[index], directionShadowMaps[index]);
+        float lambertian = dot(-directLights[index].direction, normal);
+        float shadowFactor = getSpotDirectionShadow(directShadowCoord[index].xy / directShadowCoord[index].w, directShadowMaps[index], directLightDepth[index], lambertian, 1.0 / directShadowSize[index]);
+        lighting *= shadowFactor;
         #endif
         totalLighting += lighting;
     }
@@ -107,7 +117,8 @@ void main () {
             vec3(0.0)
         );
         #ifdef USE_SHADOW
-        lighting = lighting * getSpotDirectionShadow(spotShadowCoord[index], spotShadowMaps[index]);
+        float lambertian = dot(-spotLights[index].spotDir, normal);
+        lighting = lighting * getSpotDirectionShadow(spotShadowCoord[index].xy / spotShadowCoord[index].w, spotShadowMaps[index], spotLightDepth[index], lambertian, 1.0 / spotShadowSize[index]);
         #endif
         totalLighting += lighting;
 

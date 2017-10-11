@@ -8,7 +8,6 @@ import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
 import { Texture2D } from "../../textures/Texture2D";
 import { Material } from "../Material";
-
 export class LogBlurMaterial extends Material {
 
     @texture("uOrigin")
@@ -22,15 +21,19 @@ export class LogBlurMaterial extends Material {
 
     constructor(gl: WebGLRenderingContext) {
         super();
-        this.program = new ShaderBuilder()
+        this.shader = new ShaderBuilder()
             .resetShaderLib()
             .addShaderLib(ShaderSource.calculators__packFloat1x32_glsl)
             .addShaderLib(ShaderSource.calculators__unpackFloat1x32_glsl)
             .setShadingFrag(ShaderSource.interploters__forward__esm__blur_frag)
             .setShadingVert(ShaderSource.interploters__forward__esm__blur_vert)
             .setPass({
+                uniforms: {
+                    normalMatrix: defaultProgramPass.uniforms.normalViewMatrix,
+                },
                 attributes: {
                     position: defaultProgramPass.attributes.position,
+                    normal: defaultProgramPass.attributes.aNormal,
                 },
             })
             .build(gl);
