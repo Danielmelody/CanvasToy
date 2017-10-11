@@ -7,7 +7,7 @@ import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
-import { Renderer} from "../renderer/Renderer";
+import { Renderer } from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
 import { Light } from "./Light";
 import { ShadowType } from "./ShadowType";
@@ -16,9 +16,9 @@ export class DirectionalLight extends Light {
 
     @uniform("direction", DataType.vec3, (light: DirectionalLight, camera: Camera) => {
         const lookDirWorld = vec3.fromValues(
-            -light.projectCamera.worldToObjectMatrix[2],
-            -light.projectCamera.worldToObjectMatrix[6],
-            -light.projectCamera.worldToObjectMatrix[10],
+            -light._projectCamera.worldToObjectMatrix[2],
+            -light._projectCamera.worldToObjectMatrix[6],
+            -light._projectCamera.worldToObjectMatrix[10],
         );
         const cameraRatation = mat4.getRotation(quat.create(), camera.worldToObjectMatrix);
         const lookDirView = vec3.transformQuat(vec3.create(), lookDirWorld, cameraRatation);
@@ -59,6 +59,6 @@ export class DirectionalLight extends Light {
         this._projectCamera = new OrthoCamera()
             .setParent(this)
             .setLocalPosition(vec3.create())
-            .adaptTargetRadio({ width: 10, height: 10 });
+            .adaptTargetRadio({ width: 1, height: 1 });
     }
 }

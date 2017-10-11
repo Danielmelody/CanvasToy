@@ -219,11 +219,11 @@ export class Program implements IProgramPass {
         for (const textureArrayDiscriptor of this.textureArrays) {
             const textureArray = textureArrayDiscriptor.arrayGetter(mesh, camera, materiel);
             const indices = [];
-            for (const index in textureArray) {
-                const texture = textureArray[index];
+            for (const texture of textureArray) {
                 this.gl.activeTexture(this.gl.TEXTURE0 + unit);
                 this.gl.bindTexture(texture.target, texture.glTexture);
-                indices.push(unit++);
+                indices.push(unit);
+                unit++;
             }
             if (indices.length > 0) {
                 this.gl.uniform1iv(textureArrayDiscriptor.location, indices);
@@ -275,16 +275,16 @@ export class Program implements IProgramPass {
     }
 
     public addTextureArray(samplerArray: string, arrayGetter: () => Texture[]) {
-        const location = this.gl.getUniformLocation(this.webGlProgram, samplerArray);
+        this.gl.useProgram(this.webGlProgram);
         this.textureArrays.push({
             samplerArray,
             arrayGetter,
-            location,
+            location: this.gl.getUniformLocation(this.webGlProgram, samplerArray),
         });
     }
 
     public addTexture(sampler: string, getter: (mesh, camera, material) => Texture) {
-        const unit = this.textures.length;
+        this.gl.useProgram(this.webGlProgram);
         this.textures.push({ sampler, getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
     }
 
@@ -467,6 +467,18 @@ export const defaultProgramPass = {
                     camera.worldToObjectMatrix,
                     mesh.matrix,
                 );
+            },
+        },
+        cameraFar: {
+            type: DataType.float,
+            updator: (mesh: Mesh, camera: Camera) => {
+                return camera.far;
+            },
+        },
+        cameraNear: {
+            type: DataType.float,
+            updator: (mesh: Mesh, camera: Camera) => {
+                return camera.near;
             },
         },
         normalViewMatrix: {

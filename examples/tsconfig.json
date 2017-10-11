@@ -8,8 +8,7 @@
         "module": "amd",
         "lib":["es5", "es2015.promise", "dom"],
         "sourceMap": true,
-        "experimentalDecorators": true,
-        "baseUrl": "."
+        "experimentalDecorators": true
     },
    "compileOnSave": true,
    "include" : [

@@ -8,17 +8,27 @@ import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
 import { Material } from "../Material";
 
-export class DepthPackMaterial extends Material {
+export class LinearDepthPackMaterial extends Material {
     constructor(gl: WebGLRenderingContext) {
         super();
-        this.program = new ShaderBuilder()
+        this.shader = new ShaderBuilder()
             .resetShaderLib()
+            .addShaderLib(ShaderSource.calculators__linearlize_depth_glsl)
             .addShaderLib(ShaderSource.calculators__packFloat1x32_glsl)
             .setShadingFrag(ShaderSource.interploters__forward__esm__depth_frag)
             .setShadingVert(ShaderSource.interploters__forward__esm__depth_vert)
             .setPass({
                 uniforms: {
                     modelViewProjectionMatrix: defaultProgramPass.uniforms.modelViewProjectionMatrix,
+                    modelViewMatrix: defaultProgramPass.uniforms.modelViewMatrix,
+                    far: {
+                        type: DataType.float,
+                        updator: (mesh: Mesh, camera: Camera) => camera.far,
+                    },
+                    near: {
+                        type: DataType.float,
+                        updator: (mesh: Mesh, camera: Camera) => camera.near,
+                    },
                 },
                 attributes: {
                     position: defaultProgramPass.attributes.position,

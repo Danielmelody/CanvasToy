@@ -70,7 +70,7 @@ export class StandardMaterial extends Material {
 
     constructor(gl: WebGLRenderingContext, paramter: IStandardMaterial = {}) {
         super();
-        this.program = new ShaderBuilder().build(gl);
+        this.shader = new ShaderBuilder().build(gl);
         if (!!paramter) {
             for (const name in paramter) {
                 this[name] = paramter[name];

@@ -8,6 +8,7 @@ import { ForwardProcessor } from "./forward/ForwardProcessor";
 import { FrameBuffer } from "./FrameBuffer";
 import { Graphics } from "./GraphicsUtils";
 import { WebGLExtension } from "./IExtension";
+import { IProcessor } from "./IProcessor";
 import { ShadowPreProcess } from "./ShadowPreProcessor";
 
 export class Renderer {
@@ -229,7 +230,7 @@ export class Renderer {
 
                 const shadowPreProcess = new ShadowPreProcess(this.gl, this.ext);
 
-                let processor;
+                let processor: IProcessor;
                 // TODO: Dynamic processor strategy
                 if (this.isDeferred) {
                     processor = new DeferredProcessor(this.gl, this.ext, scene, camera);

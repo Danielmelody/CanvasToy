@@ -30,7 +30,7 @@ export { DataTexture } from "./textures/DataTexture";
 export { Material } from "./materials/Material";
 export { StandardMaterial } from "./materials/StandardMaterial";
 export { SkyMaterial } from "./materials/SkyMaterial";
-export { DepthPackMaterial } from "./materials/ESM/DepthPackMaterial";
+export { LinearDepthPackMaterial } from "./materials/ESM/DepthPackMaterial";
 
 export { Light } from "./lights/Light";
 export { PointLight } from "./lights/PointLight";

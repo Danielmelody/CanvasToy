@@ -16,7 +16,7 @@ export class SkyMaterial extends Material {
     constructor(gl: WebGLRenderingContext, cubeTexture: CubeTexture) {
         super();
         this.cubeTexture = cubeTexture;
-        this.program = new ShaderBuilder()
+        this.shader = new ShaderBuilder()
             .resetShaderLib()
             .setShadingVert(ShaderSource.interploters__forward__skybox_vert)
             .setShadingFrag(ShaderSource.interploters__forward__skybox_frag)

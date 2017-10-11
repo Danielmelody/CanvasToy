@@ -6,7 +6,7 @@ import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
-import { Renderer} from "../renderer/Renderer";
+import { Renderer } from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
 import { Light } from "./Light";
 import { ShadowType } from "./ShadowType";

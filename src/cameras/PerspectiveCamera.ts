@@ -18,11 +18,11 @@ export class PerspectiveCamera extends Camera {
 
     public compuseProjectionMatrix() {
         mat4.perspective(
-            mat4.create(),
-            this.fovy,
-            this.aspect,
-            this.near,
-            this.far,
+            this._projectionMatrix,
+            this._fovy,
+            this._aspect,
+            this._near,
+            this._far,
         );
     }
 
@@ -36,16 +36,16 @@ export class PerspectiveCamera extends Camera {
 
     public setAspect(aspect: number) {
         if (aspect !== this._aspect) {
-            this.compuseProjectionMatrix();
             this._aspect = aspect;
+            this.compuseProjectionMatrix();
         }
         return this;
     }
 
     public setFovy(fovy: number) {
         if (fovy !== this._fovy) {
-            this.compuseProjectionMatrix();
             this._fovy = fovy;
+            this.compuseProjectionMatrix();
         }
         return this;
     }
