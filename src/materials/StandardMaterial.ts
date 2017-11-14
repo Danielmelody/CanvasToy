@@ -1,9 +1,10 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
-import { linkdef, readyRequire, texture, uniform } from "../Decorators";
+import { define, ifdefine, readyRequire, texture, uniform } from "../Decorators";
 import { Mesh } from "../Mesh";
-import { Program } from "../shader/Program";
+import { Graphics } from "../renderer/GraphicsUtils";
+import { Program, shaderPassLib } from "../shader/Program";
 import { ShaderBuilder } from "../shader/ShaderBuilder";
 import { ShaderSource } from "../shader/shaders";
 import { CubeTexture } from "../textures/CubeTexture";
@@ -20,26 +21,26 @@ export interface IStandardMaterial {
 
 export class StandardMaterial extends Material {
 
-    @linkdef("_DEBUG")
+    @define("_DEBUG")
     public debug: boolean = false;
 
-    @linkdef("USE_SHADOW")
+    @define("USE_SHADOW", true)
     public castShadow: boolean = true;
 
-    @linkdef("_MAIN_TEXTURE")
+    @define("_MAIN_TEXTURE")
     @texture("uMainTexture")
     public mainTexture: Texture;
 
-    @uniform("ambient", DataType.vec3)
+    @uniform(DataType.vec3, "ambient")
     public ambient: vec3 = vec3.fromValues(0.1, 0.1, 0.1);
 
-    @uniform("materialDiff", DataType.vec3)
+    @uniform(DataType.vec3, "uMaterialDiff")
     public diffuse: vec3 = vec3.fromValues(0.8, 0.8, 0.8);
 
-    @uniform("materialSpec", DataType.vec3)
+    @uniform(DataType.vec3, "uMaterialSpec")
     public specular: vec3 = vec3.fromValues(0.3, 0.3, 0.3);
 
-    @uniform("materialSpecExp", DataType.float)
+    @uniform(DataType.float, "uMaterialSpecExp")
     public specularExponent: number = 64;
 
     // @texture("specularTexture")
@@ -59,22 +60,31 @@ export class StandardMaterial extends Material {
     @readyRequire
     public stencilMap: Texture;
 
-    @uniform("reflectivity", DataType.float)
-    public reflectivity: number = 0.5;
+    @uniform(DataType.float, "reflectivity")
+    public reflectivity: number = 1;
 
-    @linkdef("_ENVIRONMENT_MAP")
+    @define("_ENVIRONMENT_MAP")
     @texture("uCubeTexture")
     public reflectionMap: CubeTexture;
 
-    public geometryProgram: Program;
+    public geometryShader: Program;
 
     constructor(gl: WebGLRenderingContext, paramter: IStandardMaterial = {}) {
-        super();
-        this.shader = new ShaderBuilder().build(gl);
+        super(gl);
         if (!!paramter) {
             for (const name in paramter) {
                 this[name] = paramter[name];
             }
         }
+    }
+
+    protected initShader(gl: WebGLRenderingContext) {
+        return new ShaderBuilder()
+            .setExtraRenderParamHolder("mvp", {
+                uniforms: {
+                    modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
+                },
+            })
+            .build(gl);
     }
 }

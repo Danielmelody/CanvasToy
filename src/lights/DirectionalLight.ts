@@ -14,18 +14,6 @@ import { ShadowType } from "./ShadowType";
 
 export class DirectionalLight extends Light {
 
-    @uniform("direction", DataType.vec3, (light: DirectionalLight, camera: Camera) => {
-        const lookDirWorld = vec3.fromValues(
-            -light._projectCamera.worldToObjectMatrix[2],
-            -light._projectCamera.worldToObjectMatrix[6],
-            -light._projectCamera.worldToObjectMatrix[10],
-        );
-        const cameraRatation = mat4.getRotation(quat.create(), camera.worldToObjectMatrix);
-        const lookDirView = vec3.transformQuat(vec3.create(), lookDirWorld, cameraRatation);
-        return lookDirView;
-    })
-    protected _direction: vec3 = vec3.fromValues(0, 0, -1);
-
     constructor(renderer: Renderer) {
         super(renderer);
     }
@@ -34,9 +22,10 @@ export class DirectionalLight extends Light {
         return "DirectionalLight";
     }
 
+    @uniform(DataType.vec3)
     public get direction(): vec3 {
-        return vec3.transformQuat(vec3.create(), this._direction,
-            mat4.getRotation(quat.create(), this.matrix),
+        return vec3.transformQuat(vec3.create(), vec3.fromValues(0, 0, -1),
+            mat4.getRotation(quat.create(), this._matrix),
         );
     }
 
@@ -50,8 +39,8 @@ export class DirectionalLight extends Light {
     }
 
     public setDirection(_direction: vec3) {
-        const lookPoint = vec3.add(vec3.create(), this.position, _direction);
-        this._projectCamera.lookAt(lookPoint);
+        const lookPoint = vec3.add(vec3.create(), this._position, _direction);
+        this.lookAt(lookPoint);
         return this;
     }
 
@@ -59,6 +48,6 @@ export class DirectionalLight extends Light {
         this._projectCamera = new OrthoCamera()
             .setParent(this)
             .setLocalPosition(vec3.create())
-            .adaptTargetRadio({ width: 1, height: 1 });
+            .setAspectRadio(1);
     }
 }

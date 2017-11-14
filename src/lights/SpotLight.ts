@@ -14,17 +14,10 @@ import { ShadowType } from "./ShadowType";
 
 export class SpotLight extends PointLight {
 
-    @uniform("coneAngleCos", DataType.float)
-    protected _coneAngleCos: number;
-
-    @uniform("spotDir", DataType.vec3, (light: SpotLight, camera: Camera) =>
-        vec3.transformQuat(vec3.create(), light._spotDirection,
-            mat4.getRotation(
-                quat.create(),
-                mat4.multiply(mat4.create(), camera.worldToObjectMatrix, light.matrix),
-            ),
-        ))
-    protected _spotDirection: vec3 = vec3.fromValues(0, 0, -1);
+    @uniform(DataType.float)
+    protected get coneAngleCos(): number {
+        return Math.cos(this._coneAngle);
+    }
 
     protected _coneAngle: number;
 
@@ -39,14 +32,15 @@ export class SpotLight extends PointLight {
         return "SpotLight";
     }
 
-    public get coneAngle() {
-        return this._coneAngle;
+    @uniform(DataType.vec3, "spotDir")
+    public get spotDirection() {
+        return vec3.transformQuat(vec3.create(), vec3.fromValues(0, 0, -1),
+            mat4.getRotation(quat.create(), this._matrix),
+        );
     }
 
-    public get spotDirection() {
-        return vec3.transformQuat(vec3.create(), this._spotDirection,
-            mat4.getRotation(quat.create(), this.matrix),
-        );
+    public get coneAngle() {
+        return this._coneAngle;
     }
 
     public setRadius(radius: number) {
@@ -56,15 +50,15 @@ export class SpotLight extends PointLight {
     }
 
     public setConeAngle(coneAngle: number) {
+        console.assert(coneAngle > 0, "coneAngle should greater than 0!");
         this._coneAngle = coneAngle;
-        this._coneAngleCos = Math.cos(coneAngle);
         (this._projectCamera as PerspectiveCamera).setFovy(coneAngle * 2);
         return this;
     }
 
     public setSpotDirection(spotDirection: vec3) {
         const lookPoint = vec3.add(vec3.create(), this.position, spotDirection);
-        this._projectCamera.lookAt(lookPoint);
+        this.lookAt(lookPoint);
         return this;
     }
 
@@ -83,7 +77,7 @@ export class SpotLight extends PointLight {
         this._projectCamera = new PerspectiveCamera()
             .setParent(this)
             .setLocalPosition(vec3.create())
-            .adaptTargetRadio({ width: 1, height: 1 });
+            .setAspectRadio(1);
     }
 
 }

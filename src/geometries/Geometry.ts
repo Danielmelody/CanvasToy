@@ -1,4 +1,6 @@
 import { DataType } from "../DataTypeEnum";
+import { IDirtyable } from "../Dirtyable";
+import { Graphics } from "../renderer/GraphicsUtils";
 import { Attribute } from "../shader/Program";
 
 export class Faces {
@@ -10,18 +12,15 @@ export class Faces {
     }
 }
 
-export class Geometry {
-
-    public dirty = true;
+export class Geometry implements IDirtyable {
 
     public attributes: {
-        position: Attribute,
-        uv: Attribute,
-        normal: Attribute,
-        flatNormal: Attribute,
+        [index: string]: Attribute;
     };
 
     public faces: Faces;
+
+    protected _dirty = true;
 
     protected gl: WebGLRenderingContext;
 
@@ -29,8 +28,8 @@ export class Geometry {
         this.gl = gl;
         this.attributes = {
             position: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
-            uv: new Attribute(gl, { type: DataType.float, size: 2, data: [] }),
-            normal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
+            aMainUV: new Attribute(gl, { type: DataType.float, size: 2, data: [] }),
+            aNormal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
             flatNormal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
         };
         this.faces = { data: [], buffer: gl.createBuffer() };
@@ -38,6 +37,23 @@ export class Geometry {
 
     public build() {
         // empty here
+        return this;
+    }
+
+    public assertValid() {
+        let maxIndex = 0;
+        for (const index of this.faces.data) {
+            maxIndex = Math.max(maxIndex, index);
+        }
+        for (const attributeName in this.attributes) {
+            console.assert(this.attributes[attributeName].size <= 4
+                && this.attributes[attributeName].size >= 1,
+                attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
+            console.assert((maxIndex + 1) * this.attributes[attributeName].stride <=
+                this.attributes[attributeName].data.length,
+                attributeName + " length error, now:" + this.attributes[attributeName].data.length
+                + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
+        }
         return this;
     }
 
@@ -105,5 +121,12 @@ export class Geometry {
             this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
         }
         return this;
+    }
+
+    public clean(gl: WebGLRenderingContext) {
+        if (this._dirty) {
+            Graphics.copyDataToVertexBuffer(gl, this);
+        }
+        this._dirty = false;
     }
 }

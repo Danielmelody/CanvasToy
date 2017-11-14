@@ -11,8 +11,8 @@ export class Texture2D extends Texture {
         );
     }
 
-    public bindTextureData(gl: WebGLRenderingContext) {
-        super.bindTextureData(gl);
+    public apply(gl: WebGLRenderingContext) {
+        super.apply(gl);
         gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
         return this;
     }

@@ -74,17 +74,11 @@ export class OrthoCamera extends Camera {
         // TODO: de compute ortho camera
     }
 
-    public genOtherMatrixs() {
-        super.genOtherMatrixs();
-        mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
-    }
-
-    public adaptTargetRadio(target: { width: number, height: number }) {
-        const radio = target.height / target.width;
-        this._left = -this._baseSize;
-        this._right = this._baseSize;
-        this._top = radio * this._baseSize;
-        this._bottom = -radio * this._baseSize;
+    public setAspectRadio(radio: number) {
+        this._left = -radio * this._baseSize;
+        this._right = radio * this._baseSize;
+        this._top = this._baseSize;
+        this._bottom = -this._baseSize;
         this.compuseProjectionMatrix();
         return this;
     }

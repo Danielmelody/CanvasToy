@@ -1,7 +1,10 @@
-import { mat4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
+import { IDirtyable } from "../Dirtyable";
 import { Faces } from "../geometries/Geometry";
+import { Geometry } from "../geometries/Geometry";
+import { Light } from "../lights/Light";
 import { Material } from "../materials/Material";
 import { Mesh } from "../Mesh";
 import { Object3d } from "../Object3d";
@@ -14,28 +17,62 @@ export interface IProgramSource {
     fragmentShader: string;
 }
 
-export interface IProgramPass {
-    faces?: (mesh: Mesh) => Faces;
-    uniforms?: any;
-    attributes?: any;
-    textures?: any;
-    prefix?: any;
+export interface IRenderParamHolder {
+    hostObject?: object;
+    defines?: {
+        [index: string]: { defineName: string, useValue: boolean };
+    };
+    defineLinks?: {
+        [index: string]: string;
+    };
+    uniforms?: {
+        [index: string]: IUniform;
+    };
+    uniformArrays?: {
+        [index: string]: IUniformArray;
+    };
+    attributes?: {
+        [index: string]: Attribute;
+    };
+    textures?: {
+        [index: string]: { name?: string, source?: Texture },
+    };
+    textureArrays?: {
+        [index: string]: { name?: string, sources?: Texture[] },
+    };
+    prefix?: {
+        [index: string]: {
+            type: DataType;
+            updator: (renderParam: IBuildinRenderParamMaps) => any;
+        };
+    };
+    structArrays?: {
+        [index: string]: { name?: string };
+    };
 }
 
-export interface IUniform {
-    name?: string;
-    key?: string;
-    type: DataType;
-    updator: (object?: Object3d, camera?: Camera, material?: Material) => any;
+export interface IBuildinRenderParamMaps {
+    mesh: Mesh;
+    camera?: Camera;
+    material?: Material;
+    scene?: Scene;
 }
 
-export interface IUniformArray {
+export interface IRenderParamBase {
     name?: string;
+    updator?: (param: IBuildinRenderParamMaps) => any;
+}
+
+export interface IUniform extends IRenderParamBase {
     type: DataType;
-    updator: (object?: Object3d, camera?: Camera, material?: Material) => any;
+}
+
+export interface IUniformArray extends IRenderParamBase {
+    type: DataType;
 }
 
 export class Attribute {
+    public name?: string;
     public size: number = 3;
     public data: number[] = [];
     public type: number;
@@ -60,56 +97,49 @@ export class Attribute {
     }
 }
 
-export class Program implements IProgramPass {
+export class Program implements IDirtyable {
     public gl: WebGLRenderingContext;
-    public faces: (mesh: Mesh) => Faces;
     public enableDepthTest: boolean = true;
     public enableStencilTest: boolean = true;
-    public uniforms = {};
-    public uniformArrays = {};
-    public attributes = {};
-    public attributeLocations = {};
-    public attribute0: string;
+
+    public dirty: boolean = true;
+
     public webGlProgram: WebGLProgram;
 
-    public viewport: {
+    public extensionStatements: string[] = [];
+
+    private defineCaches: { [index: string]: string } = {};
+    private uniformCaches: { [index: string]: { value: number, location: WebGLUniformLocation } } = {};
+    private uniformArrayCaches: { [index: string]: { value: ArrayBufferView, location: WebGLUniformLocation } } = {};
+    private undesiredUniforms: { [index: string]: undefined } = {};
+    private attributeLocations: { [index: string]: number } = {};
+    private undesiredAttributes: { [index: string]: undefined } = {};
+
+    private defineLinks: { [index: string]: string } = {};
+
+    private extraRenderParamHolders: { [index: string]: IRenderParamHolder };
+
+    private viewport: {
         x: number,
         y: number,
         width: number,
         height: number,
     };
 
-    public textures: Array<{
-        sampler: string,
-        getter: (mesh: Mesh, camera: Camera, material) => Texture,
-        location: WebGLUniformLocation,
-    }> = [];
+    private vertexPrecision: string = "highp";
+    private fragmentPrecision: string = "highp";
 
-    public textureArrays: Array<{
-        samplerArray: string,
-        arrayGetter: (mesh: Mesh, camera: Camera, material) => Texture[],
-        location: WebGLUniformLocation,
-    }> = [];
-
-    public vertexPrecision: string = "highp";
-    public fragmentPrecision: string = "highp";
-
-    public extensionStatements: string[] = [];
-
-    public definesFromMaterial: Array<{ name: string, value: string }> = [];
-    // public definesFromProcesser: string[] = [];
-
-    private passFunctions: IProgramPass;
+    private currentTextureUnit: number = 0;
 
     private source: IProgramSource;
 
     constructor(
         gl: WebGLRenderingContext,
         source: IProgramSource,
-        passFunctions: IProgramPass) {
+        holders: { [index: string]: IRenderParamHolder }) {
         this.gl = gl;
         this.source = source;
-        this.passFunctions = passFunctions;
+        this.extraRenderParamHolders = holders;
         this.viewport = {
             x: 0, y: 0,
             width: gl.canvas.width,
@@ -129,29 +159,27 @@ export class Program implements IProgramPass {
         return this;
     }
 
-    public resetMaterialDefines(materiel: Material) {
-        const _material: any = materiel;
-        for (const subdefines in _material.defines) {
-            const define = _material.defines[subdefines](materiel);
-            if (!!define) {
-                this.definesFromMaterial.push(define);
-            }
+    public setExtraRenderParam(name: string, paramHolder: IRenderParamHolder) {
+        this.extraRenderParamHolders[name] = paramHolder;
+        return this;
+    }
+
+    public setViewPort(viewport: { x: number, y: number, width: number, height: number }) {
+        this.viewport = viewport;
+    }
+
+    public clean() {
+        if (this.dirty) {
+            this.make();
+            this.dirty = false;
         }
     }
 
-    public make(scene: Scene) {
-        const defines = [
-            "#define OPEN_LIGHT",
-            "#define LIGHT_NUM " + scene.lights.length,
-            "#define DIR_LIGHT_NUM " + scene.dirctionLights.length,
-            "#define SPOT_LIGHT_NUM " + scene.spotLights.length,
-            "#define POINT_LIGHT_NUM " + scene.pointLights.length,
-        ];
-        for (const define of this.definesFromMaterial) {
-            let defineLine = `#define ${define.name}`;
-            if (!!define.value) {
-                defineLine += ` ${define.value}`;
-            }
+    public make() {
+        const defines = [];
+        for (const defineName in this.defineCaches) {
+            const defineVal = this.defineCaches[defineName] || "";
+            const defineLine = `#define ${defineName} ${defineVal}`;
             defines.push(defineLine);
             console.log(defineLine);
         }
@@ -163,78 +191,51 @@ export class Program implements IProgramPass {
             this.extensionStatements.join("\n")
             + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
             + this.source.fragmentShader);
-
-        this.gl.useProgram(this.webGlProgram);
-
-        const componets = this.passFunctions;
-        this.faces = (componets.faces === undefined ? this.faces : componets.faces);
-        this.uniforms = {};
-        this.textures = [];
-        if (!!componets.uniforms) {
-            for (const nameInShader in componets.uniforms) {
-                if (componets.uniforms[nameInShader] !== undefined) {
-                    this.addUniform(nameInShader, componets.uniforms[nameInShader]);
-                }
-            }
-        }
-        if (!!componets.textures) {
-            for (const sampler in componets.textures) {
-                const target = componets.textures[sampler];
-                if (target.isArray) {
-                    this.addTextureArray(sampler, componets.textures[sampler]);
-                } else {
-                    this.addTexture(sampler, componets.textures[sampler]);
-                }
-            }
-        }
-        for (const nameInShader in componets.attributes) {
-            this.addAttribute(nameInShader, componets.attributes[nameInShader]);
-        }
+        this.undesiredUniforms = {};
+        this.uniformCaches = {};
+        this.undesiredAttributes = {};
+        this.attributeLocations = {};
         return this;
     }
 
-    public pass(mesh: Mesh, camera: Camera, materiel: Material) {
+    public pass(buildinContainers: IBuildinRenderParamMaps) {
+        this.updateDefines(buildinContainers);
+        this.clean();
+        this.currentTextureUnit = 0;
         this.gl.useProgram(this.webGlProgram);
         this.gl.viewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
-        for (const uniformName in this.uniforms) {
-            if (this.uniforms[uniformName] !== undefined) {
-                this.uniforms[uniformName](mesh, camera, materiel);
-            }
+
+        for (const holderName in buildinContainers) {
+            const holder = Graphics.getRenderParamHost(buildinContainers[holderName]);
+            this.passOneParamsHolder(buildinContainers, holder);
         }
-        for (const uniformArrayName in this.uniformArrays) {
-            if (this.uniformArrays[uniformArrayName] !== undefined) {
-                this.uniformArrays[uniformArrayName](mesh, camera, materiel);
-            }
+
+        for (const holderName in this.extraRenderParamHolders) {
+            const holder = this.extraRenderParamHolders[holderName];
+            this.passOneParamsHolder(buildinContainers, holder);
         }
-        let unit = 0;
-        for (const textureDiscriptor of this.textures) {
-            const texture = textureDiscriptor.getter(mesh, camera, materiel);
-            if (!!texture) {
-                this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                this.gl.bindTexture(texture.target, texture.glTexture);
-                this.gl.uniform1i(this.textures[unit].location, unit);
+
+        const geometry = buildinContainers.mesh.geometry;
+
+        for (const attributeKey in geometry.attributes) {
+            if (attributeKey in this.undesiredAttributes) {
+                continue;
             }
-            unit++;
-        }
-        for (const textureArrayDiscriptor of this.textureArrays) {
-            const textureArray = textureArrayDiscriptor.arrayGetter(mesh, camera, materiel);
-            const indices = [];
-            for (const texture of textureArray) {
-                this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                this.gl.bindTexture(texture.target, texture.glTexture);
-                indices.push(unit);
-                unit++;
+            const attribute = geometry.attributes[attributeKey];
+            let location = this.attributeLocations[attributeKey];
+            if (location === undefined) {
+                location = this.getAttribLocation(attributeKey);
+                if (location === null || location === -1) {
+                    this.undesiredAttributes[attributeKey] = undefined;
+                    continue;
+                }
+                this.attributeLocations[attributeKey] = location;
             }
-            if (indices.length > 0) {
-                this.gl.uniform1iv(textureArrayDiscriptor.location, indices);
-            }
-        }
-        for (const attributeName in this.attributes) {
-            const attribute = this.attributes[attributeName](mesh, camera, materiel);
-            this.gl.enableVertexAttribArray(this.attributeLocations[attributeName]);
+
+            this.gl.enableVertexAttribArray(this.attributeLocations[attributeKey]);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
             this.gl.vertexAttribPointer(
-                this.attributeLocations[attributeName],
+                this.attributeLocations[attributeKey],
                 attribute.size,
                 attribute.type,
                 false,
@@ -242,105 +243,188 @@ export class Program implements IProgramPass {
                 0,
             );
         }
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-        this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
-        for (const attributeName in this.attributes) {
-            const attribute = this.attributes[attributeName](mesh, camera, materiel);
-            this.gl.disableVertexAttribArray(this.attributeLocations[attributeName]);
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
+        this.gl.drawElements(this.gl.TRIANGLES, geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
+        for (const attributeKey in this.attributeLocations) {
+            const attribute = geometry.attributes[attributeKey];
+            this.gl.disableVertexAttribArray(this.attributeLocations[attributeKey]);
         }
         return this;
     }
 
-    public checkState(mesh: Mesh) {
-        let maxIndex = 0;
-        for (const index of this.faces(mesh).data) {
-            maxIndex = Math.max(maxIndex, index);
+    private passOneParamsHolder(
+        buildinContainder: IBuildinRenderParamMaps, holder: IRenderParamHolder, namePrefix: string = "") {
+        if (holder === undefined) {
+            return;
         }
-        for (const attributeName in this.attributes) {
-            console.assert(this.attributes[attributeName](mesh).size <= 4
-                && this.attributes[attributeName](mesh).size >= 1,
-                attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
-            console.assert((maxIndex + 1) * this.attributes[attributeName](mesh).stride <=
-                this.attributes[attributeName](mesh).data.length,
-                attributeName + " length error, now:" + this.attributes[attributeName](mesh).data.length
-                + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName](mesh).stride);
+
+        for (const linkName in holder.defineLinks) {
+            this.defineLinks[namePrefix + linkName] = holder.defineLinks[linkName];
         }
-        return this;
-    }
 
-    public setAttribute0(name: string) {
-        this.attribute0 = name;
-        this.gl.bindAttribLocation(this.webGlProgram, 0, name);
-        return this;
-    }
-
-    public addTextureArray(samplerArray: string, arrayGetter: () => Texture[]) {
-        this.gl.useProgram(this.webGlProgram);
-        this.textureArrays.push({
-            samplerArray,
-            arrayGetter,
-            location: this.gl.getUniformLocation(this.webGlProgram, samplerArray),
-        });
-    }
-
-    public addTexture(sampler: string, getter: (mesh, camera, material) => Texture) {
-        this.gl.useProgram(this.webGlProgram);
-        this.textures.push({ sampler, getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
-    }
-
-    public addUniformArray(arrayNameInShader, uniformArrayDiscriptor: IUniformArray) {
-        this.gl.useProgram(this.webGlProgram);
-        const location = this.getUniformLocation(arrayNameInShader);
-        if (location == null) {
-            return this;
+        for (const uniformKey in holder.uniforms) {
+            const uniformInfo = holder.uniforms[uniformKey];
+            const uniformName = namePrefix + (uniformInfo.name || uniformKey);
+            if (uniformName in this.defineLinks && !(this.defineLinks[uniformName] in this.defineCaches)) {
+                continue;
+            }
+            const val = !!uniformInfo.updator ?
+                uniformInfo.updator(buildinContainder) : holder.hostObject[uniformKey];
+            this.updateUniform(uniformName, uniformInfo.type, val);
         }
-        this.uniformArrays[arrayNameInShader] = (mesh, camera, material) => {
-            this.updateUniformArray(
-                location,
-                uniformArrayDiscriptor.updator(mesh, camera, material), uniformArrayDiscriptor.type,
-            );
-        };
-        return this;
-    }
-
-    public addUniform(nameInShader, uniform: IUniform) {
-        this.gl.useProgram(this.webGlProgram);
-        const location = this.getUniformLocation(nameInShader);
-        if (location == null) {
-            return this;
+        for (const uniformArrayKey in holder.uniformArrays) {
+            const uniformArrayInfo = holder.uniforms[uniformArrayKey];
+            const uniformArrayName = namePrefix + (uniformArrayInfo.name || uniformArrayKey);
+            if (uniformArrayName in this.defineLinks && !(this.defineLinks[uniformArrayName] in this.defineCaches)) {
+                continue;
+            }
+            const val = !!uniformArrayInfo.updator ?
+                uniformArrayInfo.updator(buildinContainder) : holder.hostObject[uniformArrayKey];
+            this.updateUniformArray(uniformArrayName, uniformArrayInfo.type, val);
         }
-        this.uniforms[nameInShader] = (mesh, camera, material) => {
-            this.updateUniform(location, uniform.updator(mesh, camera, material), uniform.type);
-        };
-    }
-
-    public deleteUniform(nameInShader) {
-        this.uniforms[nameInShader] = undefined;
-        return this;
-    }
-
-    public deleteAttribute(nameInShader: string) {
-        this.attributes[nameInShader] = undefined;
-        this.attributeLocations[nameInShader] = undefined;
-        return this;
-    }
-
-    public addAttribute(
-        nameInShader: string,
-        attributeFun: (mesh?: Mesh, camera?: Camera, material?: Material) => Attribute) {
-        const location = this.getAttribLocation(nameInShader);
-        if (location !== null && location !== -1) {
-            this.attributes[nameInShader] = attributeFun;
-            this.attributeLocations[nameInShader] = location;
+        for (const textureKey in holder.textures) {
+            const textureInfo = holder.textures[textureKey];
+            const name = namePrefix + (textureInfo.name || textureKey);
+            if (name in this.defineLinks && !(this.defineLinks[name] in this.defineCaches)) {
+                continue;
+            }
+            const texture: Texture = !!textureInfo.source ? textureInfo.source : holder.hostObject[textureKey];
+            if (!!texture) {
+                this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
+                this.gl.bindTexture(texture.target, texture.glTexture);
+                this.updateUniform(name, DataType.int, this.currentTextureUnit);
+                this.currentTextureUnit++;
+            }
         }
-        return this;
+        for (const textureArrayKey in holder.textureArrays) {
+            const textureArrayInfo = holder.textureArrays[textureArrayKey];
+            const name = namePrefix + (textureArrayInfo.name || textureArrayKey);
+            if (name in this.defineLinks && !(this.defineLinks[name] in this.defineCaches)) {
+                continue;
+            }
+            const textureArray: Texture[] = !!textureArrayInfo.sources ?
+                holder.hostObject[textureArrayKey] : textureArrayInfo.sources;
+            const indices = [];
+            for (const texture of textureArray) {
+                this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
+                this.gl.bindTexture(texture.target, texture.glTexture);
+                indices.push(this.currentTextureUnit);
+                this.currentTextureUnit++;
+            }
+            if (indices.length > 0) {
+                this.updateUniformArray(name, DataType.int, new Uint32Array(indices));
+            }
+        }
+        if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
+            throw new Error("structArray can only be nested of depth 1");
+        }
+        for (const structArrayKey in holder.structArrays) {
+            const structArrayInfo = holder.structArrays[structArrayKey];
+            const arrayName = structArrayInfo.name || structArrayKey;
+            const structArray: any[] = holder.hostObject[structArrayKey];
+            for (const i in structArray) {
+                const struct = structArray[i];
+                const paramHolder = Graphics.getRenderParamHost(struct);
+                if (paramHolder === undefined) {
+                    throw new Error(`
+                    Property ${arrayName} of type ${typeof holder.hostObject}
+                    must be an array of class annotated by @RenderParamContainer`);
+                }
+                this.passOneParamsHolder(
+                    buildinContainder, Graphics.getRenderParamHost(struct), `${arrayName}[${i}].`);
+            }
+        }
     }
 
-    public setViewPort(viewport: { x: number, y: number, width: number, height: number }) {
-        this.viewport = viewport;
+    private updateDefines(buildinContainers: IBuildinRenderParamMaps) {
+        for (const holderName in buildinContainers) {
+            const holder = Graphics.getRenderParamHost(buildinContainers[holderName]);
+            if (!!holder) {
+                for (const defineKey in holder.defines) {
+                    const defineName = holder.defines[defineKey].defineName;
+                    if (!holder.hostObject[defineKey]) {
+                        continue;
+                    }
+                    const val = holder.defines[defineKey].useValue ? holder.hostObject[defineKey] : "";
+                    const cache = this.defineCaches[defineName];
+                    this.defineCaches[defineName] = val;
+                    if (val !== cache) {
+                        this.dirty = true;
+                    }
+                }
+                for (const structArrayKey in holder.structArrays) {
+                    const structArrayInfo = holder.structArrays[structArrayKey];
+                    const arrayName = structArrayInfo.name || structArrayKey;
+                    const structArray: any[] = holder.hostObject[structArrayKey];
+                    const val = structArray.length.toString();
+                    const cache = this.defineCaches[arrayName + "Num"];
+                    if (val !== cache) {
+                        this.dirty = true;
+                    }
+                    this.defineCaches[arrayName + "Num"] = val;
+                }
+            }
+        }
     }
 
-    private updateUniformArray(location, value: Float32Array | Uint32Array, type: DataType) {
+    private updateUniform(name: string, type: DataType, value) {
+        if (value === undefined) { return; }
+        if (name in this.undesiredUniforms) {
+            return;
+        }
+        let cache = this.uniformCaches[name];
+        if (!cache) {
+            cache = { value, location: this.gl.getUniformLocation(this.webGlProgram, name) };
+            if (cache.location === null) {
+                this.undesiredUniforms[name] = undefined;
+                return;
+            }
+            this.uniformCaches[name] = cache;
+        }
+        const location = cache.location;
+        if (!location) { console.error(location); }
+        switch (type) {
+            case DataType.float:
+                this.gl.uniform1f(location, value);
+                break;
+            case DataType.int:
+                this.gl.uniform1i(location, value);
+                break;
+            case DataType.vec2:
+                this.gl.uniform2f(location, value[0], value[1]);
+                break;
+            case DataType.vec3:
+                this.gl.uniform3f(location, value[0], value[1], value[2]);
+                break;
+            case DataType.vec4:
+                this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                break;
+            case DataType.mat2:
+                this.gl.uniformMatrix2fv(location, false, value);
+            case DataType.mat3:
+                this.gl.uniformMatrix3fv(location, false, value);
+            case DataType.mat4:
+                this.gl.uniformMatrix4fv(location, false, value);
+                break;
+            default: break;
+        }
+    }
+
+    private updateUniformArray(name, type: DataType, value: Float32Array | Uint32Array) {
+        if (value === undefined) { return; }
+        if (name in this.undesiredUniforms) {
+            return;
+        }
+        let cache = this.uniformArrayCaches[name];
+        if (!cache) {
+            cache = { value, location: this.gl.getUniformLocation(this.webGlProgram, name) };
+            if (cache.location === null) {
+                this.undesiredUniforms[name] = undefined;
+                return;
+            }
+            this.uniformArrayCaches[name] = cache;
+        }
+        const result = cache.location;
         switch (type) {
             case DataType.float:
                 this.gl.uniform1fv(location, value);
@@ -369,67 +453,6 @@ export class Program implements IProgramPass {
         return this;
     }
 
-    private updateUniform(location, value, type: DataType) {
-        switch (type) {
-            case DataType.float:
-                this.gl.uniform1f(location, value);
-                break;
-            case DataType.int:
-                this.gl.uniform1i(location, value);
-                break;
-            case DataType.vec2:
-                this.gl.uniform2f(location, value[0], value[1]);
-                break;
-            case DataType.vec3:
-                this.gl.uniform3f(location, value[0], value[1], value[2]);
-                break;
-            case DataType.vec4:
-                this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
-                break;
-            case DataType.mat2:
-                this.gl.uniformMatrix2fv(location, false, value);
-            case DataType.mat3:
-                this.gl.uniformMatrix3fv(location, false, value);
-            case DataType.mat4:
-                this.gl.uniformMatrix4fv(location, false, value);
-                break;
-            default: break;
-        }
-    }
-
-    private getUniformLocation(name: string): WebGLUniformLocation {
-        if (this.gl === undefined || this.gl === null) {
-            console.error("WebGLRenderingContext has not been initialize!");
-            return null;
-        }
-        if (!this.webGlProgram) {
-            console.warn("program invalid");
-        }
-        const result = this.gl.getUniformLocation(this.webGlProgram, name);
-        if (result === null) {
-            console.log("uniform " + name + " not found!");
-            return null;
-        }
-        return result;
-    }
-
-    private addPassProcesser(parameter: IProgramPass) {
-        this.faces = (parameter.faces === undefined ? this.faces : parameter.faces);
-        for (const nameInShader in parameter.uniforms) {
-            if (parameter.uniforms[nameInShader] !== undefined) {
-                this.addUniform(nameInShader, parameter.uniforms[nameInShader]);
-            }
-        }
-        for (const sampler in parameter.textures) {
-            this.textures[sampler] = parameter.textures[sampler];
-        }
-        for (const nameInShader in parameter.attributes) {
-            this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
-        }
-        // this.checkState(mesh);
-        return this;
-    }
-
     private getAttribLocation(name: string): number {
         if (this.gl === undefined || this.gl === null) {
             console.error("WebGLRenderingContext has not been initialize!");
@@ -440,57 +463,29 @@ export class Program implements IProgramPass {
             console.error("attribute " + name + " not found!");
             return null;
         }
+        console.log("initial pass attribute " + name + " " + result);
         return result;
     }
 
 }
 
-export const defaultProgramPass = {
-    faces: (mesh) => mesh.geometry.faces,
+export const shaderPassLib = {
     uniforms: {
         modelViewProjectionMatrix: {
             type: DataType.mat4,
-            updator: (mesh: Mesh, camera: Camera) => {
+            updator: (p: IBuildinRenderParamMaps) => {
                 return mat4.multiply(
                     mat4.create(),
-                    camera.projectionMatrix,
+                    p.camera.projectionMatrix,
                     mat4.multiply(mat4.create(),
-                        camera.worldToObjectMatrix,
-                        mesh.matrix),
+                        p.camera.worldToObjectMatrix,
+                        p.mesh.matrix),
                 );
             },
         },
         modelViewMatrix: {
             type: DataType.mat4,
-            updator: (mesh: Mesh, camera: Camera) => {
-                return mat4.multiply(mat4.create(),
-                    camera.worldToObjectMatrix,
-                    mesh.matrix,
-                );
-            },
+            updator: ({ mesh, camera }) => mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix),
         },
-        cameraFar: {
-            type: DataType.float,
-            updator: (mesh: Mesh, camera: Camera) => {
-                return camera.far;
-            },
-        },
-        cameraNear: {
-            type: DataType.float,
-            updator: (mesh: Mesh, camera: Camera) => {
-                return camera.near;
-            },
-        },
-        normalViewMatrix: {
-            type: DataType.mat4,
-            updator: (mesh: Mesh, camera: Camera) =>
-                mat4.transpose(mat4.create(), mat4.invert(mat4.create(),
-                    mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix))),
-        },
-    },
-    attributes: {
-        position: (mesh) => mesh.geometry.attributes.position,
-        aMainUV: (mesh) => mesh.geometry.attributes.uv,
-        aNormal: (mesh) => mesh.geometry.attributes.normal,
     },
 };

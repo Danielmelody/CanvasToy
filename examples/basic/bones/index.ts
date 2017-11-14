@@ -15,7 +15,7 @@ const meshes: CanvasToy.Object3d[] = [];
 
 for (let i = 0; i < 4; ++i) {
     const mesh = new CanvasToy.Mesh(
-        new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(20).setHeightSegments(20).build(),
+        new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(50).setHeightSegments(50).build(),
         // new CanvasToy.CubeGeometry(renderer.gl),
         [material],
     );
@@ -42,8 +42,7 @@ const light = new CanvasToy.DirectionalLight(renderer)
 let t = 0;
 
 scene.addOnUpdateListener((dt) => {
-    // meshes[0].rotateZ(-0.005);
-    meshes[0].rotateY(-0.01);
+    meshes[0].rotateY(-0.005);
     meshes[1].rotateY(0.01);
     meshes[2].rotateX(0.05);
     t += dt;

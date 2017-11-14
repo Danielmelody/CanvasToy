@@ -54,14 +54,9 @@ export class PerspectiveCamera extends Camera {
         // TODO: decompuse perspective camera
     }
 
-    public genOtherMatrixs() {
-        super.genOtherMatrixs();
-        this._projectionMatrix = mat4.perspective(mat4.create(), this.fovy, this.aspect, this.near, this.far);
-    }
-
-    public adaptTargetRadio(target: { width: number, height: number }) {
-        this._aspect = target.width / target.height;
-        this.genOtherMatrixs();
+    public setAspectRadio(ratio: number) {
+        this._aspect = ratio;
+        this.compuseProjectionMatrix();
         return this;
     }
 }

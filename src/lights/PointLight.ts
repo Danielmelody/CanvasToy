@@ -5,6 +5,8 @@ import { uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
+import { Material } from "../materials/Material";
+import { Mesh } from "../Mesh";
 import { Object3d } from "../Object3d";
 import { Renderer } from "../renderer/Renderer";
 import { Texture } from "../textures/Texture";
@@ -13,24 +15,20 @@ import { ShadowType } from "./ShadowType";
 
 export class PointLight extends Light {
 
-    @uniform("position", DataType.vec3, (light, camera) => {
-        return vec3.transformMat4(vec3.create(), light.position,
-            mat4.mul(mat4.create(), camera.worldToObjectMatrix, light.matrix),
-        );
-    })
-    protected _position: vec3 = vec3.create();
+    @uniform(DataType.vec3)
+    public get position() {
+        return this._position;
+    }
 
-    @uniform("radius", DataType.float)
     protected _radius: number = 100;
 
-    @uniform("squareAtten", DataType.float)
     protected _squareAttenuation: number = 0.01;
 
-    @uniform("linearAtten", DataType.float)
     protected _linearAttenuation: number = 0.1;
 
-    @uniform("constantAtten", DataType.float)
     protected _constantAttenuation: number = 1;
+
+    protected _pcssArea: number = 0.1;
 
     constructor(renderer: Renderer) {
         super(renderer);
@@ -38,6 +36,25 @@ export class PointLight extends Light {
 
         // TODO: remove temporary diasable shadow of point light;
         this._shadowType = ShadowType.None;
+    }
+
+    @uniform(DataType.float, "squareAtten")
+    public get squareAttenuation() {
+        return this._squareAttenuation;
+    }
+    @uniform(DataType.float, "linearAtten")
+    public get linearAttenuation() {
+        return this._squareAttenuation;
+    }
+
+    @uniform(DataType.float, "constantAtten")
+    public get constantAttenuation() {
+        return this._constantAttenuation;
+    }
+
+    @uniform(DataType.float)
+    public get pcssArea() {
+        return this._pcssArea;
     }
 
     public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {

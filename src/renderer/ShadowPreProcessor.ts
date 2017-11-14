@@ -1,15 +1,16 @@
-
 import { vec2 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
+import { uniform } from "../Decorators";
 import { RectGeometry } from "../geometries/RectGeometry";
 import { Light } from "../lights/Light";
 import { ShadowType } from "../lights/ShadowType";
 import { LinearDepthPackMaterial } from "../materials/ESM/DepthPackMaterial";
-import { LogBlurMaterial } from "../materials/ESM/LogBlurMaterial";
+import { PCSSFilteringMaterial } from "../materials/ESM/LogBlurMaterial";
 import { Material } from "../materials/Material";
 import { StandardMaterial } from "../materials/StandardMaterial";
 import { Mesh } from "../Mesh";
 import { Scene } from "../Scene";
+import { shaderPassLib } from "../shader/Program";
 import { FrameBuffer } from "./FrameBuffer";
 import { Graphics } from "./GraphicsUtils";
 import { WebGLExtension } from "./IExtension";
@@ -23,40 +24,26 @@ export class ShadowPreProcess implements IProcessor {
 
     private depthMaterial: LinearDepthPackMaterial;
 
-    private blurMaterial: LogBlurMaterial;
+    private blurMaterial: PCSSFilteringMaterial;
 
     private rectMesh: Mesh;
 
-    constructor(gl: WebGLRenderingContext, ext: WebGLExtension) {
+    constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene) {
         this.gl = gl;
         this.ext = ext;
 
         this.depthMaterial = new LinearDepthPackMaterial(gl);
 
-        this.blurMaterial = new LogBlurMaterial(gl);
+        this.blurMaterial = new PCSSFilteringMaterial(gl);
         this.blurMaterial.shader.setViewPort({ x: 0, y: 0, width: 512, height: 512 });
 
         this.rectMesh = new Mesh(new RectGeometry(gl).build(), []);
-        Graphics.copyDataToVertexBuffer(this.gl, this.rectMesh.geometry);
+        this.rectMesh.geometry.clean(gl);
+
+        this.initPass(scene);
     }
 
     public process(scene: Scene, camera: Camera, matriels: Material[]) {
-        if (this.depthMaterial.dirty) {
-            this.depthMaterial.shader.resetMaterialDefines(this.depthMaterial);
-            this.depthMaterial.shader.make(scene);
-            Graphics.addUniformContainer(this.depthMaterial.shader, this.depthMaterial);
-            Graphics.addTextureContainer(this.depthMaterial.shader, this.depthMaterial);
-            this.depthMaterial.dirty = false;
-        }
-
-        if (this.blurMaterial.dirty) {
-            this.blurMaterial.shader.resetMaterialDefines(this.depthMaterial);
-            this.blurMaterial.shader.make(scene);
-            Graphics.addUniformContainer(this.blurMaterial.shader, this.blurMaterial);
-            Graphics.addTextureContainer(this.blurMaterial.shader, this.blurMaterial);
-            this.depthMaterial.dirty = false;
-        }
-
         for (const light of scene.lights) {
             if (light.shadowType !== ShadowType.None) {
                 this.depthMaterial.shader.setViewPort(
@@ -72,13 +59,22 @@ export class ShadowPreProcess implements IProcessor {
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     }
 
+    private initPass(scene: Scene) {
+        this.rectMesh.geometry.clean(this.gl);
+        this.depthMaterial.shader.setExtraRenderParam("mvp", {
+            uniforms: {
+                modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
+            },
+        });
+    }
+
     private renderDepth(scene: Scene, light: Light) {
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clearColor(light.far, 0, 0, 0);
         this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-        this.gl.cullFace(this.gl.FRONT);
+        // this.gl.cullFace(this.gl.FRONT);
         for (const object of scene.objects) {
             if (object instanceof Mesh) {
                 let castShadow = false;
@@ -92,7 +88,7 @@ export class ShadowPreProcess implements IProcessor {
                 }
                 if (castShadow) {
                     this.gl.useProgram(this.depthMaterial.shader.webGlProgram);
-                    light.passSingleObjectShadow(object, this.depthMaterial);
+                    light.drawWithLightCamera({ mesh: object, material: this.depthMaterial });
                 }
             }
         }
@@ -107,7 +103,7 @@ export class ShadowPreProcess implements IProcessor {
         this.blurMaterial.blurStep = 1.0 / light.shadowSize;
         this.blurMaterial.origin = light.shadowFrameBuffer.attachments.color.targetTexture;
         this.gl.useProgram(this.blurMaterial.shader.webGlProgram);
-        light.passSingleObjectShadow(this.rectMesh, this.blurMaterial);
+        light.drawWithLightCamera({ mesh: this.rectMesh, material: this.blurMaterial });
 
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
         this.gl.clearColor(light.far, 0, 0, 0);
@@ -115,6 +111,6 @@ export class ShadowPreProcess implements IProcessor {
         this.blurMaterial.blurDirection = vec2.fromValues(0, 1);
         this.blurMaterial.blurStep = 1.0 / light.shadowSize;
         this.blurMaterial.origin = light.blurFrameBuffer.attachments.color.targetTexture;
-        light.passSingleObjectShadow(this.rectMesh, this.blurMaterial);
+        light.drawWithLightCamera({ mesh: this.rectMesh, material: this.blurMaterial });
     }
 }

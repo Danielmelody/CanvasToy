@@ -1,4 +1,4 @@
-export { linkdef, texture, textureArray, uniform, uniformArray } from "./Decorators";
+export { ifdefine, texture, textureArray, uniform, uniformArray } from "./Decorators";
 
 export { IAsyncResource } from "./IAsyncResource";
 

@@ -1,12 +1,14 @@
-#ifdef OPEN_LIGHT // light declaration
-
 struct DirectLight
 {
     vec3 color;
     float idensity;
     vec3 direction;
-
-    int shadowIndex;
+#ifdef USE_SHADOW
+    sampler2D shadowMap;
+    float shadowMapSize;
+    mat4 projectionMatrix;
+    mat4 viewMatrix;
+#endif
 };
 
 struct PointLight {
@@ -17,8 +19,13 @@ struct PointLight {
     float squareAtten;
     float linearAtten;
     float constantAtten;
-
-    int shadowIndex;
+#ifdef USE_SHADOW
+    sampler2D shadowMap;
+    float shadowMapSize;
+    mat4 projectionMatrix;
+    mat4 viewMatrix;
+    float pcssArea;
+#endif
 };
 
 struct SpotLight {
@@ -31,8 +38,11 @@ struct SpotLight {
     float constantAtten;
     float coneAngleCos;
     vec3 spotDir;
-
-    int shadowIndex;
+#ifdef USE_SHADOW
+    sampler2D shadowMap;
+    float shadowMapSize;
+    mat4 projectionMatrix;
+    mat4 viewMatrix;
+    float pcssArea;
+#endif
 };
-
-#endif // light declaration

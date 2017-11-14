@@ -1,5 +1,7 @@
+import { RENDER_PARAM_HOLDER, texture } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
-import { Attribute, Program } from "../shader/Program";
+import { Attribute, IRenderParamHolder, IUniform, IUniformArray, Program } from "../shader/Program";
+import { Texture } from "../textures/Texture";
 
 export namespace Graphics {
 
@@ -8,72 +10,30 @@ export namespace Graphics {
         FragmentShader,
     }
 
-    export function addUniformContainer(program: Program, uniformContainer) {
-        if (Array.isArray(uniformContainer.uniforms)) {
-            for (const uniformProperty of uniformContainer.uniforms) {
-                if (uniformProperty.updator(uniformContainer) !== undefined) {
-                    program.addUniform(uniformProperty.name, {
-                        type: uniformProperty.type,
-                        updator: () => {
-                            return uniformProperty.updator(uniformContainer);
-                        },
-                    });
-                }
+    export function getRenderParamHost(obj: any, logError: boolean = false) {
+        const holder: IRenderParamHolder = obj[RENDER_PARAM_HOLDER];
+        if (holder === undefined) {
+            if (logError) {
+                console.log(obj);
+                throw new Error(`${obj} has no renderParam property`);
+            } else {
+                return undefined;
             }
         }
-        if (Array.isArray(uniformContainer.uniformArray)) {
-            for (const uniformArrayProperty of uniformContainer.uniformArray) {
-                if (uniformArrayProperty.updator(uniformContainer) !== undefined) {
-                    program.addUniformArray(
-                        uniformArrayProperty.name,
-                        {
-                            type: uniformArrayProperty.type,
-                            updator: () => uniformArrayProperty.updator(uniformContainer),
-                        },
-                    );
-                }
-            }
-        }
-    }
-
-    export function addTextureContainer(program: Program, textureContainer) {
-        if (Array.isArray(textureContainer.textures)) {
-            for (const textureDiscriptor of textureContainer.textures) {
-                if (textureDiscriptor.getter(textureContainer) !== undefined) {
-                    program.addTexture(
-                        textureDiscriptor.name,
-                        () => textureDiscriptor.getter(textureContainer),
-                    );
-                }
-            }
-        }
-        if (Array.isArray(textureContainer.textureArrays)) {
-            for (const textureArrayDiscriptor of textureContainer.textureArrays) {
-                if (textureArrayDiscriptor.arrayGetter(textureContainer) !== undefined) {
-                    program.addTextureArray(
-                        textureArrayDiscriptor.name,
-                        () => textureArrayDiscriptor.arrayGetter(textureContainer),
-                    );
-                }
-            }
-        }
+        holder.hostObject = obj;
+        return holder;
     }
 
     export function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry) {
-        if (geometry.dirty) {
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-                new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
-            for (const name in geometry.attributes) {
-                const attribute: Attribute = geometry.attributes[name];
-                if (attribute !== undefined) {
-                    gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                    console.log(`${name} buffer size: `,
-                        `${gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE)}`);
-                }
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+            new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
+        for (const name in geometry.attributes) {
+            const attribute: Attribute = geometry.attributes[name];
+            if (attribute !== undefined) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
             }
-            geometry.dirty = false;
         }
     }
 

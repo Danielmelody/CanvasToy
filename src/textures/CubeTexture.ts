@@ -17,12 +17,7 @@ export class CubeTexture extends Texture {
     ) {
         super(gl);
         const image = this._image;
-        this.setAsyncFinished(Promise.all(this.images.map((image) => this.createLoadPromise(image))).then(() => {
-            return Promise.resolve(this);
-        }));
-        this.setTarget(gl.TEXTURE_CUBE_MAP)
-            .setMinFilter(gl.NEAREST)
-            .setMagFilter(gl.NEAREST);
+        this.setTarget(gl.TEXTURE_CUBE_MAP);
         this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
         this.images[0].src = xposUrl;
         this.images[1].src = xnegUrl;
@@ -30,6 +25,13 @@ export class CubeTexture extends Texture {
         this.images[3].src = ynegUrl;
         this.images[4].src = zposUrl;
         this.images[5].src = znegUrl;
+        this.setAsyncFinished(
+            Promise.all(this.images.map((image) => {
+                return this.createLoadPromise(image);
+            })).then(() => {
+                return Promise.resolve(this);
+            }),
+        );
     }
 
     public get wrapR() {
@@ -41,8 +43,8 @@ export class CubeTexture extends Texture {
         return this;
     }
 
-    public bindTextureData(gl: WebGLRenderingContext) {
-        super.bindTextureData(gl);
+    public apply(gl: WebGLRenderingContext) {
+        super.apply(gl);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
         for (let i = 0; i < this.images.length; ++i) {
             gl.texImage2D(

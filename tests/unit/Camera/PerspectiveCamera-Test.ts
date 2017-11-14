@@ -5,10 +5,7 @@ describe("PerspectiveCamera testing", () => {
         const camera = new CanvasToy.PerspectiveCamera();
         const x = Math.random() % 100;
         const y = Math.random() % 100;
-        camera.adaptTargetRadio({
-            width: x,
-            height: y,
-        });
+        camera.setAspectRadio(x / y);
         (expect(camera.aspect) as jasmine.ToyMatchers).toBeEqualish(x / y);
     });
 });

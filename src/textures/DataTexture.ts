@@ -17,12 +17,12 @@ export class DataTexture<TypeArray extends ArrayBufferView> extends Texture {
         this.data = data;
         this.width = width ? width : this.width;
         this.height = height ? height : this.height;
-        this.bindTextureData(gl);
+        this.apply(gl);
         return this;
     }
 
-    public bindTextureData(gl: WebGLRenderingContext) {
-        super.bindTextureData(gl);
+    public apply(gl: WebGLRenderingContext) {
+        super.apply(gl);
         gl.texImage2D(
             this.target,
             0,

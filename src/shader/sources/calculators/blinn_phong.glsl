@@ -18,5 +18,6 @@ vec3 calculateLight(
 
     vec3 specularColor = specular * pow(specularAngle, shiness);
     vec3 diffuseColor = diffuse * lambortian;
-    return (diffuseColor + specularColor) * idensity;
+    vec3 color = (diffuseColor + specularColor) * idensity;
+    return color;
 }

@@ -28,16 +28,16 @@ export class SphereGeometry extends Geometry {
             const verticesRow = [];
             const v = iy / this._heightSegments;
             for (ix = 0; ix <= this._widthSegments; ix++) {
-                const uv = [ix / this._widthSegments, 1 - iy / this._heightSegments];
+                const aMainUV = [ix / this._widthSegments, 1 - iy / this._heightSegments];
                 const position = [
-                    - this._radius * Math.cos(this._phiStart + uv[0] * this._phiLength)
+                    - this._radius * Math.cos(this._phiStart + aMainUV[0] * this._phiLength)
                     * Math.sin(this._thetaStart + v * this._thetaLength),
-                    this._radius * Math.cos(this._thetaStart + uv[1] * this._thetaLength),
-                    this._radius * Math.sin(this._phiStart + uv[0] * this._phiLength)
+                    this._radius * Math.cos(this._thetaStart + aMainUV[1] * this._thetaLength),
+                    this._radius * Math.sin(this._phiStart + aMainUV[0] * this._phiLength)
                     * Math.sin(this._thetaStart + v * this._thetaLength),
                 ];
-                const normal = vec3.normalize(vec3.create(), position);
-                this.addVertex({ position, normal, uv });
+                const aNormal = vec3.normalize(vec3.create(), position);
+                this.addVertex({ position, aNormal, aMainUV });
                 verticesRow.push(index++);
             }
             grid.push(verticesRow);
