@@ -34,147 +34,6 @@ define("DataTypeEnum", ["require", "exports"], function (require, exports) {
         DataType[DataType["mat4"] = 7] = "mat4";
     })(DataType = exports.DataType || (exports.DataType = {}));
 });
-define("Decorators", ["require", "exports"], function (require, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function uniform(name, type, updator) {
-        return function (proto, key) {
-            if (!proto.hasOwnProperty("uniforms") && !proto.uniforms) {
-                Object.defineProperty(proto, "uniforms", {
-                    enumerable: true,
-                    configurable: false,
-                    writable: false,
-                    value: [],
-                });
-            }
-            var uniforms = proto.uniforms;
-            uniforms.push({
-                key: key,
-                name: name,
-                type: type,
-                updator: updator ? updator : function (obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        return obj[key];
-                    }
-                    return undefined;
-                },
-            });
-        };
-    }
-    exports.uniform = uniform;
-    function uniformArray(name, type, updator) {
-        return function (proto, key) {
-            if (!proto.hasOwnProperty("uniformArray") && !proto.uniformArray) {
-                Object.defineProperty(proto, "uniformArray", {
-                    enumerable: true,
-                    configurable: false,
-                    writable: false,
-                    value: [],
-                });
-            }
-            var uniformArray = proto.uniformArray;
-            uniformArray.push({
-                key: key,
-                name: name,
-                type: type,
-                updator: updator ? updator : function (obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        return obj[key];
-                    }
-                    return undefined;
-                },
-            });
-        };
-    }
-    exports.uniformArray = uniformArray;
-    function textureArray(name) {
-        return function (proto, key) {
-            if (!proto.hasOwnProperty("textureArrays") && !proto.textureArrays) {
-                Object.defineProperty(proto, "textureArrays", {
-                    enumerable: true,
-                    configurable: false,
-                    writable: false,
-                    value: [],
-                });
-            }
-            var textureArrays = proto.textureArrays;
-            textureArrays.push({
-                key: key,
-                name: name,
-                arrayGetter: function (obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        return obj[key];
-                    }
-                    return undefined;
-                },
-            });
-        };
-    }
-    exports.textureArray = textureArray;
-    function texture(name) {
-        return function (proto, key) {
-            readyRequire(proto, key);
-            if (!proto.hasOwnProperty("textures") && !proto.textures) {
-                Object.defineProperty(proto, "textures", {
-                    enumerable: true,
-                    configurable: false,
-                    writable: false,
-                    value: [],
-                });
-            }
-            var textures = proto.textures;
-            textures.push({
-                key: key,
-                name: name,
-                getter: function (obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        return obj[key];
-                    }
-                    return undefined;
-                },
-            });
-        };
-    }
-    exports.texture = texture;
-    function linkdef(name, value) {
-        return function (proto, key) {
-            if (!proto.hasOwnProperty("defines") && !proto.defines) {
-                Object.defineProperty(proto, "defines", {
-                    enumerable: true,
-                    configurable: false,
-                    writable: false,
-                    value: {},
-                });
-            }
-            var defines = proto.defines;
-            defines[key] = function (obj) {
-                if (!!obj[key]) {
-                    return { name: name, value: value };
-                }
-                return undefined;
-            };
-        };
-    }
-    exports.linkdef = linkdef;
-    function readyRequire(proto, key) {
-        if (!proto.hasOwnProperty("asyncResources") && !proto.asyncResources) {
-            Object.defineProperty(proto, "asyncResources", {
-                enumerable: true,
-                configurable: false,
-                writable: false,
-                value: [],
-            });
-        }
-        var asyncResources = proto.asyncResources;
-        asyncResources.push(function (obj) {
-            var resources = obj[key];
-            if (!!obj[key]) {
-                return obj[key].asyncFinished();
-            }
-            return undefined;
-        });
-    }
-    exports.readyRequire = readyRequire;
-});
 define("IAsyncResource", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
 });
@@ -187,11 +46,11 @@ define("cameras/OrthoCamera", ["require", "exports", "gl-matrix", "cameras/Camer
                 parameters = {};
             }
             var _this = _super.call(this) || this;
-            _this._left = -32;
-            _this._right = 32;
-            _this._bottom = -32;
-            _this._top = 32;
-            _this._baseSize = 32;
+            _this._left = -20;
+            _this._right = 20;
+            _this._bottom = -20;
+            _this._top = 20;
+            _this._baseSize = 20;
             _this._left = parameters.left || _this._left;
             _this._right = parameters.right || _this._right;
             _this._bottom = parameters.bottom || _this._bottom;
@@ -240,16 +99,11 @@ define("cameras/OrthoCamera", ["require", "exports", "gl-matrix", "cameras/Camer
         };
         OrthoCamera.prototype.deCompuseProjectionMatrix = function () {
         };
-        OrthoCamera.prototype.genOtherMatrixs = function () {
-            _super.prototype.genOtherMatrixs.call(this);
-            gl_matrix_1.mat4.ortho(this.projectionMatrix, this.left, this.right, this.bottom, this.top, this.near, this.far);
-        };
-        OrthoCamera.prototype.adaptTargetRadio = function (target) {
-            var radio = target.height / target.width;
-            this._left = -this._baseSize / 2;
-            this._right = this._baseSize / 2;
-            this._top = radio * this._baseSize / 2;
-            this._bottom = -radio * this._baseSize / 2;
+        OrthoCamera.prototype.setAspectRadio = function (radio) {
+            this._left = -radio * this._baseSize;
+            this._right = radio * this._baseSize;
+            this._top = this._baseSize;
+            this._bottom = -this._baseSize;
             this.compuseProjectionMatrix();
             return this;
         };
@@ -257,215 +111,43 @@ define("cameras/OrthoCamera", ["require", "exports", "gl-matrix", "cameras/Camer
     }(Camera_1.Camera));
     exports.OrthoCamera = OrthoCamera;
 });
-define("materials/Material", ["require", "exports", "gl-matrix"], function (require, exports, gl_matrix_2) {
+define("Dirtyable", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.colors = {
-        black: gl_matrix_2.vec4.fromValues(0, 0, 0, 1),
-        gray: gl_matrix_2.vec4.fromValues(0.5, 0.5, 0.5, 1),
-        red: gl_matrix_2.vec4.fromValues(1, 0, 0, 1),
-        white: gl_matrix_2.vec4.fromValues(1, 1, 1, 1),
-    };
-    var Material = (function () {
-        function Material() {
-            this.dirty = true;
-            this.defines = [];
+});
+define("shader/Attibute", ["require", "exports", "DataTypeEnum"], function (require, exports, DataTypeEnum_1) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Attribute = (function () {
+        function Attribute(gl, paramter) {
+            this.size = 3;
+            this.data = [];
+            this.index = 0;
+            this.stride = 0;
+            this.buffer = null;
+            this.gl = null;
+            this.buffer = gl.createBuffer();
+            this.gl = gl;
+            for (var attributeInfo in paramter) {
+                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
+            }
+            switch (paramter.type) {
+                case DataTypeEnum_1.DataType.float:
+                    this.type = gl.FLOAT;
+                    break;
+                case DataTypeEnum_1.DataType.int:
+                    this.type = gl.INT;
+                    break;
+                default: break;
+            }
         }
-        return Material;
+        return Attribute;
     }());
-    exports.Material = Material;
-});
-define("Mesh", ["require", "exports", "Object3d"], function (require, exports, Object3d_1) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Mesh = (function (_super) {
-        __extends(Mesh, _super);
-        function Mesh(geometry, materials) {
-            var _this = _super.call(this) || this;
-            _this.materials = [];
-            _this.materials = materials;
-            _this.geometry = geometry;
-            return _this;
-        }
-        Mesh.prototype.drawMode = function (gl) {
-            return gl.STATIC_DRAW;
-        };
-        return Mesh;
-    }(Object3d_1.Object3d));
-    exports.Mesh = Mesh;
-});
-define("renderer/GraphicsUtils", ["require", "exports"], function (require, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Graphics;
-    (function (Graphics) {
-        var ShaderType;
-        (function (ShaderType) {
-            ShaderType[ShaderType["VertexShader"] = 0] = "VertexShader";
-            ShaderType[ShaderType["FragmentShader"] = 1] = "FragmentShader";
-        })(ShaderType || (ShaderType = {}));
-        function addUniformContainer(program, uniformContainer) {
-            if (Array.isArray(uniformContainer.uniforms)) {
-                var _loop_1 = function (uniformProperty) {
-                    if (uniformProperty.updator(uniformContainer) !== undefined) {
-                        program.addUniform(uniformProperty.name, {
-                            type: uniformProperty.type,
-                            updator: function () {
-                                return uniformProperty.updator(uniformContainer);
-                            },
-                        });
-                    }
-                };
-                for (var _i = 0, _a = uniformContainer.uniforms; _i < _a.length; _i++) {
-                    var uniformProperty = _a[_i];
-                    _loop_1(uniformProperty);
-                }
-            }
-            if (Array.isArray(uniformContainer.uniformArray)) {
-                var _loop_2 = function (uniformArrayProperty) {
-                    if (uniformArrayProperty.updator(uniformContainer) !== undefined) {
-                        program.addUniformArray(uniformArrayProperty.name, {
-                            type: uniformArrayProperty.type,
-                            updator: function () { return uniformArrayProperty.updator(uniformContainer); },
-                        });
-                    }
-                };
-                for (var _b = 0, _c = uniformContainer.uniformArray; _b < _c.length; _b++) {
-                    var uniformArrayProperty = _c[_b];
-                    _loop_2(uniformArrayProperty);
-                }
-            }
-        }
-        Graphics.addUniformContainer = addUniformContainer;
-        function addTextureContainer(program, textureContainer) {
-            if (Array.isArray(textureContainer.textures)) {
-                var _loop_3 = function (textureDiscriptor) {
-                    if (textureDiscriptor.getter(textureContainer) !== undefined) {
-                        program.addTexture(textureDiscriptor.name, function () { return textureDiscriptor.getter(textureContainer); });
-                    }
-                };
-                for (var _i = 0, _a = textureContainer.textures; _i < _a.length; _i++) {
-                    var textureDiscriptor = _a[_i];
-                    _loop_3(textureDiscriptor);
-                }
-            }
-            if (Array.isArray(textureContainer.textureArrays)) {
-                var _loop_4 = function (textureArrayDiscriptor) {
-                    if (textureArrayDiscriptor.arrayGetter(textureContainer) !== undefined) {
-                        program.addTextureArray(textureArrayDiscriptor.name, function () { return textureArrayDiscriptor.arrayGetter(textureContainer); });
-                    }
-                };
-                for (var _b = 0, _c = textureContainer.textureArrays; _b < _c.length; _b++) {
-                    var textureArrayDiscriptor = _c[_b];
-                    _loop_4(textureArrayDiscriptor);
-                }
-            }
-        }
-        Graphics.addTextureContainer = addTextureContainer;
-        function copyDataToVertexBuffer(gl, geometry) {
-            if (geometry.dirty) {
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
-                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
-                for (var name_1 in geometry.attributes) {
-                    var attribute = geometry.attributes[name_1];
-                    if (attribute !== undefined) {
-                        gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
-                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
-                        console.log(name_1 + " buffer size: ", "" + gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE));
-                    }
-                }
-                geometry.dirty = false;
-            }
-        }
-        Graphics.copyDataToVertexBuffer = copyDataToVertexBuffer;
-        function logEnabledAttribute(gl, program) {
-            for (var i = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES) - 1; i >= 0; i--) {
-                console.dir(gl.getActiveAttrib(program, i));
-            }
-        }
-        Graphics.logEnabledAttribute = logEnabledAttribute;
-        function logIfFrameBufferInvalid(gl, frameBuffer) {
-            var valid = false;
-            gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-            var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-            switch (status) {
-                case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-                    console.error("gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT: The attachment types are mismatched\n                    or not all framebuffer attachment points are framebuffer attachment complete.");
-                    break;
-                case gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-                    console.error("gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: There is no attachment.");
-                    break;
-                case gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-                    console.error("gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS: Height and width of the attachment are not the same.");
-                    break;
-                case gl.FRAMEBUFFER_UNSUPPORTED:
-                    console.error("gl.FRAMEBUFFER_UNSUPPORTED: The format of the attachment is not supported,\n                    or if depth and stencil attachments are not the same renderbuffer.");
-                    break;
-                default:
-                    valid = true;
-                    break;
-            }
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            return valid;
-        }
-        Graphics.logIfFrameBufferInvalid = logIfFrameBufferInvalid;
-        function initWebwebglContext(canvas, debug) {
-            var gl;
-            try {
-                gl = canvas.getContext("experimental-webgl");
-            }
-            catch (e) {
-                gl = canvas.getContext("webgl");
-            }
-            if (!gl) {
-                alert("Cannot init webgl, current browser may not support it.");
-            }
-            return gl;
-        }
-        Graphics.initWebwebglContext = initWebwebglContext;
-        function createSeparatedShader(gl, source, type) {
-            var shader;
-            var typeInfo;
-            if (type === ShaderType.FragmentShader) {
-                shader = gl.createShader(gl.FRAGMENT_SHADER);
-                typeInfo = "fragment shader";
-            }
-            else if (type === ShaderType.VertexShader) {
-                shader = gl.createShader(gl.VERTEX_SHADER);
-                typeInfo = "vertex shader";
-            }
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error("error: " + typeInfo + "\n" + gl.getShaderInfoLog(shader));
-                console.error(source);
-                return null;
-            }
-            return shader;
-        }
-        function linkShader(gl, vertexShader, fragmentShader, vertexSource, fragmentSource) {
-            var shaderProgram = gl.createProgram();
-            gl.attachShader(shaderProgram, vertexShader);
-            gl.attachShader(shaderProgram, fragmentShader);
-            gl.linkProgram(shaderProgram);
-            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-                console.error("error: link shader program failed.\n" + gl.getProgramInfoLog(shaderProgram));
-                console.error("vertex:\n" + vertexSource);
-                console.error("fragment:\n" + fragmentSource);
-            }
-            return shaderProgram;
-        }
-        function createEntileShader(gl, vertexShaderSource, fragmentShaderSource) {
-            var vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
-            var fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
-            return linkShader(gl, vertShader, fragShader, vertexShaderSource, fragmentShaderSource);
-        }
-        Graphics.createEntileShader = createEntileShader;
-    })(Graphics = exports.Graphics || (exports.Graphics = {}));
+    exports.Attribute = Attribute;
 });
 define("textures/Texture", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Texture = (function () {
         function Texture(gl, url) {
             var _this = this;
-            this.isReadyToUpdate = false;
             if (!!url) {
                 this._image = new Image();
                 var image_1 = this._image;
@@ -574,7 +256,7 @@ define("textures/Texture", ["require", "exports"], function (require, exports) {
         Texture.prototype.asyncFinished = function () {
             return this._asyncFinished;
         };
-        Texture.prototype.bindTextureData = function (gl) {
+        Texture.prototype.apply = function (gl) {
             gl.bindTexture(this.target, this.glTexture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
             gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
@@ -587,382 +269,131 @@ define("textures/Texture", ["require", "exports"], function (require, exports) {
     }());
     exports.Texture = Texture;
 });
-define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_3, DataTypeEnum_1, GraphicsUtils_1) {
+define("renderer/GraphicsUtils", ["require", "exports", "Decorators"], function (require, exports, Decorators_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Attribute = (function () {
-        function Attribute(gl, paramter) {
-            this.size = 3;
-            this.data = [];
-            this.index = 0;
-            this.stride = 0;
-            this.buffer = null;
-            this.gl = null;
-            this.buffer = gl.createBuffer();
-            this.gl = gl;
-            for (var attributeInfo in paramter) {
-                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
+    var Graphics;
+    (function (Graphics) {
+        var ShaderType;
+        (function (ShaderType) {
+            ShaderType[ShaderType["VertexShader"] = 0] = "VertexShader";
+            ShaderType[ShaderType["FragmentShader"] = 1] = "FragmentShader";
+        })(ShaderType || (ShaderType = {}));
+        function getRenderParamHost(obj, logError) {
+            if (logError === void 0) {
+                logError = false;
             }
-            switch (paramter.type) {
-                case DataTypeEnum_1.DataType.float:
-                    this.type = gl.FLOAT;
-                    break;
-                case DataTypeEnum_1.DataType.int:
-                    this.type = gl.INT;
-                    break;
-                default: break;
+            var holder = obj[Decorators_1.RENDER_PARAM_HOLDER];
+            if (holder === undefined) {
+                if (logError) {
+                    console.log(obj);
+                    throw new Error(obj + " has no renderParam property");
+                }
+                else {
+                    return undefined;
+                }
+            }
+            holder.hostObject = obj;
+            return holder;
+        }
+        Graphics.getRenderParamHost = getRenderParamHost;
+        function copyDataToVertexBuffer(gl, geometry) {
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
+            for (var name_1 in geometry.attributes) {
+                var attribute = geometry.attributes[name_1];
+                if (attribute !== undefined) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, attribute.buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attribute.data), gl.STATIC_DRAW);
+                }
             }
         }
-        return Attribute;
-    }());
-    exports.Attribute = Attribute;
-    var Program = (function () {
-        function Program(gl, source, passFunctions) {
-            this.enableDepthTest = true;
-            this.enableStencilTest = true;
-            this.uniforms = {};
-            this.uniformArrays = {};
-            this.attributes = {};
-            this.attributeLocations = {};
-            this.textures = [];
-            this.textureArrays = [];
-            this.vertexPrecision = "highp";
-            this.fragmentPrecision = "highp";
-            this.extensionStatements = [];
-            this.definesFromMaterial = [];
-            this.drawMode = function (gl) { return gl.STATIC_DRAW; };
-            this.gl = gl;
-            this.source = source;
-            this.passFunctions = passFunctions;
-            this.viewport = {
-                x: 0, y: 0,
-                width: gl.canvas.width,
-                height: gl.canvas.height,
-            };
+        Graphics.copyDataToVertexBuffer = copyDataToVertexBuffer;
+        function logEnabledAttribute(gl, program) {
+            for (var i = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES) - 1; i >= 0; i--) {
+                console.dir(gl.getActiveAttrib(program, i));
+            }
         }
-        Program.prototype.setFragmentShader = function (fragmentShader) {
-            this.source.fragmentShader = fragmentShader;
-            return this;
-        };
-        Program.prototype.setVertexShader = function (vertexShader) {
-            this.source.vertexShader = vertexShader;
-            return this;
-        };
-        Program.prototype.resetMaterialDefines = function (materiel) {
-            var _material = materiel;
-            for (var subdefines in _material.defines) {
-                var define = _material.defines[subdefines](materiel);
-                if (!!define) {
-                    this.definesFromMaterial.push(define);
-                }
-            }
-        };
-        Program.prototype.make = function (scene) {
-            var defines = [
-                "#define OPEN_LIGHT",
-                "#define LIGHT_NUM " + scene.lights.length,
-                "#define DIR_LIGHT_NUM " + scene.dirctionLights.length,
-                "#define SPOT_LIGHT_NUM " + scene.spotLights.length,
-                "#define POINT_LIGHT_NUM " + scene.pointLights.length,
-            ];
-            for (var _i = 0, _a = this.definesFromMaterial; _i < _a.length; _i++) {
-                var define = _a[_i];
-                var defineLine = "#define " + define.name;
-                if (!!define.value) {
-                    defineLine += " " + define.value;
-                }
-                defines.push(defineLine);
-                console.log(defineLine);
-            }
-            this.webGlProgram = GraphicsUtils_1.Graphics.createEntileShader(this.gl, this.extensionStatements.join("\n")
-                + "\nprecision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
-                + this.source.vertexShader, this.extensionStatements.join("\n")
-                + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
-                + this.source.fragmentShader);
-            this.gl.useProgram(this.webGlProgram);
-            var componets = this.passFunctions;
-            this.faces = (componets.faces === undefined ? this.faces : componets.faces);
-            this.uniforms = {};
-            this.textures = [];
-            if (!!componets.uniforms) {
-                for (var nameInShader in componets.uniforms) {
-                    if (componets.uniforms[nameInShader] !== undefined) {
-                        this.addUniform(nameInShader, componets.uniforms[nameInShader]);
-                    }
-                }
-            }
-            if (!!componets.textures) {
-                for (var sampler in componets.textures) {
-                    var target = componets.textures[sampler];
-                    if (target.isArray) {
-                        this.addTextureArray(sampler, componets.textures[sampler]);
-                    }
-                    else {
-                        this.addTexture(sampler, componets.textures[sampler]);
-                    }
-                }
-            }
-            for (var nameInShader in componets.attributes) {
-                this.addAttribute(nameInShader, componets.attributes[nameInShader]);
-            }
-            return this;
-        };
-        Program.prototype.pass = function (mesh, camera, materiel) {
-            this.gl.useProgram(this.webGlProgram);
-            this.gl.viewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
-            for (var uniformName in this.uniforms) {
-                if (this.uniforms[uniformName] !== undefined) {
-                    this.uniforms[uniformName](mesh, camera, materiel);
-                }
-            }
-            for (var uniformArrayName in this.uniformArrays) {
-                if (this.uniformArrays[uniformArrayName] !== undefined) {
-                    this.uniformArrays[uniformArrayName](mesh, camera, materiel);
-                }
-            }
-            var unit = 0;
-            for (var _i = 0, _a = this.textures; _i < _a.length; _i++) {
-                var textureDiscriptor = _a[_i];
-                var texture = textureDiscriptor.getter(mesh, camera, materiel);
-                if (!!texture) {
-                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                    this.gl.bindTexture(texture.target, texture.glTexture);
-                    this.gl.uniform1i(this.textures[unit].location, unit);
-                }
-                unit++;
-            }
-            for (var _b = 0, _c = this.textureArrays; _b < _c.length; _b++) {
-                var textureArrayDiscriptor = _c[_b];
-                var textureArray = textureArrayDiscriptor.arrayGetter(mesh, camera, materiel);
-                var indices = [];
-                for (var index in textureArray) {
-                    var texture = textureArray[index];
-                    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-                    this.gl.bindTexture(texture.target, texture.glTexture);
-                    indices.push(unit++);
-                }
-                if (indices.length > 0) {
-                    this.gl.uniform1iv(textureArrayDiscriptor.location, indices);
-                }
-            }
-            for (var attributeName in this.attributes) {
-                var attribute = this.attributes[attributeName](mesh, camera, materiel);
-                this.gl.enableVertexAttribArray(this.attributeLocations[attributeName]);
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
-                this.gl.vertexAttribPointer(this.attributeLocations[attributeName], attribute.size, attribute.type, false, 0, 0);
-            }
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.faces.buffer);
-            this.gl.drawElements(this.gl.TRIANGLES, mesh.geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
-            for (var attributeName in this.attributes) {
-                var attribute = this.attributes[attributeName](mesh, camera, materiel);
-                this.gl.disableVertexAttribArray(this.attributeLocations[attributeName]);
-            }
-            return this;
-        };
-        Program.prototype.checkState = function (mesh) {
-            var maxIndex = 0;
-            for (var _i = 0, _a = this.faces(mesh).data; _i < _a.length; _i++) {
-                var index = _a[_i];
-                maxIndex = Math.max(maxIndex, index);
-            }
-            for (var attributeName in this.attributes) {
-                console.assert(this.attributes[attributeName](mesh).size <= 4
-                    && this.attributes[attributeName](mesh).size >= 1, attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
-                console.assert((maxIndex + 1) * this.attributes[attributeName](mesh).stride <=
-                    this.attributes[attributeName](mesh).data.length, attributeName + " length error, now:" + this.attributes[attributeName](mesh).data.length
-                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName](mesh).stride);
-            }
-            return this;
-        };
-        Program.prototype.setAttribute0 = function (name) {
-            this.attribute0 = name;
-            this.gl.bindAttribLocation(this.webGlProgram, 0, name);
-            return this;
-        };
-        Program.prototype.addTextureArray = function (samplerArray, arrayGetter) {
-            var location = this.gl.getUniformLocation(this.webGlProgram, samplerArray);
-            this.textureArrays.push({
-                samplerArray: samplerArray,
-                arrayGetter: arrayGetter,
-                location: location,
-            });
-        };
-        Program.prototype.addTexture = function (sampler, getter) {
-            var unit = this.textures.length;
-            this.textures.push({ sampler: sampler, getter: getter, location: this.gl.getUniformLocation(this.webGlProgram, sampler) });
-        };
-        Program.prototype.addUniformArray = function (arrayNameInShader, uniformArrayDiscriptor) {
-            var _this = this;
-            this.gl.useProgram(this.webGlProgram);
-            var location = this.getUniformLocation(arrayNameInShader);
-            if (location == null) {
-                return this;
-            }
-            this.uniformArrays[arrayNameInShader] = function (mesh, camera, material) {
-                _this.updateUniformArray(location, uniformArrayDiscriptor.updator(mesh, camera, material), uniformArrayDiscriptor.type);
-            };
-            return this;
-        };
-        Program.prototype.addUniform = function (nameInShader, uniform) {
-            var _this = this;
-            this.gl.useProgram(this.webGlProgram);
-            var location = this.getUniformLocation(nameInShader);
-            if (location == null) {
-                return this;
-            }
-            this.uniforms[nameInShader] = function (mesh, camera, material) {
-                _this.updateUniform(location, uniform.updator(mesh, camera, material), uniform.type);
-            };
-        };
-        Program.prototype.deleteUniform = function (nameInShader) {
-            this.uniforms[nameInShader] = undefined;
-            return this;
-        };
-        Program.prototype.deleteAttribute = function (nameInShader) {
-            this.attributes[nameInShader] = undefined;
-            this.attributeLocations[nameInShader] = undefined;
-            return this;
-        };
-        Program.prototype.addAttribute = function (nameInShader, attributeFun) {
-            var location = this.getAttribLocation(nameInShader);
-            if (location !== null && location !== -1) {
-                this.attributes[nameInShader] = attributeFun;
-                this.attributeLocations[nameInShader] = location;
-            }
-            return this;
-        };
-        Program.prototype.setViewPort = function (viewport) {
-            this.viewport = viewport;
-        };
-        Program.prototype.updateUniformArray = function (location, value, type) {
-            switch (type) {
-                case DataTypeEnum_1.DataType.float:
-                    this.gl.uniform1fv(location, value);
+        Graphics.logEnabledAttribute = logEnabledAttribute;
+        function logIfFrameBufferInvalid(gl, frameBuffer) {
+            var valid = false;
+            gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+            var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+            switch (status) {
+                case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                    console.error("gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT: The attachment types are mismatched\n                    or not all framebuffer attachment points are framebuffer attachment complete.");
                     break;
-                case DataTypeEnum_1.DataType.int:
-                    this.gl.uniform1iv(location, value);
+                case gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                    console.error("gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: There is no attachment.");
                     break;
-                case DataTypeEnum_1.DataType.vec2:
-                    this.gl.uniform2fv(location, value);
+                case gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                    console.error("gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS: Height and width of the attachment are not the same.");
                     break;
-                case DataTypeEnum_1.DataType.vec3:
-                    this.gl.uniform3fv(location, value);
+                case gl.FRAMEBUFFER_UNSUPPORTED:
+                    console.error("gl.FRAMEBUFFER_UNSUPPORTED: The format of the attachment is not supported,\n                    or if depth and stencil attachments are not the same renderbuffer.");
                     break;
-                case DataTypeEnum_1.DataType.vec4:
-                    this.gl.uniform4fv(location, value);
+                default:
+                    valid = true;
                     break;
-                case DataTypeEnum_1.DataType.mat2:
-                    this.gl.uniformMatrix2fv(location, false, value);
-                case DataTypeEnum_1.DataType.mat3:
-                    this.gl.uniformMatrix3fv(location, false, value);
-                case DataTypeEnum_1.DataType.mat4:
-                    this.gl.uniformMatrix4fv(location, false, value);
-                    break;
-                default: break;
             }
-            return this;
-        };
-        Program.prototype.updateUniform = function (location, value, type) {
-            switch (type) {
-                case DataTypeEnum_1.DataType.float:
-                    this.gl.uniform1f(location, value);
-                    break;
-                case DataTypeEnum_1.DataType.int:
-                    this.gl.uniform1i(location, value);
-                    break;
-                case DataTypeEnum_1.DataType.vec2:
-                    this.gl.uniform2f(location, value[0], value[1]);
-                    break;
-                case DataTypeEnum_1.DataType.vec3:
-                    this.gl.uniform3f(location, value[0], value[1], value[2]);
-                    break;
-                case DataTypeEnum_1.DataType.vec4:
-                    this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
-                    break;
-                case DataTypeEnum_1.DataType.mat2:
-                    this.gl.uniformMatrix2fv(location, false, value);
-                case DataTypeEnum_1.DataType.mat3:
-                    this.gl.uniformMatrix3fv(location, false, value);
-                case DataTypeEnum_1.DataType.mat4:
-                    this.gl.uniformMatrix4fv(location, false, value);
-                    break;
-                default: break;
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            return valid;
+        }
+        Graphics.logIfFrameBufferInvalid = logIfFrameBufferInvalid;
+        function initWebwebglContext(canvas, debug) {
+            var gl;
+            try {
+                gl = canvas.getContext("experimental-webgl");
             }
-        };
-        Program.prototype.getUniformLocation = function (name) {
-            if (this.gl === undefined || this.gl === null) {
-                console.error("WebGLRenderingContext has not been initialize!");
+            catch (e) {
+                gl = canvas.getContext("webgl");
+            }
+            if (!gl) {
+                alert("Cannot init webgl, current browser may not support it.");
+            }
+            return gl;
+        }
+        Graphics.initWebwebglContext = initWebwebglContext;
+        function createSeparatedShader(gl, source, type) {
+            var shader;
+            var typeInfo;
+            if (type === ShaderType.FragmentShader) {
+                shader = gl.createShader(gl.FRAGMENT_SHADER);
+                typeInfo = "fragment shader";
+            }
+            else if (type === ShaderType.VertexShader) {
+                shader = gl.createShader(gl.VERTEX_SHADER);
+                typeInfo = "vertex shader";
+            }
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error("error: " + typeInfo + "\n" + gl.getShaderInfoLog(shader));
+                console.error(source);
                 return null;
             }
-            if (!this.webGlProgram) {
-                console.warn("program invalid");
+            return shader;
+        }
+        function linkShader(gl, vertexShader, fragmentShader, vertexSource, fragmentSource) {
+            var shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                console.error("error: link shader program failed.\n" + gl.getProgramInfoLog(shaderProgram));
+                console.error("vertex:\n" + vertexSource);
+                console.error("fragment:\n" + fragmentSource);
             }
-            var result = this.gl.getUniformLocation(this.webGlProgram, name);
-            if (result === null) {
-                console.log("uniform " + name + " not found!");
-                return null;
-            }
-            return result;
-        };
-        Program.prototype.addPassProcesser = function (parameter) {
-            this.faces = (parameter.faces === undefined ? this.faces : parameter.faces);
-            for (var nameInShader in parameter.uniforms) {
-                if (parameter.uniforms[nameInShader] !== undefined) {
-                    this.addUniform(nameInShader, parameter.uniforms[nameInShader]);
-                }
-            }
-            for (var sampler in parameter.textures) {
-                this.textures[sampler] = parameter.textures[sampler];
-            }
-            for (var nameInShader in parameter.attributes) {
-                this.addAttribute(nameInShader, parameter.attributes[nameInShader]);
-            }
-            return this;
-        };
-        Program.prototype.getAttribLocation = function (name) {
-            if (this.gl === undefined || this.gl === null) {
-                console.error("WebGLRenderingContext has not been initialize!");
-                return null;
-            }
-            var result = this.gl.getAttribLocation(this.webGlProgram, name);
-            if (result === null) {
-                console.error("attribute " + name + " not found!");
-                return null;
-            }
-            return result;
-        };
-        return Program;
-    }());
-    exports.Program = Program;
-    exports.defaultProgramPass = {
-        faces: function (mesh) { return mesh.geometry.faces; },
-        uniforms: {
-            modelViewProjectionMatrix: {
-                type: DataTypeEnum_1.DataType.mat4,
-                updator: function (mesh, camera) {
-                    return gl_matrix_3.mat4.multiply(gl_matrix_3.mat4.create(), camera.projectionMatrix, gl_matrix_3.mat4.multiply(gl_matrix_3.mat4.create(), camera.worldToObjectMatrix, mesh.matrix));
-                },
-            },
-            modelViewMatrix: {
-                type: DataTypeEnum_1.DataType.mat4,
-                updator: function (mesh, camera) {
-                    return gl_matrix_3.mat4.multiply(gl_matrix_3.mat4.create(), camera.worldToObjectMatrix, mesh.matrix);
-                },
-            },
-            normalViewMatrix: {
-                type: DataTypeEnum_1.DataType.mat4,
-                updator: function (mesh, camera) {
-                    return gl_matrix_3.mat4.transpose(gl_matrix_3.mat4.create(), gl_matrix_3.mat4.invert(gl_matrix_3.mat4.create(), gl_matrix_3.mat4.mul(gl_matrix_3.mat4.create(), camera.worldToObjectMatrix, mesh.matrix)));
-                },
-            },
-        },
-        attributes: {
-            position: function (mesh) { return mesh.geometry.attributes.position; },
-            aMainUV: function (mesh) { return mesh.geometry.attributes.uv; },
-            aNormal: function (mesh) { return mesh.geometry.attributes.normal; },
-        },
-    };
+            return shaderProgram;
+        }
+        function createEntileShader(gl, vertexShaderSource, fragmentShaderSource) {
+            var vertShader = createSeparatedShader(gl, vertexShaderSource, ShaderType.VertexShader);
+            var fragShader = createSeparatedShader(gl, fragmentShaderSource, ShaderType.FragmentShader);
+            return linkShader(gl, vertShader, fragShader, vertexShaderSource, fragmentShaderSource);
+        }
+        Graphics.createEntileShader = createEntileShader;
+    })(Graphics = exports.Graphics || (exports.Graphics = {}));
 });
-define("geometries/Geometry", ["require", "exports", "DataTypeEnum", "shader/Program"], function (require, exports, DataTypeEnum_2, Program_1) {
+define("geometries/Geometry", ["require", "exports", "DataTypeEnum", "renderer/GraphicsUtils", "shader/Attibute"], function (require, exports, DataTypeEnum_2, GraphicsUtils_1, Attibute_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Faces = (function () {
         function Faces(gl, data) {
@@ -975,17 +406,32 @@ define("geometries/Geometry", ["require", "exports", "DataTypeEnum", "shader/Pro
     exports.Faces = Faces;
     var Geometry = (function () {
         function Geometry(gl) {
-            this.dirty = true;
+            this._dirty = true;
             this.gl = gl;
             this.attributes = {
-                position: new Program_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
-                uv: new Program_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 2, data: [] }),
-                normal: new Program_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
-                flatNormal: new Program_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
+                position: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
+                aMainUV: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 2, data: [] }),
+                aNormal: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
+                flatNormal: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
             };
             this.faces = { data: [], buffer: gl.createBuffer() };
         }
         Geometry.prototype.build = function () {
+            return this;
+        };
+        Geometry.prototype.assertValid = function () {
+            var maxIndex = 0;
+            for (var _i = 0, _a = this.faces.data; _i < _a.length; _i++) {
+                var index = _a[_i];
+                maxIndex = Math.max(maxIndex, index);
+            }
+            for (var attributeName in this.attributes) {
+                console.assert(this.attributes[attributeName].size <= 4
+                    && this.attributes[attributeName].size >= 1, attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
+                console.assert((maxIndex + 1) * this.attributes[attributeName].stride <=
+                    this.attributes[attributeName].data.length, attributeName + " length error, now:" + this.attributes[attributeName].data.length
+                    + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
+            }
             return this;
         };
         Geometry.prototype.setAttribute = function (name, attribute) {
@@ -1046,11 +492,17 @@ define("geometries/Geometry", ["require", "exports", "DataTypeEnum", "shader/Pro
             }
             return this;
         };
+        Geometry.prototype.clean = function (gl) {
+            if (this._dirty) {
+                GraphicsUtils_1.Graphics.copyDataToVertexBuffer(gl, this);
+            }
+            this._dirty = false;
+        };
         return Geometry;
     }());
     exports.Geometry = Geometry;
 });
-define("geometries/SphereGeometry", ["require", "exports", "gl-matrix", "geometries/Geometry"], function (require, exports, gl_matrix_4, Geometry_1) {
+define("geometries/SphereGeometry", ["require", "exports", "gl-matrix", "geometries/Geometry"], function (require, exports, gl_matrix_2, Geometry_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var SphereGeometry = (function (_super) {
         __extends(SphereGeometry, _super);
@@ -1075,16 +527,16 @@ define("geometries/SphereGeometry", ["require", "exports", "gl-matrix", "geometr
                 var verticesRow = [];
                 var v = iy / this._heightSegments;
                 for (ix = 0; ix <= this._widthSegments; ix++) {
-                    var uv = [ix / this._widthSegments, 1 - iy / this._heightSegments];
+                    var aMainUV = [ix / this._widthSegments, 1 - iy / this._heightSegments];
                     var position = [
-                        -this._radius * Math.cos(this._phiStart + uv[0] * this._phiLength)
+                        -this._radius * Math.cos(this._phiStart + aMainUV[0] * this._phiLength)
                             * Math.sin(this._thetaStart + v * this._thetaLength),
-                        this._radius * Math.cos(this._thetaStart + uv[1] * this._thetaLength),
-                        this._radius * Math.sin(this._phiStart + uv[0] * this._phiLength)
+                        this._radius * Math.cos(this._thetaStart + aMainUV[1] * this._thetaLength),
+                        this._radius * Math.sin(this._phiStart + aMainUV[0] * this._phiLength)
                             * Math.sin(this._thetaStart + v * this._thetaLength),
                     ];
-                    var normal = gl_matrix_4.vec3.normalize(gl_matrix_4.vec3.create(), position);
-                    this.addVertex({ position: position, normal: normal, uv: uv });
+                    var aNormal = gl_matrix_2.vec3.normalize(gl_matrix_2.vec3.create(), position);
+                    this.addVertex({ position: position, aNormal: aNormal, aMainUV: aMainUV });
                     verticesRow.push(index++);
                 }
                 grid.push(verticesRow);
@@ -1174,6 +626,95 @@ define("geometries/SphereGeometry", ["require", "exports", "gl-matrix", "geometr
 });
 define("Intersections/BoundingBox", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
+});
+define("materials/Material", ["require", "exports", "gl-matrix"], function (require, exports, gl_matrix_3) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.colors = {
+        black: gl_matrix_3.vec4.fromValues(0, 0, 0, 1),
+        gray: gl_matrix_3.vec4.fromValues(0.5, 0.5, 0.5, 1),
+        red: gl_matrix_3.vec4.fromValues(1, 0, 0, 1),
+        white: gl_matrix_3.vec4.fromValues(1, 1, 1, 1),
+    };
+    var Material = (function () {
+        function Material(gl) {
+            this.defines = [];
+            this.shader = this.initShader(gl);
+        }
+        return Material;
+    }());
+    exports.Material = Material;
+});
+define("Mesh", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_4, DataTypeEnum_3, Decorators_2, Object3d_1) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Mesh = (function (_super) {
+        __extends(Mesh, _super);
+        function Mesh(geometry, materials) {
+            var _this = _super.call(this) || this;
+            _this.materials = [];
+            _this.materials = materials;
+            _this.geometry = geometry;
+            return _this;
+        }
+        Object.defineProperty(Mesh.prototype, "matrix", {
+            get: function () {
+                return this._matrix;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Mesh.prototype, "normalMatrix", {
+            get: function () {
+                return gl_matrix_4.mat4.transpose(gl_matrix_4.mat4.create(), gl_matrix_4.mat4.invert(gl_matrix_4.mat4.create(), this._matrix));
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Mesh.prototype.drawMode = function (gl) {
+            return gl.STATIC_DRAW;
+        };
+        __decorate([
+            Decorators_2.uniform(DataTypeEnum_3.DataType.mat4, "modelMatrix")
+        ], Mesh.prototype, "matrix", null);
+        __decorate([
+            Decorators_2.uniform(DataTypeEnum_3.DataType.mat4)
+        ], Mesh.prototype, "normalMatrix", null);
+        return Mesh;
+    }(Object3d_1.Object3d));
+    exports.Mesh = Mesh;
+});
+define("geometries/RectGeometry", ["require", "exports", "geometries/Geometry"], function (require, exports, Geometry_2) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var RectGeometry = (function (_super) {
+        __extends(RectGeometry, _super);
+        function RectGeometry(gl) {
+            var _this = _super.call(this, gl) || this;
+            _this.attributes.position.data = [
+                -1.0, -1.0, 0.0,
+                1.0, -1.0, 0.0,
+                -1.0, 1.0, 0.0,
+                1.0, 1.0, 0.0,
+            ];
+            _this.attributes.aMainUV.data = [
+                0.0, 0.0,
+                1.0, 0.0,
+                0.0, 1.0,
+                1.0, 1.0,
+            ];
+            _this.attributes.aNormal.data = [
+                0, 0, 1,
+                0, 0, 1,
+                0, 0, 1,
+                0, 0, 1,
+            ];
+            _this.faces.data = [
+                0, 1, 2,
+                2, 1, 3,
+            ];
+            return _this;
+        }
+        return RectGeometry;
+    }(Geometry_2.Geometry));
+    exports.RectGeometry = RectGeometry;
 });
 define("renderer/FrameBuffer", ["require", "exports", "textures/Texture", "renderer/GraphicsUtils"], function (require, exports, Texture_1, GraphicsUtils_2) {
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1317,7 +858,7 @@ define("renderer/FrameBuffer", ["require", "exports", "textures/Texture", "rende
                     break;
                 case AttachmentType.RenderBuffer:
                     gl.bindRenderbuffer(gl.RENDERBUFFER, attachment.glRenderBuffer);
-                    gl.renderbufferStorage(gl.RENDERBUFFER, attachment.innerFormatForBuffer, gl.canvas.width, gl.canvas.height);
+                    gl.renderbufferStorage(gl.RENDERBUFFER, attachment.innerFormatForBuffer, this.width, this.height);
                     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, attachment.attachmentCode(gl), gl.RENDERBUFFER, attachment.glRenderBuffer);
                     break;
                 default: break;
@@ -1326,6 +867,9 @@ define("renderer/FrameBuffer", ["require", "exports", "textures/Texture", "rende
         return FrameBuffer;
     }());
     exports.FrameBuffer = FrameBuffer;
+});
+define("renderer/IExtension", ["require", "exports"], function (require, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
 });
 define("lights/ShadowType", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1336,17 +880,19 @@ define("lights/ShadowType", ["require", "exports"], function (require, exports) 
         ShadowType[ShadowType["Soft"] = 2] = "Soft";
     })(ShadowType = exports.ShadowType || (exports.ShadowType = {}));
 });
-define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d", "renderer/FrameBuffer", "lights/ShadowType"], function (require, exports, gl_matrix_5, DataTypeEnum_3, Decorators_1, Object3d_2, FrameBuffer_1, ShadowType_1) {
+define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d", "renderer/FrameBuffer", "lights/ShadowType"], function (require, exports, gl_matrix_5, DataTypeEnum_4, Decorators_3, Object3d_2, FrameBuffer_1, ShadowType_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Light = (function (_super) {
         __extends(Light, _super);
-        function Light(gl) {
+        function Light(renderer) {
             var _this = _super.call(this) || this;
             _this._color = gl_matrix_5.vec3.fromValues(1, 1, 1);
             _this._idensity = 1;
-            _this._shadowType = ShadowType_1.ShadowType.Hard;
-            _this.gl = gl;
-            _this.setShadowType(_this.shadowType);
+            _this._shadowType = ShadowType_1.ShadowType.Soft;
+            _this._shadowSize = 1024;
+            _this.gl = renderer.gl;
+            _this.ext = renderer.ext;
+            _this.configShadowFrameBuffer();
             _this.setUpProjectionCamera();
             return _this;
         }
@@ -1360,20 +906,32 @@ define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Deco
         };
         Light.prototype.setShadowType = function (shadowType) {
             this._shadowType = shadowType;
-            switch (shadowType) {
-                case ShadowType_1.ShadowType.Hard:
-                    this.configShadowFrameBuffer();
-                    break;
-                case ShadowType_1.ShadowType.Soft:
-                    this.configShadowFrameBuffer();
-                    break;
-                default: break;
+            return this;
+        };
+        Light.prototype.setShadowSize = function (shadowSize) {
+            if (shadowSize !== this._shadowSize) {
+                this._shadowSize = shadowSize;
+            }
+            if (this._shadowFrameBuffer !== null) {
+                this._shadowFrameBuffer.setWidth(this._shadowSize);
+                this._shadowFrameBuffer.setHeight(this._shadowSize);
+            }
+            if (this._blurFrameBuffer !== null) {
+                this._blurFrameBuffer.setWidth(this._shadowSize);
+                this._blurFrameBuffer.setHeight(this._shadowSize);
             }
             return this;
         };
         Object.defineProperty(Light.prototype, "shadowType", {
             get: function () {
                 return this._shadowType;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "shadowSize", {
+            get: function () {
+                return this._shadowSize;
             },
             enumerable: true,
             configurable: true
@@ -1392,9 +950,9 @@ define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Deco
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Light.prototype, "projectCamera", {
+        Object.defineProperty(Light.prototype, "blurFrameBuffer", {
             get: function () {
-                return this._projectCamera;
+                return this._blurFrameBuffer;
             },
             enumerable: true,
             configurable: true
@@ -1420,119 +978,157 @@ define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Deco
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(Light.prototype, "projectionMatrix", {
+            get: function () {
+                return this._projectCamera.projectionMatrix;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "viewMatrix", {
+            get: function () {
+                return this._worldToObjectMatrix;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "far", {
+            get: function () {
+                return this._projectCamera.far;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Light.prototype, "near", {
+            get: function () {
+                return this._projectCamera.near;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Light.prototype.drawWithLightCamera = function (renderParam) {
+            renderParam.camera = this._projectCamera;
+            renderParam.material.shader.pass(renderParam);
+        };
         Light.prototype.configShadowFrameBuffer = function () {
             if (!this._shadowFrameBuffer) {
-                this._shadowFrameBuffer = new FrameBuffer_1.FrameBuffer(this.gl).setWidth(1024).setHeight(1024);
-                this._shadowFrameBuffer.attachments.color.disable();
-                this._shadowFrameBuffer.attachments.depth.setType(this.gl, FrameBuffer_1.AttachmentType.Texture);
-                this._shadowMap = this._shadowFrameBuffer.attachments.depth.targetTexture
-                    .setType(this.gl.UNSIGNED_SHORT)
-                    .setFormat(this.gl.DEPTH_COMPONENT)
-                    .setMinFilter(this.gl.LINEAR)
-                    .setMagFilter(this.gl.LINEAR)
+                this._shadowFrameBuffer = new FrameBuffer_1.FrameBuffer(this.gl).setWidth(this._shadowSize).setHeight(this._shadowSize);
+                this._shadowMap = this._shadowFrameBuffer.attachments.color.targetTexture
+                    .setType(this.gl.FLOAT)
+                    .setFormat(this.gl.RGBA)
+                    .setMinFilter(this.gl.NEAREST)
+                    .setMagFilter(this.gl.NEAREST)
                     .setWrapS(this.gl.REPEAT)
                     .setWrapT(this.gl.REPEAT)
-                    .bindTextureData(this.gl);
+                    .apply(this.gl);
                 this._shadowFrameBuffer.attach(this.gl);
+            }
+            if (!this._blurFrameBuffer) {
+                this._blurFrameBuffer = new FrameBuffer_1.FrameBuffer(this.gl).setWidth(this._shadowSize).setHeight(this._shadowSize);
+                this._blurFrameBuffer.attachments.color.targetTexture
+                    .setType(this.gl.FLOAT)
+                    .setFormat(this.gl.RGBA)
+                    .setMagFilter(this.gl.NEAREST)
+                    .setMinFilter(this.gl.NEAREST)
+                    .setWrapS(this.gl.CLAMP_TO_EDGE)
+                    .setWrapT(this.gl.CLAMP_TO_EDGE)
+                    .apply(this.gl);
+                this._blurFrameBuffer.attach(this.gl);
             }
             return this;
         };
+        __decorate([
+            Decorators_3.ifdefine("USE_SHADOW"),
+            Decorators_3.uniform(DataTypeEnum_4.DataType.float, "shadowMapSize")
+        ], Light.prototype, "shadowSize", null);
+        __decorate([
+            Decorators_3.ifdefine("USE_SHADOW"),
+            Decorators_3.texture()
+        ], Light.prototype, "shadowMap", null);
+        __decorate([
+            Decorators_3.uniform(DataTypeEnum_4.DataType.vec3)
+        ], Light.prototype, "color", null);
+        __decorate([
+            Decorators_3.uniform(DataTypeEnum_4.DataType.float)
+        ], Light.prototype, "idensity", null);
+        __decorate([
+            Decorators_3.ifdefine("USE_SHADOW"),
+            Decorators_3.uniform(DataTypeEnum_4.DataType.mat4)
+        ], Light.prototype, "projectionMatrix", null);
+        __decorate([
+            Decorators_3.ifdefine("USE_SHADOW"),
+            Decorators_3.uniform(DataTypeEnum_4.DataType.mat4)
+        ], Light.prototype, "viewMatrix", null);
         return Light;
     }(Object3d_2.Object3d));
-    __decorate([
-        Decorators_1.uniform("color", DataTypeEnum_3.DataType.vec3)
-    ], Light.prototype, "_color", void 0);
-    __decorate([
-        Decorators_1.uniform("idensity", DataTypeEnum_3.DataType.float)
-    ], Light.prototype, "_idensity", void 0);
     exports.Light = Light;
 });
-define("lights/DirectionalLight", ["require", "exports", "gl-matrix", "cameras/OrthoCamera", "DataTypeEnum", "Decorators", "lights/Light"], function (require, exports, gl_matrix_6, OrthoCamera_1, DataTypeEnum_4, Decorators_2, Light_1) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var DirectionalLight = (function (_super) {
-        __extends(DirectionalLight, _super);
-        function DirectionalLight(gl) {
-            var _this = _super.call(this, gl) || this;
-            _this._direction = gl_matrix_6.vec3.fromValues(0, 0, -1);
-            return _this;
-        }
-        Object.defineProperty(DirectionalLight.prototype, "typename", {
-            get: function () {
-                return "DirectionalLight";
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(DirectionalLight.prototype, "direction", {
-            get: function () {
-                return gl_matrix_6.vec3.transformQuat(gl_matrix_6.vec3.create(), this._direction, gl_matrix_6.mat4.getRotation(gl_matrix_6.quat.create(), this.matrix));
-            },
-            enumerable: true,
-            configurable: true
-        });
-        DirectionalLight.prototype.getProjecttionBoundingBox2D = function (camera) {
-            return {
-                left: -1,
-                right: 1,
-                top: 1,
-                bottom: -1,
-            };
-        };
-        DirectionalLight.prototype.setDirection = function (_direction) {
-            var lookPoint = gl_matrix_6.vec3.add(gl_matrix_6.vec3.create(), this.position, _direction);
-            this._projectCamera.lookAt(lookPoint);
-            return this;
-        };
-        DirectionalLight.prototype.setUpProjectionCamera = function () {
-            this._projectCamera = new OrthoCamera_1.OrthoCamera()
-                .setParent(this)
-                .setLocalPosition(gl_matrix_6.vec3.create())
-                .adaptTargetRadio({ width: 10, height: 10 })
-                .setFar(100);
-        };
-        return DirectionalLight;
-    }(Light_1.Light));
-    __decorate([
-        Decorators_2.uniform("direction", DataTypeEnum_4.DataType.vec3, function (light, camera) {
-            var lookDirWorld = gl_matrix_6.vec3.fromValues(-light.projectCamera.worldToObjectMatrix[2], -light.projectCamera.worldToObjectMatrix[6], -light.projectCamera.worldToObjectMatrix[10]);
-            var cameraRatation = gl_matrix_6.mat4.getRotation(gl_matrix_6.quat.create(), camera.worldToObjectMatrix);
-            var lookDirView = gl_matrix_6.vec3.transformQuat(gl_matrix_6.vec3.create(), lookDirWorld, cameraRatation);
-            return lookDirView;
-        })
-    ], DirectionalLight.prototype, "_direction", void 0);
-    exports.DirectionalLight = DirectionalLight;
-});
-define("lights/PointLight", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "geometries/SphereGeometry", "lights/Light", "lights/ShadowType"], function (require, exports, gl_matrix_7, DataTypeEnum_5, Decorators_3, SphereGeometry_1, Light_2, ShadowType_2) {
+define("lights/PointLight", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "geometries/SphereGeometry", "lights/Light", "lights/ShadowType"], function (require, exports, gl_matrix_6, DataTypeEnum_5, Decorators_4, SphereGeometry_1, Light_1, ShadowType_2) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var PointLight = (function (_super) {
         __extends(PointLight, _super);
-        function PointLight(gl) {
-            var _this = _super.call(this, gl) || this;
-            _this._position = gl_matrix_7.vec3.create();
+        function PointLight(renderer) {
+            var _this = _super.call(this, renderer) || this;
             _this._radius = 100;
             _this._squareAttenuation = 0.01;
             _this._linearAttenuation = 0.1;
             _this._constantAttenuation = 1;
-            _this.volume = new SphereGeometry_1.SphereGeometry(gl).setRadius(_this._radius).build();
+            _this._pcssArea = 0.1;
+            _this.volume = new SphereGeometry_1.SphereGeometry(renderer.gl).setRadius(_this._radius).build();
             _this._shadowType = ShadowType_2.ShadowType.None;
             return _this;
         }
+        Object.defineProperty(PointLight.prototype, "position", {
+            get: function () {
+                return this._position;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PointLight.prototype, "squareAttenuation", {
+            get: function () {
+                return this._squareAttenuation;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PointLight.prototype, "linearAttenuation", {
+            get: function () {
+                return this._squareAttenuation;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PointLight.prototype, "constantAttenuation", {
+            get: function () {
+                return this._constantAttenuation;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PointLight.prototype, "pcssArea", {
+            get: function () {
+                return this._pcssArea;
+            },
+            enumerable: true,
+            configurable: true
+        });
         PointLight.prototype.getProjecttionBoundingBox2D = function (camera) {
-            var viewMatrix = gl_matrix_7.mat4.multiply(gl_matrix_7.mat4.create(), camera.projectionMatrix, camera.worldToObjectMatrix);
-            var viewDir = gl_matrix_7.vec3.sub(gl_matrix_7.vec3.create(), this.position, camera.position);
-            var upSide = gl_matrix_7.vec3.normalize(gl_matrix_7.vec3.create(), camera.upVector);
-            var rightSide = gl_matrix_7.vec3.create();
-            gl_matrix_7.vec3.cross(rightSide, upSide, viewDir);
-            gl_matrix_7.vec3.normalize(rightSide, rightSide);
-            gl_matrix_7.vec3.scale(upSide, upSide, this.radius);
-            gl_matrix_7.vec3.scale(rightSide, rightSide, this.radius);
-            var lightUpPoint = gl_matrix_7.vec3.add(gl_matrix_7.vec3.create(), this.position, upSide);
-            var lightRightPoint = gl_matrix_7.vec3.add(gl_matrix_7.vec3.create(), this.position, rightSide);
-            var screenPos = gl_matrix_7.vec3.transformMat4(gl_matrix_7.vec3.create(), this._position, viewMatrix);
-            lightUpPoint = gl_matrix_7.vec3.transformMat4(gl_matrix_7.vec3.create(), lightUpPoint, viewMatrix);
-            lightRightPoint = gl_matrix_7.vec3.transformMat4(gl_matrix_7.vec3.create(), lightRightPoint, viewMatrix);
-            var screenH = Math.abs(gl_matrix_7.vec3.len(gl_matrix_7.vec3.sub(gl_matrix_7.vec3.create(), lightUpPoint, screenPos)));
-            var screenW = Math.abs(gl_matrix_7.vec3.len(gl_matrix_7.vec3.sub(gl_matrix_7.vec3.create(), lightRightPoint, screenPos)));
+            var viewMatrix = gl_matrix_6.mat4.multiply(gl_matrix_6.mat4.create(), camera.projectionMatrix, camera.worldToObjectMatrix);
+            var viewDir = gl_matrix_6.vec3.sub(gl_matrix_6.vec3.create(), this.position, camera.position);
+            var upSide = gl_matrix_6.vec3.normalize(gl_matrix_6.vec3.create(), camera.upVector);
+            var rightSide = gl_matrix_6.vec3.create();
+            gl_matrix_6.vec3.cross(rightSide, upSide, viewDir);
+            gl_matrix_6.vec3.normalize(rightSide, rightSide);
+            gl_matrix_6.vec3.scale(upSide, upSide, this.radius);
+            gl_matrix_6.vec3.scale(rightSide, rightSide, this.radius);
+            var lightUpPoint = gl_matrix_6.vec3.add(gl_matrix_6.vec3.create(), this.position, upSide);
+            var lightRightPoint = gl_matrix_6.vec3.add(gl_matrix_6.vec3.create(), this.position, rightSide);
+            var screenPos = gl_matrix_6.vec3.transformMat4(gl_matrix_6.vec3.create(), this._position, viewMatrix);
+            lightUpPoint = gl_matrix_6.vec3.transformMat4(gl_matrix_6.vec3.create(), lightUpPoint, viewMatrix);
+            lightRightPoint = gl_matrix_6.vec3.transformMat4(gl_matrix_6.vec3.create(), lightRightPoint, viewMatrix);
+            var screenH = Math.abs(gl_matrix_6.vec3.len(gl_matrix_6.vec3.sub(gl_matrix_6.vec3.create(), lightUpPoint, screenPos)));
+            var screenW = Math.abs(gl_matrix_6.vec3.len(gl_matrix_6.vec3.sub(gl_matrix_6.vec3.create(), lightRightPoint, screenPos)));
             return {
                 left: screenPos[0] - screenW,
                 right: screenPos[0] + screenW,
@@ -1561,165 +1157,130 @@ define("lights/PointLight", ["require", "exports", "gl-matrix", "DataTypeEnum", 
         });
         PointLight.prototype.setUpProjectionCamera = function () {
         };
+        __decorate([
+            Decorators_4.uniform(DataTypeEnum_5.DataType.vec3)
+        ], PointLight.prototype, "position", null);
+        __decorate([
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float, "squareAtten")
+        ], PointLight.prototype, "squareAttenuation", null);
+        __decorate([
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float, "linearAtten")
+        ], PointLight.prototype, "linearAttenuation", null);
+        __decorate([
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float, "constantAtten")
+        ], PointLight.prototype, "constantAttenuation", null);
+        __decorate([
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float)
+        ], PointLight.prototype, "pcssArea", null);
         return PointLight;
-    }(Light_2.Light));
-    __decorate([
-        Decorators_3.uniform("position", DataTypeEnum_5.DataType.vec3, function (light, camera) {
-            return gl_matrix_7.vec3.transformMat4(gl_matrix_7.vec3.create(), light.position, gl_matrix_7.mat4.mul(gl_matrix_7.mat4.create(), camera.worldToObjectMatrix, light.matrix));
-        })
-    ], PointLight.prototype, "_position", void 0);
-    __decorate([
-        Decorators_3.uniform("radius", DataTypeEnum_5.DataType.float)
-    ], PointLight.prototype, "_radius", void 0);
-    __decorate([
-        Decorators_3.uniform("squareAtten", DataTypeEnum_5.DataType.float)
-    ], PointLight.prototype, "_squareAttenuation", void 0);
-    __decorate([
-        Decorators_3.uniform("linearAtten", DataTypeEnum_5.DataType.float)
-    ], PointLight.prototype, "_linearAttenuation", void 0);
-    __decorate([
-        Decorators_3.uniform("constantAtten", DataTypeEnum_5.DataType.float)
-    ], PointLight.prototype, "_constantAttenuation", void 0);
+    }(Light_1.Light));
     exports.PointLight = PointLight;
 });
-define("cameras/PerspectiveCamera", ["require", "exports", "gl-matrix", "cameras/Camera"], function (require, exports, gl_matrix_8, Camera_2) {
+define("shader/shaders", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
-    var PerspectiveCamera = (function (_super) {
-        __extends(PerspectiveCamera, _super);
-        function PerspectiveCamera(parameter) {
-            if (parameter === void 0) {
-                parameter = {};
-            }
-            var _this = _super.call(this) || this;
-            _this._aspect = 1;
-            _this._fovy = Math.PI / 4;
-            _this._aspect = parameter.aspect || _this._aspect;
-            _this._fovy = parameter.fovy || _this._fovy;
-            _this._near = parameter.near || _this._near;
-            _this._far = parameter.far || _this._far;
-            return _this;
-        }
-        PerspectiveCamera.prototype.compuseProjectionMatrix = function () {
-            gl_matrix_8.mat4.perspective(gl_matrix_8.mat4.create(), this.fovy, this.aspect, this.near, this.far);
-        };
-        Object.defineProperty(PerspectiveCamera.prototype, "aspect", {
-            get: function () {
-                return this._aspect;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(PerspectiveCamera.prototype, "fovy", {
-            get: function () {
-                return this._fovy;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        PerspectiveCamera.prototype.setAspect = function (aspect) {
-            if (aspect !== this._aspect) {
-                this.compuseProjectionMatrix();
-                this._aspect = aspect;
-            }
-            return this;
-        };
-        PerspectiveCamera.prototype.setFovy = function (fovy) {
-            if (fovy !== this._fovy) {
-                this.compuseProjectionMatrix();
-                this._fovy = fovy;
-            }
-            return this;
-        };
-        PerspectiveCamera.prototype.deCompuseProjectionMatrix = function () {
-        };
-        PerspectiveCamera.prototype.genOtherMatrixs = function () {
-            _super.prototype.genOtherMatrixs.call(this);
-            this._projectionMatrix = gl_matrix_8.mat4.perspective(gl_matrix_8.mat4.create(), this.fovy, this.aspect, this.near, this.far);
-        };
-        PerspectiveCamera.prototype.adaptTargetRadio = function (target) {
-            this._aspect = target.width / target.height;
-            this.genOtherMatrixs();
-            return this;
-        };
-        return PerspectiveCamera;
-    }(Camera_2.Camera));
-    exports.PerspectiveCamera = PerspectiveCamera;
+    var ShaderSource;
+    (function (ShaderSource) {
+        ShaderSource.calculators__blinn_phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specular,\n    vec3 diffuse,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    vec3 color = (diffuseColor + specularColor) * idensity;\n    return color;\n}\n";
+        ShaderSource.calculators__blur__gaussian_glsl = "vec4 gaussian_blur(sampler2D origin, vec2 uv, float blurStep, vec2 blurDir) {\n    vec4 average = vec4(0.0, 0.0, 0.0, 0.0);\n    average += texture2D(origin, uv - 4.0 * blurStep * blurDir) * 0.0162162162;\n    average += texture2D(origin, uv - 3.0 * blurStep * blurDir) * 0.0540540541;\n    average += texture2D(origin, uv - 2.0 * blurStep * blurDir) * 0.1216216216;\n    average += texture2D(origin, uv - 1.0 * blurStep * blurDir) * 0.1945945946;\n    average += texture2D(origin, uv) * 0.2270270270;\n    average += texture2D(origin, uv + 1.0 * blurStep * blurDir) * 0.1945945946;\n    average += texture2D(origin, uv + 2.0 * blurStep * blurDir) * 0.1216216216;\n    average += texture2D(origin, uv + 3.0 * blurStep * blurDir) * 0.0540540541;\n    average += texture2D(origin, uv + 4.0 * blurStep * blurDir) * 0.0162162162;\n    return average;\n}\n";
+        ShaderSource.calculators__blur__gaussian_log_glsl = "\n";
+        ShaderSource.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 - 1.0;;\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n}\n";
+        ShaderSource.calculators__packFloat1x32_glsl = "vec4 packFloat1x32(float val)\n{\n    vec4 pack = vec4(1.0, 255.0, 65025.0, 16581375.0) * val;\n    pack = fract(pack);\n    pack -= vec4(pack.yzw / 255.0, 0.0);\n    return pack;\n}\n";
+        ShaderSource.calculators__phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specularLight,\n    vec3 diffuseLight,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
+        ShaderSource.calculators__shadow_factor_glsl = "float getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDepth, float lambertian, float texelSize)\n{\n    vec2 uv = clipPos * 0.5 + 0.5;\n    \n    vec2 f = fract(uv / texelSize - 0.5);\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n    float lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0)).r;\n    float lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0)).r;\n    float rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0)).r;\n    float rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0)).r;\n    float a = lb + log(mix(1.0, exp(lt - lb), f.y));\n    float b = rb + log(mix(1.0, exp(rt - rb), f.y));\n    float z = a + log(mix(1.0, exp(b - a), f.x));\n\n    float bias = clamp(0.1 * tan(acos(lambertian)), 0.0, 1.0);\n\n    float s = exp((z + bias - linearDepth));\n\n    return min(s, 1.0);\n}\n";
+        ShaderSource.calculators__types_glsl = "vec3 calculateDirLight(\n    DirectLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        position,\n        normal,\n        -light.direction,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity *= step(lightDis, light.radius);\n    return calculateLight(\n        position,\n        normal,\n        normalize(light.position - position),\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        position,\n        normal,\n        lightDir,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\n// float directAndSpotShadow(sampler2D shadowMap, vec4 shadowCoord) {\n//\n// }\n";
+        ShaderSource.calculators__unpackFloat1x32_glsl = "float unpackFloat1x32( vec4 rgba ) {\n  return dot( rgba, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 160581375.0) );\n}\n";
+        ShaderSource.debug__checkBox_glsl = "float checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
+        ShaderSource.definitions__light_glsl = "struct DirectLight\n{\n    vec3 color;\n    float idensity;\n    vec3 direction;\n#ifdef USE_SHADOW\n    sampler2D shadowMap;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n#endif\n};\n\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n#ifdef USE_SHADOW\n    sampler2D shadowMap;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n    float pcssArea;\n#endif\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n    float coneAngleCos;\n    vec3 spotDir;\n#ifdef USE_SHADOW\n    sampler2D shadowMap;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n    float pcssArea;\n#endif\n};\n";
+        ShaderSource.interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
+        ShaderSource.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
+        ShaderSource.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculateLight(\n                viewPosition,\n                normal,\n                normalize(lightPos - viewPosition),\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
+        ShaderSource.interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
+        ShaderSource.interploters__forward__esm__blur_frag = "uniform sampler2D uOrigin;\nuniform vec2 uBlurDir;\nuniform float uBlurStep;\n\nuniform float lightArea;\n\n#define MAX_BLOCK_SAMPLE 8.0\n#define MAX_PCF_SAMPLE 8.0\n\nuniform float blockSamples;\nuniform float PCFSamples;\n\nvarying vec4 vProjPos;\nvarying vec3 vNormal;\n\nvoid main () {\n    vec2 uv = vProjPos.xy * 0.5 + 0.5;\n    float base = texture2D(uOrigin, uv).r;\n    float block = 0.0;\n    gl_FragColor.r = base;\n\n    for (float i = 0.0; i < MAX_BLOCK_SAMPLE; ++i) {\n        if(i >= blockSamples) {\n            break;\n        }\n        float d = texture2D(uOrigin, uv + (i - blockSamples / 2.0) * uBlurStep * uBlurDir).r;\n        block += step(base, d) * d / blockSamples;\n    }\n    \n    float kenelSize = lightArea * (base - block) / base;\n\n    float sum = 0.0;\n\n    for (float i = 0.0; i < MAX_PCF_SAMPLE; ++i) {\n        if(i >= PCFSamples) {\n            break;\n        }\n        float expd = exp(texture2D(uOrigin, uv + (i - PCFSamples / 2.0) * kenelSize * uBlurStep * uBlurDir).r - base);\n        sum += expd / PCFSamples;\n    }\n\n    float average = log(sum) + base;\n\n    gl_FragColor.r += average;\n}\n";
+        ShaderSource.interploters__forward__esm__blur_vert = "uniform mat4 normalMatrix;\nattribute vec3 position;\nattribute vec3 normal;\nvarying vec4 vProjPos;\nvarying vec3 vNormal;\n\nvoid main () {\n    gl_Position = vProjPos = vec4(position, 1.0);\n    vNormal = normalize((normalMatrix * vec4(normal, 1.0)).xyz);\n}\n";
+        ShaderSource.interploters__forward__esm__depth_frag = "varying vec3 viewPos;\n\nvoid main () {\n    gl_FragColor.r = -viewPos.z;\n}\n";
+        ShaderSource.interploters__forward__esm__depth_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\nvarying vec3 viewPos;\n\nvoid main () {\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    viewPos = (modelViewMatrix * vec4(position, 1.0)).xyz;\n}\n";
+        ShaderSource.interploters__forward__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
+        ShaderSource.interploters__forward__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
+        ShaderSource.interploters__forward__phong_frag = "uniform vec3 ambient;\nuniform vec3 uMaterialSpec;\nuniform float uMaterialSpecExp;\nuniform vec3 uMaterialDiff;\n\nuniform vec3 cameraPos;\n\nvarying vec2 vMainUV;\nvarying vec4 clipPos;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\n#endif\n\n#if (pointLightsNum > 0)\nuniform PointLight pointLights[pointLightsNum];\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\n#endif\n\n#ifdef USE_SHADOW\n\n    #if (directLightsNum > 0)\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n\n    #if (pointLightsNum > 0)\n    varying vec4 pointShadowCoord[pointLightsNum];\n    varying float pointLightDepth[pointLightsNum];\n    #endif\n\n    #if (spotLightsNum > 0)\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = ambient;\n    #ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(viewDir, vNormal);\n    totalLighting = mix(totalLighting, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n    #endif\n#if (directLightsNum > 0)\n    for (int index = 0; index < directLightsNum; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            uMaterialDiff,\n            uMaterialSpec,\n            uMaterialSpecExp,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef USE_SHADOW\n        float lambertian = dot(-directLights[index].direction, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            directShadowCoord[index].xy / directShadowCoord[index].w, \n            directLights[index].shadowMap, \n            directLightDepth[index], \n            lambertian, \n            1.0 / directLights[index].shadowMapSize\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (pointLightsNum > 0)\n    for (int index = 0; index < pointLightsNum; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            uMaterialDiff,\n            uMaterialSpec,\n            uMaterialSpecExp,\n            vPosition,\n            normal,\n            cameraPos\n        );\n        totalLighting += lighting;\n    }\n#endif\n#if (spotLightsNum > 0)\n    for (int index = 0; index < spotLightsNum; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            uMaterialDiff,\n            uMaterialSpec,\n            uMaterialSpecExp,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef USE_SHADOW\n        float lambertian = dot(-spotLights[index].spotDir, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            spotShadowCoord[index].xy / spotShadowCoord[index].w, \n            spotLights[index].shadowMap,\n            spotLightDepth[index], \n            lambertian, 1.0 / spotLights[index].shadowMapSize\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n\n    }\n#endif\n    color += totalLighting;\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+        ShaderSource.interploters__forward__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\nvarying vec4 clipPos;\n\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\n    #ifdef USE_SHADOW\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n#endif\n\n#if (pointLightsNum > 0)\nuniform PointLight pointLights[pointLightsNum];\n    #ifdef USE_SHADOW\n    varying vec4 pointShadowCoord[pointLightsNum];\n    varying float pointLightDepth[pointLightsNum];\n    #endif\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\n    #ifdef USE_SHADOW\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n#endif\n\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    clipPos = gl_Position;\n    vec4 worldPos = (modelMatrix * vec4(position, 1.0));\n    vPosition = worldPos.xyz;\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n\n    #ifdef USE_SHADOW\n        #if (directLightsNum > 0)\n        for (int i = 0; i < directLightsNum; ++i) {\n            directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;\n            directLightDepth[i] = -(directLights[i].viewMatrix * worldPos).z;\n        }\n        #endif\n\n        #if (pointLightsNum > 0)\n        for (int i = 0; i < pointLightsNum; ++i) {\n            pointShadowCoord[i] = pointLights[i].projectionMatrix * pointLights[i].viewMatrix * worldPos;\n            pointLightDepth[i] = -(pointLights[i].viewMatrix * worldPos).z;\n        }\n        #endif\n\n        #if (spotLightsNum > 0)\n        for (int i = 0; i < spotLightsNum; ++i) {\n            spotShadowCoord[i] = spotLights[i].projectionMatrix * spotLights[i].viewMatrix * worldPos;\n            spotLightDepth[i] = -(spotLights[i].viewMatrix * worldPos).z;\n        }\n        #endif\n    #endif\n}\n";
+        ShaderSource.interploters__forward__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
+        ShaderSource.interploters__forward__skybox_vert = "attribute vec3 position;\nuniform mat4 viewProjectionMatrix;\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = viewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
+    })(ShaderSource = exports.ShaderSource || (exports.ShaderSource = {}));
 });
-define("lights/SpotLight", ["require", "exports", "gl-matrix", "cameras/PerspectiveCamera", "DataTypeEnum", "Decorators", "lights/PointLight", "lights/ShadowType"], function (require, exports, gl_matrix_9, PerspectiveCamera_1, DataTypeEnum_6, Decorators_4, PointLight_1, ShadowType_3) {
+define("shader/ShaderBuilder", ["require", "exports", "shader/Program", "shader/shaders"], function (require, exports, Program_1, shaders_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SpotLight = (function (_super) {
-        __extends(SpotLight, _super);
-        function SpotLight(gl) {
-            var _this = _super.call(this, gl) || this;
-            _this._spotDirection = gl_matrix_9.vec3.fromValues(0, 0, -1);
-            _this.setConeAngle(Math.PI / 4);
-            _this.setRadius(100);
-            _this._shadowType = ShadowType_3.ShadowType.Hard;
-            return _this;
+    var ShaderBuilder = (function () {
+        function ShaderBuilder() {
+            this.vertLibs = [
+                shaders_1.ShaderSource.definitions__light_glsl,
+            ];
+            this.fragLibs = [
+                shaders_1.ShaderSource.definitions__light_glsl,
+                shaders_1.ShaderSource.calculators__linearlize_depth_glsl,
+                shaders_1.ShaderSource.calculators__blinn_phong_glsl,
+                shaders_1.ShaderSource.calculators__types_glsl,
+                shaders_1.ShaderSource.calculators__unpackFloat1x32_glsl,
+                shaders_1.ShaderSource.calculators__shadow_factor_glsl,
+                shaders_1.ShaderSource.debug__checkBox_glsl,
+            ];
+            this.shadingVert = shaders_1.ShaderSource.interploters__forward__phong_vert;
+            this.shadingFrag = shaders_1.ShaderSource.interploters__forward__phong_frag;
+            this.extraRenderParamHolders = {};
         }
-        Object.defineProperty(SpotLight.prototype, "typename", {
-            get: function () {
-                return "SpotLight";
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(SpotLight.prototype, "coneAngle", {
-            get: function () {
-                return this._coneAngle;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(SpotLight.prototype, "spotDirection", {
-            get: function () {
-                return gl_matrix_9.vec3.transformQuat(gl_matrix_9.vec3.create(), this._spotDirection, gl_matrix_9.mat4.getRotation(gl_matrix_9.quat.create(), this.matrix));
-            },
-            enumerable: true,
-            configurable: true
-        });
-        SpotLight.prototype.setRadius = function (radius) {
-            _super.prototype.setRadius.call(this, radius);
-            this._projectCamera.setFar(radius);
+        ShaderBuilder.prototype.resetShaderLib = function () {
+            this.vertLibs = [];
+            this.fragLibs = [];
             return this;
         };
-        SpotLight.prototype.setConeAngle = function (coneAngle) {
-            this._coneAngle = coneAngle;
-            this._coneAngleCos = Math.cos(coneAngle);
-            this._projectCamera.setFovy(coneAngle * 2);
+        ShaderBuilder.prototype.addShaderLib = function () {
+            var lib = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                lib[_i] = arguments[_i];
+            }
+            (_a = this.vertLibs).push.apply(_a, lib);
+            (_b = this.fragLibs).push.apply(_b, lib);
+            return this;
+            var _a, _b;
+        };
+        ShaderBuilder.prototype.addShaderLibVert = function () {
+            var lib = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                lib[_i] = arguments[_i];
+            }
+            (_a = this.vertLibs).push.apply(_a, lib);
+            return this;
+            var _a;
+        };
+        ShaderBuilder.prototype.addShaderLibFrag = function () {
+            var lib = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                lib[_i] = arguments[_i];
+            }
+            (_a = this.fragLibs).push.apply(_a, lib);
+            return this;
+            var _a;
+        };
+        ShaderBuilder.prototype.setShadingVert = function (vert) {
+            this.shadingVert = vert;
             return this;
         };
-        SpotLight.prototype.setSpotDirection = function (spotDirection) {
-            var lookPoint = gl_matrix_9.vec3.add(gl_matrix_9.vec3.create(), this.position, spotDirection);
-            this._projectCamera.lookAt(lookPoint);
+        ShaderBuilder.prototype.setShadingFrag = function (frag) {
+            this.shadingFrag = frag;
             return this;
         };
-        SpotLight.prototype.getProjecttionBoundingBox2D = function (camera) {
-            console.error("function getProjecttionBoundingBox2D has not been init");
-            return {
-                left: -1,
-                right: 1,
-                top: 1,
-                bottom: -1,
-            };
+        ShaderBuilder.prototype.setExtraRenderParamHolder = function (name, paramHolder) {
+            this.extraRenderParamHolders[name] = paramHolder;
+            return this;
         };
-        SpotLight.prototype.setUpProjectionCamera = function () {
-            this._projectCamera = new PerspectiveCamera_1.PerspectiveCamera()
-                .setParent(this)
-                .setLocalPosition(gl_matrix_9.vec3.fromValues(0, 0, 0))
-                .adaptTargetRadio({ width: 1024, height: 1024 });
+        ShaderBuilder.prototype.build = function (gl) {
+            return new Program_1.Program(gl, {
+                vertexShader: this.vertLibs.join("\n") + this.shadingVert,
+                fragmentShader: this.fragLibs.join("\n") + this.shadingFrag,
+            }, this.extraRenderParamHolders);
         };
-        return SpotLight;
-    }(PointLight_1.PointLight));
-    __decorate([
-        Decorators_4.uniform("coneAngleCos", DataTypeEnum_6.DataType.float)
-    ], SpotLight.prototype, "_coneAngleCos", void 0);
-    __decorate([
-        Decorators_4.uniform("spotDir", DataTypeEnum_6.DataType.vec3, function (light, camera) {
-            return gl_matrix_9.vec3.transformQuat(gl_matrix_9.vec3.create(), light._spotDirection, gl_matrix_9.mat4.getRotation(gl_matrix_9.quat.create(), gl_matrix_9.mat4.multiply(gl_matrix_9.mat4.create(), camera.worldToObjectMatrix, light.matrix)));
-        })
-    ], SpotLight.prototype, "_spotDirection", void 0);
-    exports.SpotLight = SpotLight;
+        return ShaderBuilder;
+    }());
+    exports.ShaderBuilder = ShaderBuilder;
 });
 define("textures/CubeTexture", ["require", "exports", "textures/Texture"], function (require, exports, Texture_2) {
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1729,12 +1290,7 @@ define("textures/CubeTexture", ["require", "exports", "textures/Texture"], funct
             var _this = _super.call(this, gl) || this;
             _this.images = [];
             var image = _this._image;
-            _this.setAsyncFinished(Promise.all(_this.images.map(function (image) { return _this.createLoadPromise(image); })).then(function () {
-                return Promise.resolve(_this);
-            }));
-            _this.setTarget(gl.TEXTURE_CUBE_MAP)
-                .setMinFilter(gl.NEAREST)
-                .setMagFilter(gl.NEAREST);
+            _this.setTarget(gl.TEXTURE_CUBE_MAP);
             _this.images = [0, 0, 0, 0, 0, 0].map(function () { return new Image(); });
             _this.images[0].src = xposUrl;
             _this.images[1].src = xnegUrl;
@@ -1742,6 +1298,11 @@ define("textures/CubeTexture", ["require", "exports", "textures/Texture"], funct
             _this.images[3].src = ynegUrl;
             _this.images[4].src = zposUrl;
             _this.images[5].src = znegUrl;
+            _this.setAsyncFinished(Promise.all(_this.images.map(function (image) {
+                return _this.createLoadPromise(image);
+            })).then(function () {
+                return Promise.resolve(_this);
+            }));
             return _this;
         }
         Object.defineProperty(CubeTexture.prototype, "wrapR", {
@@ -1755,8 +1316,8 @@ define("textures/CubeTexture", ["require", "exports", "textures/Texture"], funct
             this._wrapR = _wrapR;
             return this;
         };
-        CubeTexture.prototype.bindTextureData = function (gl) {
-            _super.prototype.bindTextureData.call(this, gl);
+        CubeTexture.prototype.apply = function (gl) {
+            _super.prototype.apply.call(this, gl);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
             for (var i = 0; i < this.images.length; ++i) {
                 gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.format, this.format, this.type, this.images[i]);
@@ -1779,41 +1340,1028 @@ define("textures/CubeTexture", ["require", "exports", "textures/Texture"], funct
     }(Texture_2.Texture));
     exports.CubeTexture = CubeTexture;
 });
-define("textures/Texture2D", ["require", "exports", "textures/Texture"], function (require, exports, Texture_3) {
+define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/Program", "shader/ShaderBuilder", "materials/Material"], function (require, exports, gl_matrix_7, DataTypeEnum_6, Decorators_5, Program_2, ShaderBuilder_1, Material_1) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var StandardMaterial = (function (_super) {
+        __extends(StandardMaterial, _super);
+        function StandardMaterial() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this._debug = false;
+            _this._castShadow = true;
+            _this._ambient = gl_matrix_7.vec3.fromValues(0.1, 0.1, 0.1);
+            _this._diffuse = gl_matrix_7.vec3.fromValues(0.8, 0.8, 0.8);
+            _this._specular = gl_matrix_7.vec3.fromValues(0.3, 0.3, 0.3);
+            _this._specularExponent = 64;
+            _this._transparency = 0;
+            _this._reflectivity = 1;
+            return _this;
+        }
+        Object.defineProperty(StandardMaterial.prototype, "debugMode", {
+            get: function () {
+                return this._debug;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "isCastShadow", {
+            get: function () {
+                return this._castShadow;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "mainTexture", {
+            get: function () {
+                return this._mainTexture;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "ambient", {
+            get: function () {
+                return this._ambient;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "diffuse", {
+            get: function () {
+                return this._diffuse;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "specular", {
+            get: function () {
+                return this._specular;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "specularExponent", {
+            get: function () {
+                return this._specularExponent;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        StandardMaterial.prototype.transparency = function () {
+            return this._transparency;
+        };
+        StandardMaterial.prototype.alphaMap = function () {
+            return this._alphaMap;
+        };
+        Object.defineProperty(StandardMaterial.prototype, "bumpMap", {
+            get: function () {
+                return this._bumpMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "displamentMap", {
+            get: function () {
+                return this._displamentMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "stencilMap", {
+            get: function () {
+                return this.stencilMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "reflectivity", {
+            get: function () {
+                return this._reflectivity;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "environmentMap", {
+            get: function () {
+                return this._environmentMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        StandardMaterial.prototype.setDebugMode = function (_debug) {
+            this._debug = _debug;
+            return this;
+        };
+        StandardMaterial.prototype.castShadow = function (_castShadow) {
+            this._castShadow = _castShadow;
+            return this;
+        };
+        StandardMaterial.prototype.setMainTexture = function (_texture) {
+            this._mainTexture = _texture;
+            return this;
+        };
+        StandardMaterial.prototype.setAmbient = function (_ambient) {
+            this._ambient = _ambient;
+            return this;
+        };
+        StandardMaterial.prototype.setDiffuse = function (_diffuse) {
+            this._diffuse = _diffuse;
+            return this;
+        };
+        StandardMaterial.prototype.setSpecular = function (_specular) {
+            this._specular = _specular;
+            return this;
+        };
+        StandardMaterial.prototype.setSpecularExponent = function (_specularExponent) {
+            this._specularExponent = _specularExponent;
+            return this;
+        };
+        StandardMaterial.prototype.setTransparency = function (_transparency) {
+            console.assert(_transparency >= 0 && _transparency <= 1);
+            this._transparency = _transparency;
+            return this;
+        };
+        StandardMaterial.prototype.setAlphaMap = function (_alphaMap) {
+            this._alphaMap = _alphaMap;
+            return this;
+        };
+        StandardMaterial.prototype.setBumpMap = function (_bumpMap) {
+            this._bumpMap = _bumpMap;
+            return this;
+        };
+        StandardMaterial.prototype.setDisplamentMap = function (_displamentMap) {
+            this._displamentMap = _displamentMap;
+            return this;
+        };
+        StandardMaterial.prototype.setStencilMap = function (_stencilMap) {
+            this._stencilMap = _stencilMap;
+            return this;
+        };
+        StandardMaterial.prototype.setReflectivity = function (_reflectivity) {
+            this._reflectivity = _reflectivity;
+            return this;
+        };
+        StandardMaterial.prototype.setEnvironmentMap = function (_environmentMap) {
+            this._environmentMap = _environmentMap;
+            return this;
+        };
+        StandardMaterial.prototype.initShader = function (gl) {
+            return new ShaderBuilder_1.ShaderBuilder()
+                .setExtraRenderParamHolder("mvp", {
+                uniforms: {
+                    modelViewProjectionMatrix: Program_2.shaderPassLib.uniforms.modelViewProjectionMatrix,
+                },
+            })
+                .build(gl);
+        };
+        __decorate([
+            Decorators_5.define("_DEBUG")
+        ], StandardMaterial.prototype, "_debug", void 0);
+        __decorate([
+            Decorators_5.define("USE_SHADOW", true)
+        ], StandardMaterial.prototype, "_castShadow", void 0);
+        __decorate([
+            Decorators_5.define("_MAIN_TEXTURE"),
+            Decorators_5.texture("uMainTexture")
+        ], StandardMaterial.prototype, "_mainTexture", void 0);
+        __decorate([
+            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "uMaterialDiff")
+        ], StandardMaterial.prototype, "_diffuse", void 0);
+        __decorate([
+            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "uMaterialSpec")
+        ], StandardMaterial.prototype, "_specular", void 0);
+        __decorate([
+            Decorators_5.uniform(DataTypeEnum_6.DataType.float, "uMaterialSpecExp")
+        ], StandardMaterial.prototype, "_specularExponent", void 0);
+        __decorate([
+            Decorators_5.readyRequire
+        ], StandardMaterial.prototype, "_bumpMap", void 0);
+        __decorate([
+            Decorators_5.readyRequire
+        ], StandardMaterial.prototype, "_displamentMap", void 0);
+        __decorate([
+            Decorators_5.readyRequire
+        ], StandardMaterial.prototype, "_stencilMap", void 0);
+        __decorate([
+            Decorators_5.uniform(DataTypeEnum_6.DataType.float, "reflectivity")
+        ], StandardMaterial.prototype, "_reflectivity", void 0);
+        __decorate([
+            Decorators_5.define("_ENVIRONMENT_MAP"),
+            Decorators_5.texture("uCubeTexture")
+        ], StandardMaterial.prototype, "_environmentMap", void 0);
+        __decorate([
+            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "ambient")
+        ], StandardMaterial.prototype, "ambient", null);
+        return StandardMaterial;
+    }(Material_1.Material));
+    exports.StandardMaterial = StandardMaterial;
+});
+define("textures/DataTexture", ["require", "exports", "textures/Texture"], function (require, exports, Texture_3) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var DataTexture = (function (_super) {
+        __extends(DataTexture, _super);
+        function DataTexture(gl, data, width, height) {
+            if (width === void 0) {
+                width = 16;
+            }
+            if (height === void 0) {
+                height = 16;
+            }
+            var _this = _super.call(this, gl) || this;
+            _this.data = data;
+            _this.width = width;
+            _this.height = height;
+            return _this;
+        }
+        DataTexture.prototype.resetData = function (gl, data, width, height) {
+            this.data = data;
+            this.width = width ? width : this.width;
+            this.height = height ? height : this.height;
+            this.apply(gl);
+            return this;
+        };
+        DataTexture.prototype.apply = function (gl) {
+            _super.prototype.apply.call(this, gl);
+            gl.texImage2D(this.target, 0, this.format, this.width, this.height, 0, this.format, this.type, this.data);
+            return this;
+        };
+        return DataTexture;
+    }(Texture_3.Texture));
+    exports.DataTexture = DataTexture;
+});
+define("renderer/IProcessor", ["require", "exports"], function (require, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+});
+define("renderer/deferred/DeferredProcessor", ["require", "exports", "gl-matrix", "DataTypeEnum", "geometries/RectGeometry", "materials/StandardMaterial", "Mesh", "shader/ShaderBuilder", "shader/shaders", "textures/DataTexture", "renderer/FrameBuffer", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_8, DataTypeEnum_7, RectGeometry_1, StandardMaterial_1, Mesh_1, ShaderBuilder_2, shaders_2, DataTexture_1, FrameBuffer_2, GraphicsUtils_3) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var DeferredProcessor = (function () {
+        function DeferredProcessor(gl, ext, scene, camera) {
+            this.tilePixelSize = 32;
+            this.tileLightIndex = [];
+            this.linearLightIndex = [];
+            this.gl = gl;
+            this.ext = ext;
+            this.gBuffer = new FrameBuffer_2.FrameBuffer(gl);
+            this.horizontalTileNum = Math.floor(this.gl.canvas.width / this.tilePixelSize);
+            this.verticalTileNum = Math.floor(this.gl.canvas.height / this.tilePixelSize);
+            this.tileCount = this.horizontalTileNum * this.verticalTileNum;
+            this.initGeometryProcess(scene);
+            this.initTiledPass(scene);
+            scene.programSetUp = true;
+        }
+        DeferredProcessor.prototype.process = function (scene, camera, materials) {
+            GraphicsUtils_3.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer);
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
+            this.gl.enable(this.gl.DEPTH_TEST);
+            this.gl.enable(this.gl.CULL_FACE);
+            this.gl.cullFace(this.gl.BACK);
+            this.gl.disable(this.gl.BLEND);
+            this.gl.depthFunc(this.gl.LESS);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                if (object instanceof Mesh_1.Mesh) {
+                    var mesh = object;
+                    for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
+                        var material = _c[_b];
+                        if (material instanceof StandardMaterial_1.StandardMaterial) {
+                            material.geometryShader.pass({ mesh: mesh, camera: camera });
+                        }
+                    }
+                }
+            }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            this.gl.disable(this.gl.DEPTH_TEST);
+            this.gl.enable(this.gl.BLEND);
+            this.gl.depthFunc(this.gl.EQUAL);
+            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+            this.tileLightPass(scene, camera);
+        };
+        DeferredProcessor.prototype.initGeometryProcess = function (scene) {
+            this.gBuffer.attachments.color.disable();
+            this.gBuffer.attachments.depth
+                .setType(this.gl, FrameBuffer_2.AttachmentType.Texture)
+                .targetTexture
+                .setType(this.gl.UNSIGNED_SHORT)
+                .setFormat(this.gl.DEPTH_COMPONENT)
+                .apply(this.gl);
+            this.gBuffer.extras.push(new FrameBuffer_2.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; })
+                .setType(this.gl, FrameBuffer_2.AttachmentType.Texture), new FrameBuffer_2.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT1_WEBGL; })
+                .setType(this.gl, FrameBuffer_2.AttachmentType.Texture));
+            for (var _i = 0, _a = this.gBuffer.extras; _i < _a.length; _i++) {
+                var colorAttach = _a[_i];
+                colorAttach.targetTexture
+                    .setType(this.gl.FLOAT)
+                    .setFormat(this.gl.RGBA)
+                    .setMinFilter(this.gl.NEAREST)
+                    .setMagFilter(this.gl.NEAREST)
+                    .apply(this.gl);
+            }
+            this.gBuffer.attach(this.gl, this.ext.draw_buffer);
+            for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
+                var object = _c[_b];
+                if (object instanceof Mesh_1.Mesh) {
+                    var geometryProgram = new ShaderBuilder_2.ShaderBuilder()
+                        .resetShaderLib()
+                        .setShadingVert(shaders_2.ShaderSource.interploters__deferred__geometry_vert)
+                        .setShadingFrag(shaders_2.ShaderSource.interploters__deferred__geometry_frag)
+                        .build(this.gl);
+                    for (var _d = 0, _e = object.materials; _d < _e.length; _d++) {
+                        var material = _e[_d];
+                        if (material instanceof StandardMaterial_1.StandardMaterial) {
+                            geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
+                            material.geometryShader = geometryProgram;
+                        }
+                    }
+                }
+            }
+        };
+        DeferredProcessor.prototype.tileLightPass = function (scene, camera) {
+            var lightColors = [];
+            var lightPositionRadius = [];
+            for (var _i = 0, _a = scene.pointLights; _i < _a.length; _i++) {
+                var light = _a[_i];
+                lightColors.push(light.color[0], light.color[1], light.color[2], light.idensity);
+                var lightPosInViewSpace = gl_matrix_8.vec3.transformMat4(gl_matrix_8.vec3.create(), light.position, camera.worldToObjectMatrix);
+                lightPositionRadius.push(lightPosInViewSpace[0], lightPosInViewSpace[1], lightPosInViewSpace[2], light.radius);
+            }
+            this.lightColorIdensityMap.resetData(this.gl, new Float32Array(lightColors), lightColors.length / 4, 1);
+            this.lightPositionRadiusMap.resetData(this.gl, new Float32Array(lightPositionRadius), lightPositionRadius.length / 4, 1);
+            for (var i = 0; i < this.tileCount; ++i) {
+                this.tileLightIndex[i] = [];
+            }
+            this.linearLightIndex = [];
+            for (var i = 0; i < scene.pointLights.length; ++i) {
+                var light = scene.pointLights[i];
+                var box = light.getProjecttionBoundingBox2D(camera);
+                this.fillTileWithBoundingBox2D(camera, box, i);
+            }
+            var lightOffsetCount = [];
+            var offset = 0;
+            for (var _b = 0, _c = this.tileLightIndex; _b < _c.length; _b++) {
+                var indices = _c[_b];
+                lightOffsetCount.push(offset);
+                lightOffsetCount.push(indices.length);
+                offset += indices.length;
+                for (var _d = 0, indices_1 = indices; _d < indices_1.length; _d++) {
+                    var index = indices_1[_d];
+                    this.linearLightIndex.push(index / scene.pointLights.length);
+                }
+            }
+            this.tileLightIndexMap.resetData(this.gl, new Float32Array(this.linearLightIndex), this.linearLightIndex.length, 1);
+            this.tileLightOffsetCountMap.resetData(this.gl, new Float32Array(lightOffsetCount), this.horizontalTileNum, this.verticalTileNum);
+            this.tileProgram.pass({ mesh: this.tile, camera: camera });
+        };
+        DeferredProcessor.prototype.initTiledPass = function (scene) {
+            var _this = this;
+            if (this.tile === undefined) {
+                this.tile = new Mesh_1.Mesh(new RectGeometry_1.RectGeometry(this.gl).build(), []);
+            }
+            for (var i = 0; i < this.horizontalTileNum; ++i) {
+                for (var j = 0; j < this.verticalTileNum; ++j) {
+                    this.tileLightIndex.push([]);
+                }
+            }
+            this.tileLightIndexMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]))
+                .setFormat(this.gl.LUMINANCE)
+                .setType(this.gl.FLOAT);
+            this.tileLightOffsetCountMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]), this.horizontalTileNum, this.verticalTileNum)
+                .setFormat(this.gl.LUMINANCE_ALPHA)
+                .setType(this.gl.FLOAT);
+            this.tileLightCountMap = new DataTexture_1.DataTexture(this.gl, new Uint8Array([]), this.horizontalTileNum, this.verticalTileNum).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
+            this.lightColorIdensityMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA);
+            this.lightPositionRadiusMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]))
+                .setType(this.gl.FLOAT)
+                .setFormat(this.gl.RGBA);
+            this.tileProgram = new ShaderBuilder_2.ShaderBuilder()
+                .resetShaderLib()
+                .addShaderLibFrag(shaders_2.ShaderSource.calculators__blinn_phong_glsl)
+                .setShadingVert(shaders_2.ShaderSource.interploters__deferred__tiledLight_vert)
+                .setShadingFrag(shaders_2.ShaderSource.interploters__deferred__tiledLight_frag)
+                .setExtraRenderParamHolder("lightInfo", {
+                uniforms: {
+                    inverseProjection: {
+                        type: DataTypeEnum_7.DataType.mat4,
+                        updator: function (_a) {
+                            var camera = _a.camera;
+                            return gl_matrix_8.mat4.invert(gl_matrix_8.mat4.create(), camera.projectionMatrix);
+                        },
+                    },
+                    uLightListLengthSqrt: {
+                        type: DataTypeEnum_7.DataType.float,
+                        updator: function () { return _this.linearLightIndex.length; },
+                    },
+                    uHorizontalTileNum: {
+                        type: DataTypeEnum_7.DataType.float,
+                        updator: function () { return _this.horizontalTileNum; },
+                    },
+                    uVerticalTileNum: {
+                        type: DataTypeEnum_7.DataType.float,
+                        updator: function () { return _this.verticalTileNum; },
+                    },
+                    uTotalLightNum: {
+                        type: DataTypeEnum_7.DataType.float,
+                        updator: function () { return scene.pointLights.length; },
+                    },
+                },
+                textures: {
+                    uNormalDepthSE: { source: this.gBuffer.extras[0].targetTexture },
+                    uDiffSpec: { source: this.gBuffer.extras[1].targetTexture },
+                    uLightOffsetCount: { source: this.tileLightOffsetCountMap },
+                    uLightPositionRadius: { source: this.lightPositionRadiusMap },
+                    uLightColorIdensity: { source: this.lightColorIdensityMap },
+                    uLightIndex: { source: this.tileLightIndexMap },
+                },
+            })
+                .build(this.gl);
+            GraphicsUtils_3.Graphics.copyDataToVertexBuffer(this.gl, this.tile.geometry);
+            this.tileProgram.make();
+        };
+        DeferredProcessor.prototype.fillTileWithBoundingBox2D = function (camera, box, lightIndex) {
+            var leftTile = Math.max(Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum) - 1, 0);
+            var topTile = Math.min(Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum) + 1, this.verticalTileNum);
+            var rightTile = Math.min(Math.ceil((box.right / 2.0 + 0.5) * this.horizontalTileNum) + 1, this.horizontalTileNum);
+            var bottomTile = Math.max(Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum) - 1, 0);
+            for (var i = leftTile; i < rightTile; i++) {
+                for (var j = bottomTile; j < topTile; j++) {
+                    var tileIndex = i + j * this.horizontalTileNum;
+                    if (tileIndex < this.tileCount && tileIndex >= 0) {
+                        this.tileLightIndex[tileIndex].push(lightIndex);
+                    }
+                }
+            }
+        };
+        return DeferredProcessor;
+    }());
+    exports.DeferredProcessor = DeferredProcessor;
+});
+define("materials/ESM/DepthPackMaterial", ["require", "exports", "shader/Program", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, Program_3, ShaderBuilder_3, shaders_3, Material_2) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var LinearDepthPackMaterial = (function (_super) {
+        __extends(LinearDepthPackMaterial, _super);
+        function LinearDepthPackMaterial() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        LinearDepthPackMaterial.prototype.initShader = function (gl) {
+            return new ShaderBuilder_3.ShaderBuilder()
+                .resetShaderLib()
+                .addShaderLib(shaders_3.ShaderSource.calculators__linearlize_depth_glsl)
+                .addShaderLib(shaders_3.ShaderSource.calculators__packFloat1x32_glsl)
+                .setShadingFrag(shaders_3.ShaderSource.interploters__forward__esm__depth_frag)
+                .setShadingVert(shaders_3.ShaderSource.interploters__forward__esm__depth_vert)
+                .setExtraRenderParamHolder("transform", {
+                uniforms: {
+                    modelViewProjectionMatrix: Program_3.shaderPassLib.uniforms.modelViewProjectionMatrix,
+                    modelViewMatrix: Program_3.shaderPassLib.uniforms.modelViewMatrix,
+                },
+            })
+                .build(gl);
+        };
+        return LinearDepthPackMaterial;
+    }(Material_2.Material));
+    exports.LinearDepthPackMaterial = LinearDepthPackMaterial;
+});
+define("renderer/forward/ForwardProcessor", ["require", "exports", "Mesh"], function (require, exports, Mesh_2) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ForwardProcessor = (function () {
+        function ForwardProcessor(gl, ext, scene, camera) {
+            this.gl = gl;
+            this.ext = ext;
+        }
+        ForwardProcessor.prototype.process = function (scene, camera, materials) {
+            this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                this.renderObject(scene, camera, object);
+            }
+        };
+        ForwardProcessor.prototype.renderObject = function (scene, camera, object) {
+            if (object instanceof Mesh_2.Mesh) {
+                var mesh = object;
+                mesh.geometry.clean(this.gl);
+                for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
+                    var material = _a[_i];
+                    var shader = material.shader;
+                    if (shader.enableDepthTest) {
+                        this.gl.enable(this.gl.DEPTH_TEST);
+                    }
+                    else {
+                        this.gl.disable(this.gl.DEPTH_TEST);
+                    }
+                    if (shader.enableStencilTest) {
+                        this.gl.enable(this.gl.STENCIL_TEST);
+                    }
+                    else {
+                        this.gl.disable(this.gl.STENCIL_TEST);
+                    }
+                    this.gl.useProgram(shader.webGlProgram);
+                    shader.pass({ mesh: mesh, camera: camera, material: material, scene: scene });
+                }
+            }
+        };
+        return ForwardProcessor;
+    }());
+    exports.ForwardProcessor = ForwardProcessor;
+});
+define("textures/Texture2D", ["require", "exports", "textures/Texture"], function (require, exports, Texture_4) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Texture2D = (function (_super) {
         __extends(Texture2D, _super);
         function Texture2D(gl, url) {
             return _super.call(this, gl, url) || this;
         }
-        Texture2D.prototype.bindTextureData = function (gl) {
-            _super.prototype.bindTextureData.call(this, gl);
+        Texture2D.prototype.apply = function (gl) {
+            _super.prototype.apply.call(this, gl);
             gl.texImage2D(this.target, 0, this.format, this.format, this.type, this.image);
             return this;
         };
         return Texture2D;
-    }(Texture_3.Texture));
+    }(Texture_4.Texture));
     exports.Texture2D = Texture2D;
 });
-define("Scene", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators"], function (require, exports, gl_matrix_10, DataTypeEnum_7, Decorators_5) {
+define("materials/ESM/LogBlurMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, gl_matrix_9, DataTypeEnum_8, Decorators_6, ShaderBuilder_4, shaders_4, Material_3) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var PCSSFilteringMaterial = (function (_super) {
+        __extends(PCSSFilteringMaterial, _super);
+        function PCSSFilteringMaterial() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.blurDirection = gl_matrix_9.vec2.fromValues(1, 0);
+            _this.blurStep = 1.0;
+            return _this;
+        }
+        PCSSFilteringMaterial.prototype.initShader = function (gl) {
+            return new ShaderBuilder_4.ShaderBuilder()
+                .resetShaderLib()
+                .addShaderLib(shaders_4.ShaderSource.calculators__packFloat1x32_glsl)
+                .addShaderLib(shaders_4.ShaderSource.calculators__unpackFloat1x32_glsl)
+                .setShadingFrag(shaders_4.ShaderSource.interploters__forward__esm__blur_frag)
+                .setShadingVert(shaders_4.ShaderSource.interploters__forward__esm__blur_vert)
+                .build(gl);
+        };
+        __decorate([
+            Decorators_6.texture("uOrigin")
+        ], PCSSFilteringMaterial.prototype, "origin", void 0);
+        __decorate([
+            Decorators_6.uniform(DataTypeEnum_8.DataType.vec2, "uBlurDir")
+        ], PCSSFilteringMaterial.prototype, "blurDirection", void 0);
+        __decorate([
+            Decorators_6.uniform(DataTypeEnum_8.DataType.float, "uBlurStep")
+        ], PCSSFilteringMaterial.prototype, "blurStep", void 0);
+        return PCSSFilteringMaterial;
+    }(Material_3.Material));
+    exports.PCSSFilteringMaterial = PCSSFilteringMaterial;
+});
+define("renderer/ShadowPreProcessor", ["require", "exports", "gl-matrix", "geometries/RectGeometry", "lights/ShadowType", "materials/ESM/DepthPackMaterial", "materials/ESM/LogBlurMaterial", "materials/StandardMaterial", "Mesh", "shader/Program"], function (require, exports, gl_matrix_10, RectGeometry_2, ShadowType_3, DepthPackMaterial_1, LogBlurMaterial_1, StandardMaterial_2, Mesh_3, Program_4) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ShadowPreProcess = (function () {
+        function ShadowPreProcess(gl, ext, scene) {
+            this.gl = gl;
+            this.ext = ext;
+            this.depthMaterial = new DepthPackMaterial_1.LinearDepthPackMaterial(gl);
+            this.blurMaterial = new LogBlurMaterial_1.PCSSFilteringMaterial(gl);
+            this.blurMaterial.shader.setViewPort({ x: 0, y: 0, width: 512, height: 512 });
+            this.rectMesh = new Mesh_3.Mesh(new RectGeometry_2.RectGeometry(gl).build(), []);
+            this.rectMesh.geometry.clean(gl);
+            this.initPass(scene);
+        }
+        ShadowPreProcess.prototype.process = function (scene, camera, matriels) {
+            for (var _i = 0, _a = scene.lights; _i < _a.length; _i++) {
+                var light = _a[_i];
+                if (light.shadowType !== ShadowType_3.ShadowType.None) {
+                    this.depthMaterial.shader.setViewPort({ x: 0, y: 0, width: light.shadowSize, height: light.shadowSize });
+                    this.renderDepth(scene, light);
+                }
+                if (light.shadowType === ShadowType_3.ShadowType.Soft) {
+                    this.blurMaterial.shader.setViewPort({ x: 0, y: 0, width: light.shadowSize, height: light.shadowSize });
+                }
+            }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        };
+        ShadowPreProcess.prototype.initPass = function (scene) {
+            this.rectMesh.geometry.clean(this.gl);
+            this.depthMaterial.shader.setExtraRenderParam("mvp", {
+                uniforms: {
+                    modelViewProjectionMatrix: Program_4.shaderPassLib.uniforms.modelViewProjectionMatrix,
+                },
+            });
+        };
+        ShadowPreProcess.prototype.renderDepth = function (scene, light) {
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
+            this.gl.enable(this.gl.DEPTH_TEST);
+            this.gl.depthFunc(this.gl.LEQUAL);
+            this.gl.clearColor(light.far, 0, 0, 0);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                if (object instanceof Mesh_3.Mesh) {
+                    var castShadow = false;
+                    for (var _b = 0, _c = object.materials; _b < _c.length; _b++) {
+                        var material = _c[_b];
+                        if (material instanceof StandardMaterial_2.StandardMaterial) {
+                            if (material.castShadow) {
+                                castShadow = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (castShadow) {
+                        this.gl.useProgram(this.depthMaterial.shader.webGlProgram);
+                        light.drawWithLightCamera({ mesh: object, material: this.depthMaterial });
+                    }
+                }
+            }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        };
+        ShadowPreProcess.prototype.blurDepth = function (scene, light) {
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.blurFrameBuffer.glFramebuffer);
+            this.gl.clearColor(light.far, 0, 0, 0);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            this.blurMaterial.blurDirection = gl_matrix_10.vec2.fromValues(1, 0);
+            this.blurMaterial.blurStep = 1.0 / light.shadowSize;
+            this.blurMaterial.origin = light.shadowFrameBuffer.attachments.color.targetTexture;
+            this.gl.useProgram(this.blurMaterial.shader.webGlProgram);
+            light.drawWithLightCamera({ mesh: this.rectMesh, material: this.blurMaterial });
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
+            this.gl.clearColor(light.far, 0, 0, 0);
+            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+            this.blurMaterial.blurDirection = gl_matrix_10.vec2.fromValues(0, 1);
+            this.blurMaterial.blurStep = 1.0 / light.shadowSize;
+            this.blurMaterial.origin = light.blurFrameBuffer.attachments.color.targetTexture;
+            light.drawWithLightCamera({ mesh: this.rectMesh, material: this.blurMaterial });
+        };
+        return ShadowPreProcess;
+    }());
+    exports.ShadowPreProcess = ShadowPreProcess;
+});
+define("renderer/Renderer", ["require", "exports", "Mesh", "renderer/deferred/DeferredProcessor", "renderer/forward/ForwardProcessor", "renderer/FrameBuffer", "renderer/GraphicsUtils", "renderer/ShadowPreProcessor"], function (require, exports, Mesh_4, DeferredProcessor_1, ForwardProcessor_1, FrameBuffer_3, GraphicsUtils_4, ShadowPreProcessor_1) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Renderer = (function () {
+        function Renderer(canvas, debug) {
+            var _this = this;
+            this.canvas = null;
+            this.gl = null;
+            this.debug = false;
+            this.preloadRes = [];
+            this.usedTextureNum = 0;
+            this.renderTargets = [];
+            this.vertPrecision = "highp";
+            this.fragPrecision = "mediump";
+            this.isAnimating = false;
+            this.renderQueue = [];
+            this.fbos = [];
+            this.scenes = [];
+            this.cameras = [];
+            this.frameRate = 1000 / 60;
+            this.stopped = false;
+            this.materials = [];
+            this.isDeferred = false;
+            this.main = function () {
+                for (var _i = 0, _a = _this.renderQueue; _i < _a.length; _i++) {
+                    var renderCommand = _a[_i];
+                    renderCommand(_this.frameRate);
+                }
+                if (_this.stopped) {
+                    return;
+                }
+                setTimeout(_this.main, _this.frameRate);
+            };
+            this.canvas = canvas;
+            this.debug = debug;
+            this.gl = GraphicsUtils_4.Graphics.initWebwebglContext(canvas, debug);
+            this.ext = {
+                depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
+                draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
+                texture_float: this.gl.getExtension("OES_texture_float"),
+                texture_half_float: this.gl.getExtension("OES_texture_half_float"),
+                texture_float_linear: this.gl.getExtension("OES_texture_float_linear"),
+            };
+            this.initMatrix();
+            this.gl.clearDepth(1.0);
+            this.gl.enable(this.gl.DEPTH_TEST);
+            this.gl.depthFunc(this.gl.LEQUAL);
+            setTimeout(this.main, this.frameRate);
+        }
+        Renderer.prototype.stop = function () {
+            this.stopped = true;
+        };
+        Renderer.prototype.start = function () {
+            this.stopped = false;
+            setTimeout(this.main, this.frameRate);
+        };
+        Renderer.prototype.createFrameBuffer = function () {
+            var fbo = new FrameBuffer_3.FrameBuffer(this.gl);
+            this.fbos.push(fbo);
+            return fbo;
+        };
+        Renderer.prototype.renderFBO = function (scene, camera) {
+        };
+        Renderer.prototype.handleResource = function (scene) {
+            var _this = this;
+            var objectPromises = [];
+            var _loop_1 = function (object) {
+                var promise = object.asyncFinished();
+                if (!!promise) {
+                    objectPromises.push(promise.then(function () {
+                        for (var _i = 0, _a = object.children; _i < _a.length; _i++) {
+                            var child = _a[_i];
+                            scene.addObject(child);
+                        }
+                    }));
+                }
+            };
+            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                var object = _a[_i];
+                _loop_1(object);
+            }
+            return Promise.all(objectPromises).then(function () {
+                var texturePromises = [];
+                for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                    var object = _a[_i];
+                    if (object instanceof Mesh_4.Mesh) {
+                        for (var _b = 0, _c = object.materials; _b < _c.length; _b++) {
+                            var material = _c[_b];
+                            var _material = material;
+                            for (var _d = 0, _e = _material.asyncResources; _d < _e.length; _d++) {
+                                var textureGetter = _e[_d];
+                                var promise = textureGetter(_material);
+                                if (!!promise) {
+                                    texturePromises.push(promise.then(function (texture) {
+                                        texture.apply(_this.gl);
+                                        return Promise.resolve(texture);
+                                    }));
+                                }
+                            }
+                        }
+                    }
+                }
+                return Promise.all(texturePromises);
+            });
+        };
+        Renderer.prototype.forceDeferred = function () {
+            this.isDeferred = true;
+        };
+        Renderer.prototype.render = function (scene, camera, adaptCanvasAspectRatio) {
+            var _this = this;
+            if (adaptCanvasAspectRatio === void 0) {
+                adaptCanvasAspectRatio = true;
+            }
+            if (adaptCanvasAspectRatio) {
+                camera.setAspectRadio(this.canvas.width / this.canvas.height);
+            }
+            if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
+                return;
+            }
+            this.scenes.push(scene);
+            this.handleResource(scene)
+                .then(function () {
+                var materials = [];
+                for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
+                    var obj = _a[_i];
+                    if (obj instanceof Mesh_4.Mesh) {
+                        var mesh = obj;
+                        for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
+                            var material = _c[_b];
+                            if (materials.indexOf(material) === -1) {
+                                materials.push(material);
+                            }
+                        }
+                    }
+                }
+                for (var _d = 0, _e = scene.objects; _d < _e.length; _d++) {
+                    var object = _e[_d];
+                    if (object instanceof Mesh_4.Mesh) {
+                        GraphicsUtils_4.Graphics.copyDataToVertexBuffer(_this.gl, object.geometry);
+                    }
+                }
+                var shadowPreProcess = new ShadowPreProcessor_1.ShadowPreProcess(_this.gl, _this.ext, scene);
+                var processor;
+                if (_this.isDeferred) {
+                    processor = new DeferredProcessor_1.DeferredProcessor(_this.gl, _this.ext, scene, camera);
+                }
+                else {
+                    processor = new ForwardProcessor_1.ForwardProcessor(_this.gl, _this.ext, scene, camera);
+                }
+                scene.programSetUp = true;
+                _this.renderQueue.push(function (deltaTime) {
+                    scene.update(deltaTime);
+                    if (!_this.isDeferred) {
+                        shadowPreProcess.process(scene, camera, materials);
+                    }
+                    processor.process(scene, camera, materials);
+                });
+            })
+                .catch(function (err) {
+                console.error(err);
+            });
+        };
+        Renderer.prototype.renderLight = function (light, scene) {
+        };
+        Renderer.prototype.initMatrix = function () {
+        };
+        return Renderer;
+    }());
+    exports.Renderer = Renderer;
+});
+define("lights/DirectionalLight", ["require", "exports", "gl-matrix", "cameras/OrthoCamera", "DataTypeEnum", "Decorators", "lights/Light"], function (require, exports, gl_matrix_11, OrthoCamera_1, DataTypeEnum_9, Decorators_7, Light_2) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var DirectionalLight = (function (_super) {
+        __extends(DirectionalLight, _super);
+        function DirectionalLight(renderer) {
+            return _super.call(this, renderer) || this;
+        }
+        Object.defineProperty(DirectionalLight.prototype, "typename", {
+            get: function () {
+                return "DirectionalLight";
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(DirectionalLight.prototype, "direction", {
+            get: function () {
+                return gl_matrix_11.vec3.transformQuat(gl_matrix_11.vec3.create(), gl_matrix_11.vec3.fromValues(0, 0, -1), gl_matrix_11.mat4.getRotation(gl_matrix_11.quat.create(), this._matrix));
+            },
+            enumerable: true,
+            configurable: true
+        });
+        DirectionalLight.prototype.getProjecttionBoundingBox2D = function (camera) {
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
+        };
+        DirectionalLight.prototype.setDirection = function (_direction) {
+            var lookPoint = gl_matrix_11.vec3.add(gl_matrix_11.vec3.create(), this._position, _direction);
+            this.lookAt(lookPoint);
+            return this;
+        };
+        DirectionalLight.prototype.setUpProjectionCamera = function () {
+            this._projectCamera = new OrthoCamera_1.OrthoCamera()
+                .setParent(this)
+                .setLocalPosition(gl_matrix_11.vec3.create())
+                .setAspectRadio(1);
+        };
+        __decorate([
+            Decorators_7.uniform(DataTypeEnum_9.DataType.vec3)
+        ], DirectionalLight.prototype, "direction", null);
+        return DirectionalLight;
+    }(Light_2.Light));
+    exports.DirectionalLight = DirectionalLight;
+});
+define("cameras/PerspectiveCamera", ["require", "exports", "gl-matrix", "cameras/Camera"], function (require, exports, gl_matrix_12, Camera_2) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var PerspectiveCamera = (function (_super) {
+        __extends(PerspectiveCamera, _super);
+        function PerspectiveCamera(parameter) {
+            if (parameter === void 0) {
+                parameter = {};
+            }
+            var _this = _super.call(this) || this;
+            _this._aspect = 1;
+            _this._fovy = Math.PI / 4;
+            _this._aspect = parameter.aspect || _this._aspect;
+            _this._fovy = parameter.fovy || _this._fovy;
+            _this._near = parameter.near || _this._near;
+            _this._far = parameter.far || _this._far;
+            return _this;
+        }
+        PerspectiveCamera.prototype.compuseProjectionMatrix = function () {
+            gl_matrix_12.mat4.perspective(this._projectionMatrix, this._fovy, this._aspect, this._near, this._far);
+        };
+        Object.defineProperty(PerspectiveCamera.prototype, "aspect", {
+            get: function () {
+                return this._aspect;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(PerspectiveCamera.prototype, "fovy", {
+            get: function () {
+                return this._fovy;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        PerspectiveCamera.prototype.setAspect = function (aspect) {
+            if (aspect !== this._aspect) {
+                this._aspect = aspect;
+                this.compuseProjectionMatrix();
+            }
+            return this;
+        };
+        PerspectiveCamera.prototype.setFovy = function (fovy) {
+            if (fovy !== this._fovy) {
+                this._fovy = fovy;
+                this.compuseProjectionMatrix();
+            }
+            return this;
+        };
+        PerspectiveCamera.prototype.deCompuseProjectionMatrix = function () {
+        };
+        PerspectiveCamera.prototype.setAspectRadio = function (ratio) {
+            this._aspect = ratio;
+            this.compuseProjectionMatrix();
+            return this;
+        };
+        return PerspectiveCamera;
+    }(Camera_2.Camera));
+    exports.PerspectiveCamera = PerspectiveCamera;
+});
+define("lights/SpotLight", ["require", "exports", "gl-matrix", "cameras/PerspectiveCamera", "DataTypeEnum", "Decorators", "lights/PointLight", "lights/ShadowType"], function (require, exports, gl_matrix_13, PerspectiveCamera_1, DataTypeEnum_10, Decorators_8, PointLight_1, ShadowType_4) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var SpotLight = (function (_super) {
+        __extends(SpotLight, _super);
+        function SpotLight(renderer) {
+            var _this = _super.call(this, renderer) || this;
+            _this.setConeAngle(Math.PI / 8);
+            _this.setRadius(100);
+            _this._shadowType = ShadowType_4.ShadowType.Soft;
+            return _this;
+        }
+        Object.defineProperty(SpotLight.prototype, "coneAngleCos", {
+            get: function () {
+                return Math.cos(this._coneAngle);
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SpotLight.prototype, "typename", {
+            get: function () {
+                return "SpotLight";
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SpotLight.prototype, "spotDirection", {
+            get: function () {
+                return gl_matrix_13.vec3.transformQuat(gl_matrix_13.vec3.create(), gl_matrix_13.vec3.fromValues(0, 0, -1), gl_matrix_13.mat4.getRotation(gl_matrix_13.quat.create(), this._matrix));
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SpotLight.prototype, "coneAngle", {
+            get: function () {
+                return this._coneAngle;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        SpotLight.prototype.setRadius = function (radius) {
+            _super.prototype.setRadius.call(this, radius);
+            return this;
+        };
+        SpotLight.prototype.setConeAngle = function (coneAngle) {
+            console.assert(coneAngle > 0, "coneAngle should greater than 0!");
+            this._coneAngle = coneAngle;
+            this._projectCamera.setFovy(coneAngle * 2);
+            return this;
+        };
+        SpotLight.prototype.setSpotDirection = function (spotDirection) {
+            var lookPoint = gl_matrix_13.vec3.add(gl_matrix_13.vec3.create(), this.position, spotDirection);
+            this.lookAt(lookPoint);
+            return this;
+        };
+        SpotLight.prototype.getProjecttionBoundingBox2D = function (camera) {
+            console.error("function getProjecttionBoundingBox2D has not been init");
+            return {
+                left: -1,
+                right: 1,
+                top: 1,
+                bottom: -1,
+            };
+        };
+        SpotLight.prototype.setUpProjectionCamera = function () {
+            this._projectCamera = new PerspectiveCamera_1.PerspectiveCamera()
+                .setParent(this)
+                .setLocalPosition(gl_matrix_13.vec3.create())
+                .setAspectRadio(1);
+        };
+        __decorate([
+            Decorators_8.uniform(DataTypeEnum_10.DataType.float)
+        ], SpotLight.prototype, "coneAngleCos", null);
+        __decorate([
+            Decorators_8.uniform(DataTypeEnum_10.DataType.vec3, "spotDir")
+        ], SpotLight.prototype, "spotDirection", null);
+        return SpotLight;
+    }(PointLight_1.PointLight));
+    exports.SpotLight = SpotLight;
+});
+define("Scene", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators"], function (require, exports, gl_matrix_14, DataTypeEnum_11, Decorators_9) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Scene = (function () {
         function Scene() {
             this.objects = [];
             this.lights = [];
-            this.pointLights = [];
-            this.spotLights = [];
-            this.dirctionLights = [];
-            this.pointShadowMaps = [];
-            this.pointShadowMatrices = new Float32Array([]);
-            this.spotShadowMaps = [];
-            this.spotShadowMatrices = new Float32Array([]);
-            this.directionShadowMaps = [];
-            this.directShadowMatrices = new Float32Array([]);
-            this.ambientLight = gl_matrix_10.vec3.fromValues(0, 0, 0);
+            this.ambientLight = gl_matrix_14.vec3.fromValues(0.2, 0.2, 0.2);
             this.openLight = false;
             this.clearColor = [0, 0, 0, 0];
             this.programSetUp = false;
+            this.directLights = [];
+            this.pointLights = [];
+            this.spotLights = [];
             this.updateEvents = [];
         }
         Scene.prototype.update = function (dt) {
@@ -1871,7 +2419,7 @@ define("Scene", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators"
                 var light = lights_1[_a];
                 this.lights.push(light);
                 if (light.typename === "DirectionalLight") {
-                    this.dirctionLights.push(light);
+                    this.directLights.push(light);
                 }
                 else if (light.typename === "PointLight") {
                     this.pointLights.push(light);
@@ -1885,46 +2433,39 @@ define("Scene", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators"
                 light.scene = this;
             }
         };
+        __decorate([
+            Decorators_9.uniform(DataTypeEnum_11.DataType.vec3, "ambient")
+        ], Scene.prototype, "ambientLight", void 0);
+        __decorate([
+            Decorators_9.arrayOfStructures()
+        ], Scene.prototype, "directLights", void 0);
+        __decorate([
+            Decorators_9.arrayOfStructures()
+        ], Scene.prototype, "pointLights", void 0);
+        __decorate([
+            Decorators_9.arrayOfStructures()
+        ], Scene.prototype, "spotLights", void 0);
         return Scene;
     }());
-    __decorate([
-        Decorators_5.textureArray("pointShadowMaps")
-    ], Scene.prototype, "pointShadowMaps", void 0);
-    __decorate([
-        Decorators_5.uniformArray("pointShadowMatrices", DataTypeEnum_7.DataType.mat4)
-    ], Scene.prototype, "pointShadowMatrices", void 0);
-    __decorate([
-        Decorators_5.textureArray("spotShadowMaps")
-    ], Scene.prototype, "spotShadowMaps", void 0);
-    __decorate([
-        Decorators_5.uniformArray("spotShadowMatrices", DataTypeEnum_7.DataType.mat4)
-    ], Scene.prototype, "spotShadowMatrices", void 0);
-    __decorate([
-        Decorators_5.textureArray("directionShadowMaps")
-    ], Scene.prototype, "directionShadowMaps", void 0);
-    __decorate([
-        Decorators_5.uniformArray("directShadowMatrices", DataTypeEnum_7.DataType.mat4)
-    ], Scene.prototype, "directShadowMatrices", void 0);
     exports.Scene = Scene;
 });
-define("Object3d", ["require", "exports", "gl-matrix"], function (require, exports, gl_matrix_11) {
+define("Object3d", ["require", "exports", "gl-matrix"], function (require, exports, gl_matrix_15) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Object3d = (function () {
         function Object3d(tag) {
             this.children = [];
             this.depredations = [];
-            this.uniforms = [];
-            this._worldToObjectMatrix = gl_matrix_11.mat4.create();
+            this._worldToObjectMatrix = gl_matrix_15.mat4.create();
             this._asyncFinished = Promise.resolve(this);
-            this._matrix = gl_matrix_11.mat4.create();
+            this._matrix = gl_matrix_15.mat4.create();
             this._parent = null;
-            this._localMatrix = gl_matrix_11.mat4.create();
-            this._localPosition = gl_matrix_11.vec3.create();
-            this._localRotation = gl_matrix_11.quat.create();
-            this._localScaling = gl_matrix_11.vec3.fromValues(1, 1, 1);
-            this._position = gl_matrix_11.vec3.create();
-            this._scaling = gl_matrix_11.vec3.fromValues(1, 1, 1);
-            this._rotation = gl_matrix_11.quat.create();
+            this._localMatrix = gl_matrix_15.mat4.create();
+            this._localPosition = gl_matrix_15.vec3.create();
+            this._localRotation = gl_matrix_15.quat.create();
+            this._localScaling = gl_matrix_15.vec3.fromValues(1, 1, 1);
+            this._position = gl_matrix_15.vec3.create();
+            this._scaling = gl_matrix_15.vec3.fromValues(1, 1, 1);
+            this._rotation = gl_matrix_15.quat.create();
             this.tag = tag;
             this.handleUniformProperty();
         }
@@ -1963,7 +2504,7 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
         });
         Object3d.prototype.setWorldToObjectMatrix = function (worldToObjectMatrix) {
             this._worldToObjectMatrix = worldToObjectMatrix;
-            gl_matrix_11.mat4.invert(this._matrix, this._worldToObjectMatrix);
+            gl_matrix_15.mat4.invert(this._matrix, this._worldToObjectMatrix);
             this.deComposeGlobalMatrix();
             return this;
         };
@@ -1979,10 +2520,10 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
             this._localPosition = _localPosition;
             this.composeFromLocalTransform();
             if (!!this._parent) {
-                gl_matrix_11.mat4.getTranslation(this._position, this.matrix);
+                gl_matrix_15.mat4.getTranslation(this._position, this.matrix);
             }
             else {
-                this._position = gl_matrix_11.vec3.clone(_localPosition);
+                this._position = gl_matrix_15.vec3.clone(_localPosition);
             }
             this.applyToChildren();
             return this;
@@ -1999,10 +2540,10 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
             this._position = _position;
             this.composeFromGlobalTransform();
             if (!!this._parent) {
-                gl_matrix_11.mat4.getTranslation(this._localPosition, this._localMatrix);
+                gl_matrix_15.mat4.getTranslation(this._localPosition, this._localMatrix);
             }
             else {
-                this._localPosition = gl_matrix_11.vec3.clone(_position);
+                this._localPosition = gl_matrix_15.vec3.clone(_position);
             }
             this.applyToChildren();
             return this;
@@ -2016,42 +2557,42 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
         });
         Object3d.prototype.setLocalRotation = function (_localRotation) {
             console.assert(_localRotation && _localRotation.length === 4, "invalid object rotation paramter");
-            gl_matrix_11.quat.normalize(_localRotation, gl_matrix_11.quat.clone(_localRotation));
+            gl_matrix_15.quat.normalize(_localRotation, gl_matrix_15.quat.clone(_localRotation));
             this._localRotation = _localRotation;
             this.composeFromLocalTransform();
             if (!!this._parent) {
-                gl_matrix_11.mat4.getRotation(this._rotation, this.matrix);
+                gl_matrix_15.mat4.getRotation(this._rotation, this.matrix);
             }
             else {
-                this._rotation = gl_matrix_11.quat.clone(_localRotation);
+                this._rotation = gl_matrix_15.quat.clone(_localRotation);
             }
             this.applyToChildren();
             return this;
         };
         Object.defineProperty(Object3d.prototype, "rotation", {
             get: function () {
-                return this._rotation;
+                return gl_matrix_15.quat.clone(this._rotation);
             },
             enumerable: true,
             configurable: true
         });
         Object3d.prototype.setRotation = function (_rotation) {
             console.assert(_rotation && _rotation.length === 4, "invalid object rotation paramter");
-            gl_matrix_11.quat.normalize(_rotation, gl_matrix_11.quat.clone(_rotation));
+            gl_matrix_15.quat.normalize(_rotation, gl_matrix_15.quat.clone(_rotation));
             this._rotation = _rotation;
             this.composeFromGlobalTransform();
             if (!!this._parent) {
-                gl_matrix_11.mat4.getRotation(this._localRotation, this.localMatrix);
+                gl_matrix_15.mat4.getRotation(this._localRotation, this.localMatrix);
             }
             else {
-                this._localRotation = gl_matrix_11.quat.clone(_rotation);
+                this._localRotation = gl_matrix_15.quat.clone(_rotation);
             }
             this.applyToChildren();
             return this;
         };
         Object.defineProperty(Object3d.prototype, "localScaling", {
             get: function () {
-                return this._localScaling;
+                return gl_matrix_15.vec3.clone(this._localScaling);
             },
             enumerable: true,
             configurable: true
@@ -2060,17 +2601,17 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
             console.assert(_localScaling && _localScaling.length === 3, "invalid object scale paramter");
             this._localScaling = _localScaling;
             if (!!this._parent) {
-                gl_matrix_11.vec3.mul(this._scaling, this._parent.scaling, this._localScaling);
+                gl_matrix_15.vec3.mul(this._scaling, this._parent.scaling, this._localScaling);
             }
             else {
-                this._scaling = gl_matrix_11.vec3.clone(_localScaling);
+                this._scaling = gl_matrix_15.vec3.clone(_localScaling);
             }
             this.applyToChildren();
             return this;
         };
         Object.defineProperty(Object3d.prototype, "scaling", {
             get: function () {
-                return this._scaling;
+                return gl_matrix_15.vec3.clone(this._scaling);
             },
             enumerable: true,
             configurable: true
@@ -2080,39 +2621,47 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
             this._scaling = _scaling;
             this.composeFromGlobalTransform();
             if (!!this._parent) {
-                gl_matrix_11.vec3.div(this._localScaling, this.scaling, this._parent.scaling);
+                gl_matrix_15.vec3.div(this._localScaling, this.scaling, this._parent.scaling);
             }
             else {
-                this._localScaling = gl_matrix_11.vec3.clone(_scaling);
+                this._localScaling = gl_matrix_15.vec3.clone(_scaling);
             }
             this.applyToChildren();
             return this;
         };
         Object3d.prototype.setTransformFromParent = function () {
             if (!!this.parent) {
-                this._matrix = gl_matrix_11.mat4.mul(gl_matrix_11.mat4.create(), this.parent.matrix, this.localMatrix);
+                this._matrix = gl_matrix_15.mat4.mul(gl_matrix_15.mat4.create(), this.parent.matrix, this.localMatrix);
                 this.genOtherMatrixs();
-                gl_matrix_11.mat4.getTranslation(this._position, this.matrix);
-                gl_matrix_11.mat4.getRotation(this._rotation, this.matrix);
-                gl_matrix_11.vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
+                gl_matrix_15.mat4.getTranslation(this._position, this.matrix);
+                gl_matrix_15.mat4.getRotation(this._rotation, this.matrix);
+                gl_matrix_15.vec3.mul(this.scaling, this.parent.scaling, this.localScaling);
             }
             return this;
         };
         Object3d.prototype.translate = function (delta) {
             console.assert(delta && delta.length === 3, "invalid delta translate");
-            this.setPosition(gl_matrix_11.vec3.add(this.localPosition, gl_matrix_11.vec3.clone(this.localPosition), delta));
+            this.setPosition(gl_matrix_15.vec3.add(this.localPosition, gl_matrix_15.vec3.clone(this.localPosition), delta));
             return this;
         };
         Object3d.prototype.rotateX = function (angle) {
-            this.setLocalRotation(gl_matrix_11.quat.rotateX(this.localRotation, gl_matrix_11.quat.clone(this.localRotation), angle));
+            this.setLocalRotation(gl_matrix_15.quat.rotateX(this.localRotation, gl_matrix_15.quat.clone(this.localRotation), angle));
             return this;
         };
         Object3d.prototype.rotateY = function (angle) {
-            this.setLocalRotation(gl_matrix_11.quat.rotateY(this.localRotation, gl_matrix_11.quat.clone(this.localRotation), angle));
+            this.setLocalRotation(gl_matrix_15.quat.rotateY(this.localRotation, gl_matrix_15.quat.clone(this.localRotation), angle));
             return this;
         };
         Object3d.prototype.rotateZ = function (angle) {
-            this.setLocalRotation(gl_matrix_11.quat.rotateZ(this.localRotation, gl_matrix_11.quat.clone(this.localRotation), angle));
+            this.setLocalRotation(gl_matrix_15.quat.rotateZ(this.localRotation, gl_matrix_15.quat.clone(this.localRotation), angle));
+            return this;
+        };
+        Object3d.prototype.lookAt = function (center) {
+            var dir = gl_matrix_15.vec3.sub(gl_matrix_15.vec3.create(), center, this.position);
+            var right = gl_matrix_15.vec3.cross(gl_matrix_15.vec3.create(), dir, [0, 1, 0]);
+            var up = gl_matrix_15.vec3.cross(gl_matrix_15.vec3.create(), right, dir);
+            gl_matrix_15.mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
+            this.setWorldToObjectMatrix(this._worldToObjectMatrix);
             return this;
         };
         Object3d.prototype.handleUniformProperty = function () {
@@ -2124,48 +2673,48 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
             this._asyncFinished = promise;
         };
         Object3d.prototype.genOtherMatrixs = function () {
-            gl_matrix_11.mat4.invert(this._worldToObjectMatrix, this.matrix);
+            gl_matrix_15.mat4.invert(this._worldToObjectMatrix, this.matrix);
         };
         Object3d.prototype.deComposeLocalMatrix = function () {
-            gl_matrix_11.mat4.getTranslation(this._localPosition, this._localMatrix);
-            gl_matrix_11.mat4.getRotation(this._localRotation, this._localMatrix);
+            gl_matrix_15.mat4.getTranslation(this._localPosition, this._localMatrix);
+            gl_matrix_15.mat4.getRotation(this._localRotation, this._localMatrix);
             if (!!this._parent) {
-                gl_matrix_11.mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
+                gl_matrix_15.mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
             }
             else {
-                this._matrix = gl_matrix_11.mat4.clone(this._localMatrix);
+                this._matrix = gl_matrix_15.mat4.clone(this._localMatrix);
             }
-            gl_matrix_11.mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
+            gl_matrix_15.mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
         };
         Object3d.prototype.composeFromLocalTransform = function () {
-            gl_matrix_11.mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
+            gl_matrix_15.mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
             if (!!this._parent) {
-                gl_matrix_11.mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
+                gl_matrix_15.mat4.mul(this._matrix, this._parent.matrix, this.localMatrix);
             }
             else {
-                this._matrix = gl_matrix_11.mat4.clone(this._localMatrix);
+                this._matrix = gl_matrix_15.mat4.clone(this._localMatrix);
             }
             this.genOtherMatrixs();
         };
         Object3d.prototype.deComposeGlobalMatrix = function () {
-            gl_matrix_11.mat4.getTranslation(this._position, this._matrix);
-            gl_matrix_11.mat4.getRotation(this._rotation, this._matrix);
+            gl_matrix_15.mat4.getTranslation(this._position, this._matrix);
+            gl_matrix_15.mat4.getRotation(this._rotation, this._matrix);
             if (!!this._parent) {
-                gl_matrix_11.mat4.mul(this._localMatrix, this._parent._worldToObjectMatrix, this.matrix);
+                gl_matrix_15.mat4.mul(this._localMatrix, this._parent._worldToObjectMatrix, this.matrix);
             }
             else {
-                this._localMatrix = gl_matrix_11.mat4.clone(this._matrix);
+                this._localMatrix = gl_matrix_15.mat4.clone(this._matrix);
             }
-            gl_matrix_11.mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
+            gl_matrix_15.mat4.fromRotationTranslationScale(this.localMatrix, this.localRotation, this.localPosition, this.localScaling);
         };
         Object3d.prototype.composeFromGlobalTransform = function () {
-            gl_matrix_11.mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
+            gl_matrix_15.mat4.fromRotationTranslationScale(this._matrix, this.rotation, this.position, this.scaling);
             this.genOtherMatrixs();
             if (!!this._parent) {
-                gl_matrix_11.mat4.mul(this._localMatrix, this._parent._worldToObjectMatrix, this.matrix);
+                gl_matrix_15.mat4.mul(this._localMatrix, this._parent._worldToObjectMatrix, this.matrix);
             }
             else {
-                this._localMatrix = gl_matrix_11.mat4.clone(this._matrix);
+                this._localMatrix = gl_matrix_15.mat4.clone(this._matrix);
             }
         };
         Object3d.prototype.applyToChildren = function () {
@@ -2179,20 +2728,27 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
     }());
     exports.Object3d = Object3d;
 });
-define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_12, DataTypeEnum_8, Decorators_6, Object3d_3) {
+define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_16, DataTypeEnum_12, Decorators_10, Object3d_3) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Camera = (function (_super) {
         __extends(Camera, _super);
         function Camera() {
             var _this = _super.call(this) || this;
-            _this._upVector = gl_matrix_12.vec3.fromValues(0, 1, 0);
-            _this._centerVector = gl_matrix_12.vec3.fromValues(0, 0, -1);
-            _this._rightVector = gl_matrix_12.vec3.fromValues(1, 0, 0);
-            _this._projectionMatrix = gl_matrix_12.mat4.create();
+            _this._upVector = gl_matrix_16.vec3.fromValues(0, 1, 0);
+            _this._centerVector = gl_matrix_16.vec3.fromValues(0, 0, -1);
+            _this._rightVector = gl_matrix_16.vec3.fromValues(1, 0, 0);
+            _this._projectionMatrix = gl_matrix_16.mat4.create();
             _this._near = 0.1;
-            _this._far = 1000;
+            _this._far = 500;
             return _this;
         }
+        Object.defineProperty(Camera.prototype, "position", {
+            get: function () {
+                return this._position;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Camera.prototype, "near", {
             get: function () {
                 return this._near;
@@ -2209,28 +2765,28 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
         });
         Object.defineProperty(Camera.prototype, "eyeVector", {
             get: function () {
-                return this._centerVector;
+                return gl_matrix_16.vec3.clone(this._centerVector);
             },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Camera.prototype, "upVector", {
             get: function () {
-                return this._upVector;
+                return gl_matrix_16.vec3.clone(this._upVector);
             },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Camera.prototype, "centerVector", {
             get: function () {
-                return this._centerVector;
+                return gl_matrix_16.vec3.clone(this._centerVector);
             },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Camera.prototype, "rightVector", {
             get: function () {
-                return this._rightVector;
+                return gl_matrix_16.vec3.clone(this._rightVector);
             },
             enumerable: true,
             configurable: true
@@ -2243,860 +2799,503 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
             configurable: true
         });
         Camera.prototype.lookAt = function (center) {
+            _super.prototype.lookAt.call(this, center);
             this._centerVector = center;
-            gl_matrix_12.vec3.cross(this._rightVector, [0, 1, 0], center);
-            gl_matrix_12.mat4.lookAt(this._worldToObjectMatrix, this.position, center, [0, 1, 0]);
-            this.setWorldToObjectMatrix(this._worldToObjectMatrix);
-            return this;
-        };
-        Camera.prototype.setProjectionMatrix = function (projectionMatrix) {
-            this._projectionMatrix = projectionMatrix;
+            gl_matrix_16.vec3.cross(this._rightVector, [0, 1, 0], center);
             return this;
         };
         Camera.prototype.setNear = function (near) {
             if (near !== this._near) {
-                this.compuseProjectionMatrix();
                 this._near = near;
+                this.compuseProjectionMatrix();
             }
             return this;
         };
         Camera.prototype.setFar = function (far) {
             if (far !== this._far) {
-                this.compuseProjectionMatrix();
                 this._far = far;
+                this.compuseProjectionMatrix();
             }
             return this;
         };
+        Camera.prototype.genOtherMatrixs = function () {
+            _super.prototype.genOtherMatrixs.call(this);
+            this.compuseProjectionMatrix();
+        };
+        __decorate([
+            Decorators_10.uniform(DataTypeEnum_12.DataType.vec3, "cameraPos")
+        ], Camera.prototype, "position", null);
+        __decorate([
+            Decorators_10.uniform(DataTypeEnum_12.DataType.float, "cameraNear")
+        ], Camera.prototype, "near", null);
+        __decorate([
+            Decorators_10.uniform(DataTypeEnum_12.DataType.float, "cameraFar")
+        ], Camera.prototype, "far", null);
         return Camera;
     }(Object3d_3.Object3d));
-    __decorate([
-        Decorators_6.uniform("cameraNear", DataTypeEnum_8.DataType.float)
-    ], Camera.prototype, "_near", void 0);
-    __decorate([
-        Decorators_6.uniform("cameraFar", DataTypeEnum_8.DataType.float)
-    ], Camera.prototype, "_far", void 0);
     exports.Camera = Camera;
 });
-define("geometries/RectGeometry", ["require", "exports", "geometries/Geometry"], function (require, exports, Geometry_2) {
+define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_17, DataTypeEnum_13, GraphicsUtils_5) {
     Object.defineProperty(exports, "__esModule", { value: true });
-    var RectGeometry = (function (_super) {
-        __extends(RectGeometry, _super);
-        function RectGeometry(gl) {
-            var _this = _super.call(this, gl) || this;
-            _this.attributes.position.data = [
-                -1.0, -1.0, 0.0,
-                1.0, -1.0, 0.0,
-                -1.0, 1.0, 0.0,
-                1.0, 1.0, 0.0,
-            ];
-            _this.attributes.uv.data = [
-                0.0, 0.0,
-                1.0, 0.0,
-                0.0, 1.0,
-                1.0, 1.0,
-            ];
-            _this.attributes.normal.data = [
-                0, 0, 1,
-                0, 0, 1,
-                0, 0, 1,
-                0, 0, 1,
-            ];
-            _this.faces.data = [
-                0, 1, 2,
-                2, 1, 3,
-            ];
-            return _this;
-        }
-        return RectGeometry;
-    }(Geometry_2.Geometry));
-    exports.RectGeometry = RectGeometry;
-});
-define("shader/shaders", ["require", "exports"], function (require, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ShaderSource;
-    (function (ShaderSource) {
-        ShaderSource.calculators__blinn_phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specular,\n    vec3 diffuse,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = specular * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-        ShaderSource.calculators__linearlize_depth_glsl = "float linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 - 1.0;;\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n}\n";
-        ShaderSource.calculators__phong_glsl = "vec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specularLight,\n    vec3 diffuseLight,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-        ShaderSource.calculators__shadow_factor_glsl = "float getSpotDirectionShadow(vec4 shadowCoord, sampler2D shadowMap)\n{\n    vec3 NDCoord = shadowCoord.xyz / shadowCoord.w;\n    vec2 uv = NDCoord.xy * 0.5 + 0.5;\n    if (uv.x >= 0.0 && uv.y >= 0.0 && uv.x <= 1.0 && uv.y <= 1.0) {\n        float z = 0.5 * NDCoord.z + 0.5;\n        float depth = texture2D(shadowMap, uv).x;\n        if (depth < (z - 0.0001)) {\n            return 0.0;\n        } else {\n            return 1.0;\n        }\n    } else {\n        return 1.0;\n    }\n}\n";
-        ShaderSource.calculators__types_glsl = "vec3 calculateDirLight(\n    DirectLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        position,\n        normal,\n        -light.direction,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity *= step(lightDis, light.radius);\n    return calculateLight(\n        position,\n        normal,\n        normalize(light.position - position),\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    vec3 materialDiff,\n    vec3 materialSpec,\n    float materialSpecExp,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    idensity = (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        position,\n        normal,\n        lightDir,\n        eyePos,\n        light.color * materialSpec,\n        light.color * materialDiff,\n        materialSpecExp,\n        idensity\n    );\n}\n\n// float directAndSpotShadow(sampler2D shadowMap, vec4 shadowCoord) {\n//\n// }\n";
-        ShaderSource.debug__checkBox_glsl = "float checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
-        ShaderSource.definitions__light_glsl = "#ifdef OPEN_LIGHT // light declaration\n\nstruct DirectLight\n{\n    vec3 color;\n    float idensity;\n    vec3 direction;\n\n    int shadowIndex;\n};\n\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n\n    int shadowIndex;\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n    float coneAngleCos;\n    vec3 spotDir;\n\n    int shadowIndex;\n};\n\n#endif // light declaration\n";
-        ShaderSource.interploters__deferred__geometry_frag = "uniform vec3 ambient;\nuniform vec3 materialDiff;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\n\n\n#ifdef OPEN_LIGHT\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n\n#ifdef OPEN_LIGHT\n    vec3 normal = normalize(vNormal);\n    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(materialDiff, specular);\n#endif\n#endif\n}\n";
-        ShaderSource.interploters__deferred__geometry_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef OPEN_LIGHT\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n#endif\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
-        ShaderSource.interploters__deferred__tiledLight_frag = "#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D uNormalDepthSE;\nuniform sampler2D uDiffSpec;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(uNormalDepthSE, uv);\n    vec4 tex2 = texture2D(uDiffSpec, uv);\n\n    vec3 materialDiff = tex2.xyz;\n    vec3 materialSpec = vec3(tex2.w);\n    float materialSpecExp = tex1.w;\n\n    vec3 normal = decodeNormal(tex1.xy);\n    vec3 viewPosition = decodePosition(tex1.z);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculateLight(\n                viewPosition,\n                normal,\n                normalize(lightPos - viewPosition),\n                vec3(0.0),\n                materialSpec * lightColor,\n                materialDiff * lightColor,\n                materialSpecExp,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
-        ShaderSource.interploters__deferred__tiledLight_vert = "attribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
-        ShaderSource.interploters__depth_phong_frag = "uniform vec3 ambient;\nuniform vec3 depthColor;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\nvoid main () {\n}\n";
-        ShaderSource.interploters__depth_phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n}\n";
-        ShaderSource.interploters__forward__gouraud_frag = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
-        ShaderSource.interploters__forward__gouraud_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-        ShaderSource.interploters__forward__phong_frag = "uniform vec3 ambient;\nuniform vec3 materialSpec;\nuniform float materialSpecExp;\nuniform vec3 materialDiff;\nvarying vec2 vMainUV;\nvarying vec4 screenPos;\n\n#ifdef OPEN_LIGHT\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n#endif\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (DIR_LIGHT_NUM > 0)\nuniform DirectLight directLights[DIR_LIGHT_NUM];\n#endif\n\n#if (POINT_LIGHT_NUM > 0)\nuniform PointLight pointLights[POINT_LIGHT_NUM];\n#endif\n\n#if (SPOT_LIGHT_NUM)\nuniform SpotLight spotLights[SPOT_LIGHT_NUM];\n#endif\n\n#ifdef USE_SHADOW\n\n    #if (DIR_LIGHT_NUM > 0)\n    uniform sampler2D directionShadowMaps[DIR_LIGHT_NUM];\n    varying vec4 directShadowCoord[DIR_LIGHT_NUM];\n    #endif\n\n    #if (POINT_LIGHT_NUM > 0)\n    uniform sampler2D pointShadowMaps[POINT_LIGHT_NUM];\n    varying vec4 pointShadowCoord[POINT_LIGHT_NUM];\n    #endif\n\n    #if (SPOT_LIGHT_NUM > 0)\n    uniform sampler2D spotShadowMaps[SPOT_LIGHT_NUM];\n    varying vec4 spotShadowCoord[SPOT_LIGHT_NUM];\n    #endif\n\n#endif\n\nvoid main () {\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n#ifdef OPEN_LIGHT\n    vec3 totalLighting = ambient;\n    #if (DIR_LIGHT_NUM > 0)\n    for (int index = 0; index < DIR_LIGHT_NUM; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n        #ifdef USE_SHADOW\n        lighting = lighting * getSpotDirectionShadow(directShadowCoord[index], directionShadowMaps[index]);\n        #endif\n        totalLighting += lighting;\n    }\n    #endif\n    #if (POINT_LIGHT_NUM > 0)\n    for (int index = 0; index < POINT_LIGHT_NUM; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n        totalLighting += lighting;\n    }\n    #endif\n    #if (SPOT_LIGHT_NUM > 0)\n    for (int index = 0; index < SPOT_LIGHT_NUM; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            materialDiff,\n            materialSpec,\n            materialSpecExp,\n            vPosition,\n            normal,\n            vec3(0.0)\n        );\n        #ifdef USE_SHADOW\n        lighting = lighting * getSpotDirectionShadow(spotShadowCoord[index], spotShadowMaps[index]);\n        #endif\n        totalLighting += lighting;\n\n    }\n    #endif\n    color = totalLighting;\n#endif\n#ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(-viewDir, vNormal);\n    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n#endif\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
-        ShaderSource.interploters__forward__phong_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\nvarying vec4 screenPos;\n\n\n#ifdef USE_SHADOW\n\n    #if (DIR_LIGHT_NUM > 0)\n    uniform mat4 directShadowMatrices[DIR_LIGHT_NUM];\n    varying vec4 directShadowCoord[DIR_LIGHT_NUM];\n    #endif\n\n    #if (POINT_LIGHT_NUM > 0)\n    uniform mat4 pointShadowMatrices[POINT_LIGHT_NUM];\n    varying vec4 pointShadowCoord[POINT_LIGHT_NUM];\n    #endif\n\n    #if (SPOT_LIGHT_NUM > 0)\n    uniform mat4 spotShadowMatrices[SPOT_LIGHT_NUM];\n    varying vec4 spotShadowCoord[SPOT_LIGHT_NUM];\n    #endif\n\n#endif\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    screenPos = gl_Position;\n    vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n\n    #ifdef USE_SHADOW\n        #if (DIR_LIGHT_NUM > 0)\n        for (int i = 0; i < DIR_LIGHT_NUM; ++i) {\n            directShadowCoord[i] = directShadowMatrices[i] * vec4(position, 1.0);\n        }\n        #endif\n\n        #if (POINT_LIGHT_NUM > 0)\n        for (int i = 0; i < POINT_LIGHT_NUM; ++i) {\n            pointShadowCoord[i] = pointShadowMatrices[i] * vec4(position, 1.0);\n        }\n        #endif\n\n        #if (SPOT_LIGHT_NUM > 0)\n        for (int i = 0; i < SPOT_LIGHT_NUM; ++i) {\n            spotShadowCoord[i] = spotShadowMatrices[i] * vec4(position, 1.0);\n        }\n        #endif\n    #endif\n}\n";
-        ShaderSource.interploters__forward__skybox_frag = "varying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
-        ShaderSource.interploters__forward__skybox_vert = "attribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = modelViewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
-    })(ShaderSource = exports.ShaderSource || (exports.ShaderSource = {}));
-});
-define("shader/ShaderBuilder", ["require", "exports", "shader/Program", "shader/shaders"], function (require, exports, Program_2, shaders_1) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ShaderBuilder = (function () {
-        function ShaderBuilder() {
-            this.vertLibs = [];
-            this.fragLibs = [
-                shaders_1.ShaderSource.definitions__light_glsl,
-                shaders_1.ShaderSource.calculators__linearlize_depth_glsl,
-                shaders_1.ShaderSource.calculators__blinn_phong_glsl,
-                shaders_1.ShaderSource.calculators__types_glsl,
-                shaders_1.ShaderSource.calculators__shadow_factor_glsl,
-                shaders_1.ShaderSource.debug__checkBox_glsl,
-            ];
-            this.shadingVert = shaders_1.ShaderSource.interploters__forward__phong_vert;
-            this.shadingFrag = shaders_1.ShaderSource.interploters__forward__phong_frag;
-            this.pass = Program_2.defaultProgramPass;
-        }
-        ShaderBuilder.prototype.resetShaderLib = function () {
-            this.vertLibs = [];
-            this.fragLibs = [];
-            return this;
-        };
-        ShaderBuilder.prototype.addShaderLib = function () {
-            var lib = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                lib[_i] = arguments[_i];
-            }
-            (_a = this.vertLibs).push.apply(_a, lib);
-            (_b = this.fragLibs).push.apply(_b, lib);
-            return this;
-            var _a, _b;
-        };
-        ShaderBuilder.prototype.addShaderLibVert = function () {
-            var lib = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                lib[_i] = arguments[_i];
-            }
-            (_a = this.vertLibs).push.apply(_a, lib);
-            return this;
-            var _a;
-        };
-        ShaderBuilder.prototype.addShaderLibFrag = function () {
-            var lib = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                lib[_i] = arguments[_i];
-            }
-            (_a = this.fragLibs).push.apply(_a, lib);
-            return this;
-            var _a;
-        };
-        ShaderBuilder.prototype.setShadingVert = function (vert) {
-            this.shadingVert = vert;
-            return this;
-        };
-        ShaderBuilder.prototype.setShadingFrag = function (frag) {
-            this.shadingFrag = frag;
-            return this;
-        };
-        ShaderBuilder.prototype.setPass = function (pass) {
-            this.pass = pass;
-            return this;
-        };
-        ShaderBuilder.prototype.build = function (gl) {
-            return new Program_2.Program(gl, {
-                vertexShader: this.vertLibs.join("\n") + this.shadingVert,
-                fragmentShader: this.fragLibs.join("\n") + this.shadingFrag,
-            }, this.pass);
-        };
-        return ShaderBuilder;
-    }());
-    exports.ShaderBuilder = ShaderBuilder;
-});
-define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "materials/Material"], function (require, exports, gl_matrix_13, DataTypeEnum_9, Decorators_7, ShaderBuilder_1, Material_1) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var StandardMaterial = (function (_super) {
-        __extends(StandardMaterial, _super);
-        function StandardMaterial(gl, paramter) {
-            if (paramter === void 0) {
-                paramter = {};
-            }
-            var _this = _super.call(this) || this;
-            _this.debug = false;
-            _this.castShadow = true;
-            _this.ambient = gl_matrix_13.vec3.fromValues(0.1, 0.1, 0.1);
-            _this.diffuse = gl_matrix_13.vec3.fromValues(0.8, 0.8, 0.8);
-            _this.specular = gl_matrix_13.vec3.fromValues(0.3, 0.3, 0.3);
-            _this.specularExponent = 64;
-            _this.transparency = 0;
-            _this.reflectivity = 0.5;
-            _this.program = new ShaderBuilder_1.ShaderBuilder().build(gl);
-            if (!!paramter) {
-                for (var name_2 in paramter) {
-                    _this[name_2] = paramter[name_2];
-                }
-            }
-            return _this;
-        }
-        return StandardMaterial;
-    }(Material_1.Material));
-    __decorate([
-        Decorators_7.linkdef("_DEBUG")
-    ], StandardMaterial.prototype, "debug", void 0);
-    __decorate([
-        Decorators_7.linkdef("USE_SHADOW")
-    ], StandardMaterial.prototype, "castShadow", void 0);
-    __decorate([
-        Decorators_7.linkdef("_MAIN_TEXTURE"),
-        Decorators_7.texture("uMainTexture")
-    ], StandardMaterial.prototype, "mainTexture", void 0);
-    __decorate([
-        Decorators_7.uniform("ambient", DataTypeEnum_9.DataType.vec3)
-    ], StandardMaterial.prototype, "ambient", void 0);
-    __decorate([
-        Decorators_7.uniform("materialDiff", DataTypeEnum_9.DataType.vec3)
-    ], StandardMaterial.prototype, "diffuse", void 0);
-    __decorate([
-        Decorators_7.uniform("materialSpec", DataTypeEnum_9.DataType.vec3)
-    ], StandardMaterial.prototype, "specular", void 0);
-    __decorate([
-        Decorators_7.uniform("materialSpecExp", DataTypeEnum_9.DataType.float)
-    ], StandardMaterial.prototype, "specularExponent", void 0);
-    __decorate([
-        Decorators_7.readyRequire
-    ], StandardMaterial.prototype, "bumpMap", void 0);
-    __decorate([
-        Decorators_7.readyRequire
-    ], StandardMaterial.prototype, "displamentMap", void 0);
-    __decorate([
-        Decorators_7.readyRequire
-    ], StandardMaterial.prototype, "stencilMap", void 0);
-    __decorate([
-        Decorators_7.uniform("reflectivity", DataTypeEnum_9.DataType.float)
-    ], StandardMaterial.prototype, "reflectivity", void 0);
-    __decorate([
-        Decorators_7.linkdef("_ENVIRONMENT_MAP"),
-        Decorators_7.texture("uCubeTexture")
-    ], StandardMaterial.prototype, "reflectionMap", void 0);
-    exports.StandardMaterial = StandardMaterial;
-});
-define("textures/DataTexture", ["require", "exports", "textures/Texture"], function (require, exports, Texture_4) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var DataTexture = (function (_super) {
-        __extends(DataTexture, _super);
-        function DataTexture(gl, data, width, height) {
-            if (width === void 0) {
-                width = 16;
-            }
-            if (height === void 0) {
-                height = 16;
-            }
-            var _this = _super.call(this, gl) || this;
-            _this.data = data;
-            _this.width = width;
-            _this.height = height;
-            return _this;
-        }
-        DataTexture.prototype.resetData = function (gl, data, width, height) {
-            this.data = data;
-            this.width = width ? width : this.width;
-            this.height = height ? height : this.height;
-            this.bindTextureData(gl);
-            return this;
-        };
-        DataTexture.prototype.bindTextureData = function (gl) {
-            _super.prototype.bindTextureData.call(this, gl);
-            gl.texImage2D(this.target, 0, this.format, this.width, this.height, 0, this.format, this.type, this.data);
-            return this;
-        };
-        return DataTexture;
-    }(Texture_4.Texture));
-    exports.DataTexture = DataTexture;
-});
-define("renderer/IExtension", ["require", "exports"], function (require, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-});
-define("renderer/IProcessor", ["require", "exports"], function (require, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-});
-define("renderer/deferred/DeferredProcessor", ["require", "exports", "gl-matrix", "DataTypeEnum", "geometries/RectGeometry", "materials/StandardMaterial", "Mesh", "shader/ShaderBuilder", "shader/shaders", "textures/DataTexture", "renderer/FrameBuffer", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_14, DataTypeEnum_10, RectGeometry_1, StandardMaterial_1, Mesh_1, ShaderBuilder_2, shaders_2, DataTexture_1, FrameBuffer_2, GraphicsUtils_3) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var DeferredProcessor = (function () {
-        function DeferredProcessor(gl, ext, scene, camera) {
-            this.tilePixelSize = 32;
-            this.tileLightIndex = [];
-            this.linearLightIndex = [];
+    var Program = (function () {
+        function Program(gl, source, holders) {
+            this.enableDepthTest = true;
+            this.enableStencilTest = true;
+            this.dirty = true;
+            this.extensionStatements = [];
+            this.defineCaches = {};
+            this.uniformCaches = {};
+            this.uniformArrayCaches = {};
+            this.undesiredUniforms = {};
+            this.attributeLocations = {};
+            this.undesiredAttributes = {};
+            this.defineLinks = {};
+            this.vertexPrecision = "highp";
+            this.fragmentPrecision = "highp";
+            this.currentTextureUnit = 0;
+            this.drawMode = function (gl) { return gl.STATIC_DRAW; };
             this.gl = gl;
-            this.ext = ext;
-            this.gBuffer = new FrameBuffer_2.FrameBuffer(gl);
-            this.horizontalTileNum = Math.floor(this.gl.canvas.width / this.tilePixelSize);
-            this.verticalTileNum = Math.floor(this.gl.canvas.height / this.tilePixelSize);
-            this.tileCount = this.horizontalTileNum * this.verticalTileNum;
-            this.initGeometryProcess(scene);
-            this.initTiledPass(scene);
-            scene.programSetUp = true;
-        }
-        DeferredProcessor.prototype.process = function (scene, camera, materials) {
-            GraphicsUtils_3.Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer);
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
-            this.gl.enable(this.gl.DEPTH_TEST);
-            this.gl.enable(this.gl.CULL_FACE);
-            this.gl.cullFace(this.gl.BACK);
-            this.gl.disable(this.gl.BLEND);
-            this.gl.depthFunc(this.gl.LESS);
-            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                if (object instanceof Mesh_1.Mesh) {
-                    var mesh = object;
-                    for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
-                        var material = _c[_b];
-                        if (material instanceof StandardMaterial_1.StandardMaterial) {
-                            if (material.dirty) {
-                                material.geometryProgram.resetMaterialDefines(material);
-                                material.geometryProgram.make(mesh.scene);
-                                GraphicsUtils_3.Graphics.addUniformContainer(material.geometryProgram, object);
-                                GraphicsUtils_3.Graphics.addUniformContainer(material.geometryProgram, material);
-                                GraphicsUtils_3.Graphics.addUniformContainer(material.geometryProgram, camera);
-                                GraphicsUtils_3.Graphics.addTextureContainer(material.geometryProgram, material);
-                                GraphicsUtils_3.Graphics.addTextureContainer(material.geometryProgram, scene);
-                                material.dirty = false;
-                            }
-                            material.geometryProgram.pass(mesh, camera, material);
-                        }
-                    }
-                }
-            }
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-            this.gl.disable(this.gl.DEPTH_TEST);
-            this.gl.enable(this.gl.BLEND);
-            this.gl.depthFunc(this.gl.EQUAL);
-            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
-            this.tileLightPass(scene, camera);
-        };
-        DeferredProcessor.prototype.initGeometryProcess = function (scene) {
-            this.gBuffer.attachments.color.disable();
-            this.gBuffer.attachments.depth
-                .setType(this.gl, FrameBuffer_2.AttachmentType.Texture)
-                .targetTexture
-                .setType(this.gl.UNSIGNED_SHORT)
-                .setFormat(this.gl.DEPTH_COMPONENT)
-                .bindTextureData(this.gl);
-            this.gBuffer.extras.push(new FrameBuffer_2.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT0_WEBGL; })
-                .setType(this.gl, FrameBuffer_2.AttachmentType.Texture), new FrameBuffer_2.Attachment(this.gBuffer, function (ext) { return ext.COLOR_ATTACHMENT1_WEBGL; })
-                .setType(this.gl, FrameBuffer_2.AttachmentType.Texture));
-            for (var _i = 0, _a = this.gBuffer.extras; _i < _a.length; _i++) {
-                var colorAttach = _a[_i];
-                colorAttach.targetTexture
-                    .setType(this.gl.FLOAT)
-                    .setFormat(this.gl.RGBA)
-                    .setMinFilter(this.gl.NEAREST)
-                    .setMagFilter(this.gl.NEAREST)
-                    .bindTextureData(this.gl);
-            }
-            this.gBuffer.attach(this.gl, this.ext.draw_buffer);
-            for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
-                var object = _c[_b];
-                if (object instanceof Mesh_1.Mesh) {
-                    var geometryProgram = new ShaderBuilder_2.ShaderBuilder()
-                        .resetShaderLib()
-                        .setShadingVert(shaders_2.ShaderSource.interploters__deferred__geometry_vert)
-                        .setShadingFrag(shaders_2.ShaderSource.interploters__deferred__geometry_frag)
-                        .build(this.gl);
-                    for (var _d = 0, _e = object.materials; _d < _e.length; _d++) {
-                        var material = _e[_d];
-                        if (material instanceof StandardMaterial_1.StandardMaterial) {
-                            geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                            material.geometryProgram = geometryProgram;
-                        }
-                    }
-                }
-            }
-        };
-        DeferredProcessor.prototype.tileLightPass = function (scene, camera) {
-            var lightColors = [];
-            var lightPositionRadius = [];
-            for (var _i = 0, _a = scene.pointLights; _i < _a.length; _i++) {
-                var light = _a[_i];
-                lightColors.push(light.color[0], light.color[1], light.color[2], light.idensity);
-                var lightPosInViewSpace = gl_matrix_14.vec3.transformMat4(gl_matrix_14.vec3.create(), light.position, camera.worldToObjectMatrix);
-                lightPositionRadius.push(lightPosInViewSpace[0], lightPosInViewSpace[1], lightPosInViewSpace[2], light.radius);
-            }
-            this.lightColorIdensityMap.resetData(this.gl, new Float32Array(lightColors), lightColors.length / 4, 1);
-            this.lightPositionRadiusMap.resetData(this.gl, new Float32Array(lightPositionRadius), lightPositionRadius.length / 4, 1);
-            for (var i = 0; i < this.tileCount; ++i) {
-                this.tileLightIndex[i] = [];
-            }
-            this.linearLightIndex = [];
-            for (var i = 0; i < scene.pointLights.length; ++i) {
-                var light = scene.pointLights[i];
-                var box = light.getProjecttionBoundingBox2D(camera);
-                this.fillTileWithBoundingBox2D(camera, box, i);
-            }
-            var lightOffsetCount = [];
-            var offset = 0;
-            for (var _b = 0, _c = this.tileLightIndex; _b < _c.length; _b++) {
-                var indices = _c[_b];
-                lightOffsetCount.push(offset);
-                lightOffsetCount.push(indices.length);
-                offset += indices.length;
-                for (var _d = 0, indices_1 = indices; _d < indices_1.length; _d++) {
-                    var index = indices_1[_d];
-                    this.linearLightIndex.push(index / scene.pointLights.length);
-                }
-            }
-            this.tileLightIndexMap.resetData(this.gl, new Float32Array(this.linearLightIndex), this.linearLightIndex.length, 1);
-            this.tileLightOffsetCountMap.resetData(this.gl, new Float32Array(lightOffsetCount), this.horizontalTileNum, this.verticalTileNum);
-            this.tileProgram.pass(this.tile, camera, null);
-        };
-        DeferredProcessor.prototype.initTiledPass = function (scene) {
-            var _this = this;
-            if (this.tile === undefined) {
-                this.tile = new Mesh_1.Mesh(new RectGeometry_1.RectGeometry(this.gl).build(), []);
-            }
-            for (var i = 0; i < this.horizontalTileNum; ++i) {
-                for (var j = 0; j < this.verticalTileNum; ++j) {
-                    this.tileLightIndex.push([]);
-                }
-            }
-            this.tileLightIndexMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]))
-                .setFormat(this.gl.LUMINANCE)
-                .setType(this.gl.FLOAT);
-            this.tileLightOffsetCountMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]), this.horizontalTileNum, this.verticalTileNum)
-                .setFormat(this.gl.LUMINANCE_ALPHA)
-                .setType(this.gl.FLOAT);
-            this.tileLightCountMap = new DataTexture_1.DataTexture(this.gl, new Uint8Array([]), this.horizontalTileNum, this.verticalTileNum).setFormat(this.gl.LUMINANCE).setType(this.gl.UNSIGNED_BYTE);
-            this.lightColorIdensityMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]))
-                .setType(this.gl.FLOAT)
-                .setFormat(this.gl.RGBA);
-            this.lightPositionRadiusMap = new DataTexture_1.DataTexture(this.gl, new Float32Array([]))
-                .setType(this.gl.FLOAT)
-                .setFormat(this.gl.RGBA);
-            this.tileProgram = new ShaderBuilder_2.ShaderBuilder()
-                .resetShaderLib()
-                .addShaderLibFrag(shaders_2.ShaderSource.calculators__blinn_phong_glsl)
-                .setShadingVert(shaders_2.ShaderSource.interploters__deferred__tiledLight_vert)
-                .setShadingFrag(shaders_2.ShaderSource.interploters__deferred__tiledLight_frag)
-                .setPass({
-                faces: function () { return _this.tile.geometry.faces; },
-                uniforms: {
-                    cameraFar: {
-                        type: DataTypeEnum_10.DataType.float,
-                        updator: function (mesh, camera) { return camera.far; },
-                    },
-                    cameraNear: {
-                        type: DataTypeEnum_10.DataType.float,
-                        updator: function (mesh, camera) { return camera.near; },
-                    },
-                    inverseProjection: {
-                        type: DataTypeEnum_10.DataType.mat4,
-                        updator: function (mesh, camera) { return gl_matrix_14.mat4.invert(gl_matrix_14.mat4.create(), camera.projectionMatrix); },
-                    },
-                    uLightListLengthSqrt: {
-                        type: DataTypeEnum_10.DataType.float,
-                        updator: function () { return _this.linearLightIndex.length; },
-                    },
-                    uHorizontalTileNum: {
-                        type: DataTypeEnum_10.DataType.float,
-                        updator: function () { return _this.horizontalTileNum; },
-                    },
-                    uVerticalTileNum: {
-                        type: DataTypeEnum_10.DataType.float,
-                        updator: function () { return _this.verticalTileNum; },
-                    },
-                    uTotalLightNum: {
-                        type: DataTypeEnum_10.DataType.float,
-                        updator: function () { return scene.pointLights.length; },
-                    },
-                },
-                textures: {
-                    uNormalDepthSE: function () { return _this.gBuffer.extras[0].targetTexture; },
-                    uDiffSpec: function () { return _this.gBuffer.extras[1].targetTexture; },
-                    uLightOffsetCount: function () { return _this.tileLightOffsetCountMap; },
-                    uLightPositionRadius: function () { return _this.lightPositionRadiusMap; },
-                    uLightColorIdensity: function () { return _this.lightColorIdensityMap; },
-                    uLightIndex: function () { return _this.tileLightIndexMap; },
-                },
-                attributes: {
-                    position: function () { return _this.tile.geometry.attributes.position; },
-                },
-            })
-                .build(this.gl);
-            GraphicsUtils_3.Graphics.copyDataToVertexBuffer(this.gl, this.tile.geometry);
-            this.tileProgram.make(scene);
-        };
-        DeferredProcessor.prototype.fillTileWithBoundingBox2D = function (camera, box, lightIndex) {
-            var leftTile = Math.max(Math.floor((box.left / 2.0 + 0.5) * this.horizontalTileNum) - 1, 0);
-            var topTile = Math.min(Math.ceil((box.top / 2.0 + 0.5) * this.verticalTileNum) + 1, this.verticalTileNum);
-            var rightTile = Math.min(Math.ceil((box.right / 2.0 + 0.5) * this.horizontalTileNum) + 1, this.horizontalTileNum);
-            var bottomTile = Math.max(Math.floor((box.bottom / 2.0 + 0.5) * this.verticalTileNum) - 1, 0);
-            for (var i = leftTile; i < rightTile; i++) {
-                for (var j = bottomTile; j < topTile; j++) {
-                    var tileIndex = i + j * this.horizontalTileNum;
-                    if (tileIndex < this.tileCount && tileIndex >= 0) {
-                        this.tileLightIndex[tileIndex].push(lightIndex);
-                    }
-                }
-            }
-        };
-        return DeferredProcessor;
-    }());
-    exports.DeferredProcessor = DeferredProcessor;
-});
-define("materials/DepthMaterial", ["require", "exports", "DataTypeEnum", "shader/Program", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, DataTypeEnum_11, Program_3, ShaderBuilder_3, shaders_3, Material_2) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var DepthMaterial = (function (_super) {
-        __extends(DepthMaterial, _super);
-        function DepthMaterial(gl) {
-            var _this = _super.call(this) || this;
-            _this.program = new ShaderBuilder_3.ShaderBuilder()
-                .resetShaderLib()
-                .addShaderLib(shaders_3.ShaderSource.calculators__linearlize_depth_glsl)
-                .setShadingFrag(shaders_3.ShaderSource.interploters__depth_phong_frag)
-                .setShadingVert(shaders_3.ShaderSource.interploters__depth_phong_vert)
-                .setPass({
-                uniforms: {
-                    modelViewProjectionMatrix: Program_3.defaultProgramPass.uniforms.modelViewProjectionMatrix,
-                    modelViewMatrix: Program_3.defaultProgramPass.uniforms.modelViewMatrix,
-                    cameraFar: {
-                        type: DataTypeEnum_11.DataType.float,
-                        updator: function (mesh, lightCamera) { return lightCamera.far; },
-                    },
-                    cameraNear: {
-                        type: DataTypeEnum_11.DataType.float,
-                        updator: function (mesh, lightCamera) { return lightCamera.near; },
-                    },
-                },
-                attributes: {
-                    position: Program_3.defaultProgramPass.attributes.position,
-                },
-            })
-                .build(gl);
-            return _this;
-        }
-        return DepthMaterial;
-    }(Material_2.Material));
-    exports.DepthMaterial = DepthMaterial;
-});
-define("renderer/forward/ForwardProcessor", ["require", "exports", "gl-matrix", "lights/ShadowType", "materials/StandardMaterial", "Mesh", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_15, ShadowType_4, StandardMaterial_2, Mesh_2, GraphicsUtils_4) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ForwardProcessor = (function () {
-        function ForwardProcessor(gl, ext, scene, camera) {
-            this.gl = gl;
-            this.ext = ext;
-        }
-        ForwardProcessor.prototype.process = function (scene, camera, materials) {
-            this.gl.clearColor(scene.clearColor[0], scene.clearColor[1], scene.clearColor[2], scene.clearColor[3]);
-            this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                this.renderObject(scene, camera, object);
-            }
-        };
-        ForwardProcessor.prototype.renderObject = function (scene, camera, object) {
-            if (object instanceof Mesh_2.Mesh) {
-                var mesh = object;
-                for (var _i = 0, _a = mesh.materials; _i < _a.length; _i++) {
-                    var material = _a[_i];
-                    var program = material.program;
-                    if (program.enableDepthTest) {
-                        this.gl.enable(this.gl.DEPTH_TEST);
-                    }
-                    else {
-                        this.gl.disable(this.gl.DEPTH_TEST);
-                    }
-                    if (program.enableStencilTest) {
-                        this.gl.enable(this.gl.STENCIL_TEST);
-                    }
-                    else {
-                        this.gl.disable(this.gl.STENCIL_TEST);
-                    }
-                    if (material.dirty) {
-                        program.resetMaterialDefines(material);
-                        program.make(mesh.scene);
-                        GraphicsUtils_4.Graphics.addUniformContainer(material.program, mesh);
-                        GraphicsUtils_4.Graphics.addUniformContainer(material.program, material);
-                        GraphicsUtils_4.Graphics.addUniformContainer(material.program, camera);
-                        GraphicsUtils_4.Graphics.addUniformContainer(material.program, scene);
-                        if (material instanceof StandardMaterial_2.StandardMaterial) {
-                            this.setupLights(mesh.scene, material, mesh, camera);
-                        }
-                        GraphicsUtils_4.Graphics.addTextureContainer(material.program, material);
-                        GraphicsUtils_4.Graphics.addTextureContainer(material.program, scene);
-                        material.dirty = false;
-                    }
-                    if (material instanceof StandardMaterial_2.StandardMaterial && material.castShadow) {
-                        this.passShadows(mesh, scene, material, camera);
-                    }
-                    this.gl.useProgram(program.webGlProgram);
-                    program.pass(mesh, camera, material);
-                }
-            }
-        };
-        ForwardProcessor.prototype.setupLight = function (light, camera, program, index, lightArrayName) {
-            console.assert(light.uniforms !== undefined);
-            var _loop_5 = function (uniformProperty) {
-                if (!!uniformProperty.key && light[uniformProperty.key] !== undefined) {
-                    program.addUniform(lightArrayName + "[" + index + "]." + uniformProperty.name, {
-                        type: uniformProperty.type,
-                        updator: function (obj, camera) {
-                            return uniformProperty.updator(light, camera);
-                        },
-                    });
-                }
+            this.source = source;
+            this.extraRenderParamHolders = holders;
+            this.viewport = {
+                x: 0, y: 0,
+                width: gl.canvas.width,
+                height: gl.canvas.height,
             };
-            for (var _i = 0, _a = light.uniforms; _i < _a.length; _i++) {
-                var uniformProperty = _a[_i];
-                _loop_5(uniformProperty);
-            }
-        };
-        ForwardProcessor.prototype.setupLights = function (scene, material, mesh, camera) {
-            for (var index in scene.dirctionLights) {
-                this.setupLight(scene.dirctionLights[index], camera, material.program, index, "directLights");
-            }
-            for (var index in scene.pointLights) {
-                this.setupLight(scene.pointLights[index], camera, material.program, index, "pointLights");
-            }
-            for (var index in scene.spotLights) {
-                this.setupLight(scene.spotLights[index], camera, material.program, index, "spotLights");
-            }
-        };
-        ForwardProcessor.prototype.passShadows = function (mesh, scene, material, camera) {
-            var handleShadow = function (lights, shadowMatrices, shadowMaps) {
-                var offset = 0;
-                lights.forEach(function (light) {
-                    if (light.shadowType === ShadowType_4.ShadowType.None) {
-                        return;
-                    }
-                    shadowMaps.push(light.shadowMap);
-                    shadowMatrices.set(gl_matrix_15.mat4.mul(gl_matrix_15.mat4.create(), light.projectCamera.projectionMatrix, gl_matrix_15.mat4.mul(gl_matrix_15.mat4.create(), light.projectCamera.worldToObjectMatrix, mesh.matrix)), offset);
-                    offset += 16;
-                });
-            };
-            scene.directionShadowMaps = [];
-            scene.directShadowMatrices = new Float32Array(scene.dirctionLights.length * 16);
-            handleShadow(scene.dirctionLights, scene.directShadowMatrices, scene.directionShadowMaps);
-            scene.pointShadowMaps = [];
-            scene.pointShadowMatrices = new Float32Array(scene.pointLights.length * 16);
-            handleShadow(scene.pointLights, scene.pointShadowMatrices, scene.pointShadowMaps);
-            scene.spotShadowMaps = [];
-            scene.spotShadowMatrices = new Float32Array(scene.spotLights.length * 16);
-            handleShadow(scene.spotLights, scene.spotShadowMatrices, scene.spotShadowMaps);
-        };
-        return ForwardProcessor;
-    }());
-    exports.ForwardProcessor = ForwardProcessor;
-});
-define("renderer/ShadowPreProcessor", ["require", "exports", "lights/ShadowType", "materials/DepthMaterial", "materials/StandardMaterial", "Mesh", "renderer/GraphicsUtils"], function (require, exports, ShadowType_5, DepthMaterial_1, StandardMaterial_3, Mesh_3, GraphicsUtils_5) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ShadowPreProcess = (function () {
-        function ShadowPreProcess(gl, ext) {
-            this.gl = gl;
-            this.ext = ext;
-            this.depthMaterial = new DepthMaterial_1.DepthMaterial(gl);
-            this.depthMaterial.program.setViewPort({ x: 0, y: 0, width: 1024, height: 1024 });
         }
-        ShadowPreProcess.prototype.process = function (scene, camera, matriels) {
-            if (this.depthMaterial.dirty) {
-                this.depthMaterial.program.resetMaterialDefines(this.depthMaterial);
-                this.depthMaterial.program.make(scene);
-                GraphicsUtils_5.Graphics.addUniformContainer(this.depthMaterial.program, this.depthMaterial);
-                GraphicsUtils_5.Graphics.addTextureContainer(this.depthMaterial.program, this.depthMaterial);
-                this.depthMaterial.dirty = false;
+        Program.prototype.setFragmentShader = function (fragmentShader) {
+            this.source.fragmentShader = fragmentShader;
+            return this;
+        };
+        Program.prototype.setVertexShader = function (vertexShader) {
+            this.source.vertexShader = vertexShader;
+            return this;
+        };
+        Program.prototype.setExtraRenderParam = function (name, paramHolder) {
+            this.extraRenderParamHolders[name] = paramHolder;
+            return this;
+        };
+        Program.prototype.setViewPort = function (viewport) {
+            this.viewport = viewport;
+        };
+        Program.prototype.clean = function () {
+            if (this.dirty) {
+                this.make();
+                this.dirty = false;
             }
-            for (var _i = 0, _a = scene.lights; _i < _a.length; _i++) {
-                var light = _a[_i];
-                if (light.shadowType !== ShadowType_5.ShadowType.None) {
-                    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
-                    this.gl.enable(this.gl.DEPTH_TEST);
-                    this.gl.depthFunc(this.gl.LEQUAL);
-                    this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-                    for (var _b = 0, _c = scene.objects; _b < _c.length; _b++) {
-                        var object = _c[_b];
-                        if (object instanceof Mesh_3.Mesh) {
-                            var castShadow = false;
-                            for (var _d = 0, _e = object.materials; _d < _e.length; _d++) {
-                                var material = _e[_d];
-                                if (material instanceof StandardMaterial_3.StandardMaterial) {
-                                    if (material.castShadow) {
-                                        castShadow = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (castShadow) {
-                                this.renderMeshDepth(object, light);
-                            }
-                        }
+        };
+        Program.prototype.make = function () {
+            var defines = [];
+            for (var defineName in this.defineCaches) {
+                var defineVal = this.defineCaches[defineName] || "";
+                var defineLine = "#define " + defineName + " " + defineVal;
+                defines.push(defineLine);
+                console.log(defineLine);
+            }
+            this.webGlProgram = GraphicsUtils_5.Graphics.createEntileShader(this.gl, this.extensionStatements.join("\n")
+                + "\nprecision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
+                + this.source.vertexShader, this.extensionStatements.join("\n")
+                + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
+                + this.source.fragmentShader);
+            this.undesiredUniforms = {};
+            this.uniformCaches = {};
+            this.undesiredAttributes = {};
+            this.attributeLocations = {};
+            return this;
+        };
+        Program.prototype.pass = function (buildinContainers) {
+            this.updateDefines(buildinContainers);
+            this.clean();
+            this.currentTextureUnit = 0;
+            this.gl.useProgram(this.webGlProgram);
+            this.gl.viewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
+            for (var holderName in buildinContainers) {
+                var holder = GraphicsUtils_5.Graphics.getRenderParamHost(buildinContainers[holderName]);
+                this.passOneParamsHolder(buildinContainers, holder);
+            }
+            for (var holderName in this.extraRenderParamHolders) {
+                var holder = this.extraRenderParamHolders[holderName];
+                this.passOneParamsHolder(buildinContainers, holder);
+            }
+            var geometry = buildinContainers.mesh.geometry;
+            for (var attributeKey in geometry.attributes) {
+                if (attributeKey in this.undesiredAttributes) {
+                    continue;
+                }
+                var attribute = geometry.attributes[attributeKey];
+                var location_1 = this.attributeLocations[attributeKey];
+                if (location_1 === undefined) {
+                    location_1 = this.getAttribLocation(attributeKey);
+                    if (location_1 === null || location_1 === -1) {
+                        this.undesiredAttributes[attributeKey] = undefined;
+                        continue;
                     }
+                    this.attributeLocations[attributeKey] = location_1;
                 }
+                this.gl.enableVertexAttribArray(this.attributeLocations[attributeKey]);
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
+                this.gl.vertexAttribPointer(this.attributeLocations[attributeKey], attribute.size, attribute.type, false, 0, 0);
             }
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-        };
-        ShadowPreProcess.prototype.renderMeshDepth = function (mesh, light) {
-            this.gl.useProgram(this.depthMaterial.program.webGlProgram);
-            this.depthMaterial.program.pass(mesh, light.projectCamera, this.depthMaterial);
-        };
-        return ShadowPreProcess;
-    }());
-    exports.ShadowPreProcess = ShadowPreProcess;
-});
-define("renderer/Renderer", ["require", "exports", "Mesh", "renderer/deferred/DeferredProcessor", "renderer/forward/ForwardProcessor", "renderer/FrameBuffer", "renderer/GraphicsUtils", "renderer/ShadowPreProcessor"], function (require, exports, Mesh_4, DeferredProcessor_1, ForwardProcessor_1, FrameBuffer_3, GraphicsUtils_6, ShadowPreProcessor_1) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Renderer = (function () {
-        function Renderer(canvas, debug) {
-            var _this = this;
-            this.canvas = null;
-            this.gl = null;
-            this.debug = false;
-            this.preloadRes = [];
-            this.usedTextureNum = 0;
-            this.renderTargets = [];
-            this.vertPrecision = "highp";
-            this.fragPrecision = "mediump";
-            this.isAnimating = false;
-            this.renderQueue = [];
-            this.fbos = [];
-            this.scenes = [];
-            this.cameras = [];
-            this.frameRate = 1000 / 60;
-            this.stopped = false;
-            this.materials = [];
-            this.isDeferred = false;
-            this.main = function () {
-                for (var _i = 0, _a = _this.renderQueue; _i < _a.length; _i++) {
-                    var renderCommand = _a[_i];
-                    renderCommand(_this.frameRate);
-                }
-                if (_this.stopped) {
-                    return;
-                }
-                setTimeout(_this.main, _this.frameRate);
-            };
-            this.canvas = canvas;
-            this.debug = debug;
-            this.gl = GraphicsUtils_6.Graphics.initWebwebglContext(canvas, debug);
-            this.ext = {
-                depth_texture: this.gl.getExtension("WEBGL_depth_texture"),
-                draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
-                texture_float: this.gl.getExtension("OES_texture_float"),
-                texture_float_linear: this.gl.getExtension("OES_texture_float_linear"),
-            };
-            this.initMatrix();
-            this.gl.clearDepth(1.0);
-            this.gl.enable(this.gl.DEPTH_TEST);
-            this.gl.depthFunc(this.gl.LEQUAL);
-            setTimeout(this.main, this.frameRate);
-        }
-        Renderer.prototype.stop = function () {
-            this.stopped = true;
-        };
-        Renderer.prototype.start = function () {
-            this.stopped = false;
-            setTimeout(this.main, this.frameRate);
-        };
-        Renderer.prototype.createFrameBuffer = function () {
-            var fbo = new FrameBuffer_3.FrameBuffer(this.gl);
-            this.fbos.push(fbo);
-            return fbo;
-        };
-        Renderer.prototype.renderFBO = function (scene, camera) {
-        };
-        Renderer.prototype.handleResource = function (scene) {
-            var _this = this;
-            var objectPromises = [];
-            var _loop_6 = function (object) {
-                var promise = object.asyncFinished();
-                if (!!promise) {
-                    objectPromises.push(promise.then(function () {
-                        for (var _i = 0, _a = object.children; _i < _a.length; _i++) {
-                            var child = _a[_i];
-                            scene.addObject(child);
-                        }
-                    }));
-                }
-            };
-            for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                var object = _a[_i];
-                _loop_6(object);
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
+            this.gl.drawElements(this.gl.TRIANGLES, geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
+            for (var attributeKey in this.attributeLocations) {
+                var attribute = geometry.attributes[attributeKey];
+                this.gl.disableVertexAttribArray(this.attributeLocations[attributeKey]);
             }
-            return Promise.all(objectPromises).then(function () {
-                var texturePromises = [];
-                for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                    var object = _a[_i];
-                    if (object instanceof Mesh_4.Mesh) {
-                        for (var _b = 0, _c = object.materials; _b < _c.length; _b++) {
-                            var material = _c[_b];
-                            var _material = material;
-                            for (var _d = 0, _e = _material.asyncResources; _d < _e.length; _d++) {
-                                var textureGetter = _e[_d];
-                                var promise = textureGetter(_material);
-                                if (!!promise) {
-                                    texturePromises.push(promise.then(function (texture) {
-                                        texture.bindTextureData(_this.gl);
-                                        return Promise.resolve(texture);
-                                    }));
-                                }
-                            }
-                        }
-                    }
-                }
-                return Promise.all(texturePromises);
-            });
+            return this;
         };
-        Renderer.prototype.forceDeferred = function () {
-            this.isDeferred = true;
-        };
-        Renderer.prototype.render = function (scene, camera) {
-            var _this = this;
-            camera.adaptTargetRadio(this.canvas);
-            if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
+        Program.prototype.passOneParamsHolder = function (buildinContainder, holder, namePrefix) {
+            if (namePrefix === void 0) {
+                namePrefix = "";
+            }
+            if (holder === undefined) {
                 return;
             }
-            this.scenes.push(scene);
-            this.handleResource(scene)
-                .then(function () {
-                var materials = [];
-                for (var _i = 0, _a = scene.objects; _i < _a.length; _i++) {
-                    var obj = _a[_i];
-                    if (obj instanceof Mesh_4.Mesh) {
-                        var mesh = obj;
-                        for (var _b = 0, _c = mesh.materials; _b < _c.length; _b++) {
-                            var material = _c[_b];
-                            if (materials.indexOf(material) === -1) {
-                                materials.push(material);
-                            }
+            for (var linkName in holder.defineLinks) {
+                this.defineLinks[namePrefix + linkName] = holder.defineLinks[linkName];
+            }
+            for (var uniformKey in holder.uniforms) {
+                var uniformInfo = holder.uniforms[uniformKey];
+                var uniformName = namePrefix + (uniformInfo.name || uniformKey);
+                if (uniformName in this.defineLinks && !(this.defineLinks[uniformName] in this.defineCaches)) {
+                    continue;
+                }
+                var val = !!uniformInfo.updator ?
+                    uniformInfo.updator(buildinContainder) : holder.hostObject[uniformKey];
+                this.updateUniform(uniformName, uniformInfo.type, val);
+            }
+            for (var uniformArrayKey in holder.uniformArrays) {
+                var uniformArrayInfo = holder.uniforms[uniformArrayKey];
+                var uniformArrayName = namePrefix + (uniformArrayInfo.name || uniformArrayKey);
+                if (uniformArrayName in this.defineLinks && !(this.defineLinks[uniformArrayName] in this.defineCaches)) {
+                    continue;
+                }
+                var val = !!uniformArrayInfo.updator ?
+                    uniformArrayInfo.updator(buildinContainder) : holder.hostObject[uniformArrayKey];
+                this.updateUniformArray(uniformArrayName, uniformArrayInfo.type, val);
+            }
+            for (var textureKey in holder.textures) {
+                var textureInfo = holder.textures[textureKey];
+                var name_2 = namePrefix + (textureInfo.name || textureKey);
+                if (name_2 in this.defineLinks && !(this.defineLinks[name_2] in this.defineCaches)) {
+                    continue;
+                }
+                var texture = !!textureInfo.source ? textureInfo.source : holder.hostObject[textureKey];
+                if (!!texture) {
+                    this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
+                    this.gl.bindTexture(texture.target, texture.glTexture);
+                    this.updateUniform(name_2, DataTypeEnum_13.DataType.int, this.currentTextureUnit);
+                    this.currentTextureUnit++;
+                }
+            }
+            for (var textureArrayKey in holder.textureArrays) {
+                var textureArrayInfo = holder.textureArrays[textureArrayKey];
+                var name_3 = namePrefix + (textureArrayInfo.name || textureArrayKey);
+                if (name_3 in this.defineLinks && !(this.defineLinks[name_3] in this.defineCaches)) {
+                    continue;
+                }
+                var textureArray = !!textureArrayInfo.sources ?
+                    holder.hostObject[textureArrayKey] : textureArrayInfo.sources;
+                var indices = [];
+                for (var _i = 0, textureArray_1 = textureArray; _i < textureArray_1.length; _i++) {
+                    var texture = textureArray_1[_i];
+                    this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
+                    this.gl.bindTexture(texture.target, texture.glTexture);
+                    indices.push(this.currentTextureUnit);
+                    this.currentTextureUnit++;
+                }
+                if (indices.length > 0) {
+                    this.updateUniformArray(name_3, DataTypeEnum_13.DataType.int, new Uint32Array(indices));
+                }
+            }
+            if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
+                throw new Error("structArray can only be nested of depth 1");
+            }
+            for (var structArrayKey in holder.structArrays) {
+                var structArrayInfo = holder.structArrays[structArrayKey];
+                var arrayName = structArrayInfo.name || structArrayKey;
+                var structArray = holder.hostObject[structArrayKey];
+                for (var i in structArray) {
+                    var struct = structArray[i];
+                    var paramHolder = GraphicsUtils_5.Graphics.getRenderParamHost(struct);
+                    if (paramHolder === undefined) {
+                        throw new Error("\n                    Property " + arrayName + " of type " + typeof holder.hostObject + "\n                    must be an array of class annotated by @RenderParamContainer");
+                    }
+                    this.passOneParamsHolder(buildinContainder, GraphicsUtils_5.Graphics.getRenderParamHost(struct), arrayName + "[" + i + "].");
+                }
+            }
+        };
+        Program.prototype.updateDefines = function (buildinContainers) {
+            for (var holderName in buildinContainers) {
+                var holder = GraphicsUtils_5.Graphics.getRenderParamHost(buildinContainers[holderName]);
+                if (!!holder) {
+                    for (var defineKey in holder.defines) {
+                        var defineName = holder.defines[defineKey].defineName;
+                        if (!holder.hostObject[defineKey]) {
+                            continue;
+                        }
+                        var val = holder.defines[defineKey].useValue ? holder.hostObject[defineKey] : "";
+                        var cache = this.defineCaches[defineName];
+                        this.defineCaches[defineName] = val;
+                        if (val !== cache) {
+                            this.dirty = true;
                         }
                     }
-                }
-                for (var _d = 0, _e = scene.objects; _d < _e.length; _d++) {
-                    var object = _e[_d];
-                    if (object instanceof Mesh_4.Mesh) {
-                        GraphicsUtils_6.Graphics.copyDataToVertexBuffer(_this.gl, object.geometry);
+                    for (var structArrayKey in holder.structArrays) {
+                        var structArrayInfo = holder.structArrays[structArrayKey];
+                        var arrayName = structArrayInfo.name || structArrayKey;
+                        var structArray = holder.hostObject[structArrayKey];
+                        var val = structArray.length.toString();
+                        var cache = this.defineCaches[arrayName + "Num"];
+                        if (val !== cache) {
+                            this.dirty = true;
+                        }
+                        this.defineCaches[arrayName + "Num"] = val;
                     }
                 }
-                var shadowPreProcess = new ShadowPreProcessor_1.ShadowPreProcess(_this.gl, _this.ext);
-                var processor;
-                if (_this.isDeferred) {
-                    processor = new DeferredProcessor_1.DeferredProcessor(_this.gl, _this.ext, scene, camera);
+            }
+        };
+        Program.prototype.updateUniform = function (name, type, value) {
+            if (value === undefined) {
+                return;
+            }
+            if (name in this.undesiredUniforms) {
+                return;
+            }
+            var cache = this.uniformCaches[name];
+            if (!cache) {
+                cache = { value: value, location: this.gl.getUniformLocation(this.webGlProgram, name) };
+                if (cache.location === null) {
+                    this.undesiredUniforms[name] = undefined;
+                    return;
                 }
-                else {
-                    processor = new ForwardProcessor_1.ForwardProcessor(_this.gl, _this.ext, scene, camera);
+                this.uniformCaches[name] = cache;
+            }
+            var location = cache.location;
+            if (!location) {
+                console.error(location);
+            }
+            switch (type) {
+                case DataTypeEnum_13.DataType.float:
+                    this.gl.uniform1f(location, value);
+                    break;
+                case DataTypeEnum_13.DataType.int:
+                    this.gl.uniform1i(location, value);
+                    break;
+                case DataTypeEnum_13.DataType.vec2:
+                    this.gl.uniform2f(location, value[0], value[1]);
+                    break;
+                case DataTypeEnum_13.DataType.vec3:
+                    this.gl.uniform3f(location, value[0], value[1], value[2]);
+                    break;
+                case DataTypeEnum_13.DataType.vec4:
+                    this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                    break;
+                case DataTypeEnum_13.DataType.mat2:
+                    this.gl.uniformMatrix2fv(location, false, value);
+                case DataTypeEnum_13.DataType.mat3:
+                    this.gl.uniformMatrix3fv(location, false, value);
+                case DataTypeEnum_13.DataType.mat4:
+                    this.gl.uniformMatrix4fv(location, false, value);
+                    break;
+                default: break;
+            }
+        };
+        Program.prototype.updateUniformArray = function (name, type, value) {
+            if (value === undefined) {
+                return;
+            }
+            if (name in this.undesiredUniforms) {
+                return;
+            }
+            var cache = this.uniformArrayCaches[name];
+            if (!cache) {
+                cache = { value: value, location: this.gl.getUniformLocation(this.webGlProgram, name) };
+                if (cache.location === null) {
+                    this.undesiredUniforms[name] = undefined;
+                    return;
                 }
-                scene.programSetUp = true;
-                _this.renderQueue.push(function (deltaTime) {
-                    scene.update(deltaTime);
-                    shadowPreProcess.process(scene, camera, materials);
-                    processor.process(scene, camera, materials);
-                });
-            })
-                .catch(function (err) {
-                console.error(err);
-            });
+                this.uniformArrayCaches[name] = cache;
+            }
+            var result = cache.location;
+            switch (type) {
+                case DataTypeEnum_13.DataType.float:
+                    this.gl.uniform1fv(location, value);
+                    break;
+                case DataTypeEnum_13.DataType.int:
+                    this.gl.uniform1iv(location, value);
+                    break;
+                case DataTypeEnum_13.DataType.vec2:
+                    this.gl.uniform2fv(location, value);
+                    break;
+                case DataTypeEnum_13.DataType.vec3:
+                    this.gl.uniform3fv(location, value);
+                    break;
+                case DataTypeEnum_13.DataType.vec4:
+                    this.gl.uniform4fv(location, value);
+                    break;
+                case DataTypeEnum_13.DataType.mat2:
+                    this.gl.uniformMatrix2fv(location, false, value);
+                case DataTypeEnum_13.DataType.mat3:
+                    this.gl.uniformMatrix3fv(location, false, value);
+                case DataTypeEnum_13.DataType.mat4:
+                    this.gl.uniformMatrix4fv(location, false, value);
+                    break;
+                default: break;
+            }
+            return this;
         };
-        Renderer.prototype.renderLight = function (light, scene) {
+        Program.prototype.getAttribLocation = function (name) {
+            if (this.gl === undefined || this.gl === null) {
+                console.error("WebGLRenderingContext has not been initialize!");
+                return null;
+            }
+            var result = this.gl.getAttribLocation(this.webGlProgram, name);
+            if (result === null) {
+                console.error("attribute " + name + " not found!");
+                return null;
+            }
+            console.log("initial pass attribute " + name + " " + result);
+            return result;
         };
-        Renderer.prototype.initMatrix = function () {
-        };
-        return Renderer;
+        return Program;
     }());
-    exports.Renderer = Renderer;
+    exports.Program = Program;
+    exports.shaderPassLib = {
+        uniforms: {
+            modelViewProjectionMatrix: {
+                type: DataTypeEnum_13.DataType.mat4,
+                updator: function (p) {
+                    return gl_matrix_17.mat4.multiply(gl_matrix_17.mat4.create(), p.camera.projectionMatrix, gl_matrix_17.mat4.multiply(gl_matrix_17.mat4.create(), p.camera.worldToObjectMatrix, p.mesh.matrix));
+                },
+            },
+            modelViewMatrix: {
+                type: DataTypeEnum_13.DataType.mat4,
+                updator: function (_a) {
+                    var mesh = _a.mesh, camera = _a.camera;
+                    return gl_matrix_17.mat4.mul(gl_matrix_17.mat4.create(), camera.worldToObjectMatrix, mesh.matrix);
+                },
+            },
+        },
+    };
+});
+define("Decorators", ["require", "exports"], function (require, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.RENDER_PARAM_HOLDER = "renderParams";
+    function tryAddParamHolder(proto) {
+        if (proto.hasOwnProperty(exports.RENDER_PARAM_HOLDER)) {
+            return;
+        }
+        var params = proto[exports.RENDER_PARAM_HOLDER];
+        if (params === undefined) {
+            params = {};
+        }
+        delete proto[exports.RENDER_PARAM_HOLDER];
+        Object.defineProperty(proto, exports.RENDER_PARAM_HOLDER, {
+            enumerable: true,
+            configurable: false,
+            writable: false,
+            value: params,
+        });
+    }
+    function uniform(type, name) {
+        return function (proto, key) {
+            tryAddParamHolder(proto);
+            var uniforms = proto[exports.RENDER_PARAM_HOLDER].uniforms || {};
+            uniforms[key] = { name: name, type: type };
+            proto[exports.RENDER_PARAM_HOLDER].uniforms = uniforms;
+        };
+    }
+    exports.uniform = uniform;
+    function bindUniformGetter(name, type, getter) {
+        return function (constructor) {
+            var proto = constructor.prototype;
+            tryAddParamHolder(proto);
+            var uniforms = proto[exports.RENDER_PARAM_HOLDER].uniforms || {};
+            uniforms[name] = { type: type, updator: getter };
+            proto[exports.RENDER_PARAM_HOLDER].uniforms = uniforms;
+        };
+    }
+    exports.bindUniformGetter = bindUniformGetter;
+    function uniformArray(type, name) {
+        return function (proto, key) {
+            tryAddParamHolder(proto);
+            var uniformArray = proto[exports.RENDER_PARAM_HOLDER].uniformArray || {};
+            uniformArray[key] = { name: name, type: type };
+            proto[exports.RENDER_PARAM_HOLDER].uniformArray = uniformArray;
+        };
+    }
+    exports.uniformArray = uniformArray;
+    function texture(name) {
+        return function (proto, key) {
+            readyRequire(proto, key);
+            tryAddParamHolder(proto);
+            var textures = proto[exports.RENDER_PARAM_HOLDER].textures || {};
+            textures[key] = { name: name };
+            proto[exports.RENDER_PARAM_HOLDER].textures = textures;
+        };
+    }
+    exports.texture = texture;
+    function textureArray(name) {
+        return function (proto, key) {
+            tryAddParamHolder(proto);
+            var textureArrays = proto[exports.RENDER_PARAM_HOLDER].textureArrays || {};
+            textureArrays[key] = { name: name };
+            proto[exports.RENDER_PARAM_HOLDER].textureArrays = textureArrays;
+        };
+    }
+    exports.textureArray = textureArray;
+    function arrayOfStructures(name) {
+        return function (proto, key) {
+            tryAddParamHolder(proto);
+            var structArrays = proto[exports.RENDER_PARAM_HOLDER].structArrays || {};
+            structArrays[key] = { name: name };
+            proto[exports.RENDER_PARAM_HOLDER].structArrays = structArrays;
+        };
+    }
+    exports.arrayOfStructures = arrayOfStructures;
+    function define(defineName, useValue) {
+        if (useValue === void 0) {
+            useValue = false;
+        }
+        return function (proto, key) {
+            tryAddParamHolder(proto);
+            var defines = proto[exports.RENDER_PARAM_HOLDER].defines || {};
+            defines[key] = { defineName: defineName, useValue: useValue };
+            proto[exports.RENDER_PARAM_HOLDER].defines = defines;
+        };
+    }
+    exports.define = define;
+    function ifdefine(defineName) {
+        return function (proto, key) {
+            tryAddParamHolder(proto);
+            var defineLinks = proto[exports.RENDER_PARAM_HOLDER].defineLinks || {};
+            defineLinks[key] = defineName;
+            proto[exports.RENDER_PARAM_HOLDER].defineLinks = defineLinks;
+        };
+    }
+    exports.ifdefine = ifdefine;
+    function readyRequire(proto, key) {
+        var asyncResources = proto.asyncResources || [];
+        if (!proto.hasOwnProperty("asyncResources")) {
+            delete proto.asyncResources;
+            Object.defineProperty(proto, "asyncResources", {
+                enumerable: true,
+                configurable: false,
+                writable: false,
+                value: asyncResources,
+            });
+        }
+        asyncResources.push(function (obj) {
+            var resources = obj[key];
+            if (!!obj[key]) {
+                return obj[key].asyncFinished();
+            }
+            return undefined;
+        });
+        proto.asyncResources = asyncResources;
+    }
+    exports.readyRequire = readyRequire;
 });
 define("Util", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -3158,7 +3357,7 @@ define("geometries/CubeGeometry", ["require", "exports", "geometries/Geometry"],
                 -1.0, 1.0, 1.0,
                 -1.0, 1.0, -1.0,
             ];
-            _this.attributes.uv.data = [
+            _this.attributes.aMainUV.data = [
                 0, 0,
                 1, 0,
                 1, 1,
@@ -3184,7 +3383,7 @@ define("geometries/CubeGeometry", ["require", "exports", "geometries/Geometry"],
                 1, 1,
                 0, 1,
             ];
-            _this.attributes.normal.data = [
+            _this.attributes.aNormal.data = [
                 0.0, 0.0, 1.0,
                 0.0, 0.0, 1.0,
                 0.0, 0.0, 1.0,
@@ -3247,9 +3446,9 @@ define("geometries/TileGeometry", ["require", "exports", "geometries/Geometry"],
                         this._height * (y - this._heightSegments / 2) / this._heightSegments,
                         0,
                     ];
-                    var uv = [x / this._widthSegments, y / this._heightSegments];
-                    var normal = [0, 0, 1];
-                    this.addVertex({ position: position, normal: normal, uv: uv });
+                    var aMainUV = [x / this._widthSegments, y / this._heightSegments];
+                    var aNormal = [0, 0, 1];
+                    this.addVertex({ position: position, aNormal: aNormal, aMainUV: aMainUV });
                     row.push(index++);
                 }
                 grid.push(row);
@@ -3270,39 +3469,40 @@ define("geometries/TileGeometry", ["require", "exports", "geometries/Geometry"],
     }(Geometry_4.Geometry));
     exports.TileGeometry = TileGeometry;
 });
-define("materials/SkyMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, gl_matrix_16, DataTypeEnum_12, Decorators_8, ShaderBuilder_4, shaders_4, Material_3) {
+define("materials/SkyMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, gl_matrix_18, DataTypeEnum_14, Decorators_11, ShaderBuilder_5, shaders_5, Material_4) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var SkyMaterial = (function (_super) {
         __extends(SkyMaterial, _super);
         function SkyMaterial(gl, cubeTexture) {
-            var _this = _super.call(this) || this;
+            var _this = _super.call(this, gl) || this;
             _this.cubeTexture = cubeTexture;
-            _this.program = new ShaderBuilder_4.ShaderBuilder()
+            return _this;
+        }
+        SkyMaterial.prototype.initShader = function (gl) {
+            return new ShaderBuilder_5.ShaderBuilder()
                 .resetShaderLib()
-                .setShadingVert(shaders_4.ShaderSource.interploters__forward__skybox_vert)
-                .setShadingFrag(shaders_4.ShaderSource.interploters__forward__skybox_frag)
-                .setPass({
-                faces: function (mesh) { return mesh.geometry.faces; },
+                .setShadingVert(shaders_5.ShaderSource.interploters__forward__skybox_vert)
+                .setShadingFrag(shaders_5.ShaderSource.interploters__forward__skybox_frag)
+                .setExtraRenderParamHolder("skyTransform", {
                 uniforms: {
-                    modelViewProjectionMatrix: {
-                        type: DataTypeEnum_12.DataType.mat4,
-                        updator: function (mesh, camera) {
-                            return gl_matrix_16.mat4.multiply(gl_matrix_16.mat4.create(), camera.projectionMatrix, gl_matrix_16.mat4.multiply(gl_matrix_16.mat4.create(), camera.worldToObjectMatrix, mesh.matrix));
+                    viewProjectionMatrix: {
+                        type: DataTypeEnum_14.DataType.mat4,
+                        updator: function (_a) {
+                            var mesh = _a.mesh, camera = _a.camera;
+                            var rotateOnlyViewMatrix = gl_matrix_18.mat4.fromQuat(gl_matrix_18.mat4.create(), gl_matrix_18.mat4.getRotation(gl_matrix_18.quat.create(), camera.matrix));
+                            rotateOnlyViewMatrix = gl_matrix_18.mat4.invert(gl_matrix_18.mat4.create(), rotateOnlyViewMatrix);
+                            return gl_matrix_18.mat4.multiply(gl_matrix_18.mat4.create(), camera.projectionMatrix, rotateOnlyViewMatrix);
                         },
                     },
                 },
-                attributes: {
-                    position: function (mesh) { return mesh.geometry.attributes.position; },
-                },
             })
                 .build(gl);
-            return _this;
-        }
+        };
+        __decorate([
+            Decorators_11.texture("uCubeTexture")
+        ], SkyMaterial.prototype, "cubeTexture", void 0);
         return SkyMaterial;
-    }(Material_3.Material));
-    __decorate([
-        Decorators_8.texture("uCubeTexture")
-    ], SkyMaterial.prototype, "cubeTexture", void 0);
+    }(Material_4.Material));
     exports.SkyMaterial = SkyMaterial;
 });
 define("loader/obj_mtl/CommonPatterns", ["require", "exports"], function (require, exports) {
@@ -3329,7 +3529,7 @@ define("loader/obj_mtl/ResourceFetcher", ["require", "exports"], function (requi
     }
     exports.fetchRes = fetchRes;
 });
-define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "materials/StandardMaterial", "textures/Texture2D", "loader/obj_mtl/CommonPatterns", "loader/obj_mtl/ResourceFetcher"], function (require, exports, gl_matrix_17, StandardMaterial_4, Texture2D_1, CommonPatterns_1, ResourceFetcher_1) {
+define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "materials/StandardMaterial", "textures/Texture2D", "loader/obj_mtl/CommonPatterns", "loader/obj_mtl/ResourceFetcher"], function (require, exports, gl_matrix_19, StandardMaterial_3, Texture2D_1, CommonPatterns_1, ResourceFetcher_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var MTLLoader = (function () {
         function MTLLoader() {
@@ -3354,41 +3554,40 @@ define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "material
             switch (firstVar) {
                 case "newmtl":
                     var mtlName = line.match(MTLLoader.newmtlPattern)[1];
-                    materials[mtlName] = new StandardMaterial_4.StandardMaterial(gl);
+                    materials[mtlName] = new StandardMaterial_3.StandardMaterial(gl);
                     return materials[mtlName];
                 case "Ka":
-                    currentMaterial.ambient = MTLLoader.getVector(MTLLoader.ambientPattern, line);
+                    currentMaterial.setAmbient(MTLLoader.getVector(MTLLoader.ambientPattern, line));
                     break;
                 case "Kd":
-                    currentMaterial.diffuse = MTLLoader.getVector(MTLLoader.diffusePattern, line);
+                    currentMaterial.setDiffuse(MTLLoader.getVector(MTLLoader.diffusePattern, line));
                     break;
                 case "Ks":
-                    currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
+                    currentMaterial.setSpecular(MTLLoader.getVector(MTLLoader.specularePattern, line));
                     break;
                 case "Ns":
-                    currentMaterial.specularExponent =
-                        MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
+                    currentMaterial.setSpecularExponent(MTLLoader.getNumber(MTLLoader.specularExponentPattern, line));
                     break;
                 case "map_Ka":
-                    currentMaterial.mainTexture = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setMainTexture(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "map_Ka":
-                    currentMaterial.alphaMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setAlphaMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "map_Kd":
-                    currentMaterial.mainTexture = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setMainTexture(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "map_bump":
-                    currentMaterial.bumpMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setBumpMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "bump":
-                    currentMaterial.bumpMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setBumpMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "disp":
-                    currentMaterial.displamentMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setDisplamentMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "decal":
-                    currentMaterial.stencilMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setStencilMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 default: break;
             }
@@ -3408,7 +3607,7 @@ define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "material
                     }
                 });
             }
-            return gl_matrix_17.vec3.fromValues(vector[0], vector[1], vector[2]);
+            return gl_matrix_19.vec3.fromValues(vector[0], vector[1], vector[2]);
         };
         MTLLoader.getNumber = function (pattern, line) {
             var matches = line.match(pattern);
@@ -3417,19 +3616,19 @@ define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "material
             }
             return 0;
         };
+        MTLLoader.newmtlPattern = /newmtl\s(.+)/m;
+        MTLLoader.ambientPattern = /Ka\s(.+)/m;
+        MTLLoader.diffusePattern = /Kd\s(.+)/m;
+        MTLLoader.specularePattern = /Ks\s(.+)/m;
+        MTLLoader.specularExponentPattern = /Ns\s(.+)/m;
+        MTLLoader.trancparencyPattern = /(Tr|d)\s(.+)/m;
+        MTLLoader.mapPattern = /(map_[^\s]+|bump|disp|decal)\s.+/mg;
+        MTLLoader.mapSinglePattern = /(map_[^\s]+|bump|disp|decal)\s([^\s]+)/m;
         return MTLLoader;
     }());
-    MTLLoader.newmtlPattern = /newmtl\s(.+)/m;
-    MTLLoader.ambientPattern = /Ka\s(.+)/m;
-    MTLLoader.diffusePattern = /Kd\s(.+)/m;
-    MTLLoader.specularePattern = /Ks\s(.+)/m;
-    MTLLoader.specularExponentPattern = /Ns\s(.+)/m;
-    MTLLoader.trancparencyPattern = /(Tr|d)\s(.+)/m;
-    MTLLoader.mapPattern = /(map_[^\s]+|bump|disp|decal)\s.+/mg;
-    MTLLoader.mapSinglePattern = /(map_[^\s]+|bump|disp|decal)\s([^\s]+)/m;
     exports.MTLLoader = MTLLoader;
 });
-define("loader/obj_mtl/OBJLoader", ["require", "exports", "geometries/Geometry", "materials/StandardMaterial", "Mesh", "Object3d", "Util", "loader/obj_mtl/CommonPatterns", "loader/obj_mtl/MTLLoader", "loader/obj_mtl/ResourceFetcher"], function (require, exports, Geometry_5, StandardMaterial_5, Mesh_5, Object3d_4, Util_1, CommonPatterns_2, MTLLoader_1, ResourceFetcher_2) {
+define("loader/obj_mtl/OBJLoader", ["require", "exports", "geometries/Geometry", "materials/StandardMaterial", "Mesh", "Object3d", "Util", "loader/obj_mtl/CommonPatterns", "loader/obj_mtl/MTLLoader", "loader/obj_mtl/ResourceFetcher"], function (require, exports, Geometry_5, StandardMaterial_4, Mesh_5, Object3d_4, Util_1, CommonPatterns_2, MTLLoader_1, ResourceFetcher_2) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var OBJLoader = (function () {
         function OBJLoader() {
@@ -3504,9 +3703,9 @@ define("loader/obj_mtl/OBJLoader", ["require", "exports", "geometries/Geometry",
                                 geometry.faces.data.push(geometry.attributes.position.data.length / 3);
                                 geometry.addVertex({
                                     position: unIndexedPositions[positionIndex],
-                                    uv: [unIndexedUVs[parseInt(match[2], 0) - 1][0],
+                                    aMainUV: [unIndexedUVs[parseInt(match[2], 0) - 1][0],
                                         unIndexedUVs[parseInt(match[2], 0) - 1][1]],
-                                    normal: unIndexedNormals[parseInt(match[3], 0) - 1],
+                                    aNormal: unIndexedNormals[parseInt(match[3], 0) - 1],
                                 });
                             });
                         });
@@ -3520,81 +3719,103 @@ define("loader/obj_mtl/OBJLoader", ["require", "exports", "geometries/Geometry",
                     });
                 }
                 else {
-                    meshMaterials.push(new StandardMaterial_5.StandardMaterial(gl));
+                    meshMaterials.push(new StandardMaterial_4.StandardMaterial(gl));
                 }
                 var mesh = new Mesh_5.Mesh(geometry, meshMaterials);
                 mesh.setParent(container);
             });
         };
+        OBJLoader.faceSplitVertPattern = /([0-9]|\/|\-)+/g;
+        OBJLoader.facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
+        OBJLoader.objectSplitPattern = /[o|g]\s+.+/mg;
+        OBJLoader.mtlLibPattern = /mtllib\s([^\s]+)/mg;
+        OBJLoader.useMTLPattern = /usemtl\s([^\s]+)/mg;
+        OBJLoader.mtlLibSinglePattern = /mtllib\s([^\s]+)/;
+        OBJLoader.useMTLSinglePattern = /usemtl\s([^\s]+)/;
+        OBJLoader.vertexPattern = /v\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
+        OBJLoader.uvPattern = /vt\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
+        OBJLoader.normalPattern = /vn\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
+        OBJLoader.indexPattern = /f\s+([-+]?[0-9]*\.?[0-9]+ ?|\/)+/mg;
         return OBJLoader;
     }());
-    OBJLoader.faceSplitVertPattern = /([0-9]|\/|\-)+/g;
-    OBJLoader.facePerVertPattern = /([0-9]*)\/?([0-9]*)\/?([0-9]*)/;
-    OBJLoader.objectSplitPattern = /[o|g]\s+.+/mg;
-    OBJLoader.mtlLibPattern = /mtllib\s([^\s]+)/mg;
-    OBJLoader.useMTLPattern = /usemtl\s([^\s]+)/mg;
-    OBJLoader.mtlLibSinglePattern = /mtllib\s([^\s]+)/;
-    OBJLoader.useMTLSinglePattern = /usemtl\s([^\s]+)/;
-    OBJLoader.vertexPattern = /v\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
-    OBJLoader.uvPattern = /vt\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
-    OBJLoader.normalPattern = /vn\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? ?)+/mg;
-    OBJLoader.indexPattern = /f\s+([-+]?[0-9]*\.?[0-9]+ ?|\/)+/mg;
     exports.OBJLoader = OBJLoader;
 });
-define("extensions/Water", ["require", "exports", "geometries/Geometry", "materials/StandardMaterial", "Mesh"], function (require, exports, Geometry_6, StandardMaterial_6, Mesh_6) {
+define("extensions/Water", ["require", "exports", "geometries/Geometry", "materials/StandardMaterial", "Mesh"], function (require, exports, Geometry_6, StandardMaterial_5, Mesh_6) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Water = (function (_super) {
         __extends(Water, _super);
         function Water(gl) {
-            return _super.call(this, new Geometry_6.Geometry(gl), [new StandardMaterial_6.StandardMaterial(gl)]) || this;
+            return _super.call(this, new Geometry_6.Geometry(gl), [new StandardMaterial_5.StandardMaterial(gl)]) || this;
         }
         return Water;
     }(Mesh_6.Mesh));
     exports.Water = Water;
 });
-define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "renderer/FrameBuffer", "Object3d", "Scene", "DataTypeEnum", "Util", "cameras/Camera", "cameras/PerspectiveCamera", "cameras/OrthoCamera", "geometries/Geometry", "geometries/CubeGeometry", "geometries/RectGeometry", "geometries/SphereGeometry", "geometries/TileGeometry", "textures/Texture", "textures/Texture2D", "textures/CubeTexture", "textures/DataTexture", "materials/Material", "materials/StandardMaterial", "materials/SkyMaterial", "materials/DepthMaterial", "lights/Light", "lights/PointLight", "lights/SpotLight", "lights/DirectionalLight", "loader/obj_mtl/OBJLoader", "Mesh", "extensions/Water"], function (require, exports, Decorators_9, Renderer_1, FrameBuffer_4, Object3d_5, Scene_1, DataTypeEnum_13, Util_2, Camera_3, PerspectiveCamera_2, OrthoCamera_2, Geometry_7, CubeGeometry_1, RectGeometry_2, SphereGeometry_2, TileGeometry_1, Texture_5, Texture2D_2, CubeTexture_1, DataTexture_2, Material_4, StandardMaterial_7, SkyMaterial_1, DepthMaterial_2, Light_3, PointLight_2, SpotLight_1, DirectionalLight_1, OBJLoader_1, Mesh_7, Water_1) {
+define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "renderer/FrameBuffer", "Object3d", "Scene", "DataTypeEnum", "Util", "cameras/Camera", "cameras/PerspectiveCamera", "cameras/OrthoCamera", "geometries/Geometry", "geometries/CubeGeometry", "geometries/RectGeometry", "geometries/SphereGeometry", "geometries/TileGeometry", "textures/Texture", "textures/Texture2D", "textures/CubeTexture", "textures/DataTexture", "materials/Material", "materials/StandardMaterial", "materials/SkyMaterial", "materials/ESM/DepthPackMaterial", "lights/Light", "lights/PointLight", "lights/SpotLight", "lights/DirectionalLight", "lights/ShadowType", "loader/obj_mtl/OBJLoader", "Mesh", "extensions/Water"], function (require, exports, Decorators_12, Renderer_1, FrameBuffer_4, Object3d_5, Scene_1, DataTypeEnum_15, Util_2, Camera_3, PerspectiveCamera_2, OrthoCamera_2, Geometry_7, CubeGeometry_1, RectGeometry_3, SphereGeometry_2, TileGeometry_1, Texture_5, Texture2D_2, CubeTexture_1, DataTexture_2, Material_5, StandardMaterial_6, SkyMaterial_1, DepthPackMaterial_2, Light_3, PointLight_2, SpotLight_1, DirectionalLight_1, ShadowType_5, OBJLoader_1, Mesh_7, Water_1) {
     function __export(m) {
         for (var p in m)
             if (!exports.hasOwnProperty(p))
                 exports[p] = m[p];
     }
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.linkdef = Decorators_9.linkdef;
-    exports.texture = Decorators_9.texture;
-    exports.textureArray = Decorators_9.textureArray;
-    exports.uniform = Decorators_9.uniform;
-    exports.uniformArray = Decorators_9.uniformArray;
+    exports.ifdefine = Decorators_12.ifdefine;
+    exports.texture = Decorators_12.texture;
+    exports.textureArray = Decorators_12.textureArray;
+    exports.uniform = Decorators_12.uniform;
+    exports.uniformArray = Decorators_12.uniformArray;
     exports.Renderer = Renderer_1.Renderer;
     exports.FrameBuffer = FrameBuffer_4.FrameBuffer;
     exports.Attachment = FrameBuffer_4.Attachment;
     exports.AttachmentType = FrameBuffer_4.AttachmentType;
     exports.Object3d = Object3d_5.Object3d;
     exports.Scene = Scene_1.Scene;
-    exports.DataType = DataTypeEnum_13.DataType;
+    exports.DataType = DataTypeEnum_15.DataType;
     __export(Util_2);
     exports.Camera = Camera_3.Camera;
     exports.PerspectiveCamera = PerspectiveCamera_2.PerspectiveCamera;
     exports.OrthoCamera = OrthoCamera_2.OrthoCamera;
     exports.Geometry = Geometry_7.Geometry;
     exports.CubeGeometry = CubeGeometry_1.CubeGeometry;
-    exports.RectGeometry = RectGeometry_2.RectGeometry;
+    exports.RectGeometry = RectGeometry_3.RectGeometry;
     exports.SphereGeometry = SphereGeometry_2.SphereGeometry;
     exports.TileGeometry = TileGeometry_1.TileGeometry;
     exports.Texture = Texture_5.Texture;
     exports.Texture2D = Texture2D_2.Texture2D;
     exports.CubeTexture = CubeTexture_1.CubeTexture;
     exports.DataTexture = DataTexture_2.DataTexture;
-    exports.Material = Material_4.Material;
-    exports.StandardMaterial = StandardMaterial_7.StandardMaterial;
+    exports.Material = Material_5.Material;
+    exports.StandardMaterial = StandardMaterial_6.StandardMaterial;
     exports.SkyMaterial = SkyMaterial_1.SkyMaterial;
-    exports.DepthMaterial = DepthMaterial_2.DepthMaterial;
+    exports.LinearDepthPackMaterial = DepthPackMaterial_2.LinearDepthPackMaterial;
     exports.Light = Light_3.Light;
     exports.PointLight = PointLight_2.PointLight;
     exports.SpotLight = SpotLight_1.SpotLight;
     exports.DirectionalLight = DirectionalLight_1.DirectionalLight;
+    exports.ShadowType = ShadowType_5.ShadowType;
     exports.OBJLoader = OBJLoader_1.OBJLoader;
     exports.Mesh = Mesh_7.Mesh;
     exports.Water = Water_1.Water;
+});
+define("cameras/CubeCamera", ["require", "exports", "gl-matrix", "cameras/PerspectiveCamera"], function (require, exports, gl_matrix_20, PerspectiveCamera_3) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var CubeCamera = (function (_super) {
+        __extends(CubeCamera, _super);
+        function CubeCamera() {
+            var _this = _super.call(this) || this;
+            _this._projectionMatrices = [0, 0, 0, 0, 0, 0].map(function () { return gl_matrix_20.mat4.create(); });
+            return _this;
+        }
+        CubeCamera.prototype.compuseProjectionMatrix = function () {
+            for (var _i = 0, _a = this._projectionMatrices; _i < _a.length; _i++) {
+                var mat = _a[_i];
+                gl_matrix_20.mat4.perspective(mat, this._fovy, this._aspect, this._near, this._far);
+            }
+        };
+        CubeCamera.prototype.deCompuseProjectionMatrix = function () {
+        };
+        return CubeCamera;
+    }(PerspectiveCamera_3.PerspectiveCamera));
+    exports.CubeCamera = CubeCamera;
 });
 define("examples/global", ["require", "exports", "CanvasToy"], function (require, exports, CanvasToy) {
     "use strict";
@@ -3631,10 +3852,10 @@ define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-mat
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
     var mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
-    var material = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: mainTexture });
+    var material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture);
     var meshes = [];
     for (var i = 0; i < 4; ++i) {
-        var mesh = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(20).setHeightSegments(20).build(), [material]);
+        var mesh = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(50).setHeightSegments(50).build(), [material]);
         if (i > 0) {
             mesh.setParent(meshes[i - 1]);
             if (i === 3) {
@@ -3649,14 +3870,18 @@ define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-mat
         meshes.push(mesh);
     }
     meshes[0].translate(gl_matrix_1.vec3.fromValues(0, -2, -10));
-    scene.addOnUpdateListener(function () {
+    camera.rotateX(-0.2);
+    var light = new CanvasToy.DirectionalLight(renderer)
+        .rotateY(Math.PI / 3)
+        .setPosition(gl_matrix_1.vec3.fromValues(10, -2, -10));
+    var t = 0;
+    scene.addOnUpdateListener(function (dt) {
         meshes[0].rotateY(-0.005);
         meshes[1].rotateY(0.01);
         meshes[2].rotateX(0.05);
+        t += dt;
     });
     scene.addObject(meshes[0], camera);
-    camera.rotateX(-0.2);
-    var light = new CanvasToy.DirectionalLight(renderer.gl).setDirection(gl_matrix_1.vec3.fromValues(-1, 0, -1));
     scene.addLight(light);
     renderer.render(scene, camera);
     renderer.stop();
@@ -3667,40 +3892,41 @@ define("examples/basic/lightesAndGeometries/index", ["require", "exports", "Canv
     Object.defineProperty(exports, "__esModule", { value: true });
     var renderer = new CanvasToy.Renderer(global_2.createCanvas());
     var scene = new CanvasToy.Scene();
+    var center = new CanvasToy.Object3d();
     var camera = new CanvasToy.PerspectiveCamera()
-        .setPosition(gl_matrix_2.vec3.fromValues(0, 5, 5))
-        .lookAt(gl_matrix_2.vec3.fromValues(0, 0, -10));
-    var checkerBoard = new CanvasToy.StandardMaterial(renderer.gl);
-    checkerBoard.debug = true;
-    var objectMaterial = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg") });
+        .setParent(center)
+        .translate(gl_matrix_2.vec3.fromValues(0, 10, 10))
+        .rotateX(-Math.PI / 4);
+    var checkerBoard = new CanvasToy.StandardMaterial(renderer.gl).setDebugMode(true);
+    var objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
+        .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"));
     var ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
-        .setPosition(gl_matrix_2.vec3.fromValues(0, -1, -3)).rotateX(-Math.PI / 2).setScaling(gl_matrix_2.vec3.fromValues(10, 10, 10));
-    var back = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
-        .setPosition(gl_matrix_2.vec3.fromValues(0, 2, -10)).setScaling(gl_matrix_2.vec3.fromValues(5, 5, 5));
+        .setPosition(gl_matrix_2.vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(gl_matrix_2.vec3.fromValues(10, 10, 10));
     var box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
-        .setPosition(gl_matrix_2.vec3.fromValues(-2, -1, -5)).setScaling(gl_matrix_2.vec3.fromValues(0.5, 0.5, 0.5));
+        .setPosition(gl_matrix_2.vec3.fromValues(-2, -1, 0)).setScaling(gl_matrix_2.vec3.fromValues(0.5, 0.5, 0.5));
     var sphere = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl)
         .setWidthSegments(50)
         .setHeightSegments(50)
         .build(), [objectMaterial])
-        .setPosition(gl_matrix_2.vec3.fromValues(2, 0, -5)).setScaling(gl_matrix_2.vec3.fromValues(0.5, 0.5, 0.5));
-    scene.addObject(ground, back, box, sphere, camera);
-    var directLight = new CanvasToy.DirectionalLight(renderer.gl)
-        .setPosition(gl_matrix_2.vec3.fromValues(10, 5, 0))
-        .setDirection(gl_matrix_2.vec3.fromValues(-1, -1, 0));
-    var pointLight = new CanvasToy.PointLight(renderer.gl)
-        .setPosition(gl_matrix_2.vec3.fromValues(0, 0, -3)).setIdensity(3).setRadius(8);
-    var spotLight = new CanvasToy.SpotLight(renderer.gl)
-        .setIdensity(600000)
-        .setSpotDirection(gl_matrix_2.vec3.fromValues(10, 0, 0))
-        .setConeAngle(Math.PI / 4);
+        .setPosition(gl_matrix_2.vec3.fromValues(2, 0, 0)).setScaling(gl_matrix_2.vec3.fromValues(0.5, 0.5, 0.5));
+    var directLight = new CanvasToy.DirectionalLight(renderer)
+        .setIdensity(0.3)
+        .translate(gl_matrix_2.vec3.fromValues(0, 6, 1))
+        .rotateX(-Math.PI / 2)
+        .rotateY(-Math.PI / 4);
+    var spotLight = new CanvasToy.SpotLight(renderer)
+        .setIdensity(4)
+        .translate(gl_matrix_2.vec3.fromValues(0, 5, 5))
+        .rotateX(-Math.PI / 4)
+        .setConeAngle(Math.PI / 6);
     scene.addLight(spotLight, directLight);
+    scene.addObject(ground, box, sphere, center, camera);
     var time = 0;
     scene.addOnUpdateListener(function (delta) {
         time += delta;
-        spotLight.rotateY(0.02 * Math.cos(time / 600));
-        box.translate(gl_matrix_2.vec3.fromValues(0, 0.02 * Math.sin(time / 600), 0));
-        sphere.translate(gl_matrix_2.vec3.fromValues(0, -0.02 * Math.sin(time / 600), 0));
+        box.translate(gl_matrix_2.vec3.fromValues(0, 0.04 * Math.sin(time / 400), 0));
+        sphere.translate(gl_matrix_2.vec3.fromValues(0, -0.04 * Math.sin(time / 400), 0));
+        center.rotateY(0.01);
     });
     scene.ambientLight = gl_matrix_2.vec3.fromValues(0.2, 0.2, 0.2);
     renderer.render(scene, camera);
@@ -3712,25 +3938,31 @@ define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-
     Object.defineProperty(exports, "__esModule", { value: true });
     var renderer = new CanvasToy.Renderer(global_3.createCanvas());
     var scene = new CanvasToy.Scene();
-    var camera = new CanvasToy.PerspectiveCamera();
-    var light = new CanvasToy.DirectionalLight(renderer.gl).setDirection(gl_matrix_3.vec3.fromValues(-1, -1, -1)).setIdensity(3);
+    var camera = new CanvasToy.PerspectiveCamera()
+        .translate(gl_matrix_3.vec3.fromValues(0, 2, 5))
+        .lookAt(gl_matrix_3.vec3.create());
+    var light = new CanvasToy.SpotLight(renderer)
+        .translate(gl_matrix_3.vec3.fromValues(-5, 5, 0))
+        .setConeAngle(Math.PI / 3)
+        .setIdensity(4)
+        .rotateX(-Math.PI / 4)
+        .rotateY(-Math.PI / 4);
     scene.addLight(light);
     var skyTexture = new CanvasToy.CubeTexture(renderer.gl, "resources/images/skybox/arid2_rt.jpg", "resources/images/skybox/arid2_lf.jpg", "resources/images/skybox/arid2_up.jpg", "resources/images/skybox/arid2_dn.jpg", "resources/images/skybox/arid2_bk.jpg", "resources/images/skybox/arid2_ft.jpg");
-    global_3.createSkyBox(renderer, skyTexture).setParent(camera);
-    scene.addObject(camera);
+    scene.addObject(global_3.createSkyBox(renderer, skyTexture));
     var teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapot.setAsyncFinished(teapot.asyncFinished().then(function () {
         var material = teapot.children[0].materials[0];
-        material.reflectionMap = skyTexture;
-        material.castShadow = false;
+        material.setEnvironmentMap(skyTexture).castShadow(true);
         return Promise.resolve(teapot);
     }));
+    teapot.setScaling(gl_matrix_3.vec3.fromValues(0.1, 0.1, 0.1));
     scene.addObject(teapot);
-    teapot.translate(gl_matrix_3.vec3.fromValues(0, -2, -40));
+    camera.lookAt(teapot.position);
     var time = 0;
     scene.addOnUpdateListener(function () {
         time += 1 / 60;
-        teapot.rotateX(0.01);
+        teapot.rotateY(0.01);
     });
     renderer.render(scene, camera);
     renderer.stop();
@@ -3744,22 +3976,24 @@ define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "
     var camera = new CanvasToy.PerspectiveCamera()
         .setPosition(gl_matrix_4.vec3.fromValues(0, 100, 100))
         .lookAt(gl_matrix_4.vec3.fromValues(0, 0, -40));
-    var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [new CanvasToy.StandardMaterial(renderer.gl, {
-            mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"),
-        })]).translate(gl_matrix_4.vec3.fromValues(0, -10, -40)).rotateX(-Math.PI / 2).setScaling(gl_matrix_4.vec3.fromValues(200, 200, 200));
+    var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [
+        new CanvasToy.StandardMaterial(renderer.gl)
+            .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg")),
+    ])
+        .translate(gl_matrix_4.vec3.fromValues(0, -10, -40)).rotateX(-Math.PI / 2).setScaling(gl_matrix_4.vec3.fromValues(200, 200, 200));
     scene.addObject(tile, camera);
     var teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(function () {
         var material = teapotProto.children[0].materials[0];
-        material.diffuse = gl_matrix_4.vec3.fromValues(1, 0.8, 0.2);
-        material.castShadow = false;
+        material.setDiffuse(gl_matrix_4.vec3.fromValues(1, 0.8, 0.2));
+        material.castShadow(false);
         var _loop_1 = function (i) {
             var teapot = new CanvasToy.Mesh(teapotProto.children[0].geometry, teapotProto.children[0].materials);
             scene.addObject(teapot);
             teapot.translate(gl_matrix_4.vec3.fromValues((i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40));
             var time = 0;
             var spin = 0.03 * (Math.random() - 0.5);
-            var light = new CanvasToy.PointLight(renderer.gl)
+            var light = new CanvasToy.PointLight(renderer)
                 .setPosition(gl_matrix_4.vec3.fromValues(Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150))
                 .setIdensity(0.5)
                 .setRadius(50);
@@ -3779,6 +4013,8 @@ define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "
         renderer.render(scene, camera);
         return Promise.resolve(teapotProto);
     }));
+    renderer.stop();
+    global_4.onMouseOnStart(renderer);
 });
 define("examples/index", ["require", "exports", "examples/basic/bones/index", "examples/basic/lightesAndGeometries/index", "examples/basic/Loader/obj_mtl", "examples/deferredRendering/index"], function (require, exports) {
     "use strict";
