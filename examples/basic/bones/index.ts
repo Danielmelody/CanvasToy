@@ -9,7 +9,7 @@ const camera = new CanvasToy.PerspectiveCamera();
 
 const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
 
-const material = new CanvasToy.StandardMaterial(renderer.gl, { mainTexture });
+const material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture);
 
 const meshes: CanvasToy.Object3d[] = [];
 

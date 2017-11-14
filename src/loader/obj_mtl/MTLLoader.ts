@@ -46,38 +46,37 @@ export class MTLLoader {
                 materials[mtlName] = new StandardMaterial(gl);
                 return materials[mtlName];
             case "Ka":
-                currentMaterial.ambient = MTLLoader.getVector(MTLLoader.ambientPattern, line);
+                currentMaterial.setAmbient(MTLLoader.getVector(MTLLoader.ambientPattern, line));
                 break;
             case "Kd":
-                currentMaterial.diffuse = MTLLoader.getVector(MTLLoader.diffusePattern, line);
+                currentMaterial.setDiffuse(MTLLoader.getVector(MTLLoader.diffusePattern, line));
                 break;
             case "Ks":
-                currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
+                currentMaterial.setSpecular(MTLLoader.getVector(MTLLoader.specularePattern, line));
                 break;
             case "Ns":
-                currentMaterial.specularExponent =
-                    MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
+                currentMaterial.setSpecularExponent(MTLLoader.getNumber(MTLLoader.specularExponentPattern, line));
                 break;
             case "map_Ka":
-                currentMaterial.mainTexture = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                currentMaterial.setMainTexture(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                 break;
             case "map_Ka":
-                currentMaterial.alphaMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                currentMaterial.setAlphaMap(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                 break;
             case "map_Kd":
-                currentMaterial.mainTexture = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                currentMaterial.setMainTexture(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                 break;
             case "map_bump":
-                currentMaterial.bumpMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                currentMaterial.setBumpMap(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                 break;
             case "bump":
-                currentMaterial.bumpMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                currentMaterial.setBumpMap(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                 break;
             case "disp":
-                currentMaterial.displamentMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                currentMaterial.setDisplamentMap(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                 break;
             case "decal":
-                currentMaterial.stencilMap = new Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                currentMaterial.setStencilMap(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                 break;
             default: break;
         }

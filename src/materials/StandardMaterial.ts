@@ -11,71 +11,182 @@ import { CubeTexture } from "../textures/CubeTexture";
 import { Texture } from "../textures/Texture";
 import { Material } from "./Material";
 
-export interface IStandardMaterial {
-    mainTexture?: Texture;
-    ambient?: vec3;
-    diffuse?: vec3;
-    specular?: vec3;
-    program?: Program;
-}
-
 export class StandardMaterial extends Material {
 
+    // TODO: move geometryShader out
+    public geometryShader: Program;
+
     @define("_DEBUG")
-    public debug: boolean = false;
+    protected _debug: boolean = false;
 
     @define("USE_SHADOW", true)
-    public castShadow: boolean = true;
+    protected _castShadow: boolean = true;
 
     @define("_MAIN_TEXTURE")
     @texture("uMainTexture")
-    public mainTexture: Texture;
+    protected _mainTexture: Texture;
 
-    @uniform(DataType.vec3, "ambient")
-    public ambient: vec3 = vec3.fromValues(0.1, 0.1, 0.1);
+    protected _ambient: vec3 = vec3.fromValues(0.1, 0.1, 0.1);
 
     @uniform(DataType.vec3, "uMaterialDiff")
-    public diffuse: vec3 = vec3.fromValues(0.8, 0.8, 0.8);
+    protected _diffuse: vec3 = vec3.fromValues(0.8, 0.8, 0.8);
 
     @uniform(DataType.vec3, "uMaterialSpec")
-    public specular: vec3 = vec3.fromValues(0.3, 0.3, 0.3);
+    protected _specular: vec3 = vec3.fromValues(0.3, 0.3, 0.3);
 
     @uniform(DataType.float, "uMaterialSpecExp")
-    public specularExponent: number = 64;
+    protected _specularExponent: number = 64;
 
     // @texture("specularTexture")
-    public specularMap: Texture;
+    protected _specularMap: Texture;
 
-    public transparency: number = 0;
+    protected _transparency: number = 0;
 
     // @texture("alphaTexture")
-    public alphaMap: Texture;
+    protected _alphaMap: Texture;
 
     @readyRequire
-    public bumpMap: Texture;
+    protected _bumpMap: Texture;
 
     @readyRequire
-    public displamentMap: Texture;
+    protected _displamentMap: Texture;
 
     @readyRequire
-    public stencilMap: Texture;
+    protected _stencilMap: Texture;
 
     @uniform(DataType.float, "reflectivity")
-    public reflectivity: number = 1;
+    protected _reflectivity: number = 1;
 
     @define("_ENVIRONMENT_MAP")
     @texture("uCubeTexture")
-    public reflectionMap: CubeTexture;
+    protected _environmentMap: CubeTexture;
 
-    public geometryShader: Program;
+    public get debugMode() {
+        return this._debug;
+    }
 
-    constructor(gl: WebGLRenderingContext, paramter: IStandardMaterial = {}) {
-        super(gl);
-        if (!!paramter) {
-            for (const name in paramter) {
-                this[name] = paramter[name];
-            }
-        }
+    public get isCastShadow() {
+        return this._castShadow;
+    }
+
+    public get mainTexture() {
+        return this._mainTexture;
+    }
+
+    @uniform(DataType.vec3, "ambient")
+    public get ambient() {
+        return this._ambient;
+    }
+
+    public get diffuse() {
+        return this._diffuse;
+    }
+
+    public get specular() {
+        return this._specular;
+    }
+
+    public get specularExponent() {
+        return this._specularExponent;
+    }
+
+    public transparency() {
+        return this._transparency;
+    }
+
+    // @texture("alphaTexture")
+    public alphaMap() {
+        return this._alphaMap;
+    }
+
+    public get bumpMap() {
+        return this._bumpMap;
+    }
+
+    public get displamentMap() {
+        return this._displamentMap;
+    }
+    public get stencilMap() {
+        return this.stencilMap;
+    }
+
+    public get reflectivity() {
+        return this._reflectivity;
+    }
+
+    public get environmentMap() {
+        return this._environmentMap;
+    }
+
+    public setDebugMode(_debug: boolean) {
+        this._debug = _debug;
+        return this;
+    }
+
+    public castShadow(_castShadow: boolean) {
+        this._castShadow = _castShadow;
+        return this;
+    }
+
+    public setMainTexture(_texture: Texture) {
+        this._mainTexture = _texture;
+        return this;
+    }
+
+    public setAmbient(_ambient: vec3) {
+        this._ambient = _ambient;
+        return this;
+    }
+
+    public setDiffuse(_diffuse: vec3) {
+        this._diffuse = _diffuse;
+        return this;
+    }
+
+    public setSpecular(_specular: vec3) {
+        this._specular = _specular;
+        return this;
+    }
+
+    public setSpecularExponent(_specularExponent: number) {
+        this._specularExponent = _specularExponent;
+        return this;
+    }
+
+    public setTransparency(_transparency: number) {
+        console.assert(_transparency >= 0 && _transparency <= 1);
+        this._transparency = _transparency;
+        return this;
+    }
+
+    // @texture("alphaTexture")
+    public setAlphaMap(_alphaMap) {
+        this._alphaMap = _alphaMap;
+        return this;
+    }
+
+    public setBumpMap(_bumpMap: Texture) {
+        this._bumpMap = _bumpMap;
+        return this;
+    }
+
+    public setDisplamentMap(_displamentMap: Texture) {
+        this._displamentMap = _displamentMap;
+        return this;
+    }
+    public setStencilMap(_stencilMap: Texture) {
+        this._stencilMap = _stencilMap;
+        return this;
+    }
+
+    public setReflectivity(_reflectivity: number) {
+        this._reflectivity = _reflectivity;
+        return this;
+    }
+
+    public setEnvironmentMap(_environmentMap: CubeTexture) {
+        this._environmentMap = _environmentMap;
+        return this;
     }
 
     protected initShader(gl: WebGLRenderingContext) {

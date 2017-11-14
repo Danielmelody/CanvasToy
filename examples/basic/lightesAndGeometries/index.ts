@@ -10,10 +10,9 @@ const camera = new CanvasToy.PerspectiveCamera()
     .setParent(center)
     .translate(vec3.fromValues(0, 10, 10))
     .rotateX(-Math.PI / 4);
-const checkerBoard = new CanvasToy.StandardMaterial(renderer.gl);
-checkerBoard.debug = true;
-const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl,
-    { mainTexture: new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg") });
+const checkerBoard = new CanvasToy.StandardMaterial(renderer.gl).setDebugMode(true);
+const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
+    .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"));
 // objectMaterial.castShadow = false;
 const ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
     .setPosition(vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(vec3.fromValues(10, 10, 10));
