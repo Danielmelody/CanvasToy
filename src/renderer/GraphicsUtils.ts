@@ -1,6 +1,7 @@
 import { RENDER_PARAM_HOLDER, texture } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
-import { Attribute, IRenderParamHolder, IUniform, IUniformArray, Program } from "../shader/Program";
+import { Attribute } from "../shader/Attibute";
+import { IRenderParamHolder, IUniform, IUniformArray, Program } from "../shader/Program";
 import { Texture } from "../textures/Texture";
 
 export namespace Graphics {

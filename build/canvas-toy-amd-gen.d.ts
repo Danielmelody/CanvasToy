@@ -49,6 +49,24 @@ declare module "Dirtyable" {
         clean(...args: any[]): any;
     }
 }
+declare module "shader/Attibute" {
+    export class Attribute {
+        name?: string;
+        size: number;
+        data: number[];
+        type: number;
+        index: number;
+        stride: number;
+        buffer: WebGLBuffer;
+        gl: WebGLRenderingContext;
+        constructor(gl: WebGLRenderingContext, paramter: {
+            type: number;
+            size?: number;
+            data?: number[];
+            stride?: number;
+        });
+    }
+}
 declare module "textures/Texture" {
     import { IAsyncResource } from "IAsyncResource";
     export class Texture implements IAsyncResource {
@@ -97,7 +115,7 @@ declare module "renderer/GraphicsUtils" {
 }
 declare module "geometries/Geometry" {
     import { IDirtyable } from "Dirtyable";
-    import { Attribute } from "shader/Program";
+    import { Attribute } from "shader/Attibute";
     export class Faces {
         buffer: WebGLBuffer;
         data: number[];
@@ -747,6 +765,7 @@ declare module "shader/Program" {
     import { Mesh } from "Mesh";
     import { Scene } from "Scene";
     import { Texture } from "textures/Texture";
+    import { Attribute } from "shader/Attibute";
     export interface IProgramSource {
         vertexShader: string;
         fragmentShader: string;
@@ -810,22 +829,6 @@ declare module "shader/Program" {
     }
     export interface IUniformArray extends IRenderParamBase {
         type: DataType;
-    }
-    export class Attribute {
-        name?: string;
-        size: number;
-        data: number[];
-        type: number;
-        index: number;
-        stride: number;
-        buffer: WebGLBuffer;
-        gl: WebGLRenderingContext;
-        constructor(gl: WebGLRenderingContext, paramter: {
-            type: number;
-            size?: number;
-            data?: number[];
-            stride?: number;
-        });
     }
     export class Program implements IDirtyable {
         gl: WebGLRenderingContext;

@@ -1,5 +1,4 @@
 import { DataType } from "../DataTypeEnum";
-import { Attribute } from "../shader/Program";
 import { Geometry } from "./Geometry";
 
 export class TileGeometry extends Geometry {

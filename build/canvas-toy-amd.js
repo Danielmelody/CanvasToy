@@ -92,10 +92,10 @@ define("cameras/OrthoCamera", ["require", "exports", "gl-matrix", "cameras/Camer
         OrthoCamera.prototype.deCompuseProjectionMatrix = function () {
         };
         OrthoCamera.prototype.setAspectRadio = function (radio) {
-            this._left = -this._baseSize;
-            this._right = this._baseSize;
-            this._top = radio * this._baseSize;
-            this._bottom = -radio * this._baseSize;
+            this._left = -radio * this._baseSize;
+            this._right = radio * this._baseSize;
+            this._top = this._baseSize;
+            this._bottom = -this._baseSize;
             this.compuseProjectionMatrix();
             return this;
         };
@@ -105,6 +105,35 @@ define("cameras/OrthoCamera", ["require", "exports", "gl-matrix", "cameras/Camer
 });
 define("Dirtyable", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
+});
+define("shader/Attibute", ["require", "exports", "DataTypeEnum"], function (require, exports, DataTypeEnum_1) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Attribute = (function () {
+        function Attribute(gl, paramter) {
+            this.size = 3;
+            this.data = [];
+            this.index = 0;
+            this.stride = 0;
+            this.buffer = null;
+            this.gl = null;
+            this.buffer = gl.createBuffer();
+            this.gl = gl;
+            for (var attributeInfo in paramter) {
+                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
+            }
+            switch (paramter.type) {
+                case DataTypeEnum_1.DataType.float:
+                    this.type = gl.FLOAT;
+                    break;
+                case DataTypeEnum_1.DataType.int:
+                    this.type = gl.INT;
+                    break;
+                default: break;
+            }
+        }
+        return Attribute;
+    }());
+    exports.Attribute = Attribute;
 });
 define("textures/Texture", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -354,7 +383,7 @@ define("renderer/GraphicsUtils", ["require", "exports", "Decorators"], function 
         Graphics.createEntileShader = createEntileShader;
     })(Graphics = exports.Graphics || (exports.Graphics = {}));
 });
-define("geometries/Geometry", ["require", "exports", "DataTypeEnum", "renderer/GraphicsUtils", "shader/Program"], function (require, exports, DataTypeEnum_1, GraphicsUtils_1, Program_1) {
+define("geometries/Geometry", ["require", "exports", "DataTypeEnum", "renderer/GraphicsUtils", "shader/Attibute"], function (require, exports, DataTypeEnum_2, GraphicsUtils_1, Attibute_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Faces = (function () {
         function Faces(gl, data) {
@@ -370,10 +399,10 @@ define("geometries/Geometry", ["require", "exports", "DataTypeEnum", "renderer/G
             this._dirty = true;
             this.gl = gl;
             this.attributes = {
-                position: new Program_1.Attribute(gl, { type: DataTypeEnum_1.DataType.float, size: 3, data: [] }),
-                aMainUV: new Program_1.Attribute(gl, { type: DataTypeEnum_1.DataType.float, size: 2, data: [] }),
-                aNormal: new Program_1.Attribute(gl, { type: DataTypeEnum_1.DataType.float, size: 3, data: [] }),
-                flatNormal: new Program_1.Attribute(gl, { type: DataTypeEnum_1.DataType.float, size: 3, data: [] }),
+                position: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
+                aMainUV: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 2, data: [] }),
+                aNormal: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
+                flatNormal: new Attibute_1.Attribute(gl, { type: DataTypeEnum_2.DataType.float, size: 3, data: [] }),
             };
             this.faces = { data: [], buffer: gl.createBuffer() };
         }
@@ -605,7 +634,7 @@ define("materials/Material", ["require", "exports", "gl-matrix"], function (requ
     }());
     exports.Material = Material;
 });
-define("Mesh", ["require", "exports", "DataTypeEnum", "gl-matrix", "Decorators", "Object3d"], function (require, exports, DataTypeEnum_2, gl_matrix_4, Decorators_2, Object3d_1) {
+define("Mesh", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_4, DataTypeEnum_3, Decorators_2, Object3d_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Mesh = (function (_super) {
         __extends(Mesh, _super);
@@ -634,10 +663,10 @@ define("Mesh", ["require", "exports", "DataTypeEnum", "gl-matrix", "Decorators",
             return gl.STATIC_DRAW;
         };
         __decorate([
-            Decorators_2.uniform(DataTypeEnum_2.DataType.mat4, "modelMatrix")
+            Decorators_2.uniform(DataTypeEnum_3.DataType.mat4, "modelMatrix")
         ], Mesh.prototype, "matrix", null);
         __decorate([
-            Decorators_2.uniform(DataTypeEnum_2.DataType.mat4)
+            Decorators_2.uniform(DataTypeEnum_3.DataType.mat4)
         ], Mesh.prototype, "normalMatrix", null);
         return Mesh;
     }(Object3d_1.Object3d));
@@ -841,7 +870,7 @@ define("lights/ShadowType", ["require", "exports"], function (require, exports) 
         ShadowType[ShadowType["Soft"] = 2] = "Soft";
     })(ShadowType = exports.ShadowType || (exports.ShadowType = {}));
 });
-define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d", "renderer/FrameBuffer", "lights/ShadowType"], function (require, exports, gl_matrix_5, DataTypeEnum_3, Decorators_3, Object3d_2, FrameBuffer_1, ShadowType_1) {
+define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d", "renderer/FrameBuffer", "lights/ShadowType"], function (require, exports, gl_matrix_5, DataTypeEnum_4, Decorators_3, Object3d_2, FrameBuffer_1, ShadowType_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Light = (function (_super) {
         __extends(Light, _super);
@@ -1000,31 +1029,31 @@ define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Deco
         };
         __decorate([
             Decorators_3.ifdefine("USE_SHADOW"),
-            Decorators_3.uniform(DataTypeEnum_3.DataType.float, "shadowMapSize")
+            Decorators_3.uniform(DataTypeEnum_4.DataType.float, "shadowMapSize")
         ], Light.prototype, "shadowSize", null);
         __decorate([
             Decorators_3.ifdefine("USE_SHADOW"),
             Decorators_3.texture()
         ], Light.prototype, "shadowMap", null);
         __decorate([
-            Decorators_3.uniform(DataTypeEnum_3.DataType.vec3)
+            Decorators_3.uniform(DataTypeEnum_4.DataType.vec3)
         ], Light.prototype, "color", null);
         __decorate([
-            Decorators_3.uniform(DataTypeEnum_3.DataType.float)
+            Decorators_3.uniform(DataTypeEnum_4.DataType.float)
         ], Light.prototype, "idensity", null);
         __decorate([
             Decorators_3.ifdefine("USE_SHADOW"),
-            Decorators_3.uniform(DataTypeEnum_3.DataType.mat4)
+            Decorators_3.uniform(DataTypeEnum_4.DataType.mat4)
         ], Light.prototype, "projectionMatrix", null);
         __decorate([
             Decorators_3.ifdefine("USE_SHADOW"),
-            Decorators_3.uniform(DataTypeEnum_3.DataType.mat4)
+            Decorators_3.uniform(DataTypeEnum_4.DataType.mat4)
         ], Light.prototype, "viewMatrix", null);
         return Light;
     }(Object3d_2.Object3d));
     exports.Light = Light;
 });
-define("lights/PointLight", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "geometries/SphereGeometry", "lights/Light", "lights/ShadowType"], function (require, exports, gl_matrix_6, DataTypeEnum_4, Decorators_4, SphereGeometry_1, Light_1, ShadowType_2) {
+define("lights/PointLight", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "geometries/SphereGeometry", "lights/Light", "lights/ShadowType"], function (require, exports, gl_matrix_6, DataTypeEnum_5, Decorators_4, SphereGeometry_1, Light_1, ShadowType_2) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var PointLight = (function (_super) {
         __extends(PointLight, _super);
@@ -1119,19 +1148,19 @@ define("lights/PointLight", ["require", "exports", "gl-matrix", "DataTypeEnum", 
         PointLight.prototype.setUpProjectionCamera = function () {
         };
         __decorate([
-            Decorators_4.uniform(DataTypeEnum_4.DataType.vec3)
+            Decorators_4.uniform(DataTypeEnum_5.DataType.vec3)
         ], PointLight.prototype, "position", null);
         __decorate([
-            Decorators_4.uniform(DataTypeEnum_4.DataType.float, "squareAtten")
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float, "squareAtten")
         ], PointLight.prototype, "squareAttenuation", null);
         __decorate([
-            Decorators_4.uniform(DataTypeEnum_4.DataType.float, "linearAtten")
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float, "linearAtten")
         ], PointLight.prototype, "linearAttenuation", null);
         __decorate([
-            Decorators_4.uniform(DataTypeEnum_4.DataType.float, "constantAtten")
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float, "constantAtten")
         ], PointLight.prototype, "constantAttenuation", null);
         __decorate([
-            Decorators_4.uniform(DataTypeEnum_4.DataType.float)
+            Decorators_4.uniform(DataTypeEnum_5.DataType.float)
         ], PointLight.prototype, "pcssArea", null);
         return PointLight;
     }(Light_1.Light));
@@ -1168,7 +1197,7 @@ define("shader/shaders", ["require", "exports"], function (require, exports) {
         ShaderSource.interploters__forward__skybox_vert = "attribute vec3 position;\nuniform mat4 viewProjectionMatrix;\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = viewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
     })(ShaderSource = exports.ShaderSource || (exports.ShaderSource = {}));
 });
-define("shader/ShaderBuilder", ["require", "exports", "shader/Program", "shader/shaders"], function (require, exports, Program_2, shaders_1) {
+define("shader/ShaderBuilder", ["require", "exports", "shader/Program", "shader/shaders"], function (require, exports, Program_1, shaders_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var ShaderBuilder = (function () {
         function ShaderBuilder() {
@@ -1234,7 +1263,7 @@ define("shader/ShaderBuilder", ["require", "exports", "shader/Program", "shader/
             return this;
         };
         ShaderBuilder.prototype.build = function (gl) {
-            return new Program_2.Program(gl, {
+            return new Program_1.Program(gl, {
                 vertexShader: this.vertLibs.join("\n") + this.shadingVert,
                 fragmentShader: this.fragLibs.join("\n") + this.shadingFrag,
             }, this.extraRenderParamHolders);
@@ -1301,7 +1330,7 @@ define("textures/CubeTexture", ["require", "exports", "textures/Texture"], funct
     }(Texture_2.Texture));
     exports.CubeTexture = CubeTexture;
 });
-define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/Program", "shader/ShaderBuilder", "materials/Material"], function (require, exports, gl_matrix_7, DataTypeEnum_5, Decorators_5, Program_3, ShaderBuilder_1, Material_1) {
+define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/Program", "shader/ShaderBuilder", "materials/Material"], function (require, exports, gl_matrix_7, DataTypeEnum_6, Decorators_5, Program_2, ShaderBuilder_1, Material_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var StandardMaterial = (function (_super) {
         __extends(StandardMaterial, _super);
@@ -1327,7 +1356,7 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
             return new ShaderBuilder_1.ShaderBuilder()
                 .setExtraRenderParamHolder("mvp", {
                 uniforms: {
-                    modelViewProjectionMatrix: Program_3.shaderPassLib.uniforms.modelViewProjectionMatrix,
+                    modelViewProjectionMatrix: Program_2.shaderPassLib.uniforms.modelViewProjectionMatrix,
                 },
             })
                 .build(gl);
@@ -1343,16 +1372,16 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
             Decorators_5.texture("uMainTexture")
         ], StandardMaterial.prototype, "mainTexture", void 0);
         __decorate([
-            Decorators_5.uniform(DataTypeEnum_5.DataType.vec3, "ambient")
+            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "ambient")
         ], StandardMaterial.prototype, "ambient", void 0);
         __decorate([
-            Decorators_5.uniform(DataTypeEnum_5.DataType.vec3, "uMaterialDiff")
+            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "uMaterialDiff")
         ], StandardMaterial.prototype, "diffuse", void 0);
         __decorate([
-            Decorators_5.uniform(DataTypeEnum_5.DataType.vec3, "uMaterialSpec")
+            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "uMaterialSpec")
         ], StandardMaterial.prototype, "specular", void 0);
         __decorate([
-            Decorators_5.uniform(DataTypeEnum_5.DataType.float, "uMaterialSpecExp")
+            Decorators_5.uniform(DataTypeEnum_6.DataType.float, "uMaterialSpecExp")
         ], StandardMaterial.prototype, "specularExponent", void 0);
         __decorate([
             Decorators_5.readyRequire
@@ -1364,7 +1393,7 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
             Decorators_5.readyRequire
         ], StandardMaterial.prototype, "stencilMap", void 0);
         __decorate([
-            Decorators_5.uniform(DataTypeEnum_5.DataType.float, "reflectivity")
+            Decorators_5.uniform(DataTypeEnum_6.DataType.float, "reflectivity")
         ], StandardMaterial.prototype, "reflectivity", void 0);
         __decorate([
             Decorators_5.define("_ENVIRONMENT_MAP"),
@@ -1406,7 +1435,7 @@ define("textures/DataTexture", ["require", "exports", "textures/Texture"], funct
 define("renderer/IProcessor", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("renderer/deferred/DeferredProcessor", ["require", "exports", "gl-matrix", "DataTypeEnum", "geometries/RectGeometry", "materials/StandardMaterial", "Mesh", "shader/ShaderBuilder", "shader/shaders", "textures/DataTexture", "renderer/FrameBuffer", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_8, DataTypeEnum_6, RectGeometry_1, StandardMaterial_1, Mesh_1, ShaderBuilder_2, shaders_2, DataTexture_1, FrameBuffer_2, GraphicsUtils_3) {
+define("renderer/deferred/DeferredProcessor", ["require", "exports", "gl-matrix", "DataTypeEnum", "geometries/RectGeometry", "materials/StandardMaterial", "Mesh", "shader/ShaderBuilder", "shader/shaders", "textures/DataTexture", "renderer/FrameBuffer", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_8, DataTypeEnum_7, RectGeometry_1, StandardMaterial_1, Mesh_1, ShaderBuilder_2, shaders_2, DataTexture_1, FrameBuffer_2, GraphicsUtils_3) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var DeferredProcessor = (function () {
         function DeferredProcessor(gl, ext, scene, camera) {
@@ -1558,26 +1587,26 @@ define("renderer/deferred/DeferredProcessor", ["require", "exports", "gl-matrix"
                 .setExtraRenderParamHolder("lightInfo", {
                 uniforms: {
                     inverseProjection: {
-                        type: DataTypeEnum_6.DataType.mat4,
+                        type: DataTypeEnum_7.DataType.mat4,
                         updator: function (_a) {
                             var camera = _a.camera;
                             return gl_matrix_8.mat4.invert(gl_matrix_8.mat4.create(), camera.projectionMatrix);
                         },
                     },
                     uLightListLengthSqrt: {
-                        type: DataTypeEnum_6.DataType.float,
+                        type: DataTypeEnum_7.DataType.float,
                         updator: function () { return _this.linearLightIndex.length; },
                     },
                     uHorizontalTileNum: {
-                        type: DataTypeEnum_6.DataType.float,
+                        type: DataTypeEnum_7.DataType.float,
                         updator: function () { return _this.horizontalTileNum; },
                     },
                     uVerticalTileNum: {
-                        type: DataTypeEnum_6.DataType.float,
+                        type: DataTypeEnum_7.DataType.float,
                         updator: function () { return _this.verticalTileNum; },
                     },
                     uTotalLightNum: {
-                        type: DataTypeEnum_6.DataType.float,
+                        type: DataTypeEnum_7.DataType.float,
                         updator: function () { return scene.pointLights.length; },
                     },
                 },
@@ -1612,7 +1641,7 @@ define("renderer/deferred/DeferredProcessor", ["require", "exports", "gl-matrix"
     }());
     exports.DeferredProcessor = DeferredProcessor;
 });
-define("materials/ESM/DepthPackMaterial", ["require", "exports", "shader/Program", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, Program_4, ShaderBuilder_3, shaders_3, Material_2) {
+define("materials/ESM/DepthPackMaterial", ["require", "exports", "shader/Program", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, Program_3, ShaderBuilder_3, shaders_3, Material_2) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var LinearDepthPackMaterial = (function (_super) {
         __extends(LinearDepthPackMaterial, _super);
@@ -1628,8 +1657,8 @@ define("materials/ESM/DepthPackMaterial", ["require", "exports", "shader/Program
                 .setShadingVert(shaders_3.ShaderSource.interploters__forward__esm__depth_vert)
                 .setExtraRenderParamHolder("transform", {
                 uniforms: {
-                    modelViewProjectionMatrix: Program_4.shaderPassLib.uniforms.modelViewProjectionMatrix,
-                    modelViewMatrix: Program_4.shaderPassLib.uniforms.modelViewMatrix,
+                    modelViewProjectionMatrix: Program_3.shaderPassLib.uniforms.modelViewProjectionMatrix,
+                    modelViewMatrix: Program_3.shaderPassLib.uniforms.modelViewMatrix,
                 },
             })
                 .build(gl);
@@ -1697,7 +1726,7 @@ define("textures/Texture2D", ["require", "exports", "textures/Texture"], functio
     }(Texture_4.Texture));
     exports.Texture2D = Texture2D;
 });
-define("materials/ESM/LogBlurMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, gl_matrix_9, DataTypeEnum_7, Decorators_6, ShaderBuilder_4, shaders_4, Material_3) {
+define("materials/ESM/LogBlurMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, gl_matrix_9, DataTypeEnum_8, Decorators_6, ShaderBuilder_4, shaders_4, Material_3) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var PCSSFilteringMaterial = (function (_super) {
         __extends(PCSSFilteringMaterial, _super);
@@ -1720,16 +1749,16 @@ define("materials/ESM/LogBlurMaterial", ["require", "exports", "gl-matrix", "Dat
             Decorators_6.texture("uOrigin")
         ], PCSSFilteringMaterial.prototype, "origin", void 0);
         __decorate([
-            Decorators_6.uniform(DataTypeEnum_7.DataType.vec2, "uBlurDir")
+            Decorators_6.uniform(DataTypeEnum_8.DataType.vec2, "uBlurDir")
         ], PCSSFilteringMaterial.prototype, "blurDirection", void 0);
         __decorate([
-            Decorators_6.uniform(DataTypeEnum_7.DataType.float, "uBlurStep")
+            Decorators_6.uniform(DataTypeEnum_8.DataType.float, "uBlurStep")
         ], PCSSFilteringMaterial.prototype, "blurStep", void 0);
         return PCSSFilteringMaterial;
     }(Material_3.Material));
     exports.PCSSFilteringMaterial = PCSSFilteringMaterial;
 });
-define("renderer/ShadowPreProcessor", ["require", "exports", "gl-matrix", "geometries/RectGeometry", "lights/ShadowType", "materials/ESM/DepthPackMaterial", "materials/ESM/LogBlurMaterial", "materials/StandardMaterial", "Mesh", "shader/Program"], function (require, exports, gl_matrix_10, RectGeometry_2, ShadowType_3, DepthPackMaterial_1, LogBlurMaterial_1, StandardMaterial_2, Mesh_3, Program_5) {
+define("renderer/ShadowPreProcessor", ["require", "exports", "gl-matrix", "geometries/RectGeometry", "lights/ShadowType", "materials/ESM/DepthPackMaterial", "materials/ESM/LogBlurMaterial", "materials/StandardMaterial", "Mesh", "shader/Program"], function (require, exports, gl_matrix_10, RectGeometry_2, ShadowType_3, DepthPackMaterial_1, LogBlurMaterial_1, StandardMaterial_2, Mesh_3, Program_4) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var ShadowPreProcess = (function () {
         function ShadowPreProcess(gl, ext, scene) {
@@ -1759,7 +1788,7 @@ define("renderer/ShadowPreProcessor", ["require", "exports", "gl-matrix", "geome
             this.rectMesh.geometry.clean(this.gl);
             this.depthMaterial.shader.setExtraRenderParam("mvp", {
                 uniforms: {
-                    modelViewProjectionMatrix: Program_5.shaderPassLib.uniforms.modelViewProjectionMatrix,
+                    modelViewProjectionMatrix: Program_4.shaderPassLib.uniforms.modelViewProjectionMatrix,
                 },
             });
         };
@@ -1978,7 +2007,7 @@ define("renderer/Renderer", ["require", "exports", "Mesh", "renderer/deferred/De
     }());
     exports.Renderer = Renderer;
 });
-define("lights/DirectionalLight", ["require", "exports", "gl-matrix", "cameras/OrthoCamera", "DataTypeEnum", "Decorators", "lights/Light"], function (require, exports, gl_matrix_11, OrthoCamera_1, DataTypeEnum_8, Decorators_7, Light_2) {
+define("lights/DirectionalLight", ["require", "exports", "gl-matrix", "cameras/OrthoCamera", "DataTypeEnum", "Decorators", "lights/Light"], function (require, exports, gl_matrix_11, OrthoCamera_1, DataTypeEnum_9, Decorators_7, Light_2) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var DirectionalLight = (function (_super) {
         __extends(DirectionalLight, _super);
@@ -2019,7 +2048,7 @@ define("lights/DirectionalLight", ["require", "exports", "gl-matrix", "cameras/O
                 .setAspectRadio(1);
         };
         __decorate([
-            Decorators_7.uniform(DataTypeEnum_8.DataType.vec3)
+            Decorators_7.uniform(DataTypeEnum_9.DataType.vec3)
         ], DirectionalLight.prototype, "direction", null);
         return DirectionalLight;
     }(Light_2.Light));
@@ -2082,7 +2111,7 @@ define("cameras/PerspectiveCamera", ["require", "exports", "gl-matrix", "cameras
     }(Camera_2.Camera));
     exports.PerspectiveCamera = PerspectiveCamera;
 });
-define("lights/SpotLight", ["require", "exports", "gl-matrix", "cameras/PerspectiveCamera", "DataTypeEnum", "Decorators", "lights/PointLight", "lights/ShadowType"], function (require, exports, gl_matrix_13, PerspectiveCamera_1, DataTypeEnum_9, Decorators_8, PointLight_1, ShadowType_4) {
+define("lights/SpotLight", ["require", "exports", "gl-matrix", "cameras/PerspectiveCamera", "DataTypeEnum", "Decorators", "lights/PointLight", "lights/ShadowType"], function (require, exports, gl_matrix_13, PerspectiveCamera_1, DataTypeEnum_10, Decorators_8, PointLight_1, ShadowType_4) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var SpotLight = (function (_super) {
         __extends(SpotLight, _super);
@@ -2152,16 +2181,16 @@ define("lights/SpotLight", ["require", "exports", "gl-matrix", "cameras/Perspect
                 .setAspectRadio(1);
         };
         __decorate([
-            Decorators_8.uniform(DataTypeEnum_9.DataType.float)
+            Decorators_8.uniform(DataTypeEnum_10.DataType.float)
         ], SpotLight.prototype, "coneAngleCos", null);
         __decorate([
-            Decorators_8.uniform(DataTypeEnum_9.DataType.vec3, "spotDir")
+            Decorators_8.uniform(DataTypeEnum_10.DataType.vec3, "spotDir")
         ], SpotLight.prototype, "spotDirection", null);
         return SpotLight;
     }(PointLight_1.PointLight));
     exports.SpotLight = SpotLight;
 });
-define("Scene", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators"], function (require, exports, gl_matrix_14, DataTypeEnum_10, Decorators_9) {
+define("Scene", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators"], function (require, exports, gl_matrix_14, DataTypeEnum_11, Decorators_9) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Scene = (function () {
         function Scene() {
@@ -2246,7 +2275,7 @@ define("Scene", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators"
             }
         };
         __decorate([
-            Decorators_9.uniform(DataTypeEnum_10.DataType.vec3, "ambient")
+            Decorators_9.uniform(DataTypeEnum_11.DataType.vec3, "ambient")
         ], Scene.prototype, "ambientLight", void 0);
         __decorate([
             Decorators_9.arrayOfStructures()
@@ -2540,7 +2569,7 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
     }());
     exports.Object3d = Object3d;
 });
-define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_16, DataTypeEnum_11, Decorators_10, Object3d_3) {
+define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_16, DataTypeEnum_12, Decorators_10, Object3d_3) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Camera = (function (_super) {
         __extends(Camera, _super);
@@ -2635,46 +2664,20 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
             this.compuseProjectionMatrix();
         };
         __decorate([
-            Decorators_10.uniform(DataTypeEnum_11.DataType.vec3, "cameraPos")
+            Decorators_10.uniform(DataTypeEnum_12.DataType.vec3, "cameraPos")
         ], Camera.prototype, "position", null);
         __decorate([
-            Decorators_10.uniform(DataTypeEnum_11.DataType.float, "cameraNear")
+            Decorators_10.uniform(DataTypeEnum_12.DataType.float, "cameraNear")
         ], Camera.prototype, "near", null);
         __decorate([
-            Decorators_10.uniform(DataTypeEnum_11.DataType.float, "cameraFar")
+            Decorators_10.uniform(DataTypeEnum_12.DataType.float, "cameraFar")
         ], Camera.prototype, "far", null);
         return Camera;
     }(Object3d_3.Object3d));
     exports.Camera = Camera;
 });
-define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_17, DataTypeEnum_12, GraphicsUtils_5) {
+define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "renderer/GraphicsUtils"], function (require, exports, gl_matrix_17, DataTypeEnum_13, GraphicsUtils_5) {
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Attribute = (function () {
-        function Attribute(gl, paramter) {
-            this.size = 3;
-            this.data = [];
-            this.index = 0;
-            this.stride = 0;
-            this.buffer = null;
-            this.gl = null;
-            this.buffer = gl.createBuffer();
-            this.gl = gl;
-            for (var attributeInfo in paramter) {
-                this[attributeInfo] = paramter[attributeInfo] ? paramter[attributeInfo] : this[attributeInfo];
-            }
-            switch (paramter.type) {
-                case DataTypeEnum_12.DataType.float:
-                    this.type = gl.FLOAT;
-                    break;
-                case DataTypeEnum_12.DataType.int:
-                    this.type = gl.INT;
-                    break;
-                default: break;
-            }
-        }
-        return Attribute;
-    }());
-    exports.Attribute = Attribute;
     var Program = (function () {
         function Program(gl, source, holders) {
             this.enableDepthTest = true;
@@ -2820,7 +2823,7 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                 if (!!texture) {
                     this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
                     this.gl.bindTexture(texture.target, texture.glTexture);
-                    this.updateUniform(name_3, DataTypeEnum_12.DataType.int, this.currentTextureUnit);
+                    this.updateUniform(name_3, DataTypeEnum_13.DataType.int, this.currentTextureUnit);
                     this.currentTextureUnit++;
                 }
             }
@@ -2841,7 +2844,7 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                     this.currentTextureUnit++;
                 }
                 if (indices.length > 0) {
-                    this.updateUniformArray(name_4, DataTypeEnum_12.DataType.int, new Uint32Array(indices));
+                    this.updateUniformArray(name_4, DataTypeEnum_13.DataType.int, new Uint32Array(indices));
                 }
             }
             if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
@@ -2912,26 +2915,26 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                 console.error(location);
             }
             switch (type) {
-                case DataTypeEnum_12.DataType.float:
+                case DataTypeEnum_13.DataType.float:
                     this.gl.uniform1f(location, value);
                     break;
-                case DataTypeEnum_12.DataType.int:
+                case DataTypeEnum_13.DataType.int:
                     this.gl.uniform1i(location, value);
                     break;
-                case DataTypeEnum_12.DataType.vec2:
+                case DataTypeEnum_13.DataType.vec2:
                     this.gl.uniform2f(location, value[0], value[1]);
                     break;
-                case DataTypeEnum_12.DataType.vec3:
+                case DataTypeEnum_13.DataType.vec3:
                     this.gl.uniform3f(location, value[0], value[1], value[2]);
                     break;
-                case DataTypeEnum_12.DataType.vec4:
+                case DataTypeEnum_13.DataType.vec4:
                     this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
                     break;
-                case DataTypeEnum_12.DataType.mat2:
+                case DataTypeEnum_13.DataType.mat2:
                     this.gl.uniformMatrix2fv(location, false, value);
-                case DataTypeEnum_12.DataType.mat3:
+                case DataTypeEnum_13.DataType.mat3:
                     this.gl.uniformMatrix3fv(location, false, value);
-                case DataTypeEnum_12.DataType.mat4:
+                case DataTypeEnum_13.DataType.mat4:
                     this.gl.uniformMatrix4fv(location, false, value);
                     break;
                 default: break;
@@ -2955,26 +2958,26 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
             }
             var result = cache.location;
             switch (type) {
-                case DataTypeEnum_12.DataType.float:
+                case DataTypeEnum_13.DataType.float:
                     this.gl.uniform1fv(location, value);
                     break;
-                case DataTypeEnum_12.DataType.int:
+                case DataTypeEnum_13.DataType.int:
                     this.gl.uniform1iv(location, value);
                     break;
-                case DataTypeEnum_12.DataType.vec2:
+                case DataTypeEnum_13.DataType.vec2:
                     this.gl.uniform2fv(location, value);
                     break;
-                case DataTypeEnum_12.DataType.vec3:
+                case DataTypeEnum_13.DataType.vec3:
                     this.gl.uniform3fv(location, value);
                     break;
-                case DataTypeEnum_12.DataType.vec4:
+                case DataTypeEnum_13.DataType.vec4:
                     this.gl.uniform4fv(location, value);
                     break;
-                case DataTypeEnum_12.DataType.mat2:
+                case DataTypeEnum_13.DataType.mat2:
                     this.gl.uniformMatrix2fv(location, false, value);
-                case DataTypeEnum_12.DataType.mat3:
+                case DataTypeEnum_13.DataType.mat3:
                     this.gl.uniformMatrix3fv(location, false, value);
-                case DataTypeEnum_12.DataType.mat4:
+                case DataTypeEnum_13.DataType.mat4:
                     this.gl.uniformMatrix4fv(location, false, value);
                     break;
                 default: break;
@@ -3000,13 +3003,13 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
     exports.shaderPassLib = {
         uniforms: {
             modelViewProjectionMatrix: {
-                type: DataTypeEnum_12.DataType.mat4,
+                type: DataTypeEnum_13.DataType.mat4,
                 updator: function (p) {
                     return gl_matrix_17.mat4.multiply(gl_matrix_17.mat4.create(), p.camera.projectionMatrix, gl_matrix_17.mat4.multiply(gl_matrix_17.mat4.create(), p.camera.worldToObjectMatrix, p.mesh.matrix));
                 },
             },
             modelViewMatrix: {
-                type: DataTypeEnum_12.DataType.mat4,
+                type: DataTypeEnum_13.DataType.mat4,
                 updator: function (_a) {
                     var mesh = _a.mesh, camera = _a.camera;
                     return gl_matrix_17.mat4.mul(gl_matrix_17.mat4.create(), camera.worldToObjectMatrix, mesh.matrix);
@@ -3303,7 +3306,7 @@ define("geometries/TileGeometry", ["require", "exports", "geometries/Geometry"],
     }(Geometry_4.Geometry));
     exports.TileGeometry = TileGeometry;
 });
-define("materials/SkyMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, gl_matrix_18, DataTypeEnum_13, Decorators_11, ShaderBuilder_5, shaders_5, Material_4) {
+define("materials/SkyMaterial", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "shader/ShaderBuilder", "shader/shaders", "materials/Material"], function (require, exports, gl_matrix_18, DataTypeEnum_14, Decorators_11, ShaderBuilder_5, shaders_5, Material_4) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var SkyMaterial = (function (_super) {
         __extends(SkyMaterial, _super);
@@ -3320,7 +3323,7 @@ define("materials/SkyMaterial", ["require", "exports", "gl-matrix", "DataTypeEnu
                 .setExtraRenderParamHolder("skyTransform", {
                 uniforms: {
                     viewProjectionMatrix: {
-                        type: DataTypeEnum_13.DataType.mat4,
+                        type: DataTypeEnum_14.DataType.mat4,
                         updator: function (_a) {
                             var mesh = _a.mesh, camera = _a.camera;
                             var rotateOnlyViewMatrix = gl_matrix_18.mat4.fromQuat(gl_matrix_18.mat4.create(), gl_matrix_18.mat4.getRotation(gl_matrix_18.quat.create(), camera.matrix));
@@ -3586,7 +3589,7 @@ define("extensions/Water", ["require", "exports", "geometries/Geometry", "materi
     }(Mesh_6.Mesh));
     exports.Water = Water;
 });
-define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "renderer/FrameBuffer", "Object3d", "Scene", "DataTypeEnum", "Util", "cameras/Camera", "cameras/PerspectiveCamera", "cameras/OrthoCamera", "geometries/Geometry", "geometries/CubeGeometry", "geometries/RectGeometry", "geometries/SphereGeometry", "geometries/TileGeometry", "textures/Texture", "textures/Texture2D", "textures/CubeTexture", "textures/DataTexture", "materials/Material", "materials/StandardMaterial", "materials/SkyMaterial", "materials/ESM/DepthPackMaterial", "lights/Light", "lights/PointLight", "lights/SpotLight", "lights/DirectionalLight", "lights/ShadowType", "loader/obj_mtl/OBJLoader", "Mesh", "extensions/Water"], function (require, exports, Decorators_12, Renderer_1, FrameBuffer_4, Object3d_5, Scene_1, DataTypeEnum_14, Util_2, Camera_3, PerspectiveCamera_2, OrthoCamera_2, Geometry_7, CubeGeometry_1, RectGeometry_3, SphereGeometry_2, TileGeometry_1, Texture_5, Texture2D_2, CubeTexture_1, DataTexture_2, Material_5, StandardMaterial_6, SkyMaterial_1, DepthPackMaterial_2, Light_3, PointLight_2, SpotLight_1, DirectionalLight_1, ShadowType_5, OBJLoader_1, Mesh_7, Water_1) {
+define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "renderer/FrameBuffer", "Object3d", "Scene", "DataTypeEnum", "Util", "cameras/Camera", "cameras/PerspectiveCamera", "cameras/OrthoCamera", "geometries/Geometry", "geometries/CubeGeometry", "geometries/RectGeometry", "geometries/SphereGeometry", "geometries/TileGeometry", "textures/Texture", "textures/Texture2D", "textures/CubeTexture", "textures/DataTexture", "materials/Material", "materials/StandardMaterial", "materials/SkyMaterial", "materials/ESM/DepthPackMaterial", "lights/Light", "lights/PointLight", "lights/SpotLight", "lights/DirectionalLight", "lights/ShadowType", "loader/obj_mtl/OBJLoader", "Mesh", "extensions/Water"], function (require, exports, Decorators_12, Renderer_1, FrameBuffer_4, Object3d_5, Scene_1, DataTypeEnum_15, Util_2, Camera_3, PerspectiveCamera_2, OrthoCamera_2, Geometry_7, CubeGeometry_1, RectGeometry_3, SphereGeometry_2, TileGeometry_1, Texture_5, Texture2D_2, CubeTexture_1, DataTexture_2, Material_5, StandardMaterial_6, SkyMaterial_1, DepthPackMaterial_2, Light_3, PointLight_2, SpotLight_1, DirectionalLight_1, ShadowType_5, OBJLoader_1, Mesh_7, Water_1) {
     function __export(m) {
         for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
     }
@@ -3602,7 +3605,7 @@ define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "r
     exports.AttachmentType = FrameBuffer_4.AttachmentType;
     exports.Object3d = Object3d_5.Object3d;
     exports.Scene = Scene_1.Scene;
-    exports.DataType = DataTypeEnum_14.DataType;
+    exports.DataType = DataTypeEnum_15.DataType;
     __export(Util_2);
     exports.Camera = Camera_3.Camera;
     exports.PerspectiveCamera = PerspectiveCamera_2.PerspectiveCamera;

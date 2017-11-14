@@ -1,7 +1,7 @@
 import { DataType } from "../DataTypeEnum";
 import { IDirtyable } from "../Dirtyable";
 import { Graphics } from "../renderer/GraphicsUtils";
-import { Attribute } from "../shader/Program";
+import { Attribute } from "../shader/Attibute";
 
 export class Faces {
     public buffer: WebGLBuffer;

@@ -1,6 +1,5 @@
 import { vec3 } from "gl-matrix";
 import { DataType } from "../DataTypeEnum";
-import { Attribute } from "../shader/Program";
 import { Geometry } from "./Geometry";
 
 export class SphereGeometry extends Geometry {
