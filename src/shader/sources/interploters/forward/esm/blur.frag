@@ -2,26 +2,44 @@ uniform sampler2D uOrigin;
 uniform vec2 uBlurDir;
 uniform float uBlurStep;
 
+uniform float lightArea;
+
+#define MAX_BLOCK_SAMPLE 8.0
+#define MAX_PCF_SAMPLE 8.0
+
+uniform float blockSamples;
+uniform float PCFSamples;
+
 varying vec4 vProjPos;
 varying vec3 vNormal;
 
 void main () {
     vec2 uv = vProjPos.xy * 0.5 + 0.5;
     float base = texture2D(uOrigin, uv).r;
-    float average = 0.0;
+    float block = 0.0;
     gl_FragColor.r = base;
-    //if (dot(vNormal, vec3(0, 0, -1)) > 0.0) 
-    //{
-        average += exp((texture2D(uOrigin, uv - 4.0 * uBlurStep * uBlurDir).r - base)) * 0.0162162162;
-        average += exp((texture2D(uOrigin, uv - 3.0 * uBlurStep * uBlurDir).r - base)) * 0.0540540541;
-        average += exp((texture2D(uOrigin, uv - 2.0 * uBlurStep * uBlurDir).r - base)) * 0.1216216216;
-        average += exp((texture2D(uOrigin, uv - 1.0 * uBlurStep * uBlurDir).r - base)) * 0.1945945946;
-        average += 0.2270270270;
-        average += exp((texture2D(uOrigin, uv + 1.0 * uBlurStep * uBlurDir).r - base)) * 0.1945945946;
-        average += exp((texture2D(uOrigin, uv + 2.0 * uBlurStep * uBlurDir).r - base)) * 0.1216216216;
-        average += exp((texture2D(uOrigin, uv + 3.0 * uBlurStep * uBlurDir).r - base)) * 0.0540540541;
-        average += exp((texture2D(uOrigin, uv + 4.0 * uBlurStep * uBlurDir).r - base)) * 0.0162162162;
-        average += log(average);
-    // }
-     gl_FragColor.r += average;
+
+    for (float i = 0.0; i < MAX_BLOCK_SAMPLE; ++i) {
+        if(i >= blockSamples) {
+            break;
+        }
+        float d = texture2D(uOrigin, uv + (i - blockSamples / 2.0) * uBlurStep * uBlurDir).r;
+        block += step(base, d) * d / blockSamples;
+    }
+    
+    float kenelSize = lightArea * (base - block) / base;
+
+    float sum = 0.0;
+
+    for (float i = 0.0; i < MAX_PCF_SAMPLE; ++i) {
+        if(i >= PCFSamples) {
+            break;
+        }
+        float expd = exp(texture2D(uOrigin, uv + (i - PCFSamples / 2.0) * kenelSize * uBlurStep * uBlurDir).r - base);
+        sum += expd / PCFSamples;
+    }
+
+    float average = log(sum) + base;
+
+    gl_FragColor.r += average;
 }

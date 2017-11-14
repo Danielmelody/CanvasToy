@@ -1,9 +1,11 @@
-import { defaultProgramPass, IProgramPass, Program } from "./Program";
+import { IRenderParamHolder, Program, shaderPassLib } from "./Program";
 import { ShaderLib, ShaderSource, ShadingFrag, ShadingVert } from "./shaders";
 
 export class ShaderBuilder {
 
-    private vertLibs: ShaderLib[] = [];
+    private vertLibs: ShaderLib[] = [
+        ShaderSource.definitions__light_glsl,
+    ];
 
     private fragLibs: ShaderLib[] = [
         ShaderSource.definitions__light_glsl,
@@ -19,7 +21,7 @@ export class ShaderBuilder {
 
     private shadingFrag: ShadingFrag = ShaderSource.interploters__forward__phong_frag;
 
-    private pass: IProgramPass = defaultProgramPass;
+    private extraRenderParamHolders: { [index: string]: IRenderParamHolder } = {};
 
     public resetShaderLib() {
         this.vertLibs = [];
@@ -53,8 +55,8 @@ export class ShaderBuilder {
         return this;
     }
 
-    public setPass(pass: IProgramPass) {
-        this.pass = pass;
+    public setExtraRenderParamHolder(name: string, paramHolder: IRenderParamHolder) {
+        this.extraRenderParamHolders[name] = paramHolder;
         return this;
     }
 
@@ -63,7 +65,7 @@ export class ShaderBuilder {
             vertexShader: this.vertLibs.join("\n") + this.shadingVert,
             fragmentShader: this.fragLibs.join("\n") + this.shadingFrag,
         },
-            this.pass,
+            this.extraRenderParamHolders,
         );
     }
 }

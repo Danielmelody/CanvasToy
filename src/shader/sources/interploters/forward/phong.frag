@@ -1,15 +1,15 @@
 uniform vec3 ambient;
-uniform vec3 materialSpec;
-uniform float materialSpecExp;
-uniform vec3 materialDiff;
+uniform vec3 uMaterialSpec;
+uniform float uMaterialSpecExp;
+uniform vec3 uMaterialDiff;
+
+uniform vec3 cameraPos;
 
 varying vec2 vMainUV;
 varying vec4 clipPos;
 
-#ifdef OPEN_LIGHT
 varying vec3 vNormal;
 varying vec3 vPosition;
-#endif
 
 #ifdef _MAIN_TEXTURE
 uniform sampler2D uMainTexture;
@@ -20,39 +20,33 @@ uniform float reflectivity;
 uniform samplerCube uCubeTexture;
 #endif
 
-#if (DIR_LIGHT_NUM > 0)
-uniform DirectLight directLights[DIR_LIGHT_NUM];
+#if (directLightsNum > 0)
+uniform DirectLight directLights[directLightsNum];
 #endif
 
-#if (POINT_LIGHT_NUM > 0)
-uniform PointLight pointLights[POINT_LIGHT_NUM];
+#if (pointLightsNum > 0)
+uniform PointLight pointLights[pointLightsNum];
 #endif
 
-#if (SPOT_LIGHT_NUM)
-uniform SpotLight spotLights[SPOT_LIGHT_NUM];
+#if (spotLightsNum > 0)
+uniform SpotLight spotLights[spotLightsNum];
 #endif
 
 #ifdef USE_SHADOW
 
-    #if (DIR_LIGHT_NUM > 0)
-    uniform sampler2D directShadowMaps[DIR_LIGHT_NUM];
-    uniform float directShadowSize[DIR_LIGHT_NUM];
-    varying vec4 directShadowCoord[DIR_LIGHT_NUM];
-    varying float directLightDepth[DIR_LIGHT_NUM];
+    #if (directLightsNum > 0)
+    varying vec4 directShadowCoord[directLightsNum];
+    varying float directLightDepth[directLightsNum];
     #endif
 
-    #if (POINT_LIGHT_NUM > 0)
-    uniform sampler2D pointShadowMaps[POINT_LIGHT_NUM];
-    uniform float pointShadowSize[POINT_LIGHT_NUM];
-    varying vec4 pointShadowCoord[POINT_LIGHT_NUM];
-    varying float pointLightDepth[POINT_LIGHT_NUM];
+    #if (pointLightsNum > 0)
+    varying vec4 pointShadowCoord[pointLightsNum];
+    varying float pointLightDepth[pointLightsNum];
     #endif
 
-    #if (SPOT_LIGHT_NUM > 0)
-    uniform sampler2D spotShadowMaps[SPOT_LIGHT_NUM];
-    uniform float spotShadowSize[SPOT_LIGHT_NUM];
-    varying vec4 spotShadowCoord[SPOT_LIGHT_NUM];
-    varying float spotLightDepth[SPOT_LIGHT_NUM];
+    #if (spotLightsNum > 0)
+    varying vec4 spotShadowCoord[spotLightsNum];
+    varying float spotLightDepth[spotLightsNum];
     #endif
 
 #endif
@@ -70,72 +64,76 @@ void main () {
 #endif
     vec3 color = vec3(0.0);
     vec3 normal = normalize(vNormal);
-#ifdef OPEN_LIGHT
     vec3 totalLighting = ambient;
-    #if (DIR_LIGHT_NUM > 0)
-    for (int index = 0; index < DIR_LIGHT_NUM; index++) {
+    #ifdef _ENVIRONMENT_MAP
+    vec3 viewDir = normalize(-vPosition);
+    vec3 skyUV = reflect(viewDir, vNormal);
+    totalLighting = mix(totalLighting, textureCube(uCubeTexture, skyUV).xyz, reflectivity);
+    #endif
+#if (directLightsNum > 0)
+    for (int index = 0; index < directLightsNum; index++) {
         vec3 lighting = calculateDirLight(
             directLights[index],
-            materialDiff,
-            materialSpec,
-            materialSpecExp,
+            uMaterialDiff,
+            uMaterialSpec,
+            uMaterialSpecExp,
             vPosition,
             normal,
-            vec3(0.0)
+            cameraPos
         );
-        #ifdef USE_SHADOW
+    #ifdef USE_SHADOW
         float lambertian = dot(-directLights[index].direction, normal);
-        float shadowFactor = getSpotDirectionShadow(directShadowCoord[index].xy / directShadowCoord[index].w, directShadowMaps[index], directLightDepth[index], lambertian, 1.0 / directShadowSize[index]);
+        float shadowFactor = getSpotDirectionShadow(
+            directShadowCoord[index].xy / directShadowCoord[index].w, 
+            directLights[index].shadowMap, 
+            directLightDepth[index], 
+            lambertian, 
+            1.0 / directLights[index].shadowMapSize
+        );
         lighting *= shadowFactor;
-        #endif
+    #endif
         totalLighting += lighting;
     }
-    #endif
-    #if (POINT_LIGHT_NUM > 0)
-    for (int index = 0; index < POINT_LIGHT_NUM; index++) {
+#endif
+#if (pointLightsNum > 0)
+    for (int index = 0; index < pointLightsNum; index++) {
         vec3 lighting = calculatePointLight(
             pointLights[index],
-            materialDiff,
-            materialSpec,
-            materialSpecExp,
+            uMaterialDiff,
+            uMaterialSpec,
+            uMaterialSpecExp,
             vPosition,
             normal,
-            vec3(0.0)
+            cameraPos
         );
         totalLighting += lighting;
     }
-    #endif
-    #if (SPOT_LIGHT_NUM > 0)
-    for (int index = 0; index < SPOT_LIGHT_NUM; index++) {
+#endif
+#if (spotLightsNum > 0)
+    for (int index = 0; index < spotLightsNum; index++) {
         vec3 lighting = calculateSpotLight(
             spotLights[index],
-            materialDiff,
-            materialSpec,
-            materialSpecExp,
+            uMaterialDiff,
+            uMaterialSpec,
+            uMaterialSpecExp,
             vPosition,
             normal,
-            vec3(0.0)
+            cameraPos
         );
-        #ifdef USE_SHADOW
+    #ifdef USE_SHADOW
         float lambertian = dot(-spotLights[index].spotDir, normal);
-        lighting = lighting * getSpotDirectionShadow(spotShadowCoord[index].xy / spotShadowCoord[index].w, spotShadowMaps[index], spotLightDepth[index], lambertian, 1.0 / spotShadowSize[index]);
-        #endif
+        float shadowFactor = getSpotDirectionShadow(
+            spotShadowCoord[index].xy / spotShadowCoord[index].w, 
+            spotLights[index].shadowMap,
+            spotLightDepth[index], 
+            lambertian, 1.0 / spotLights[index].shadowMapSize
+        );
+        lighting *= shadowFactor;
+    #endif
         totalLighting += lighting;
 
     }
-    #endif
-    color = totalLighting;
 #endif
-#ifdef _ENVIRONMENT_MAP
-    vec3 viewDir = normalize(-vPosition);
-    vec3 skyUV = reflect(-viewDir, vNormal);
-    color = mix(color, textureCube(uCubeTexture, skyUV).xyz, reflectivity);
-#endif
+    color += totalLighting;
     gl_FragColor *= vec4(color, 1.0);
-    // #ifdef USE_SHADOW
-    // #if (DIR_LIGHT_NUM > 0)
-    // vec2 uv = gl_FragCoord.xy / 640.0;
-    // gl_FragColor = vec4(vec3(unpackFloat1x32(texture2D(directionShadowMaps[0], uv))), 1.0);
-    // #endif
-    // #endif
 }

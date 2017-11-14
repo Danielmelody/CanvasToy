@@ -9,13 +9,13 @@ export class RectGeometry extends Geometry {
             -1.0, 1.0, 0.0,
             1.0, 1.0, 0.0,
         ];
-        this.attributes.uv.data = [
+        this.attributes.aMainUV.data = [
             0.0, 0.0,
             1.0, 0.0,
             0.0, 1.0,
             1.0, 1.0,
         ];
-        this.attributes.normal.data = [
+        this.attributes.aNormal.data = [
             0, 0, 1,
             0, 0, 1,
             0, 0, 1,

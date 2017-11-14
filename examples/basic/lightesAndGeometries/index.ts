@@ -34,7 +34,7 @@ const directLight = new CanvasToy.DirectionalLight(renderer)
     .rotateY(-Math.PI / 4);
 // .setConeAngle(Math.PI / 3);
 const spotLight = new CanvasToy.SpotLight(renderer)
-    .setIdensity(8)
+    .setIdensity(4)
     .translate(vec3.fromValues(0, 5, 5))
     .rotateX(-Math.PI / 4)
     .setConeAngle(Math.PI / 6);
@@ -46,8 +46,8 @@ let time = 0;
 
 scene.addOnUpdateListener((delta) => {
     time += delta;
-    box.translate(vec3.fromValues(0, 0.02 * Math.sin(time / 400), 0));
-    sphere.translate(vec3.fromValues(0, -0.02 * Math.sin(time / 400), 0));
+    box.translate(vec3.fromValues(0, 0.04 * Math.sin(time / 400), 0));
+    sphere.translate(vec3.fromValues(0, -0.04 * Math.sin(time / 400), 0));
     center.rotateY(0.01);
 });
 scene.ambientLight = vec3.fromValues(0.2, 0.2, 0.2);

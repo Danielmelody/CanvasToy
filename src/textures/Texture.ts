@@ -3,7 +3,6 @@ import { IAsyncResource } from "../IAsyncResource";
 export class Texture implements IAsyncResource {
 
     public readonly glTexture: WebGLTexture;
-    public isReadyToUpdate: boolean = false;
 
     protected _asyncFinished: Promise<Texture>;
     protected _image: HTMLImageElement;
@@ -114,7 +113,7 @@ export class Texture implements IAsyncResource {
         return this._asyncFinished;
     }
 
-    public bindTextureData(gl: WebGLRenderingContext) {
+    public apply(gl: WebGLRenderingContext) {
         gl.bindTexture(this.target, this.glTexture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);

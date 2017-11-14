@@ -109,9 +109,9 @@ export class OBJLoader {
                             geometry.faces.data.push(geometry.attributes.position.data.length / 3);
                             geometry.addVertex({
                                 position: unIndexedPositions[positionIndex],
-                                uv: [unIndexedUVs[parseInt(match[2], 0) - 1][0],
+                                aMainUV: [unIndexedUVs[parseInt(match[2], 0) - 1][0],
                                 unIndexedUVs[parseInt(match[2], 0) - 1][1]],
-                                normal: unIndexedNormals[parseInt(match[3], 0) - 1],
+                                aNormal: unIndexedNormals[parseInt(match[3], 0) - 1],
                             });
                         });
                     });

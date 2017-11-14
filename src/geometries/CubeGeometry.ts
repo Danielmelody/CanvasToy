@@ -43,7 +43,7 @@ export class CubeGeometry extends Geometry {
             -1.0, 1.0, -1.0,
         ];
 
-        this.attributes.uv.data = [
+        this.attributes.aMainUV.data = [
             0, 0,
             1, 0,
             1, 1,
@@ -75,7 +75,7 @@ export class CubeGeometry extends Geometry {
             0, 1,
         ];
 
-        this.attributes.normal.data = [
+        this.attributes.aNormal.data = [
             // front
             0.0, 0.0, 1.0,
             0.0, 0.0, 1.0,

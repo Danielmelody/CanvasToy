@@ -10,38 +10,43 @@ export abstract class Camera extends Object3d {
     protected _rightVector: vec3 = vec3.fromValues(1, 0, 0);
     protected _projectionMatrix: mat4 = mat4.create();
 
-    @uniform("cameraNear", DataType.float)
     protected _near: number = 0.1;
 
-    @uniform("cameraFar", DataType.float)
     protected _far: number = 500;
 
     constructor() {
         super();
     }
 
+    @uniform(DataType.vec3, "cameraPos")
+    public get position() {
+        return this._position;
+    }
+
+    @uniform(DataType.float, "cameraNear")
     public get near() {
         return this._near;
     }
 
+    @uniform(DataType.float, "cameraFar")
     public get far() {
         return this._far;
     }
 
     public get eyeVector() {
-        return this._centerVector;
+        return vec3.clone(this._centerVector);
     }
 
     public get upVector() {
-        return this._upVector;
+        return vec3.clone(this._upVector);
     }
 
     public get centerVector() {
-        return this._centerVector;
+        return vec3.clone(this._centerVector);
     }
 
     public get rightVector() {
-        return this._rightVector;
+        return vec3.clone(this._rightVector);
     }
 
     public get projectionMatrix() {
@@ -49,15 +54,9 @@ export abstract class Camera extends Object3d {
     }
 
     public lookAt(center: vec3) {
+        super.lookAt(center);
         this._centerVector = center;
         vec3.cross(this._rightVector, [0, 1, 0], center);
-        mat4.lookAt(this._worldToObjectMatrix, this.position, center, [0, 1, 0]);
-        this.setWorldToObjectMatrix(this._worldToObjectMatrix);
-        return this;
-    }
-
-    public setProjectionMatrix(projectionMatrix: mat4) {
-        this._projectionMatrix = projectionMatrix;
         return this;
     }
 
@@ -77,9 +76,14 @@ export abstract class Camera extends Object3d {
         return this;
     }
 
+    public genOtherMatrixs() {
+        super.genOtherMatrixs();
+        this.compuseProjectionMatrix();
+    }
+
     public abstract compuseProjectionMatrix();
 
     public abstract deCompuseProjectionMatrix();
 
-    public abstract adaptTargetRadio(target: { width: number, height: number }): Camera;
+    public abstract setAspectRadio(radio: number): Camera;
 }

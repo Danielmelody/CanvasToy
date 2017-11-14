@@ -2,14 +2,16 @@ import { mat4, quat, vec3, vec4 } from "gl-matrix";
 import { Mesh } from "Mesh";
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
-import { uniform } from "../Decorators";
+import { bindUniformGetter, ifdefine, texture, uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Material } from "../materials/Material";
 import { Object3d } from "../Object3d";
 import { AttachmentType, FrameBuffer } from "../renderer/FrameBuffer";
+import { Graphics } from "../renderer/GraphicsUtils";
 import { WebGLExtension } from "../renderer/IExtension";
 import { Renderer } from "../renderer/Renderer";
+import { IBuildinRenderParamMaps } from "../shader/Program";
 import { Texture } from "../textures/Texture";
 import { ShadowType } from "./ShadowType";
 
@@ -17,10 +19,8 @@ export abstract class Light extends Object3d {
 
     public volume: Geometry;
 
-    @uniform("color", DataType.vec3)
     protected _color = vec3.fromValues(1, 1, 1);
 
-    @uniform("idensity", DataType.float)
     protected _idensity = 1;
 
     protected _shadowMap: Texture;
@@ -83,10 +83,14 @@ export abstract class Light extends Object3d {
         return this._shadowType;
     }
 
+    @ifdefine("USE_SHADOW")
+    @uniform(DataType.float, "shadowMapSize")
     public get shadowSize() {
         return this._shadowSize;
     }
 
+    @ifdefine("USE_SHADOW")
+    @texture()
     public get shadowMap() {
         return this._shadowMap;
     }
@@ -103,16 +107,26 @@ export abstract class Light extends Object3d {
         return "Light";
     }
 
+    @uniform(DataType.vec3)
     public get color() {
         return this._color;
     }
 
+    @uniform(DataType.float)
     public get idensity() {
         return this._idensity;
     }
 
+    @ifdefine("USE_SHADOW")
+    @uniform(DataType.mat4)
     public get projectionMatrix() {
         return this._projectCamera.projectionMatrix;
+    }
+
+    @ifdefine("USE_SHADOW")
+    @uniform(DataType.mat4)
+    public get viewMatrix() {
+        return this._worldToObjectMatrix;
     }
 
     public get far() {
@@ -123,8 +137,9 @@ export abstract class Light extends Object3d {
         return this._projectCamera.near;
     }
 
-    public passSingleObjectShadow(mesh: Mesh, material: Material) {
-        material.shader.pass(mesh, this._projectCamera, material);
+    public drawWithLightCamera(renderParam: IBuildinRenderParamMaps) {
+        renderParam.camera = this._projectCamera;
+        renderParam.material.shader.pass(renderParam);
     }
 
     protected abstract setUpProjectionCamera();
@@ -137,9 +152,9 @@ export abstract class Light extends Object3d {
                 .setFormat(this.gl.RGBA)
                 .setMinFilter(this.gl.NEAREST)
                 .setMagFilter(this.gl.NEAREST)
-                .setWrapS(this.gl.CLAMP_TO_EDGE)
-                .setWrapT(this.gl.CLAMP_TO_EDGE)
-                .bindTextureData(this.gl);
+                .setWrapS(this.gl.REPEAT)
+                .setWrapT(this.gl.REPEAT)
+                .apply(this.gl);
             this._shadowFrameBuffer.attach(this.gl);
         }
         if (!this._blurFrameBuffer) {
@@ -151,7 +166,7 @@ export abstract class Light extends Object3d {
                 .setMinFilter(this.gl.NEAREST)
                 .setWrapS(this.gl.CLAMP_TO_EDGE)
                 .setWrapT(this.gl.CLAMP_TO_EDGE)
-                .bindTextureData(this.gl);
+                .apply(this.gl);
             this._blurFrameBuffer.attach(this.gl);
         }
         return this;

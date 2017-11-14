@@ -22,9 +22,9 @@ export class TileGeometry extends Geometry {
                     this._height * (y - this._heightSegments / 2) / this._heightSegments,
                     0,
                 ];
-                const uv = [x / this._widthSegments, y / this._heightSegments];
-                const normal = [0, 0, 1];
-                this.addVertex({ position, normal, uv });
+                const aMainUV = [x / this._widthSegments, y / this._heightSegments];
+                const aNormal = [0, 0, 1];
+                this.addVertex({ position, aNormal, aMainUV });
                 row.push(index++);
             }
             grid.push(row);

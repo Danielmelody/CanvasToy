@@ -1,6 +1,6 @@
 import { mat2, mat2d, mat3, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
 import { DataType } from "./DataTypeEnum";
-import { textureArray, uniformArray } from "./Decorators";
+import { arrayOfStructures, textureArray, uniform, uniformArray } from "./Decorators";
 import { DirectionalLight } from "./lights/DirectionalLight";
 import { Light } from "./lights/Light";
 import { PointLight } from "./lights/PointLight";
@@ -16,40 +16,8 @@ export class Scene {
 
     public lights: Light[] = [];
 
-    public pointLights: PointLight[] = [];
-
-    public spotLights: SpotLight[] = [];
-
-    public dirctionLights: DirectionalLight[] = [];
-
-    @textureArray("directShadowMaps")
-    public directShadowMaps: Texture2D[] = [];
-    @uniformArray("directShadowMV", DataType.mat4)
-    public directShadowMV: Float32Array = new Float32Array([]);
-    @uniformArray("directShadowP", DataType.mat4)
-    public directShadowP: Float32Array = new Float32Array([]);
-    @uniformArray("directShadowSize", DataType.float)
-    public directShadowSize: Float32Array = new Float32Array([]);
-
-    @textureArray("pointShadowMaps")
-    public pointShadowMaps: CubeTexture[] = [];
-    @uniformArray("pointShadowMV", DataType.mat4)
-    public pointShadowMV: Float32Array = new Float32Array([]);
-    @uniformArray("pointShadowP", DataType.mat4)
-    public pointShadowP: Float32Array = new Float32Array([]);
-    @uniformArray("pointShadowSize", DataType.float)
-    public pointShadowSize: Float32Array = new Float32Array([]);
-
-    @textureArray("spotShadowMaps")
-    public spotShadowMaps: Texture2D[] = [];
-    @uniformArray("spotShadowMV", DataType.mat4)
-    public spotShadowMV: Float32Array = new Float32Array([]);
-    @uniformArray("spotShadowP", DataType.mat4)
-    public spotShadowP: Float32Array = new Float32Array([]);
-    @uniformArray("spotShadowSize", DataType.float)
-    public spotShadowSize: Float32Array = new Float32Array([]);
-
-    public ambientLight: vec3 = vec3.fromValues(0, 0, 0);
+    @uniform(DataType.vec3, "ambient")
+    public ambientLight: vec3 = vec3.fromValues(0.2, 0.2, 0.2);
 
     public openLight: boolean = false;
 
@@ -57,7 +25,16 @@ export class Scene {
 
     public programSetUp: boolean = false;
 
-    protected updateEvents: Array<(deltaTime?: number) => void> = [];
+    @arrayOfStructures()
+    public directLights: DirectionalLight[] = [];
+
+    @arrayOfStructures()
+    public pointLights: PointLight[] = [];
+
+    @arrayOfStructures()
+    public spotLights: SpotLight[] = [];
+
+    private updateEvents: Array<(deltaTime?: number) => void> = [];
 
     public update(dt: number) {
         for (const event of this.updateEvents) {
@@ -108,7 +85,7 @@ export class Scene {
         for (const light of lights) {
             this.lights.push(light);
             if (light.typename === "DirectionalLight") {
-                this.dirctionLights.push(light as DirectionalLight);
+                this.directLights.push(light as DirectionalLight);
             } else if (light.typename === "PointLight") {
                 this.pointLights.push(light as PointLight);
             } else if (light.typename === "SpotLight") {

@@ -1,8 +1,10 @@
-import { mat4 } from "gl-matrix";
+import { mat4, quat } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
 import { texture } from "../Decorators";
 import { Mesh } from "../Mesh";
+import { Graphics } from "../renderer/GraphicsUtils";
+import { Program } from "../shader/Program";
 import { ShaderBuilder } from "../shader/ShaderBuilder";
 import { ShaderSource } from "../shader/shaders";
 import { CubeTexture } from "../textures/CubeTexture";
@@ -14,30 +16,35 @@ export class SkyMaterial extends Material {
     public cubeTexture: CubeTexture;
 
     constructor(gl: WebGLRenderingContext, cubeTexture: CubeTexture) {
-        super();
+        super(gl);
         this.cubeTexture = cubeTexture;
-        this.shader = new ShaderBuilder()
+    }
+
+    protected initShader(gl: WebGLRenderingContext): Program {
+        return new ShaderBuilder()
             .resetShaderLib()
             .setShadingVert(ShaderSource.interploters__forward__skybox_vert)
             .setShadingFrag(ShaderSource.interploters__forward__skybox_frag)
-            .setPass({
-                faces: (mesh) => mesh.geometry.faces,
+            .setExtraRenderParamHolder(
+            "skyTransform",
+            {
                 uniforms: {
-                    modelViewProjectionMatrix: {
+                    viewProjectionMatrix: {
                         type: DataType.mat4,
-                        updator: (mesh: Mesh, camera: Camera) => {
+                        updator: ({ mesh, camera }) => {
+                            let rotateOnlyViewMatrix = mat4.fromQuat(
+                                mat4.create(),
+                                mat4.getRotation(quat.create(),
+                                    camera.matrix),
+                            );
+                            rotateOnlyViewMatrix = mat4.invert(mat4.create(), rotateOnlyViewMatrix);
                             return mat4.multiply(
                                 mat4.create(),
                                 camera.projectionMatrix,
-                                mat4.multiply(mat4.create(),
-                                    camera.worldToObjectMatrix,
-                                    mesh.matrix),
+                                rotateOnlyViewMatrix,
                             );
                         },
                     },
-                },
-                attributes: {
-                    position: (mesh) => mesh.geometry.attributes.position,
                 },
             })
             .build(gl);

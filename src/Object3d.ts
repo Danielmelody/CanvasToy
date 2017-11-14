@@ -17,8 +17,6 @@ export class Object3d implements IAsyncResource {
 
     public depredations: string[] = [];
 
-    public uniforms: IUniform[] = [];
-
     protected _worldToObjectMatrix: mat4 = mat4.create();
 
     protected _asyncFinished: Promise<Object3d> = Promise.resolve(this);
@@ -166,7 +164,7 @@ export class Object3d implements IAsyncResource {
     }
 
     public get rotation(): quat {
-        return this._rotation;
+        return quat.clone(this._rotation);
     }
 
     /**
@@ -192,7 +190,7 @@ export class Object3d implements IAsyncResource {
      * @return {vec3} the local scaling factor
      */
     public get localScaling(): vec3 {
-        return this._localScaling;
+        return vec3.clone(this._localScaling);
     }
 
     /**
@@ -216,7 +214,7 @@ export class Object3d implements IAsyncResource {
      * @return {vec3} the global scaling factor
      */
     public get scaling(): vec3 {
-        return this._scaling;
+        return vec3.clone(this._scaling);
     }
 
     /**
@@ -290,6 +288,15 @@ export class Object3d implements IAsyncResource {
      */
     public rotateZ(angle: number) {
         this.setLocalRotation(quat.rotateZ(this.localRotation, quat.clone(this.localRotation), angle));
+        return this;
+    }
+
+    public lookAt(center: vec3) {
+        const dir = vec3.sub(vec3.create(), center, this.position);
+        const right = vec3.cross(vec3.create(), dir, [0, 1, 0]);
+        const up = vec3.cross(vec3.create(), right, dir);
+        mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
+        this.setWorldToObjectMatrix(this._worldToObjectMatrix);
         return this;
     }
 

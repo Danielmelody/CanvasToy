@@ -11,7 +11,7 @@ import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 import { Scene } from "../../Scene";
-import { Program } from "../../shader/Program";
+import { Program, shaderPassLib } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
 import { DataTexture } from "../../textures/DataTexture";
@@ -69,18 +69,7 @@ export class DeferredProcessor implements IProcessor {
                 const mesh = object as Mesh;
                 for (const material of mesh.materials) {
                     if (material instanceof StandardMaterial) {
-                        if (material.dirty) {
-                            material.geometryProgram.resetMaterialDefines(material);
-                            material.geometryProgram.make(mesh.scene);
-                            Graphics.addUniformContainer(material.geometryProgram, object);
-                            Graphics.addUniformContainer(material.geometryProgram, material);
-                            Graphics.addUniformContainer(material.geometryProgram, camera);
-
-                            Graphics.addTextureContainer(material.geometryProgram, material);
-                            Graphics.addTextureContainer(material.geometryProgram, scene);
-                            material.dirty = false;
-                        }
-                        material.geometryProgram.pass(mesh, camera, material);
+                        material.geometryShader.pass({ mesh, camera });
                     }
                 }
             }
@@ -101,7 +90,7 @@ export class DeferredProcessor implements IProcessor {
             .targetTexture
             .setType(this.gl.UNSIGNED_SHORT)
             .setFormat(this.gl.DEPTH_COMPONENT)
-            .bindTextureData(this.gl);
+            .apply(this.gl);
         this.gBuffer.extras.push(
             // first for normal, depth and materialSpecExp
             new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT0_WEBGL)
@@ -116,7 +105,7 @@ export class DeferredProcessor implements IProcessor {
                 .setFormat(this.gl.RGBA)
                 .setMinFilter(this.gl.NEAREST)
                 .setMagFilter(this.gl.NEAREST)
-                .bindTextureData(this.gl);
+                .apply(this.gl);
         }
 
         this.gBuffer.attach(this.gl, this.ext.draw_buffer);
@@ -131,7 +120,7 @@ export class DeferredProcessor implements IProcessor {
                 for (const material of (object as Mesh).materials) {
                     if (material instanceof StandardMaterial) {
                         geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                        material.geometryProgram = geometryProgram;
+                        material.geometryShader = geometryProgram;
                     }
                 }
             }
@@ -206,7 +195,7 @@ export class DeferredProcessor implements IProcessor {
             this.horizontalTileNum,
             this.verticalTileNum,
         );
-        this.tileProgram.pass(this.tile, camera, null);
+        this.tileProgram.pass({ mesh: this.tile, camera });
     }
 
     private initTiledPass(scene: Scene) {
@@ -263,20 +252,11 @@ export class DeferredProcessor implements IProcessor {
             .addShaderLibFrag(ShaderSource.calculators__blinn_phong_glsl)
             .setShadingVert(ShaderSource.interploters__deferred__tiledLight_vert)
             .setShadingFrag(ShaderSource.interploters__deferred__tiledLight_frag)
-            .setPass({
-                faces: () => this.tile.geometry.faces,
+            .setExtraRenderParamHolder("lightInfo", {
                 uniforms: {
-                    cameraFar: {
-                        type: DataType.float,
-                        updator: (mesh, camera: Camera) => camera.far,
-                    },
-                    cameraNear: {
-                        type: DataType.float,
-                        updator: (mesh, camera: Camera) => camera.near,
-                    },
                     inverseProjection: {
                         type: DataType.mat4,
-                        updator: (mesh, camera: Camera) => mat4.invert(mat4.create(), camera.projectionMatrix),
+                        updator: ({ camera }) => mat4.invert(mat4.create(), camera.projectionMatrix),
                     },
                     uLightListLengthSqrt: {
                         type: DataType.float,
@@ -296,20 +276,17 @@ export class DeferredProcessor implements IProcessor {
                     },
                 },
                 textures: {
-                    uNormalDepthSE: () => this.gBuffer.extras[0].targetTexture,
-                    uDiffSpec: () => this.gBuffer.extras[1].targetTexture,
-                    uLightOffsetCount: () => this.tileLightOffsetCountMap,
-                    uLightPositionRadius: () => this.lightPositionRadiusMap,
-                    uLightColorIdensity: () => this.lightColorIdensityMap,
-                    uLightIndex: () => this.tileLightIndexMap,
-                },
-                attributes: {
-                    position: () => this.tile.geometry.attributes.position,
+                    uNormalDepthSE: { source: this.gBuffer.extras[0].targetTexture },
+                    uDiffSpec: { source: this.gBuffer.extras[1].targetTexture },
+                    uLightOffsetCount: { source: this.tileLightOffsetCountMap },
+                    uLightPositionRadius: { source: this.lightPositionRadiusMap },
+                    uLightColorIdensity: { source: this.lightColorIdensityMap },
+                    uLightIndex: { source: this.tileLightIndexMap },
                 },
             })
             .build(this.gl);
         Graphics.copyDataToVertexBuffer(this.gl, this.tile.geometry);
-        this.tileProgram.make(scene);
+        this.tileProgram.make();
     }
 
     private fillTileWithBoundingBox2D(camera: Camera, box: BoundingBox2D, lightIndex: number) {

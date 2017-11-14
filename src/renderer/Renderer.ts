@@ -184,8 +184,8 @@ export class Renderer {
                         for (const textureGetter of _material.asyncResources) {
                             const promise: Promise<any> = textureGetter(_material);
                             if (!!promise) {
-                                texturePromises.push(promise.then((texture) => {
-                                    texture.bindTextureData(this.gl);
+                                texturePromises.push(promise.then((texture: Texture) => {
+                                    texture.apply(this.gl);
                                     return Promise.resolve(texture);
                                 }));
                             }
@@ -201,8 +201,10 @@ export class Renderer {
         this.isDeferred = true;
     }
 
-    public render(scene: Scene, camera: Camera) {
-        camera.adaptTargetRadio(this.canvas);
+    public render(scene: Scene, camera: Camera, adaptCanvasAspectRatio = true) {
+        if (adaptCanvasAspectRatio) {
+            camera.setAspectRadio(this.canvas.width / this.canvas.height);
+        }
         if (this.scenes.indexOf(scene) !== -1 || this.preloadRes.length > 0) {
             return;
         }
@@ -228,7 +230,7 @@ export class Renderer {
                     }
                 }
 
-                const shadowPreProcess = new ShadowPreProcess(this.gl, this.ext);
+                const shadowPreProcess = new ShadowPreProcess(this.gl, this.ext, scene);
 
                 let processor: IProcessor;
                 // TODO: Dynamic processor strategy
