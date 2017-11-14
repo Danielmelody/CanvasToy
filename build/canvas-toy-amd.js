@@ -1334,24 +1334,165 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
     Object.defineProperty(exports, "__esModule", { value: true });
     var StandardMaterial = (function (_super) {
         __extends(StandardMaterial, _super);
-        function StandardMaterial(gl, paramter) {
-            if (paramter === void 0) { paramter = {}; }
-            var _this = _super.call(this, gl) || this;
-            _this.debug = false;
-            _this.castShadow = true;
-            _this.ambient = gl_matrix_7.vec3.fromValues(0.1, 0.1, 0.1);
-            _this.diffuse = gl_matrix_7.vec3.fromValues(0.8, 0.8, 0.8);
-            _this.specular = gl_matrix_7.vec3.fromValues(0.3, 0.3, 0.3);
-            _this.specularExponent = 64;
-            _this.transparency = 0;
-            _this.reflectivity = 1;
-            if (!!paramter) {
-                for (var name_2 in paramter) {
-                    _this[name_2] = paramter[name_2];
-                }
-            }
+        function StandardMaterial() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this._debug = false;
+            _this._castShadow = true;
+            _this._ambient = gl_matrix_7.vec3.fromValues(0.1, 0.1, 0.1);
+            _this._diffuse = gl_matrix_7.vec3.fromValues(0.8, 0.8, 0.8);
+            _this._specular = gl_matrix_7.vec3.fromValues(0.3, 0.3, 0.3);
+            _this._specularExponent = 64;
+            _this._transparency = 0;
+            _this._reflectivity = 1;
             return _this;
         }
+        Object.defineProperty(StandardMaterial.prototype, "debugMode", {
+            get: function () {
+                return this._debug;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "isCastShadow", {
+            get: function () {
+                return this._castShadow;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "mainTexture", {
+            get: function () {
+                return this._mainTexture;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "ambient", {
+            get: function () {
+                return this._ambient;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "diffuse", {
+            get: function () {
+                return this._diffuse;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "specular", {
+            get: function () {
+                return this._specular;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "specularExponent", {
+            get: function () {
+                return this._specularExponent;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        StandardMaterial.prototype.transparency = function () {
+            return this._transparency;
+        };
+        StandardMaterial.prototype.alphaMap = function () {
+            return this._alphaMap;
+        };
+        Object.defineProperty(StandardMaterial.prototype, "bumpMap", {
+            get: function () {
+                return this._bumpMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "displamentMap", {
+            get: function () {
+                return this._displamentMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "stencilMap", {
+            get: function () {
+                return this.stencilMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "reflectivity", {
+            get: function () {
+                return this._reflectivity;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(StandardMaterial.prototype, "environmentMap", {
+            get: function () {
+                return this._environmentMap;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        StandardMaterial.prototype.setDebugMode = function (_debug) {
+            this._debug = _debug;
+            return this;
+        };
+        StandardMaterial.prototype.castShadow = function (_castShadow) {
+            this._castShadow = _castShadow;
+            return this;
+        };
+        StandardMaterial.prototype.setMainTexture = function (_texture) {
+            this._mainTexture = _texture;
+            return this;
+        };
+        StandardMaterial.prototype.setAmbient = function (_ambient) {
+            this._ambient = _ambient;
+            return this;
+        };
+        StandardMaterial.prototype.setDiffuse = function (_diffuse) {
+            this._diffuse = _diffuse;
+            return this;
+        };
+        StandardMaterial.prototype.setSpecular = function (_specular) {
+            this._specular = _specular;
+            return this;
+        };
+        StandardMaterial.prototype.setSpecularExponent = function (_specularExponent) {
+            this._specularExponent = _specularExponent;
+            return this;
+        };
+        StandardMaterial.prototype.setTransparency = function (_transparency) {
+            console.assert(_transparency >= 0 && _transparency <= 1);
+            this._transparency = _transparency;
+            return this;
+        };
+        StandardMaterial.prototype.setAlphaMap = function (_alphaMap) {
+            this._alphaMap = _alphaMap;
+            return this;
+        };
+        StandardMaterial.prototype.setBumpMap = function (_bumpMap) {
+            this._bumpMap = _bumpMap;
+            return this;
+        };
+        StandardMaterial.prototype.setDisplamentMap = function (_displamentMap) {
+            this._displamentMap = _displamentMap;
+            return this;
+        };
+        StandardMaterial.prototype.setStencilMap = function (_stencilMap) {
+            this._stencilMap = _stencilMap;
+            return this;
+        };
+        StandardMaterial.prototype.setReflectivity = function (_reflectivity) {
+            this._reflectivity = _reflectivity;
+            return this;
+        };
+        StandardMaterial.prototype.setEnvironmentMap = function (_environmentMap) {
+            this._environmentMap = _environmentMap;
+            return this;
+        };
         StandardMaterial.prototype.initShader = function (gl) {
             return new ShaderBuilder_1.ShaderBuilder()
                 .setExtraRenderParamHolder("mvp", {
@@ -1363,42 +1504,42 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
         };
         __decorate([
             Decorators_5.define("_DEBUG")
-        ], StandardMaterial.prototype, "debug", void 0);
+        ], StandardMaterial.prototype, "_debug", void 0);
         __decorate([
             Decorators_5.define("USE_SHADOW", true)
-        ], StandardMaterial.prototype, "castShadow", void 0);
+        ], StandardMaterial.prototype, "_castShadow", void 0);
         __decorate([
             Decorators_5.define("_MAIN_TEXTURE"),
             Decorators_5.texture("uMainTexture")
-        ], StandardMaterial.prototype, "mainTexture", void 0);
-        __decorate([
-            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "ambient")
-        ], StandardMaterial.prototype, "ambient", void 0);
+        ], StandardMaterial.prototype, "_mainTexture", void 0);
         __decorate([
             Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "uMaterialDiff")
-        ], StandardMaterial.prototype, "diffuse", void 0);
+        ], StandardMaterial.prototype, "_diffuse", void 0);
         __decorate([
             Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "uMaterialSpec")
-        ], StandardMaterial.prototype, "specular", void 0);
+        ], StandardMaterial.prototype, "_specular", void 0);
         __decorate([
             Decorators_5.uniform(DataTypeEnum_6.DataType.float, "uMaterialSpecExp")
-        ], StandardMaterial.prototype, "specularExponent", void 0);
+        ], StandardMaterial.prototype, "_specularExponent", void 0);
         __decorate([
             Decorators_5.readyRequire
-        ], StandardMaterial.prototype, "bumpMap", void 0);
+        ], StandardMaterial.prototype, "_bumpMap", void 0);
         __decorate([
             Decorators_5.readyRequire
-        ], StandardMaterial.prototype, "displamentMap", void 0);
+        ], StandardMaterial.prototype, "_displamentMap", void 0);
         __decorate([
             Decorators_5.readyRequire
-        ], StandardMaterial.prototype, "stencilMap", void 0);
+        ], StandardMaterial.prototype, "_stencilMap", void 0);
         __decorate([
             Decorators_5.uniform(DataTypeEnum_6.DataType.float, "reflectivity")
-        ], StandardMaterial.prototype, "reflectivity", void 0);
+        ], StandardMaterial.prototype, "_reflectivity", void 0);
         __decorate([
             Decorators_5.define("_ENVIRONMENT_MAP"),
             Decorators_5.texture("uCubeTexture")
-        ], StandardMaterial.prototype, "reflectionMap", void 0);
+        ], StandardMaterial.prototype, "_environmentMap", void 0);
+        __decorate([
+            Decorators_5.uniform(DataTypeEnum_6.DataType.vec3, "ambient")
+        ], StandardMaterial.prototype, "ambient", null);
         return StandardMaterial;
     }(Material_1.Material));
     exports.StandardMaterial = StandardMaterial;
@@ -2815,22 +2956,22 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
             }
             for (var textureKey in holder.textures) {
                 var textureInfo = holder.textures[textureKey];
-                var name_3 = namePrefix + (textureInfo.name || textureKey);
-                if (name_3 in this.defineLinks && !(this.defineLinks[name_3] in this.defineCaches)) {
+                var name_2 = namePrefix + (textureInfo.name || textureKey);
+                if (name_2 in this.defineLinks && !(this.defineLinks[name_2] in this.defineCaches)) {
                     continue;
                 }
                 var texture = !!textureInfo.source ? textureInfo.source : holder.hostObject[textureKey];
                 if (!!texture) {
                     this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
                     this.gl.bindTexture(texture.target, texture.glTexture);
-                    this.updateUniform(name_3, DataTypeEnum_13.DataType.int, this.currentTextureUnit);
+                    this.updateUniform(name_2, DataTypeEnum_13.DataType.int, this.currentTextureUnit);
                     this.currentTextureUnit++;
                 }
             }
             for (var textureArrayKey in holder.textureArrays) {
                 var textureArrayInfo = holder.textureArrays[textureArrayKey];
-                var name_4 = namePrefix + (textureArrayInfo.name || textureArrayKey);
-                if (name_4 in this.defineLinks && !(this.defineLinks[name_4] in this.defineCaches)) {
+                var name_3 = namePrefix + (textureArrayInfo.name || textureArrayKey);
+                if (name_3 in this.defineLinks && !(this.defineLinks[name_3] in this.defineCaches)) {
                     continue;
                 }
                 var textureArray = !!textureArrayInfo.sources ?
@@ -2844,7 +2985,7 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                     this.currentTextureUnit++;
                 }
                 if (indices.length > 0) {
-                    this.updateUniformArray(name_4, DataTypeEnum_13.DataType.int, new Uint32Array(indices));
+                    this.updateUniformArray(name_3, DataTypeEnum_13.DataType.int, new Uint32Array(indices));
                 }
             }
             if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
@@ -3394,38 +3535,37 @@ define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "material
                     materials[mtlName] = new StandardMaterial_3.StandardMaterial(gl);
                     return materials[mtlName];
                 case "Ka":
-                    currentMaterial.ambient = MTLLoader.getVector(MTLLoader.ambientPattern, line);
+                    currentMaterial.setAmbient(MTLLoader.getVector(MTLLoader.ambientPattern, line));
                     break;
                 case "Kd":
-                    currentMaterial.diffuse = MTLLoader.getVector(MTLLoader.diffusePattern, line);
+                    currentMaterial.setDiffuse(MTLLoader.getVector(MTLLoader.diffusePattern, line));
                     break;
                 case "Ks":
-                    currentMaterial.specular = MTLLoader.getVector(MTLLoader.specularePattern, line);
+                    currentMaterial.setSpecular(MTLLoader.getVector(MTLLoader.specularePattern, line));
                     break;
                 case "Ns":
-                    currentMaterial.specularExponent =
-                        MTLLoader.getNumber(MTLLoader.specularExponentPattern, line);
+                    currentMaterial.setSpecularExponent(MTLLoader.getNumber(MTLLoader.specularExponentPattern, line));
                     break;
                 case "map_Ka":
-                    currentMaterial.mainTexture = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setMainTexture(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "map_Ka":
-                    currentMaterial.alphaMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setAlphaMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "map_Kd":
-                    currentMaterial.mainTexture = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setMainTexture(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "map_bump":
-                    currentMaterial.bumpMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setBumpMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "bump":
-                    currentMaterial.bumpMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setBumpMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "disp":
-                    currentMaterial.displamentMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setDisplamentMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "decal":
-                    currentMaterial.stencilMap = new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line));
+                    currentMaterial.setStencilMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 default: break;
             }
