@@ -20,6 +20,11 @@ function tryAddParamHolder(proto) {
     });
 }
 
+/**
+ * A property decorator. Treat property as an uniform parameter for rendering. If not provided,
+ * the name of the property will be uniform name to find in shader by default,
+ * otherwise will use the given name
+ */
 export function uniform(type: DataType, name?: string) {
     return (proto, key) => {
         tryAddParamHolder(proto);
@@ -39,6 +44,11 @@ export function bindUniformGetter(name: string, type: DataType, getter: (p: IBui
     };
 }
 
+/**
+ * A property decorator. Treat property as an array of uniform for rendering.
+ * The array in shader must be declared as ${name}[${name}Num], if not provided,
+ * the name of the property will be array name to find in shader by default, otherwise will use the given name
+ */
 export function uniformArray<DecoratorClass>(type: DataType, name?: string) {
     return (proto, key) => {
         tryAddParamHolder(proto);
@@ -48,6 +58,11 @@ export function uniformArray<DecoratorClass>(type: DataType, name?: string) {
     };
 }
 
+/**
+ * A property decorator. Treat property as a texture parameter for rendering. If not provided,
+ * the name of the property will be the uniform sampler name to find in shader by default,
+ * otherwise will use the given name
+ */
 export function texture<DecoratorClass>(name?: string) {
     return (proto, key) => {
         readyRequire(proto, key);
@@ -58,6 +73,11 @@ export function texture<DecoratorClass>(name?: string) {
     };
 }
 
+/**
+ * A property decorator. Treat property as an array of texture for rendering. The array in shader must
+ * be declared as ${name}[${name}Num], if not provided, the name of the property will be sampler
+ * array name to find in shader by default, otherwise will use the given name
+ */
 export function textureArray<DecoratorClass>(name?: string) {
     return (proto, key) => {
         tryAddParamHolder(proto);
@@ -67,6 +87,11 @@ export function textureArray<DecoratorClass>(name?: string) {
     };
 }
 
+/**
+ * A property decorator. Treat property as an array of structures(AoS) for rendering.
+ * The array in shader must be declared as ${name}[${name}Num]
+ * the name of the property will be array name to find in shader by default, otherwise will use the given name
+ */
 export function arrayOfStructures(name?: string) {
     return (proto, key) => {
         tryAddParamHolder(proto);
@@ -76,6 +101,11 @@ export function arrayOfStructures(name?: string) {
     };
 }
 
+/**
+ * A property decorator to control if add define statement at the start of the shader
+ * @param defineName name after #define
+ * @param useValue Whether use property value as the define value after name
+ */
 export function define(defineName: string, useValue = false) {
     return (proto, key) => {
         tryAddParamHolder(proto);
@@ -85,6 +115,10 @@ export function define(defineName: string, useValue = false) {
     };
 }
 
+/**
+ * A property decorator to control if pass property value to shader or not,
+ * by auto detect if the given name defined inside shader source
+ */
 export function ifdefine(defineName: string) {
     return (proto, key) => {
         tryAddParamHolder(proto);
@@ -94,6 +128,10 @@ export function ifdefine(defineName: string) {
     };
 }
 
+/**
+ * A property decorator. Mark the property as an async resource
+ * A async resource is only available when the promise it's method asyncFinished returned resolved
+ */
 export function readyRequire<IAsyncResource>(proto, key) {
     const asyncResources = proto.asyncResources || [];
     if (!proto.hasOwnProperty("asyncResources")) {
