@@ -1,9 +1,9 @@
-import { vec3 } from "gl-matrix";
+
 import { Geometry } from "../../geometries/Geometry";
 import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
-import { Texture2D } from "../../textures/Texture2D";
+
 import { mixin } from "../../Util";
 import { patterns } from "./CommonPatterns";
 import { MTLLoader } from "./MTLLoader";

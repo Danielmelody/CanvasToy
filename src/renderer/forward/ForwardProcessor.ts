@@ -1,16 +1,10 @@
-import { mat4 } from "gl-matrix";
+
 import { Camera } from "../../cameras/Camera";
-import { Light } from "../../lights/Light";
-import { ShadowType } from "../../lights/ShadowType";
-import { LinearDepthPackMaterial } from "../../materials/ESM/DepthPackMaterial";
 import { Material } from "../../materials/Material";
-import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 import { Scene } from "../../Scene";
-import { Program, shaderPassLib } from "../../shader/Program";
-import { Texture } from "../../textures/Texture";
-import { Graphics } from "../GraphicsUtils";
+import { Program } from "../../shader/Program";
 import { WebGLExtension } from "../IExtension";
 import { IProcessor } from "../IProcessor";
 

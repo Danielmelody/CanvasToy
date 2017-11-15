@@ -1,9 +1,9 @@
-import { mat4, vec2 } from "gl-matrix";
-import { Camera } from "../../cameras/Camera";
+import { vec2 } from "gl-matrix";
+
 import { DataType } from "../../DataTypeEnum";
 import { texture, uniform } from "../../Decorators";
-import { Mesh } from "../../Mesh";
-import { Program, shaderPassLib } from "../../shader/Program";
+
+import { Program } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
 import { Texture2D } from "../../textures/Texture2D";

@@ -1,9 +1,8 @@
 import { mat4, quat } from "gl-matrix";
-import { Camera } from "../cameras/Camera";
+
 import { DataType } from "../DataTypeEnum";
 import { texture } from "../Decorators";
-import { Mesh } from "../Mesh";
-import { Graphics } from "../renderer/GraphicsUtils";
+
 import { Program } from "../shader/Program";
 import { ShaderBuilder } from "../shader/ShaderBuilder";
 import { ShaderSource } from "../shader/shaders";

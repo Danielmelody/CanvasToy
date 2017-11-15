@@ -1,7 +1,5 @@
 import { vec4 } from "gl-matrix";
-import { IDirtyable } from "../Dirtyable";
-import { Scene } from "../Scene";
-import { IRenderParamHolder, Program } from "../shader/Program";
+import { Program } from "../shader/Program";
 
 export let colors = {
     black: vec4.fromValues(0, 0, 0, 1),
@@ -14,7 +12,10 @@ export abstract class Material {
     public defines: string[] = [];
     public shader: Program;
 
+    protected gl: WebGLRenderingContext;
+
     public constructor(gl: WebGLRenderingContext) {
+        this.gl = gl;
         this.shader = this.initShader(gl);
     }
 
