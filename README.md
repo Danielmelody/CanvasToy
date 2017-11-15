@@ -19,7 +19,10 @@ Lightweight WebGL/WenGL2 rendering engine
     * [x] Directional lights
     * [x] Spot lights
 + Shadow
-    * []
+    * [*] Basic shadow mapping
+    * [ ] Expotional soft shadow mapping (forward approach)
+    * [ ] Expotional soft shadow mapping (deferred approach)
+    * [ ] Percentage closer soft shadow
     * [ ] Screen-space shadow mapping (deferred approach)
 + Transforms
     * [x] Basic object transforms
