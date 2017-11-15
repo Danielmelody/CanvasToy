@@ -1,4 +1,4 @@
-import { DataType } from "../DataTypeEnum";
+
 import { Geometry } from "./Geometry";
 
 export class TileGeometry extends Geometry {

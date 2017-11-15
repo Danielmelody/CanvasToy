@@ -1,5 +1,5 @@
 import { vec3 } from "gl-matrix";
-import { Material } from "../../materials/Material";
+
 import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Texture2D } from "../../textures/Texture2D";
 import { patterns } from "./CommonPatterns";

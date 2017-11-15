@@ -1,16 +1,14 @@
-import { mat4, quat, vec3, vec4 } from "gl-matrix";
+import { mat4, quat, vec3 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { OrthoCamera } from "../cameras/OrthoCamera";
 import { DataType } from "../DataTypeEnum";
 import { uniform } from "../Decorators";
-import { Geometry } from "../geometries/Geometry";
-import { SphereGeometry } from "../geometries/SphereGeometry";
+
 import { BoundingBox2D } from "../Intersections/BoundingBox";
-import { Object3d } from "../Object3d";
+
 import { Renderer } from "../renderer/Renderer";
-import { Texture } from "../textures/Texture";
+
 import { Light } from "./Light";
-import { ShadowType } from "./ShadowType";
 
 export class DirectionalLight extends Light {
 

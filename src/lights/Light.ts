@@ -1,14 +1,14 @@
-import { mat4, quat, vec3, vec4 } from "gl-matrix";
-import { Mesh } from "Mesh";
+import { mat4, vec3 } from "gl-matrix";
+
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
-import { bindUniformGetter, ifdefine, texture, uniform } from "../Decorators";
+import { ifdefine, texture, uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
-import { Material } from "../materials/Material";
+
 import { Object3d } from "../Object3d";
-import { AttachmentType, FrameBuffer } from "../renderer/FrameBuffer";
-import { Graphics } from "../renderer/GraphicsUtils";
+import { FrameBuffer } from "../renderer/FrameBuffer";
+
 import { WebGLExtension } from "../renderer/IExtension";
 import { Renderer } from "../renderer/Renderer";
 import { IBuildinRenderParamMaps } from "../shader/Program";

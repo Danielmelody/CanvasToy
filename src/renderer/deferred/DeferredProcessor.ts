@@ -1,13 +1,14 @@
+import { StandardMaterial } from '../../materials/StandardMaterial';
 import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../../cameras/Camera";
 import { DataType } from "../../DataTypeEnum";
 import { RectGeometry } from "../../geometries/RectGeometry";
 import { BoundingBox2D } from "../../Intersections/BoundingBox";
-import { Light } from "../../lights/Light";
+
 import { PointLight } from "../../lights/PointLight";
-import { ShadowType } from "../../lights/ShadowType";
+
 import { Material } from "../../materials/Material";
-import { StandardMaterial } from "../../materials/StandardMaterial";
+
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 import { Scene } from "../../Scene";
@@ -15,7 +16,7 @@ import { Program, shaderPassLib } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
 import { DataTexture } from "../../textures/DataTexture";
-import { Texture } from "../../textures/Texture";
+
 import { Attachment, AttachmentType, FrameBuffer } from "../FrameBuffer";
 import { Graphics } from "../GraphicsUtils";
 import { WebGLExtension } from "../IExtension";
@@ -34,6 +35,7 @@ export class DeferredProcessor implements IProcessor {
     public readonly ext: WebGLExtension;
 
     public tileProgram: Program;
+
     private tileLightIndexMap: DataTexture<Uint8Array>;
     private tileLightOffsetCountMap: DataTexture<Float32Array>;
     private tileLightCountMap: DataTexture<Uint8Array>;
@@ -67,10 +69,10 @@ export class DeferredProcessor implements IProcessor {
         for (const object of scene.objects) {
             if (object instanceof Mesh) {
                 const mesh = object as Mesh;
-                for (const material of mesh.materials) {
-                    if (material instanceof StandardMaterial) {
-                        material.geometryShader.pass({ mesh, camera });
-                    }
+                const standardMaterials = mesh.materials.filter((mat) => mat instanceof StandardMaterial);
+                if (standardMaterials.length > 0) {
+                    const material = standardMaterials[0] as StandardMaterial;
+                    material.geometryShader.pass({mesh, material, scene, camera});
                 }
             }
         }
@@ -109,22 +111,6 @@ export class DeferredProcessor implements IProcessor {
         }
 
         this.gBuffer.attach(this.gl, this.ext.draw_buffer);
-
-        for (const object of scene.objects) {
-            if (object instanceof Mesh) {
-                const geometryProgram = new ShaderBuilder()
-                    .resetShaderLib()
-                    .setShadingVert(ShaderSource.interploters__deferred__geometry_vert)
-                    .setShadingFrag(ShaderSource.interploters__deferred__geometry_frag)
-                    .build(this.gl);
-                for (const material of (object as Mesh).materials) {
-                    if (material instanceof StandardMaterial) {
-                        geometryProgram.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
-                        material.geometryShader = geometryProgram;
-                    }
-                }
-            }
-        }
     }
 
     private tileLightPass(scene: Scene, camera: Camera) {

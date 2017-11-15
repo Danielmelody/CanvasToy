@@ -1,13 +1,10 @@
 uniform vec3 ambient;
-uniform vec3 materialDiff;
-uniform vec3 materialSpec;
-uniform float materialSpecExp;
+uniform vec3 uMaterialDiff;
+uniform vec3 uMaterialSpec;
+uniform float uMaterialSpecExp;
 
-
-#ifdef OPEN_LIGHT
 uniform vec3 eyePos;
 varying vec3 vNormal;
-#endif
 
 #ifdef _MAIN_TEXTURE
 uniform sampler2D uMainTexture;
@@ -24,19 +21,16 @@ vec2 encodeNormal(vec3 n) {
 }
 
 void main () {
-
-#ifdef OPEN_LIGHT
     vec3 normal = normalize(vNormal);
-    float specular = (materialSpec.x + materialSpec.y + materialSpec.z) / 3.0;
+    float specular = (uMaterialSpec.x + uMaterialSpec.y + uMaterialSpec.z) / 3.0;
 #ifdef _NORMAL_TEXTURE
-    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);
+    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, uMaterialSpecExp);
 #else
-    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, materialSpecExp);
+    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, uMaterialSpecExp);
 #endif
 #ifdef _MAIN_TEXTURE
-    gl_FragData[1] = vec4(materialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);
+    gl_FragData[1] = vec4(uMaterialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);
 #else
-    gl_FragData[1] = vec4(materialDiff, specular);
-#endif
+    gl_FragData[1] = vec4(uMaterialDiff, specular);
 #endif
 }
