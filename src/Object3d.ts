@@ -1,7 +1,6 @@
-import { mat2, mat2d, mat3, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
+import { mat4, quat, vec3 } from "gl-matrix";
 import { IAsyncResource } from "./IAsyncResource";
 import { Scene } from "./Scene";
-import { IUniform } from "./shader/Program";
 
 /**
  * class Object3d

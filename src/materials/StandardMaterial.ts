@@ -13,8 +13,7 @@ import { Material } from "./Material";
 
 export class StandardMaterial extends Material {
 
-    // TODO: move geometryShader out
-    public geometryShader: Program;
+    protected _geometryShader: Program;
 
     @define("_DEBUG")
     protected _debug: boolean = false;
@@ -26,6 +25,7 @@ export class StandardMaterial extends Material {
     @texture("uMainTexture")
     protected _mainTexture: Texture;
 
+    @uniform(DataType.vec3, "uMaterialAmbient")
     protected _ambient: vec3 = vec3.fromValues(0.1, 0.1, 0.1);
 
     @uniform(DataType.vec3, "uMaterialDiff")
@@ -61,6 +61,24 @@ export class StandardMaterial extends Material {
     @texture("uCubeTexture")
     protected _environmentMap: CubeTexture;
 
+    public get geometryShader() {
+        if (!this._geometryShader) {
+            this._geometryShader = new ShaderBuilder()
+            .resetShaderLib()
+            .setShadingVert(ShaderSource.interploters__deferred__geometry_vert)
+            .setShadingFrag(ShaderSource.interploters__deferred__geometry_frag)
+            .setExtraRenderParamHolder("mvp", {
+                uniforms: {
+                    modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
+                    normalViewMatrix: shaderPassLib.uniforms.normalViewMatrix,
+                },
+            })
+            .build(this.gl);
+            this._geometryShader.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
+        }
+        return this._geometryShader;
+    }
+
     public get debugMode() {
         return this._debug;
     }
@@ -73,7 +91,6 @@ export class StandardMaterial extends Material {
         return this._mainTexture;
     }
 
-    @uniform(DataType.vec3, "ambient")
     public get ambient() {
         return this._ambient;
     }

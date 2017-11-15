@@ -1,4 +1,4 @@
-import { IRenderParamHolder, Program, shaderPassLib } from "./Program";
+import { IRenderParamHolder, Program } from "./Program";
 import { ShaderLib, ShaderSource, ShadingFrag, ShadingVert } from "./shaders";
 
 export class ShaderBuilder {

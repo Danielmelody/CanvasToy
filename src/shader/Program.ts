@@ -1,13 +1,13 @@
-import { mat4, vec3 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
 import { IDirtyable } from "../Dirtyable";
-import { Faces } from "../geometries/Geometry";
+
 import { Geometry } from "../geometries/Geometry";
-import { Light } from "../lights/Light";
+
 import { Material } from "../materials/Material";
 import { Mesh } from "../Mesh";
-import { Object3d } from "../Object3d";
+
 import { Graphics } from "../renderer/GraphicsUtils";
 import { Scene } from "../Scene";
 import { Texture } from "../textures/Texture";
@@ -354,6 +354,7 @@ export class Program implements IDirtyable {
                 this.undesiredUniforms[name] = undefined;
                 return;
             }
+            console.log("initial pass uniform " + name + " " + value);
             this.uniformCaches[name] = cache;
         }
         const location = cache.location;
@@ -461,6 +462,12 @@ export const shaderPassLib = {
         modelViewMatrix: {
             type: DataType.mat4,
             updator: ({ mesh, camera }) => mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix),
+        },
+        normalViewMatrix: {
+            type: DataType.mat4,
+            updator: ({mesh, camera}) =>
+                mat4.transpose(mat4.create(), mat4.invert(mat4.create(),
+                    mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix))),
         },
     },
 };

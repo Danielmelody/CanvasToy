@@ -1,6 +1,5 @@
 import { vec2 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
-import { uniform } from "../Decorators";
 import { RectGeometry } from "../geometries/RectGeometry";
 import { Light } from "../lights/Light";
 import { ShadowType } from "../lights/ShadowType";
@@ -11,8 +10,6 @@ import { StandardMaterial } from "../materials/StandardMaterial";
 import { Mesh } from "../Mesh";
 import { Scene } from "../Scene";
 import { shaderPassLib } from "../shader/Program";
-import { FrameBuffer } from "./FrameBuffer";
-import { Graphics } from "./GraphicsUtils";
 import { WebGLExtension } from "./IExtension";
 import { IProcessor } from "./IProcessor";
 

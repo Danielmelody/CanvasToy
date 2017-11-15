@@ -1,13 +1,11 @@
-import { mat2, mat2d, mat3, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import { DataType } from "./DataTypeEnum";
-import { arrayOfStructures, textureArray, uniform, uniformArray } from "./Decorators";
+import { arrayOfStructures, uniform } from "./Decorators";
 import { DirectionalLight } from "./lights/DirectionalLight";
 import { Light } from "./lights/Light";
 import { PointLight } from "./lights/PointLight";
 import { SpotLight } from "./lights/SpotLight";
 import { Object3d } from "./Object3d";
-import { CubeTexture } from "./textures/CubeTexture";
-import { Texture2D } from "./textures/Texture2D";
 
 export class Scene {
 
