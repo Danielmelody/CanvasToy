@@ -1,13 +1,15 @@
 import { vec3 } from "gl-matrix";
 import { DataType } from "./DataTypeEnum";
-import { arrayOfStructures, uniform } from "./Decorators";
-import { DirectionalLight } from "./lights/DirectionalLight";
+import { arrayOfStructures, uniform, textureArray } from "./Decorators";
+import { DirectionalLight } from './lights/DirectionalLight';
 import { Light } from "./lights/Light";
 import { PointLight } from "./lights/PointLight";
 import { SpotLight } from "./lights/SpotLight";
 import { Object3d } from "./Object3d";
+import { Texture2D } from './textures/Texture2D';
+import { IDirtyable } from './Dirtyable';
 
-export class Scene {
+export class Scene implements IDirtyable {
 
     // TODO: optimize objects storage management;
     public objects: Object3d[] = [];
@@ -33,6 +35,36 @@ export class Scene {
     public spotLights: SpotLight[] = [];
 
     private updateEvents: Array<(deltaTime?: number) => void> = [];
+
+    private _directLightShadowMap: Texture2D[] = [];
+    private _spotLightShadowMap: Texture2D[] = [];
+
+    private _directShadowDirty = true;
+    private _pointShadowDirty = true;
+    private _spotShadowDirty = true;
+    
+    @textureArray()
+    public get directLightShadowMap() {
+        this.clean();
+        return this._directLightShadowMap;
+    }
+
+    @textureArray()
+    public get spotLightShadowMap() {
+        this.clean();
+        return this._spotLightShadowMap;
+    }
+
+    public clean() {
+        if (this._directShadowDirty) {
+            this._directLightShadowMap = this.directLights.map(light => light.shadowMap);
+            this._directShadowDirty = false;
+        }
+        if (this._spotShadowDirty) {
+            this._spotLightShadowMap = this.spotLights.map(light => light.shadowMap);
+            this._spotShadowDirty = false;
+        }
+    }
 
     public update(dt: number) {
         for (const event of this.updateEvents) {
@@ -70,7 +102,6 @@ export class Scene {
     }
 
     public removeObject(object: Object3d) {
-
         object.children.forEach((child) => {
             this.removeObject(child);
         });
@@ -80,18 +111,15 @@ export class Scene {
 
     public addLight(...lights: Light[]) {
         this.openLight = true;
-        for (const light of lights) {
-            this.lights.push(light);
-            if (light.typename === "DirectionalLight") {
-                this.directLights.push(light as DirectionalLight);
-            } else if (light.typename === "PointLight") {
-                this.pointLights.push(light as PointLight);
-            } else if (light.typename === "SpotLight") {
-                this.spotLights.push(light as SpotLight);
-            } else {
-                console.assert(false, "un-recognize light type: " + light);
-            }
-            light.scene = this;
-        }
+        const addonDirect = lights.filter(light => light instanceof DirectionalLight) as DirectionalLight[];
+        this.directLights = this.directLights.concat(addonDirect);
+        this._directShadowDirty = (addonDirect.length > 0);
+        const addonPoint = lights.filter(light => light instanceof PointLight) as PointLight[];
+        this.pointLights = this.pointLights.concat(addonPoint);
+        this._pointShadowDirty = addonPoint.length > 0;
+        const addonSpot = lights.filter(light => light instanceof SpotLight) as SpotLight[];
+        this.spotLights = this.spotLights.concat(addonSpot);
+        this._spotShadowDirty = (addonSpot.length > 0);
+        this.lights = this.lights.concat(lights);
     }
 }

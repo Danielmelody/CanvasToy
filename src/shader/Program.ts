@@ -278,7 +278,7 @@ export class Program implements IDirtyable {
                 continue;
             }
             const textureArray: Texture[] = !!textureArrayInfo.sources ?
-                holder.hostObject[textureArrayKey] : textureArrayInfo.sources;
+            textureArrayInfo.sources : holder.hostObject[textureArrayKey];
             const indices = [];
             for (const texture of textureArray) {
                 this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
@@ -287,7 +287,7 @@ export class Program implements IDirtyable {
                 this.currentTextureUnit++;
             }
             if (indices.length > 0) {
-                this.updateUniformArray(name, DataType.int, new Uint32Array(indices));
+                this.updateUniformArray(name, DataType.int, new Int32Array(indices));
             }
         }
         if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
@@ -386,7 +386,7 @@ export class Program implements IDirtyable {
         }
     }
 
-    private updateUniformArray(name, type: DataType, value: Float32Array | Uint32Array) {
+    private updateUniformArray(name, type: DataType, value: Float32Array | Int32Array) {
         if (value === undefined) { return; }
         if (name in this.undesiredUniforms) {
             return;
@@ -398,9 +398,10 @@ export class Program implements IDirtyable {
                 this.undesiredUniforms[name] = undefined;
                 return;
             }
+            console.log("initial pass uniform array " + name + " " + value);            
             this.uniformArrayCaches[name] = cache;
         }
-        const result = cache.location;
+        const location = cache.location;
         switch (type) {
             case DataType.float:
                 this.gl.uniform1fv(location, value);

@@ -89,8 +89,6 @@ export abstract class Light extends Object3d {
         return this._shadowSize;
     }
 
-    @ifdefine("USE_SHADOW")
-    @texture()
     public get shadowMap() {
         return this._shadowMap;
     }
@@ -101,10 +99,6 @@ export abstract class Light extends Object3d {
 
     public get blurFrameBuffer() {
         return this._blurFrameBuffer;
-    }
-
-    public get typename(): string {
-        return "Light";
     }
 
     @uniform(DataType.vec3)

@@ -92,10 +92,6 @@ export class PointLight extends Light {
         return this;
     }
 
-    public get typename(): string {
-        return "PointLight";
-    }
-
     public get radius() {
         return this._radius;
     }

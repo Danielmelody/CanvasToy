@@ -191,7 +191,6 @@ vec3 calculateSpotLight(
     float idensity;
     vec3 direction;
 #ifdef USE_SHADOW
-    sampler2D shadowMap;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
@@ -207,7 +206,6 @@ struct PointLight {
     float linearAtten;
     float constantAtten;
 #ifdef USE_SHADOW
-    sampler2D shadowMap;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
@@ -226,7 +224,6 @@ struct SpotLight {
     float coneAngleCos;
     vec3 spotDir;
 #ifdef USE_SHADOW
-    sampler2D shadowMap;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
@@ -546,6 +543,7 @@ uniform samplerCube uCubeTexture;
 
 #if (directLightsNum > 0)
 uniform DirectLight directLights[directLightsNum];
+uniform sampler2D directLightShadowMap[directLightsNum];
 #endif
 
 #if (pointLightsNum > 0)
@@ -554,6 +552,7 @@ uniform PointLight pointLights[pointLightsNum];
 
 #if (spotLightsNum > 0)
 uniform SpotLight spotLights[spotLightsNum];
+uniform sampler2D spotLightShadowMap[spotLightsNum];
 #endif
 
 #ifdef USE_SHADOW
@@ -609,7 +608,7 @@ void main () {
         float lambertian = dot(-directLights[index].direction, normal);
         float shadowFactor = getSpotDirectionShadow(
             directShadowCoord[index].xy / directShadowCoord[index].w, 
-            directLights[index].shadowMap, 
+            directLightShadowMap[index], 
             directLightDepth[index], 
             lambertian, 
             1.0 / directLights[index].shadowMapSize
@@ -648,9 +647,10 @@ void main () {
         float lambertian = dot(-spotLights[index].spotDir, normal);
         float shadowFactor = getSpotDirectionShadow(
             spotShadowCoord[index].xy / spotShadowCoord[index].w, 
-            spotLights[index].shadowMap,
+            spotLightShadowMap[index],
             spotLightDepth[index], 
-            lambertian, 1.0 / spotLights[index].shadowMapSize
+            lambertian, 
+            1.0 / spotLights[index].shadowMapSize
         );
         lighting *= shadowFactor;
     #endif
