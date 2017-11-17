@@ -1,4 +1,5 @@
-let fs = require('fs');
+let fs = require('fs')
+let os = require('os')
 
 let walkSync = function(dir, filelist) {
   files = fs.readdirSync(dir);
@@ -26,7 +27,7 @@ function exportShaderSource(results, sources, stringEnum) {
   }
 }
 
-function read() {
+function convertGLSL() {
   let srcs = walkSync('src/shader/sources');
   let libs = [];
   let shadingFrag = [];
@@ -47,8 +48,8 @@ function read() {
     }
     let content = fs.readFileSync(srcs[i], 'utf-8');
     content = content.split('\n');
-    content = content.join('\\n');
-    let out = '        export const ' + varName + ' = "' + content + '"';
+    content = content.join(os.EOL);
+    let out = '        export const ' + varName + ' = `' + content + '`';
     results.push(out);
   }
   results.push('}');
@@ -65,4 +66,5 @@ function read() {
       let resultStr = results.join('\n');
   fs.writeFileSync('src/shader/shaders.ts', resultStr);
 }
-read();
+
+exports.convertGLSL = convertGLSL;
