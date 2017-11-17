@@ -7,7 +7,7 @@ TARGET_BRANCH="gh-pages"
 # Pull requests and commits to other branches shouldn't try to deploy, just build to verify
  if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
     echo "Skipping deploy; just doing a build."
-    bash ./building.sh
+    npm run build
     exit 0
 fi
 
@@ -25,7 +25,7 @@ cd ..
 
 
 # Run our compile script
-bash ./building.sh
+npm run build
 
 rm -rf site/examples
 rm -rf site/build

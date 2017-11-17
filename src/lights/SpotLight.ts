@@ -27,10 +27,6 @@ export class SpotLight extends PointLight {
         this._shadowType = ShadowType.Soft;
     }
 
-    public get typename(): string {
-        return "SpotLight";
-    }
-
     @uniform(DataType.vec3, "spotDir")
     public get spotDirection() {
         return vec3.transformQuat(vec3.create(), vec3.fromValues(0, 0, -1),

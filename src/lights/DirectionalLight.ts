@@ -16,10 +16,6 @@ export class DirectionalLight extends Light {
         super(renderer);
     }
 
-    public get typename(): string {
-        return "DirectionalLight";
-    }
-
     @uniform(DataType.vec3)
     public get direction(): vec3 {
         return vec3.transformQuat(vec3.create(), vec3.fromValues(0, 0, -1),

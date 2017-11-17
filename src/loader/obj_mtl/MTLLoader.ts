@@ -12,7 +12,7 @@ export class MTLLoader {
         const home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
         return fetchRes(baseurl).then((content: string) => {
             content = content.replace(patterns.commentPattern, "");
-            content.split("\n").forEach((line) => {
+            content.split("\n").filter(line => !!line).forEach((line) => {
                 currentMaterial = MTLLoader.handleSingleLine(gl, home, line, materials, currentMaterial);
             });
             return Promise.resolve(materials);
@@ -36,10 +36,11 @@ export class MTLLoader {
         materials: any,
         currentMaterial: StandardMaterial,
     ) {
-        if (line.length === 0) {
+        const matches = line.match(/([^\s]+)/g);
+        if (!matches || matches.length == 0) {
             return;
         }
-        const firstVar = line.match(/([^\s]+)/g)[0];
+        const firstVar = matches[0];
         switch (firstVar) {
             case "newmtl":
                 const mtlName = line.match(MTLLoader.newmtlPattern)[1];
