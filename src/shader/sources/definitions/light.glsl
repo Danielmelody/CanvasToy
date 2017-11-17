@@ -4,7 +4,6 @@ struct DirectLight
     float idensity;
     vec3 direction;
 #ifdef USE_SHADOW
-    sampler2D shadowMap;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
@@ -20,7 +19,6 @@ struct PointLight {
     float linearAtten;
     float constantAtten;
 #ifdef USE_SHADOW
-    sampler2D shadowMap;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
@@ -39,7 +37,6 @@ struct SpotLight {
     float coneAngleCos;
     vec3 spotDir;
 #ifdef USE_SHADOW
-    sampler2D shadowMap;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
