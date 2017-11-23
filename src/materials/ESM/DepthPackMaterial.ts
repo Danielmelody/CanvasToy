@@ -1,4 +1,6 @@
 
+import { DataType } from "../../DataTypeEnum";
+import { uniform } from "../../Decorators";
 import { Program, shaderPassLib } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
@@ -20,6 +22,9 @@ export class LinearDepthPackMaterial extends Material {
                     modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
                     modelViewMatrix: shaderPassLib.uniforms.modelViewMatrix,
                 },
+            })
+            .setExtraRenderParamHolder("pcss", {
+                defines: shaderPassLib.defines,
             })
             .build(gl);
     }

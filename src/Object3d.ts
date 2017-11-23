@@ -41,7 +41,6 @@ export class Object3d implements IAsyncResource {
      */
     constructor(tag?: string) {
         this.tag = tag;
-        this.handleUniformProperty();
     }
 
     /**
@@ -84,6 +83,7 @@ export class Object3d implements IAsyncResource {
         this._worldToObjectMatrix = worldToObjectMatrix;
         mat4.invert(this._matrix, this._worldToObjectMatrix);
         this.deComposeGlobalMatrix();
+        this.applyToChildren();
         return this;
     }
 
@@ -259,7 +259,7 @@ export class Object3d implements IAsyncResource {
      */
     public translate(delta: vec3) {
         console.assert(delta && delta.length === 3, "invalid delta translate");
-        this.setPosition(vec3.add(this.localPosition, vec3.clone(this.localPosition), delta));
+        this.setPosition(vec3.add(this.position, vec3.clone(this.position), delta));
         return this;
     }
 
@@ -297,13 +297,6 @@ export class Object3d implements IAsyncResource {
         mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
         this.setWorldToObjectMatrix(this._worldToObjectMatrix);
         return this;
-    }
-
-    public handleUniformProperty() {
-        // console.warn(this);
-        // this.uniforms.forEach((uniform) => {
-        //     console.warn("handle uniform " + uniform.name);
-        // });
     }
 
     public asyncFinished() {

@@ -1,13 +1,13 @@
 import { vec3 } from "gl-matrix";
 import { DataType } from "./DataTypeEnum";
-import { arrayOfStructures, uniform, textureArray } from "./Decorators";
-import { DirectionalLight } from './lights/DirectionalLight';
+import { arrayOfStructures, textureArray, uniform } from "./Decorators";
+import { IDirtyable } from "./Dirtyable";
+import { DirectionalLight } from "./lights/DirectionalLight";
 import { Light } from "./lights/Light";
 import { PointLight } from "./lights/PointLight";
 import { SpotLight } from "./lights/SpotLight";
 import { Object3d } from "./Object3d";
-import { Texture2D } from './textures/Texture2D';
-import { IDirtyable } from './Dirtyable';
+import { Texture2D } from "./textures/Texture2D";
 
 export class Scene implements IDirtyable {
 
@@ -42,7 +42,7 @@ export class Scene implements IDirtyable {
     private _directShadowDirty = true;
     private _pointShadowDirty = true;
     private _spotShadowDirty = true;
-    
+
     @textureArray()
     public get directLightShadowMap() {
         this.clean();
@@ -57,11 +57,11 @@ export class Scene implements IDirtyable {
 
     public clean() {
         if (this._directShadowDirty) {
-            this._directLightShadowMap = this.directLights.map(light => light.shadowMap);
+            this._directLightShadowMap = this.directLights.map((light) => light.shadowMap);
             this._directShadowDirty = false;
         }
         if (this._spotShadowDirty) {
-            this._spotLightShadowMap = this.spotLights.map(light => light.shadowMap);
+            this._spotLightShadowMap = this.spotLights.map((light) => light.shadowMap);
             this._spotShadowDirty = false;
         }
     }
@@ -111,13 +111,14 @@ export class Scene implements IDirtyable {
 
     public addLight(...lights: Light[]) {
         this.openLight = true;
-        const addonDirect = lights.filter(light => light instanceof DirectionalLight) as DirectionalLight[];
+        const addonDirect = lights.filter((light) => light instanceof DirectionalLight) as DirectionalLight[];
         this.directLights = this.directLights.concat(addonDirect);
         this._directShadowDirty = (addonDirect.length > 0);
-        const addonPoint = lights.filter(light => light instanceof PointLight) as PointLight[];
+        const addonPoint = lights.filter(
+            (light) => light instanceof PointLight && !(light instanceof SpotLight)) as PointLight[];
         this.pointLights = this.pointLights.concat(addonPoint);
         this._pointShadowDirty = addonPoint.length > 0;
-        const addonSpot = lights.filter(light => light instanceof SpotLight) as SpotLight[];
+        const addonSpot = lights.filter((light) => light instanceof SpotLight) as SpotLight[];
         this.spotLights = this.spotLights.concat(addonSpot);
         this._spotShadowDirty = (addonSpot.length > 0);
         this.lights = this.lights.concat(lights);

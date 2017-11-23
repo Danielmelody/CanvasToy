@@ -10,7 +10,7 @@ import { Renderer } from "../renderer/Renderer";
 
 import { CubeCamera } from "../cameras/CubeCamera";
 import { Light } from "./Light";
-import { ShadowType } from "./ShadowType";
+import { ShadowLevel } from "./ShadowLevel";
 
 export class PointLight extends Light {
 
@@ -27,14 +27,12 @@ export class PointLight extends Light {
 
     protected _constantAttenuation: number = 1;
 
-    protected _pcssArea: number = 0.1;
-
     constructor(renderer: Renderer) {
         super(renderer);
         this.volume = new SphereGeometry(renderer.gl).setRadius(this._radius).build();
 
         // TODO: remove temporary diasable shadow of point light;
-        this._shadowType = ShadowType.None;
+        this._shadowLevel = ShadowLevel.None;
     }
 
     @uniform(DataType.float, "squareAtten")
@@ -49,11 +47,6 @@ export class PointLight extends Light {
     @uniform(DataType.float, "constantAtten")
     public get constantAttenuation() {
         return this._constantAttenuation;
-    }
-
-    @uniform(DataType.float)
-    public get pcssArea() {
-        return this._pcssArea;
     }
 
     public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {

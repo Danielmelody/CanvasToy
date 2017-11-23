@@ -17,7 +17,7 @@ const teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teap
 teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(() => {
     const material = (teapotProto.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
     material.setDiffuse(vec3.fromValues(1, 0.8, 0.2));
-    material.castShadow(false);
+    material.setCastShadow(false);
     for (let i = 0; i < 40; ++i) {
         const teapot = new CanvasToy.Mesh(
             (teapotProto.children[0] as CanvasToy.Mesh).geometry,

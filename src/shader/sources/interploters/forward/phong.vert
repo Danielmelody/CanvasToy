@@ -14,7 +14,7 @@ varying vec4 clipPos;
 
 #if (directLightsNum > 0)
 uniform DirectLight directLights[directLightsNum];
-    #ifdef USE_SHADOW
+    #ifdef RECEIVE_SHADOW
     varying vec4 directShadowCoord[directLightsNum];
     varying float directLightDepth[directLightsNum];
     #endif
@@ -22,7 +22,7 @@ uniform DirectLight directLights[directLightsNum];
 
 #if (pointLightsNum > 0)
 uniform PointLight pointLights[pointLightsNum];
-    #ifdef USE_SHADOW
+    #ifdef RECEIVE_SHADOW
     varying vec4 pointShadowCoord[pointLightsNum];
     varying float pointLightDepth[pointLightsNum];
     #endif
@@ -30,7 +30,7 @@ uniform PointLight pointLights[pointLightsNum];
 
 #if (spotLightsNum > 0)
 uniform SpotLight spotLights[spotLightsNum];
-    #ifdef USE_SHADOW
+    #ifdef RECEIVE_SHADOW
     varying vec4 spotShadowCoord[spotLightsNum];
     varying float spotLightDepth[spotLightsNum];
     #endif
@@ -45,7 +45,7 @@ void main (){
     vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;
     vMainUV = aMainUV;
 
-    #ifdef USE_SHADOW
+    #ifdef RECEIVE_SHADOW
         #if (directLightsNum > 0)
         for (int i = 0; i < directLightsNum; ++i) {
             directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;

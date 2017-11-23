@@ -1,9 +1,16 @@
+#define SHADOW_LEVEL_NONE 0
+#define SHADOW_LEVEL_HARD 1
+#define SHADOW_LEVEL_SOFT 2
+#define SHADOW_LEVEL_PCSS 3
+
 struct DirectLight
 {
     vec3 color;
     float idensity;
     vec3 direction;
-#ifdef USE_SHADOW
+#ifdef RECEIVE_SHADOW
+    lowp int shadowLevel;
+    float softness;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
@@ -18,7 +25,9 @@ struct PointLight {
     float squareAtten;
     float linearAtten;
     float constantAtten;
-#ifdef USE_SHADOW
+#ifdef RECEIVE_SHADOW
+    lowp int shadowLevel;
+    float softness;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
@@ -36,7 +45,9 @@ struct SpotLight {
     float constantAtten;
     float coneAngleCos;
     vec3 spotDir;
-#ifdef USE_SHADOW
+#ifdef RECEIVE_SHADOW
+    lowp int shadowLevel;
+    float softness;
     float shadowMapSize;
     mat4 projectionMatrix;
     mat4 viewMatrix;
