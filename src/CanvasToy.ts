@@ -36,7 +36,7 @@ export { Light } from "./lights/Light";
 export { PointLight } from "./lights/PointLight";
 export { SpotLight } from "./lights/SpotLight";
 export { DirectionalLight } from "./lights/DirectionalLight";
-export { ShadowType } from "./lights/ShadowType";
+export { ShadowLevel } from "./lights/ShadowLevel";
 
 export { OBJLoader } from "./loader/obj_mtl/OBJLoader";
 

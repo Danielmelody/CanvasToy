@@ -30,7 +30,7 @@ scene.addObject(createSkyBox(renderer, skyTexture));
 const teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
 teapot.setAsyncFinished(teapot.asyncFinished().then(() => {
     const material = (teapot.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
-    material.setEnvironmentMap(skyTexture).castShadow(true);
+    material.setEnvironmentMap(skyTexture).setCastShadow(true);
     // (teapot.children[0] as CanvasToy.Mesh).materials[0] = new CanvasToy.StandardMaterial(renderer.gl);
     return Promise.resolve(teapot);
 }));

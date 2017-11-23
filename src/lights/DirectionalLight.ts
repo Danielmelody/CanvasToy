@@ -14,6 +14,7 @@ export class DirectionalLight extends Light {
 
     constructor(renderer: Renderer) {
         super(renderer);
+        this.setShadowSize(1024);
     }
 
     @uniform(DataType.vec3)

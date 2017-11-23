@@ -18,8 +18,10 @@ export class StandardMaterial extends Material {
     @define("_DEBUG")
     protected _debug: boolean = false;
 
-    @define("USE_SHADOW", true)
     protected _castShadow: boolean = true;
+
+    @define("RECEIVE_SHADOW", true)
+    protected _receiveShadow: boolean = true;
 
     @define("_MAIN_TEXTURE")
     @texture("uMainTexture")
@@ -64,16 +66,16 @@ export class StandardMaterial extends Material {
     public get geometryShader() {
         if (!this._geometryShader) {
             this._geometryShader = new ShaderBuilder()
-            .resetShaderLib()
-            .setShadingVert(ShaderSource.interploters__deferred__geometry_vert)
-            .setShadingFrag(ShaderSource.interploters__deferred__geometry_frag)
-            .setExtraRenderParamHolder("mvp", {
-                uniforms: {
-                    modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
-                    normalViewMatrix: shaderPassLib.uniforms.normalViewMatrix,
-                },
-            })
-            .build(this.gl);
+                .resetShaderLib()
+                .setShadingVert(ShaderSource.interploters__deferred__geometry_vert)
+                .setShadingFrag(ShaderSource.interploters__deferred__geometry_frag)
+                .setExtraRenderParamHolder("mvp", {
+                    uniforms: {
+                        modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
+                        normalViewMatrix: shaderPassLib.uniforms.normalViewMatrix,
+                    },
+                })
+                .build(this.gl);
             this._geometryShader.extensionStatements.push("#extension GL_EXT_draw_buffers : require");
         }
         return this._geometryShader;
@@ -83,8 +85,12 @@ export class StandardMaterial extends Material {
         return this._debug;
     }
 
-    public get isCastShadow() {
+    public get castShadow() {
         return this._castShadow;
+    }
+
+    public get receiveShadow() {
+        return this._receiveShadow;
     }
 
     public get mainTexture() {
@@ -140,8 +146,13 @@ export class StandardMaterial extends Material {
         return this;
     }
 
-    public castShadow(_castShadow: boolean) {
+    public setCastShadow(_castShadow: boolean) {
         this._castShadow = _castShadow;
+        return this;
+    }
+
+    public setRecieveShadow(_receiveShadow: boolean) {
+        this._receiveShadow = _receiveShadow;
         return this;
     }
 
@@ -212,6 +223,9 @@ export class StandardMaterial extends Material {
                 uniforms: {
                     modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
                 },
+            })
+            .setExtraRenderParamHolder("pcss", {
+                defines: shaderPassLib.defines,
             })
             .build(gl);
     }

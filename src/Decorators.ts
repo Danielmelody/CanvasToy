@@ -1,5 +1,5 @@
 import { DataType } from "./DataTypeEnum";
-import { IBuildinRenderParamMaps, IRenderParamHolder } from "./shader/Program";
+import { IBuildinRenderParamMaps, IRenderParamHolder } from './shader/Program';
 
 export const RENDER_PARAM_HOLDER = "renderParams";
 
@@ -122,9 +122,35 @@ export function define(defineName: string, useValue = false) {
 export function ifdefine(defineName: string) {
     return (proto, key) => {
         tryAddParamHolder(proto);
-        const defineLinks = proto[RENDER_PARAM_HOLDER].defineLinks || {};
-        defineLinks[key] = defineName;
-        proto[RENDER_PARAM_HOLDER].defineLinks = defineLinks;
+        const paramFilters = (proto[RENDER_PARAM_HOLDER] as IRenderParamHolder).paramFilters || {};
+        paramFilters[key] = { name: defineName, filter: () => true };
+        proto[RENDER_PARAM_HOLDER].paramFilters = paramFilters;
+    };
+}
+
+/**
+ * A property decorator to control if pass property value to shader or not,
+ * by auto detect if the define value equal to the given value
+ */
+export function ifequal(defineName: string, defineValue: string) {
+    return (proto, key) => {
+        tryAddParamHolder(proto);
+        const paramFilters = (proto[RENDER_PARAM_HOLDER] as IRenderParamHolder).paramFilters || {};
+        paramFilters[key] = { name: defineName, filter: (value) => value === defineValue };
+        proto[RENDER_PARAM_HOLDER].paramFilters = paramFilters;
+    };
+}
+
+/**
+ * A property decorator to control if pass property value to shader or not,
+ * by auto detect if the define value less to the given value
+ */
+export function ifgreat(defineName: string, defineValue: string) {
+    return (proto, key) => {
+        tryAddParamHolder(proto);
+        const paramFilters = (proto[RENDER_PARAM_HOLDER] as IRenderParamHolder).paramFilters || {};
+        paramFilters[key] = { name: defineName, filter: (value) => value > defineValue };
+        proto[RENDER_PARAM_HOLDER].paramFilters = paramFilters;
     };
 }
 

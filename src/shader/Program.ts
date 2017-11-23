@@ -8,6 +8,7 @@ import { Geometry } from "../geometries/Geometry";
 import { Material } from "../materials/Material";
 import { Mesh } from "../Mesh";
 
+import { Light } from "../lights/Light";
 import { Graphics } from "../renderer/GraphicsUtils";
 import { Scene } from "../Scene";
 import { Texture } from "../textures/Texture";
@@ -21,10 +22,10 @@ export interface IProgramSource {
 export interface IRenderParamHolder {
     hostObject?: object;
     defines?: {
-        [index: string]: { defineName: string, useValue: boolean };
+        [index: string]: { defineName: string, useValue?: boolean, value: string };
     };
-    defineLinks?: {
-        [index: string]: string;
+    paramFilters?: {
+        [index: string]: { name: string, filter: (value: string) => boolean };
     };
     uniforms?: {
         [index: string]: IUniform;
@@ -57,6 +58,7 @@ export interface IBuildinRenderParamMaps {
     camera?: Camera;
     material?: Material;
     scene?: Scene;
+    light?: Light;
 }
 
 export interface IRenderParamBase {
@@ -90,7 +92,7 @@ export class Program implements IDirtyable {
     private attributeLocations: { [index: string]: number } = {};
     private undesiredAttributes: { [index: string]: undefined } = {};
 
-    private defineLinks: { [index: string]: string } = {};
+    private paramFilters: { [index: string]: { name: string, filter: (value: string) => boolean }; } = {};
 
     private extraRenderParamHolders: { [index: string]: IRenderParamHolder };
 
@@ -233,14 +235,14 @@ export class Program implements IDirtyable {
             return;
         }
 
-        for (const linkName in holder.defineLinks) {
-            this.defineLinks[namePrefix + linkName] = holder.defineLinks[linkName];
+        for (const linkName in holder.paramFilters) {
+            this.paramFilters[namePrefix + linkName] = holder.paramFilters[linkName];
         }
 
         for (const uniformKey in holder.uniforms) {
             const uniformInfo = holder.uniforms[uniformKey];
             const uniformName = namePrefix + (uniformInfo.name || uniformKey);
-            if (uniformName in this.defineLinks && !(this.defineLinks[uniformName] in this.defineCaches)) {
+            if (!this.filter(name)) {
                 continue;
             }
             const val = !!uniformInfo.updator ?
@@ -250,7 +252,7 @@ export class Program implements IDirtyable {
         for (const uniformArrayKey in holder.uniformArrays) {
             const uniformArrayInfo = holder.uniforms[uniformArrayKey];
             const uniformArrayName = namePrefix + (uniformArrayInfo.name || uniformArrayKey);
-            if (uniformArrayName in this.defineLinks && !(this.defineLinks[uniformArrayName] in this.defineCaches)) {
+            if (!this.filter(name)) {
                 continue;
             }
             const val = !!uniformArrayInfo.updator ?
@@ -260,7 +262,7 @@ export class Program implements IDirtyable {
         for (const textureKey in holder.textures) {
             const textureInfo = holder.textures[textureKey];
             const name = namePrefix + (textureInfo.name || textureKey);
-            if (name in this.defineLinks && !(this.defineLinks[name] in this.defineCaches)) {
+            if (!this.filter(name)) {
                 continue;
             }
             const texture: Texture = !!textureInfo.source ? textureInfo.source : holder.hostObject[textureKey];
@@ -274,11 +276,11 @@ export class Program implements IDirtyable {
         for (const textureArrayKey in holder.textureArrays) {
             const textureArrayInfo = holder.textureArrays[textureArrayKey];
             const name = namePrefix + (textureArrayInfo.name || textureArrayKey);
-            if (name in this.defineLinks && !(this.defineLinks[name] in this.defineCaches)) {
+            if (!this.filter(name)) {
                 continue;
             }
             const textureArray: Texture[] = !!textureArrayInfo.sources ?
-            textureArrayInfo.sources : holder.hostObject[textureArrayKey];
+                textureArrayInfo.sources : holder.hostObject[textureArrayKey];
             const indices = [];
             for (const texture of textureArray) {
                 this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
@@ -311,33 +313,52 @@ export class Program implements IDirtyable {
         }
     }
 
+    private filter(name) {
+        if (name in this.paramFilters && !(this.paramFilters[name].name in this.defineCaches)) {
+            const value = this.defineCaches[this.paramFilters[name].name];
+            return (this.paramFilters[name].filter(value));
+        }
+        return true;
+    }
+
     private updateDefines(buildinContainers: IBuildinRenderParamMaps) {
         for (const holderName in buildinContainers) {
-            const holder = Graphics.getRenderParamHost(buildinContainers[holderName]);
-            if (!!holder) {
-                for (const defineKey in holder.defines) {
-                    const defineName = holder.defines[defineKey].defineName;
+            this.updateOneDefines(Graphics.getRenderParamHost(buildinContainers[holderName]), buildinContainers);
+        }
+        for (const holderName in this.extraRenderParamHolders) {
+            this.updateOneDefines(this.extraRenderParamHolders[holderName], buildinContainers);
+        }
+    }
+
+    private updateOneDefines(holder: IRenderParamHolder, buildinContainers: IBuildinRenderParamMaps) {
+        if (!!holder) {
+            for (const defineKey in holder.defines) {
+                const defineName = holder.defines[defineKey].defineName;
+                let val = "";
+                if (!!holder.hostObject) {
                     if (!holder.hostObject[defineKey]) {
                         continue;
                     }
-                    const val = holder.defines[defineKey].useValue ? holder.hostObject[defineKey] : "";
-                    const cache = this.defineCaches[defineName];
-                    this.defineCaches[defineName] = val;
-                    if (val !== cache) {
-                        this.dirty = true;
-                    }
+                    val = holder.hostObject[defineKey];
+                } else if (!!holder.defines[defineKey].value) {
+                    val = holder.defines[defineKey].value;
                 }
-                for (const structArrayKey in holder.structArrays) {
-                    const structArrayInfo = holder.structArrays[structArrayKey];
-                    const arrayName = structArrayInfo.name || structArrayKey;
-                    const structArray: any[] = holder.hostObject[structArrayKey];
-                    const val = structArray.length.toString();
-                    const cache = this.defineCaches[arrayName + "Num"];
-                    if (val !== cache) {
-                        this.dirty = true;
-                    }
-                    this.defineCaches[arrayName + "Num"] = val;
+                const cache = this.defineCaches[defineName];
+                this.defineCaches[defineName] = val;
+                if (val !== cache) {
+                    this.dirty = true;
                 }
+            }
+            for (const structArrayKey in holder.structArrays) {
+                const structArrayInfo = holder.structArrays[structArrayKey];
+                const arrayName = structArrayInfo.name || structArrayKey;
+                const structArray: any[] = holder.hostObject[structArrayKey];
+                const val = structArray.length.toString();
+                const cache = this.defineCaches[arrayName + "Num"];
+                if (val !== cache) {
+                    this.dirty = true;
+                }
+                this.defineCaches[arrayName + "Num"] = val;
             }
         }
     }
@@ -398,7 +419,7 @@ export class Program implements IDirtyable {
                 this.undesiredUniforms[name] = undefined;
                 return;
             }
-            console.log("initial pass uniform array " + name + " " + value);            
+            console.log("initial pass uniform array " + name + " " + value);
             this.uniformArrayCaches[name] = cache;
         }
         const location = cache.location;
@@ -466,9 +487,13 @@ export const shaderPassLib = {
         },
         normalViewMatrix: {
             type: DataType.mat4,
-            updator: ({mesh, camera}) =>
+            updator: ({ mesh, camera }) =>
                 mat4.transpose(mat4.create(), mat4.invert(mat4.create(),
                     mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix))),
         },
+    },
+    defines: {
+        filterSize: { defineName: "FILTER_SIZE", value: "6" },
+        blockSize: { defineName: "BLOCK_SIZE", value: "6" },
     },
 };

@@ -1,9 +1,9 @@
-import { StandardMaterial } from '../../materials/StandardMaterial';
 import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../../cameras/Camera";
 import { DataType } from "../../DataTypeEnum";
 import { RectGeometry } from "../../geometries/RectGeometry";
 import { BoundingBox2D } from "../../Intersections/BoundingBox";
+import { StandardMaterial } from "../../materials/StandardMaterial";
 
 import { PointLight } from "../../lights/PointLight";
 
@@ -72,7 +72,7 @@ export class DeferredProcessor implements IProcessor {
                 const standardMaterials = mesh.materials.filter((mat) => mat instanceof StandardMaterial);
                 if (standardMaterials.length > 0) {
                     const material = standardMaterials[0] as StandardMaterial;
-                    material.geometryShader.pass({mesh, material, scene, camera});
+                    material.geometryShader.pass({ mesh, material, scene, camera });
                 }
             }
         }

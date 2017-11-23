@@ -9,7 +9,7 @@ import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Renderer } from "../renderer/Renderer";
 
 import { PointLight } from "./PointLight";
-import { ShadowType } from "./ShadowType";
+import { ShadowLevel } from "./ShadowLevel";
 
 export class SpotLight extends PointLight {
 
@@ -24,7 +24,7 @@ export class SpotLight extends PointLight {
         super(renderer);
         this.setConeAngle(Math.PI / 8);
         this.setRadius(100);
-        this._shadowType = ShadowType.Soft;
+        this._shadowLevel = ShadowLevel.PCSS;
     }
 
     @uniform(DataType.vec3, "spotDir")

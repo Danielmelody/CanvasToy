@@ -2,7 +2,7 @@ import { mat4, vec3 } from "gl-matrix";
 
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
-import { ifdefine, texture, uniform } from "../Decorators";
+import { define, ifdefine, texture, uniform, ifgreat } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 
@@ -13,7 +13,7 @@ import { WebGLExtension } from "../renderer/IExtension";
 import { Renderer } from "../renderer/Renderer";
 import { IBuildinRenderParamMaps } from "../shader/Program";
 import { Texture } from "../textures/Texture";
-import { ShadowType } from "./ShadowType";
+import { ShadowLevel } from "./ShadowLevel";
 
 export abstract class Light extends Object3d {
 
@@ -25,15 +25,21 @@ export abstract class Light extends Object3d {
 
     protected _shadowMap: Texture;
 
+    protected _pcssArea: number = 5;
+
     protected _shadowFrameBuffer: FrameBuffer;
 
-    protected _blurFrameBuffer: FrameBuffer;
+    protected _tempFrameBuffer: FrameBuffer;
 
-    protected _shadowType: ShadowType = ShadowType.Soft;
+    @uniform(DataType.int, "shadowLevel")
+    protected _shadowLevel: ShadowLevel = ShadowLevel.PCSS;
+
+    @uniform(DataType.float, "softness")
+    protected _shadowSoftness = 1.0;
 
     protected _projectCamera: Camera;
 
-    protected _shadowSize: number = 1024;
+    protected _shadowSize: number = 512;
 
     protected gl: WebGLRenderingContext;
 
@@ -59,31 +65,41 @@ export abstract class Light extends Object3d {
         return this;
     }
 
-    public setShadowType(shadowType: ShadowType) {
-        this._shadowType = shadowType;
+    public setShadowLevel(shadowLevel: ShadowLevel) {
+        this._shadowLevel = shadowLevel;
         return this;
     }
 
     public setShadowSize(shadowSize: number) {
-        if (shadowSize !== this._shadowSize) {
-            this._shadowSize = shadowSize;
-        }
+        this._shadowSize = shadowSize;
         if (this._shadowFrameBuffer !== null) {
-            this._shadowFrameBuffer.setWidth(this._shadowSize);
-            this._shadowFrameBuffer.setHeight(this._shadowSize);
+            this._shadowFrameBuffer.setWidth(this._shadowSize).setHeight(this._shadowSize).attach(this.gl);
         }
-        if (this._blurFrameBuffer !== null) {
-            this._blurFrameBuffer.setWidth(this._shadowSize);
-            this._blurFrameBuffer.setHeight(this._shadowSize);
+        if (this._tempFrameBuffer !== null) {
+            this._tempFrameBuffer.setWidth(this._shadowSize).setHeight(this._shadowSize).attach(this.gl);
         }
         return this;
     }
 
-    public get shadowType() {
-        return this._shadowType;
+    public setShadowSoftness(_shadowSoftness: number) {
+        this._shadowSoftness = _shadowSoftness;
+        return this;
     }
 
-    @ifdefine("USE_SHADOW")
+    public setPCSSArea(_pcssArea: number) {
+        this._pcssArea = _pcssArea;
+        return this;
+    }
+
+    public get shadowLevel() {
+        return this._shadowLevel;
+    }
+
+    public get shadowSoftness() {
+        return this._shadowSoftness;
+    }
+
+    @ifdefine("RECEIVE_SHADOW")
     @uniform(DataType.float, "shadowMapSize")
     public get shadowSize() {
         return this._shadowSize;
@@ -97,8 +113,8 @@ export abstract class Light extends Object3d {
         return this._shadowFrameBuffer;
     }
 
-    public get blurFrameBuffer() {
-        return this._blurFrameBuffer;
+    public get tempFrameBuffer() {
+        return this._tempFrameBuffer;
     }
 
     @uniform(DataType.vec3)
@@ -111,16 +127,21 @@ export abstract class Light extends Object3d {
         return this._idensity;
     }
 
-    @ifdefine("USE_SHADOW")
+    @ifdefine("RECEIVE_SHADOW")
     @uniform(DataType.mat4)
     public get projectionMatrix() {
         return this._projectCamera.projectionMatrix;
     }
 
-    @ifdefine("USE_SHADOW")
+    @ifdefine("RECEIVE_SHADOW")
     @uniform(DataType.mat4)
     public get viewMatrix() {
         return this._worldToObjectMatrix;
+    }
+
+    @uniform(DataType.float, "lightArea")
+    public get pcssArea() {
+        return this._pcssArea;
     }
 
     public get far() {
@@ -133,6 +154,7 @@ export abstract class Light extends Object3d {
 
     public drawWithLightCamera(renderParam: IBuildinRenderParamMaps) {
         renderParam.camera = this._projectCamera;
+        renderParam.light = this;
         renderParam.material.shader.pass(renderParam);
     }
 
@@ -151,17 +173,17 @@ export abstract class Light extends Object3d {
                 .apply(this.gl);
             this._shadowFrameBuffer.attach(this.gl);
         }
-        if (!this._blurFrameBuffer) {
-            this._blurFrameBuffer = new FrameBuffer(this.gl).setWidth(this._shadowSize).setHeight(this._shadowSize);
-            this._blurFrameBuffer.attachments.color.targetTexture
+        if (!this._tempFrameBuffer) {
+            this._tempFrameBuffer = new FrameBuffer(this.gl).setWidth(this._shadowSize).setHeight(this._shadowSize);
+            this._tempFrameBuffer.attachments.color.targetTexture
                 .setType(this.gl.FLOAT)
                 .setFormat(this.gl.RGBA)
                 .setMagFilter(this.gl.NEAREST)
                 .setMinFilter(this.gl.NEAREST)
-                .setWrapS(this.gl.CLAMP_TO_EDGE)
-                .setWrapT(this.gl.CLAMP_TO_EDGE)
+                .setWrapS(this.gl.REPEAT)
+                .setWrapT(this.gl.REPEAT)
                 .apply(this.gl);
-            this._blurFrameBuffer.attach(this.gl);
+            this._tempFrameBuffer.attach(this.gl);
         }
         return this;
     }

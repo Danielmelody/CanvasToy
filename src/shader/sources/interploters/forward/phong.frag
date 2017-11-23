@@ -34,7 +34,7 @@ uniform SpotLight spotLights[spotLightsNum];
 uniform sampler2D spotLightShadowMap[spotLightsNum];
 #endif
 
-#ifdef USE_SHADOW
+#ifdef RECEIVE_SHADOW
 
     #if (directLightsNum > 0)
     varying vec4 directShadowCoord[directLightsNum];
@@ -83,14 +83,16 @@ void main () {
             normal,
             cameraPos
         );
-    #ifdef USE_SHADOW
+    #ifdef RECEIVE_SHADOW
         float lambertian = dot(-directLights[index].direction, normal);
         float shadowFactor = getSpotDirectionShadow(
             directShadowCoord[index].xy / directShadowCoord[index].w, 
             directLightShadowMap[index], 
             directLightDepth[index], 
             lambertian, 
-            1.0 / directLights[index].shadowMapSize
+            1.0 / directLights[index].shadowMapSize,
+            directLights[index].shadowLevel,
+            directLights[index].softness
         );
         lighting *= shadowFactor;
     #endif
@@ -122,14 +124,16 @@ void main () {
             normal,
             cameraPos
         );
-    #ifdef USE_SHADOW
+    #ifdef RECEIVE_SHADOW
         float lambertian = dot(-spotLights[index].spotDir, normal);
         float shadowFactor = getSpotDirectionShadow(
             spotShadowCoord[index].xy / spotShadowCoord[index].w, 
             spotLightShadowMap[index],
             spotLightDepth[index], 
             lambertian, 
-            1.0 / spotLights[index].shadowMapSize
+            1.0 / spotLights[index].shadowMapSize,
+            spotLights[index].shadowLevel,
+            spotLights[index].softness
         );
         lighting *= shadowFactor;
     #endif
