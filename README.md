@@ -19,10 +19,10 @@ Lightweight WebGL/WenGL2 rendering engine
     * [x] Directional lights
     * [x] Spot lights
 + Shadow
-    * [*] Basic shadow mapping
-    * [ ] Expotional soft shadow mapping (forward approach)
+    * [x] Basic shadow mapping
+    * [x] Expotional soft shadow mapping (forward approach)
     * [ ] Expotional soft shadow mapping (deferred approach)
-    * [ ] Percentage closer soft shadow
+    * [x] Percentage closer soft shadow(PCSS)
     * [ ] Screen-space shadow mapping (deferred approach)
 + Transforms
     * [x] Basic object transforms
@@ -50,7 +50,7 @@ Planning filetypes:
 #### About Engineering
 + [ ]  More than 95% test cover
 + [x]  Using github workflow
-+ [ ]  Build && test using pure node.js and typescript compiler, without gulp or grunt, webpack and bash , etc.
++ [x]  Build && test using pure node.js and typescript compiler, without gulp or grunt, webpack and bash , etc.
 + [x]  Generate a typescript declaration file .d.ts to support both javascript and typescript.
 
 ### Contribute:
