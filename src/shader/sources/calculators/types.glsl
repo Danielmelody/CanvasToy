@@ -29,8 +29,12 @@ vec3 calculatePointLight(
     vec3 eyePos
     ) {
     float lightDis = length(light.position - position);
-    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);
-    idensity *= step(lightDis, light.radius);
+    lightDis /= light.radius;
+    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);
+    float atten_max = 1.0 / light.constantAtten;
+    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);
+    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);
+    idensity *= step(lightDis, 1.0);
     return calculateLight(
         position,
         normal,
@@ -58,7 +62,12 @@ vec3 calculateSpotLight(
         return vec3(0.0);
     }
     float lightDis = length(light.position - position);
-    float idensity = light.idensity / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);
+    lightDis /= light.radius;
+    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);
+    float atten_max = 1.0 / light.constantAtten;
+    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);
+    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);
+    
     idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);
     // idensity *= step(light.radius, lightDis);
     return calculateLight(

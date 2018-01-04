@@ -27,6 +27,7 @@ uniform sampler2D directLightShadowMap[directLightsNum];
 
 #if (pointLightsNum > 0)
 uniform PointLight pointLights[pointLightsNum];
+uniform samplerCube pointLightShadowMap[pointLightsNum];
 #endif
 
 #if (spotLightsNum > 0)

@@ -10,6 +10,7 @@ export class Attachment {
     public readonly frameBuffer: FrameBuffer;
     public glRenderBuffer: WebGLRenderbuffer;
     public targetTexture: Texture;
+    public textureTargetCode: number;
     public readonly attachmentCode: (gl: WebGLRenderingContext | WebGLDrawBuffers) => number;
 
     private _innerFormatForBuffer: number = -1;
@@ -51,18 +52,20 @@ export class Attachment {
         return this;
     }
 
-    public setType(gl: WebGLRenderingContext, type: AttachmentType) {
-        this._type = type;
-        if (type === AttachmentType.Texture) {
-            this.targetTexture = new Texture(gl);
-            this.glRenderBuffer = null;
-        } else {
-            this.glRenderBuffer = gl.createRenderbuffer();
-            this.targetTexture = null;
-        }
+    public asRenderBuffer(gl: WebGLRenderingContext) {
+        this._type = AttachmentType.RenderBuffer;
+        this.glRenderBuffer = gl.createRenderbuffer();
+        this.targetTexture = null;
         return this;
     }
 
+    public asTargetTexture(texture: Texture, targetcode) {
+        this._type = AttachmentType.Texture;
+        this.targetTexture = texture;
+        this.textureTargetCode = targetcode;
+        this.glRenderBuffer = null;
+        return this;
+    }
 }
 
 export class FrameBuffer {
@@ -86,11 +89,11 @@ export class FrameBuffer {
         this.glFramebuffer = gl.createFramebuffer();
         this._width = gl.canvas.width;
         this._height = gl.canvas.height;
-        this.attachments.color.setType(gl, AttachmentType.Texture)
+        this.attachments.color.asTargetTexture(new Texture(gl), gl.TEXTURE_2D)
             .setInnerFormatForBuffer(gl.RGBA4);
-        this.attachments.depth.setType(gl, AttachmentType.RenderBuffer)
+        this.attachments.depth.asRenderBuffer(gl)
             .setInnerFormatForBuffer(gl.DEPTH_COMPONENT16);
-        this.attachments.stencil.setType(gl, AttachmentType.RenderBuffer)
+        this.attachments.stencil.asRenderBuffer(gl)
             .setInnerFormatForBuffer(gl.STENCIL_INDEX8)
             .disable();
     }
@@ -145,25 +148,13 @@ export class FrameBuffer {
         context: WebGLRenderingContext | WebGLDrawBuffers) {
         switch (attachment.type) {
             case AttachmentType.Texture:
-                gl.bindTexture(attachment.targetTexture.target, attachment.targetTexture.glTexture);
-                gl.texImage2D(
-                    attachment.targetTexture.target,
-                    0,
-                    attachment.targetTexture.format,
-                    this.width,
-                    this.height,
-                    0,
-                    attachment.targetTexture.format,
-                    attachment.targetTexture.type,
-                    null,
-                );
+                attachment.targetTexture.applyForRendering(gl, this.width, this.height);
                 gl.framebufferTexture2D(
                     gl.FRAMEBUFFER,
                     attachment.attachmentCode(context),
                     attachment.targetTexture.target,
                     attachment.targetTexture.glTexture,
                     0);
-                gl.bindTexture(attachment.targetTexture.target, null);
                 break;
             case AttachmentType.RenderBuffer:
                 gl.bindRenderbuffer(gl.RENDERBUFFER, attachment.glRenderBuffer);

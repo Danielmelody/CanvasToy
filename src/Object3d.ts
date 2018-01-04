@@ -290,12 +290,15 @@ export class Object3d implements IAsyncResource {
         return this;
     }
 
-    public lookAt(center: vec3) {
-        const dir = vec3.sub(vec3.create(), center, this.position);
-        const right = vec3.cross(vec3.create(), dir, [0, 1, 0]);
-        const up = vec3.cross(vec3.create(), right, dir);
+    public lookAt(center: vec3, up = vec3.fromValues(0, 1, 0)) {
         mat4.lookAt(this._worldToObjectMatrix, this.position, center, up);
         this.setWorldToObjectMatrix(this._worldToObjectMatrix);
+        return this;
+    }
+
+    public lookAtLocal(center: vec3, up = vec3.fromValues(0, 1, 0)) {
+        mat4.invert(this._localMatrix, mat4.lookAt(mat4.create(), this.localPosition, center, up));
+        this.deComposeLocalMatrix();
         return this;
     }
 

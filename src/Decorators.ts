@@ -1,5 +1,5 @@
 import { DataType } from "./DataTypeEnum";
-import { IBuildinRenderParamMaps, IRenderParamHolder } from './shader/Program';
+import { IBuildinRenderParamMaps, IRenderParamHolder } from "./shader/Program";
 
 export const RENDER_PARAM_HOLDER = "renderParams";
 
