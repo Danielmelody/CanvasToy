@@ -8,7 +8,7 @@ const scene = new CanvasToy.Scene();
 const center = new CanvasToy.Object3d();
 const camera = new CanvasToy.PerspectiveCamera()
     .setParent(center)
-    .translate(vec3.fromValues(0, 10, 10))
+    .translate(vec3.fromValues(0, 5, 5))
     .rotateX(-Math.PI / 4);
 const checkerBoard = new CanvasToy.StandardMaterial(renderer.gl).setDebugMode(true);
 const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
@@ -17,28 +17,30 @@ const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
 const ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
     .setPosition(vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(vec3.fromValues(10, 10, 10));
 
-const box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
+const box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [checkerBoard])
     .setPosition(vec3.fromValues(-2, -1, 0)).setScaling(vec3.fromValues(0.5, 0.5, 0.5));
 const sphere = new CanvasToy.Mesh(
     new CanvasToy.SphereGeometry(renderer.gl)
         .setWidthSegments(50)
         .setHeightSegments(50)
         .build(),
-    [objectMaterial])
+    [checkerBoard])
     .setPosition(vec3.fromValues(2, 0, 0)).setScaling(vec3.fromValues(0.5, 0.5, 0.5));
-const directLight = new CanvasToy.DirectionalLight(renderer)
-    .setIdensity(0.3)
-    .translate(vec3.fromValues(0, 6, 1))
-    .rotateX(-Math.PI / 2)
-    .rotateY(-Math.PI / 4);
+const directLight = new CanvasToy.SpotLight(renderer)
+    .setIdensity(1)
+    .translate(vec3.fromValues(0, 5, 5))
+    .lookAt(vec3.create());
 // .setConeAngle(Math.PI / 3);
 const spotLight = new CanvasToy.SpotLight(renderer)
-    .setIdensity(4)
-    .translate(vec3.fromValues(0, 5, 5))
-    .rotateX(-Math.PI / 4)
-    .setConeAngle(Math.PI / 6);
+    .setIdensity(2)
+    .translate(vec3.fromValues(0, 5, -5))
+    .lookAt(vec3.create());
 
-scene.addLight(spotLight, directLight);
+const pointLight = new CanvasToy.PointLight(renderer)
+    .translate(vec3.fromValues(0, 3, 0))
+    .setIdensity(5);
+
+scene.addLight(pointLight);
 scene.addObject(ground, box, sphere, center, camera);
 let time = 0;
 // spotLight.translate(vec3.fromValues(0, 0, 0.01));
