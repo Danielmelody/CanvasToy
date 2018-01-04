@@ -37,9 +37,9 @@
     "webgl-debug": "^1.0.2"
   },
   "scripts": {
-    "test": "cd tests && tsc && karma start karma.conf.js --browsers Chrome",
+    "test": "cd tests && sh testing.sh",
     "testci": "cd tests && sh testingci.sh",
-    "build": "node scripts/build.js",
+    "build": "sh building.sh",
     "build_example": "cd examples && tsc",
     "bundle": "webpack --config webpack.config.js"
   },

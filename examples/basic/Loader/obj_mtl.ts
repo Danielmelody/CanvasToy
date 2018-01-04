@@ -17,14 +17,12 @@ scene.addLight(light);
 
 const skyTexture = new CanvasToy.CubeTexture(
     renderer.gl,
-    {
-        xpos: "resources/images/skybox/arid2_rt.jpg",
-        xneg: "resources/images/skybox/arid2_lf.jpg",
-        ypos: "resources/images/skybox/arid2_up.jpg",
-        yneg: "resources/images/skybox/arid2_dn.jpg",
-        zpos: "resources/images/skybox/arid2_bk.jpg",
-        zneg: "resources/images/skybox/arid2_ft.jpg",
-    },
+    "resources/images/skybox/arid2_rt.jpg",
+    "resources/images/skybox/arid2_lf.jpg",
+    "resources/images/skybox/arid2_up.jpg",
+    "resources/images/skybox/arid2_dn.jpg",
+    "resources/images/skybox/arid2_bk.jpg",
+    "resources/images/skybox/arid2_ft.jpg",
 );
 
 scene.addObject(createSkyBox(renderer, skyTexture));
@@ -32,7 +30,7 @@ scene.addObject(createSkyBox(renderer, skyTexture));
 const teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
 teapot.setAsyncFinished(teapot.asyncFinished().then(() => {
     const material = (teapot.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
-    material.setEnvironmentMap(skyTexture).setCastShadow(true);
+    material.setEnvironmentMap(skyTexture).castShadow(true);
     // (teapot.children[0] as CanvasToy.Mesh).materials[0] = new CanvasToy.StandardMaterial(renderer.gl);
     return Promise.resolve(teapot);
 }));
