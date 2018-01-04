@@ -17,11 +17,11 @@ import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
 import { DataTexture } from "../../textures/DataTexture";
 
+import { Texture } from "../../textures/Texture";
 import { Attachment, AttachmentType, FrameBuffer } from "../FrameBuffer";
 import { Graphics } from "../GraphicsUtils";
 import { WebGLExtension } from "../IExtension";
 import { IProcessor } from "../IProcessor";
-import { Texture } from "../../textures/Texture";
 
 export class DeferredProcessor implements IProcessor {
 

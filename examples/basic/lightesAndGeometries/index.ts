@@ -26,7 +26,7 @@ const sphere = new CanvasToy.Mesh(
         .build(),
     [objectMaterial])
     .setPosition(vec3.fromValues(2, 0, 0)).setScaling(vec3.fromValues(0.5, 0.5, 0.5));
-const directLight = new CanvasToy.SpotLight(renderer)
+const directLight = new CanvasToy.DirectionalLight(renderer)
     .setIdensity(1)
     .translate(vec3.fromValues(0, 5, 5))
     .lookAt(vec3.create());
@@ -37,10 +37,10 @@ const spotLight = new CanvasToy.SpotLight(renderer)
     .lookAt(vec3.create());
 
 const pointLight = new CanvasToy.PointLight(renderer)
-    .translate(vec3.fromValues(0, 5, 0))
-    .setIdensity(5);
+    .translate(vec3.fromValues(0, 3, 0))
+    .setIdensity(3);
 
-scene.addLight(spotLight);
+scene.addLight(pointLight);
 scene.addObject(ground, box, sphere, center, camera);
 let time = 0;
 // spotLight.translate(vec3.fromValues(0, 0, 0.01));
