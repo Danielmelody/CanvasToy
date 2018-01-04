@@ -32,13 +32,12 @@ for (let i = 0; i < 4; ++i) {
     meshes.push(mesh);
 }
 
-meshes[0].translate(vec3.fromValues(0, -2, -10));
-
-camera.rotateX(-0.2);
+meshes[0].translate(vec3.fromValues(0, 0, -10));
 
 const light = new CanvasToy.DirectionalLight(renderer)
     .rotateY(Math.PI / 3)
-    .setPosition(vec3.fromValues(10, -2, -10));
+    .setPosition(vec3.fromValues(5, 0, -5))
+    .lookAt(meshes[0].position);
 let t = 0;
 
 scene.addOnUpdateListener((dt) => {
@@ -46,7 +45,6 @@ scene.addOnUpdateListener((dt) => {
     meshes[1].rotateY(0.01);
     meshes[2].rotateX(0.05);
     t += dt;
-    // light.rotateZ(dt / 1000.0);
 });
 
 scene.addObject(meshes[0], camera);
