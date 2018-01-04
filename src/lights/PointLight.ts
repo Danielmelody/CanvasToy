@@ -106,28 +106,33 @@ export class PointLight extends DampingLight {
 
     public init(renderer) {
         this._shadowLevel = ShadowLevel.Hard;
+        this._cubeTexture = new CubeTexture(renderer.gl)
+            .setFormat(this.gl.RGBA)
+            .setType(this.gl.FLOAT);
         this._spotLights = [0, 0, 0, 0, 0, 0].map(() => new SpotLight(renderer));
         this.volume = new SphereGeometry(this.gl).setRadius(this._radius).build();
         for (let i = 0; i < this._spotLights.length; ++i) {
             const spotLight = this._spotLights[i];
             spotLight.init(renderer)
                 .setConeAngle(Math.PI / 4);
-            spotLight.shadowFrameBuffer.each((fbo) => {
+            spotLight.shadowFrameBuffer.onInit((fbo) => {
                 fbo.attachments.color.asTargetTexture(this._cubeTexture, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i);
             });
             spotLight.setParent(this);
         }
-        this._spotLights[0].lookAtLocal(vec3.fromValues(1, 0, 0), vec3.fromValues(0, 1, 0));
-        this._spotLights[1].lookAtLocal(vec3.fromValues(-1, 0, 0), vec3.fromValues(0, 1, 0));
-        this._spotLights[2].lookAtLocal(vec3.fromValues(0, 1, 0), vec3.fromValues(0, 0, -1));
-        this._spotLights[3].lookAtLocal(vec3.fromValues(0, -1, 0), vec3.fromValues(0, 0, 1));
+        this._spotLights[0].lookAtLocal(vec3.fromValues(1, 0, 0), vec3.fromValues(0, -1, 0));
+        this._spotLights[1].lookAtLocal(vec3.fromValues(-1, 0, 0), vec3.fromValues(0, -1, 0));
+        this._spotLights[2].lookAtLocal(vec3.fromValues(0, 1, 0), vec3.fromValues(0, 0, 1));
+        this._spotLights[3].lookAtLocal(vec3.fromValues(0, -1, 0), vec3.fromValues(0, 0, -1));
         this._spotLights[4].lookAtLocal(vec3.fromValues(0, 0, 1), vec3.fromValues(0, -1, 0));
         this._spotLights[5].lookAtLocal(vec3.fromValues(0, 0, -1), vec3.fromValues(0, -1, 0));
+        this.setShadowSize(256);
         return this;
     }
 
     public drawWithLightCamera(renderParam: IBuildinRenderParamMaps) {
         for (const spotLight of this._spotLights) {
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, spotLight.shadowFrameBuffer.active.glFramebuffer);
             spotLight.drawWithLightCamera(renderParam);
         }
     }

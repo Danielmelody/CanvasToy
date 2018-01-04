@@ -42,11 +42,6 @@ uniform sampler2D spotLightShadowMap[spotLightsNum];
     varying float directLightDepth[directLightsNum];
     #endif
 
-    #if (pointLightsNum > 0)
-    varying vec4 pointShadowCoord[pointLightsNum];
-    varying float pointLightDepth[pointLightsNum];
-    #endif
-
     #if (spotLightsNum > 0)
     varying vec4 spotShadowCoord[spotLightsNum];
     varying float spotLightDepth[spotLightsNum];
@@ -111,6 +106,22 @@ void main () {
             normal,
             cameraPos
         );
+        #ifdef RECEIVE_SHADOW
+        vec3 offset = vPosition - pointLights[index].position;
+        vec3 cubePos = normalize(offset);
+        float linearDepth = length(offset);
+        float lambertian = max(dot(-cubePos, normal), 0.0);
+        float shadowFactor = getPointShadow(
+            cubePos,
+            pointLightShadowMap[index],
+            linearDepth,
+            lambertian,
+            1.0 / pointLights[index].shadowMapSize,
+            pointLights[index].shadowLevel,
+            pointLights[index].softness
+        );
+        lighting *= shadowFactor;
+        #endif
         totalLighting += lighting;
     }
 #endif

@@ -17,14 +17,14 @@ const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
 const ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
     .setPosition(vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(vec3.fromValues(10, 10, 10));
 
-const box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
+const box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [checkerBoard])
     .setPosition(vec3.fromValues(-2, -1, 0)).setScaling(vec3.fromValues(0.5, 0.5, 0.5));
 const sphere = new CanvasToy.Mesh(
     new CanvasToy.SphereGeometry(renderer.gl)
         .setWidthSegments(50)
         .setHeightSegments(50)
         .build(),
-    [objectMaterial])
+    [checkerBoard])
     .setPosition(vec3.fromValues(2, 0, 0)).setScaling(vec3.fromValues(0.5, 0.5, 0.5));
 const directLight = new CanvasToy.SpotLight(renderer)
     .setIdensity(1)
@@ -37,10 +37,10 @@ const spotLight = new CanvasToy.SpotLight(renderer)
     .lookAt(vec3.create());
 
 const pointLight = new CanvasToy.PointLight(renderer)
-    .translate(vec3.fromValues(0, 5, 0))
+    .translate(vec3.fromValues(0, 3, 0))
     .setIdensity(5);
 
-scene.addLight(spotLight);
+scene.addLight(pointLight);
 scene.addObject(ground, box, sphere, center, camera);
 let time = 0;
 // spotLight.translate(vec3.fromValues(0, 0, 0.01));

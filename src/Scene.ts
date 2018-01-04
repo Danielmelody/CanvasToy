@@ -38,6 +38,7 @@ export class Scene implements IDirtyable {
 
     private _directLightShadowMap: Texture[] = [];
     private _spotLightShadowMap: Texture[] = [];
+    private _pointLightShadowMap: Texture[] = [];
 
     private _directShadowDirty = true;
     private _pointShadowDirty = true;
@@ -55,6 +56,12 @@ export class Scene implements IDirtyable {
         return this._spotLightShadowMap;
     }
 
+    @textureArray()
+    public get pointLightShadowMap() {
+        this.clean();
+        return this._pointLightShadowMap;
+    }
+
     public clean() {
         if (this._directShadowDirty) {
             this._directLightShadowMap = this.directLights.map((light) => light.shadowMap);
@@ -63,6 +70,10 @@ export class Scene implements IDirtyable {
         if (this._spotShadowDirty) {
             this._spotLightShadowMap = this.spotLights.map((light) => light.shadowMap);
             this._spotShadowDirty = false;
+        }
+        if (this._pointShadowDirty) {
+            this._pointLightShadowMap = this.pointLights.map((light) => light.shadowMap);
+            this._pointShadowDirty = false;
         }
     }
 
@@ -117,7 +128,7 @@ export class Scene implements IDirtyable {
         const addonPoint = lights.filter(
             (light) => light instanceof PointLight && !(light instanceof SpotLight)) as PointLight[];
         this.pointLights = this.pointLights.concat(addonPoint);
-        this._pointShadowDirty = addonPoint.length > 0;
+        this._pointShadowDirty = (addonPoint.length > 0);
         const addonSpot = lights.filter((light) => light instanceof SpotLight) as SpotLight[];
         this.spotLights = this.spotLights.concat(addonSpot);
         this._spotShadowDirty = (addonSpot.length > 0);

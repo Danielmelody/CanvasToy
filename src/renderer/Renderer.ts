@@ -1,4 +1,5 @@
 import { Camera } from "../cameras/Camera";
+import { IAsyncResource } from "../IAsyncResource";
 import { Material } from "../materials/Material";
 import { Mesh } from "../Mesh";
 import { Scene } from "../Scene";
@@ -10,7 +11,6 @@ import { Graphics } from "./GraphicsUtils";
 import { WebGLExtension } from "./IExtension";
 import { IProcessor } from "./IProcessor";
 import { ShadowPreProcess } from "./ShadowPreProcessor";
-import { IAsyncResource } from "../IAsyncResource";
 
 export class Renderer {
 

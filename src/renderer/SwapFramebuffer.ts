@@ -29,6 +29,7 @@ export class ProcessingFrameBuffer {
             const fbo = new FrameBuffer(this._gl);
             fbo.setWidth(this._width).setHeight(this._height);
             this._onInits.forEach((inits) => { inits(fbo); });
+            fbo.attach(this._gl);
             this._candidates.push(fbo);
         }
         return this._candidates[this._activeIndex];

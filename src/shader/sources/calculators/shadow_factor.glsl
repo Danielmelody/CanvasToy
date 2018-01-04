@@ -66,7 +66,7 @@ float getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDept
         vec2 uv = clipPos * 0.5 + 0.5;
         float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);
         if (shadowLevel == SHADOW_LEVEL_HARD) {
-            return step(texture2D(shadowMap, uv).r + bias, linearDepth);
+            return step(linearDepth, texture2D(shadowMap, uv).r + bias);
         } else {
             float z = texture2DbilinearEXP(shadowMap, uv, texelSize).r;
             float s = exp(z - linearDepth * softness);
@@ -74,4 +74,19 @@ float getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDept
         }
     }
 }
+
+float getPointShadow(vec3 cubePos, samplerCube shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)
+{
+    float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);
+    if (shadowLevel == SHADOW_LEVEL_NONE) {
+        return 1.0;
+    } else {
+        // if (shadowLevel == SHADOW_LEVEL_HARD) {
+            return step(linearDepth, textureCube(shadowMap, cubePos).r + bias);
+        //else {
+            // TODO: perform cubemap interpolation for soft-level shadow map for point light
+        //}
+    }
+}
+
 #endif

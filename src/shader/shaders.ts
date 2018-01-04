@@ -147,7 +147,7 @@ float getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDept
         vec2 uv = clipPos * 0.5 + 0.5;
         float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);
         if (shadowLevel == SHADOW_LEVEL_HARD) {
-            return step(texture2D(shadowMap, uv).r + bias, linearDepth);
+            return step(linearDepth, texture2D(shadowMap, uv).r + bias);
         } else {
             float z = texture2DbilinearEXP(shadowMap, uv, texelSize).r;
             float s = exp(z - linearDepth * softness);
@@ -155,6 +155,17 @@ float getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDept
         }
     }
 }
+
+float getPointShadow(vec3 cubePos, samplerCube shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)
+{
+    float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);
+    if (shadowLevel == SHADOW_LEVEL_NONE) {
+        return 1.0;
+    } else {
+        return step(linearDepth, textureCube(shadowMap, cubePos).r + bias);
+    }
+}
+
 #endif
 `;
         export const calculators__types_glsl = `
@@ -498,8 +509,9 @@ uniform float softness;
 varying vec3 viewPos;
 
 void main () {
-    gl_FragColor.r = -viewPos.z * softness;
-    gl_FragColor.g = exp(-viewPos.z) * -viewPos.z;
+    float d = length(viewPos);
+    gl_FragColor.r = d * softness;
+    gl_FragColor.g = exp(d) * d;
 }
 `;
         export const interploters__forward__esm__depth_vert = `
@@ -656,11 +668,6 @@ uniform sampler2D spotLightShadowMap[spotLightsNum];
     varying float directLightDepth[directLightsNum];
     #endif
 
-    #if (pointLightsNum > 0)
-    varying vec4 pointShadowCoord[pointLightsNum];
-    varying float pointLightDepth[pointLightsNum];
-    #endif
-
     #if (spotLightsNum > 0)
     varying vec4 spotShadowCoord[spotLightsNum];
     varying float spotLightDepth[spotLightsNum];
@@ -725,6 +732,22 @@ void main () {
             normal,
             cameraPos
         );
+        #ifdef RECEIVE_SHADOW
+        vec3 offset = vPosition - pointLights[index].position;
+        vec3 cubePos = normalize(offset);
+        float linearDepth = length(offset);
+        float lambertian = max(dot(-cubePos, normal), 0.0);
+        float shadowFactor = getPointShadow(
+            cubePos,
+            pointLightShadowMap[index],
+            linearDepth,
+            lambertian,
+            1.0 / pointLights[index].shadowMapSize,
+            pointLights[index].shadowLevel,
+            pointLights[index].softness
+        );
+        lighting *= shadowFactor;
+        #endif
         totalLighting += lighting;
     }
 #endif
@@ -783,14 +806,6 @@ uniform DirectLight directLights[directLightsNum];
     #endif
 #endif
 
-#if (pointLightsNum > 0)
-uniform PointLight pointLights[pointLightsNum];
-    #ifdef RECEIVE_SHADOW
-    varying vec4 pointShadowCoord[pointLightsNum];
-    varying float pointLightDepth[pointLightsNum];
-    #endif
-#endif
-
 #if (spotLightsNum > 0)
 uniform SpotLight spotLights[spotLightsNum];
     #ifdef RECEIVE_SHADOW
@@ -812,21 +827,14 @@ void main (){
         #if (directLightsNum > 0)
         for (int i = 0; i < directLightsNum; ++i) {
             directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;
-            directLightDepth[i] = -(directLights[i].viewMatrix * worldPos).z;
-        }
-        #endif
-
-        #if (pointLightsNum > 0)
-        for (int i = 0; i < pointLightsNum; ++i) {
-            pointShadowCoord[i] = pointLights[i].projectionMatrix * pointLights[i].viewMatrix * worldPos;
-            pointLightDepth[i] = -(pointLights[i].viewMatrix * worldPos).z;
+            directLightDepth[i] = length((directLights[i].viewMatrix * worldPos).xyz);
         }
         #endif
 
         #if (spotLightsNum > 0)
         for (int i = 0; i < spotLightsNum; ++i) {
             spotShadowCoord[i] = spotLights[i].projectionMatrix * spotLights[i].viewMatrix * worldPos;
-            spotLightDepth[i] = -(spotLights[i].viewMatrix * worldPos).z;
+            spotLightDepth[i] = length(spotLights[i].viewMatrix * worldPos).xyz);
         }
         #endif
     #endif

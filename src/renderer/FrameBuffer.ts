@@ -152,7 +152,7 @@ export class FrameBuffer {
                 gl.framebufferTexture2D(
                     gl.FRAMEBUFFER,
                     attachment.attachmentCode(context),
-                    attachment.targetTexture.target,
+                    attachment.textureTargetCode,
                     attachment.targetTexture.glTexture,
                     0);
                 break;

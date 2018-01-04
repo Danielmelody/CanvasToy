@@ -104,7 +104,6 @@ export class SpotLight extends DampingLight {
                         .setWrapS(this.gl.REPEAT)
                         .setWrapT(this.gl.REPEAT)
                         .apply(this.gl);
-                    frameBuffer.attach(this.gl);
                 },
             );
         }
