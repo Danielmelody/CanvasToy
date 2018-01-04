@@ -9,44 +9,133 @@ import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Renderer } from "../renderer/Renderer";
 
 import { CubeCamera } from "../cameras/CubeCamera";
+import { ProcessingFrameBuffer } from "../renderer/SwapFramebuffer";
+import { IBuildinRenderParamMaps } from "../shader/Program";
+import { CubeTexture } from "../textures/CubeTexture";
+import { DampingLight } from "./DampingLight";
 import { Light } from "./Light";
 import { ShadowLevel } from "./ShadowLevel";
+import { SpotLight } from "./SpotLight";
 
-export class PointLight extends Light {
+export class PointLight extends DampingLight {
 
-    @uniform(DataType.vec3)
-    public get position() {
-        return this._position;
-    }
+    private _spotLights: SpotLight[];
 
-    protected _radius: number = 100;
-
-    protected _squareAttenuation: number = 0.01;
-
-    protected _linearAttenuation: number = 0.1;
-
-    protected _constantAttenuation: number = 1;
+    private _cubeTexture: CubeTexture;
 
     constructor(renderer: Renderer) {
         super(renderer);
-        this.volume = new SphereGeometry(renderer.gl).setRadius(this._radius).build();
-
-        // TODO: remove temporary diasable shadow of point light;
-        this._shadowLevel = ShadowLevel.None;
     }
 
-    @uniform(DataType.float, "squareAtten")
-    public get squareAttenuation() {
-        return this._squareAttenuation;
-    }
-    @uniform(DataType.float, "linearAtten")
-    public get linearAttenuation() {
-        return this._squareAttenuation;
+    public get shadowMap() {
+        return this._cubeTexture;
     }
 
-    @uniform(DataType.float, "constantAtten")
-    public get constantAttenuation() {
-        return this._constantAttenuation;
+    public get shadowFrameBuffers(): ProcessingFrameBuffer[] {
+        return this._spotLights.map((spot) => spot.shadowFrameBuffer);
+    }
+
+    public get projectionMatrix() {
+        return this._spotLights[0].projectionMatrix;
+    }
+
+    public get far() {
+        return this._spotLights[0].far;
+    }
+
+    public get near() {
+        return this._spotLights[0].near;
+    }
+
+    public setColor(color: vec3) {
+        this._color = color;
+        for (const spotLight of this._spotLights) {
+            spotLight.setColor(color);
+        }
+        return this;
+    }
+
+    public setIdensity(idensity: number) {
+        this._idensity = idensity;
+        for (const spotLight of this._spotLights) {
+            spotLight.setIdensity(idensity);
+        }
+        return this;
+    }
+
+    public setShadowLevel(shadowLevel: ShadowLevel) {
+        this._shadowLevel = shadowLevel;
+        for (const spotLight of this._spotLights) {
+            spotLight.setShadowLevel(shadowLevel);
+        }
+        return this;
+    }
+
+    public setShadowSize(shadowSize: number) {
+        this._shadowSize = shadowSize;
+        for (const spotLight of this._spotLights) {
+            spotLight.setShadowSize(shadowSize);
+        }
+        return this;
+    }
+
+    public setShadowSoftness(_shadowSoftness: number) {
+        this._shadowSoftness = _shadowSoftness;
+        for (const spotLight of this._spotLights) {
+            spotLight.setShadowSoftness(_shadowSoftness);
+        }
+        return this;
+    }
+
+    public setPCSSArea(_pcssArea: number) {
+        this._pcssArea = _pcssArea;
+        for (const spotLight of this._spotLights) {
+            spotLight.setPCSSArea(_pcssArea);
+        }
+        return this;
+    }
+
+    public setRadius(radius: number) {
+        this._radius = radius;
+        (this.volume as SphereGeometry).setRadius(this._radius).build();
+        for (const spotLight of this._spotLights) {
+            spotLight.setRadius(radius);
+        }
+        return this;
+    }
+
+    public init(renderer) {
+        this._shadowLevel = ShadowLevel.Hard;
+        this._spotLights = [0, 0, 0, 0, 0, 0].map(() => new SpotLight(renderer));
+        this.volume = new SphereGeometry(this.gl).setRadius(this._radius).build();
+        for (let i = 0; i < this._spotLights.length; ++i) {
+            const spotLight = this._spotLights[i];
+            spotLight.init(renderer)
+                .setConeAngle(Math.PI / 4);
+            spotLight.shadowFrameBuffer.each((fbo) => {
+                fbo.attachments.color.asTargetTexture(this._cubeTexture, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i);
+            });
+            spotLight.setParent(this);
+        }
+        this._spotLights[0].lookAtLocal(vec3.fromValues(1, 0, 0), vec3.fromValues(0, 1, 0));
+        this._spotLights[1].lookAtLocal(vec3.fromValues(-1, 0, 0), vec3.fromValues(0, 1, 0));
+        this._spotLights[2].lookAtLocal(vec3.fromValues(0, 1, 0), vec3.fromValues(0, 0, -1));
+        this._spotLights[3].lookAtLocal(vec3.fromValues(0, -1, 0), vec3.fromValues(0, 0, 1));
+        this._spotLights[4].lookAtLocal(vec3.fromValues(0, 0, 1), vec3.fromValues(0, -1, 0));
+        this._spotLights[5].lookAtLocal(vec3.fromValues(0, 0, -1), vec3.fromValues(0, -1, 0));
+        return this;
+    }
+
+    public drawWithLightCamera(renderParam: IBuildinRenderParamMaps) {
+        for (const spotLight of this._spotLights) {
+            spotLight.drawWithLightCamera(renderParam);
+        }
+    }
+
+    public clearShadowFrameBuffer() {
+        for (const spotLight of this._spotLights) {
+            spotLight.clearShadowFrameBuffer();
+        }
     }
 
     public getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D {
@@ -77,22 +166,5 @@ export class PointLight extends Light {
             top: -screenPos[1] + screenH,
             bottom: -screenPos[1] - screenH,
         };
-    }
-
-    public setRadius(radius: number) {
-        this._radius = radius;
-        (this.volume as SphereGeometry).setRadius(this._radius).build();
-        return this;
-    }
-
-    public get radius() {
-        return this._radius;
-    }
-
-    protected setUpProjectionCamera() {
-        this._projectCamera = new CubeCamera()
-            .setParent(this)
-            .setLocalPosition(vec3.create())
-            .setAspectRadio(1);
     }
 }

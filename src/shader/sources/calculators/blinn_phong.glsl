@@ -9,7 +9,6 @@ vec3 calculateLight(
     float idensity
     ) {
     float lambortian = max(dot(lightDir, normal), 0.0);
-    vec3 reflectDir = normalize(reflect(lightDir, normal));
     vec3 viewDir = normalize(eyePos - position);
 
     // replace R * V with N * H

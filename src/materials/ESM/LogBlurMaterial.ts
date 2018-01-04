@@ -4,12 +4,12 @@ import { define, texture, uniform } from "../../Decorators";
 import { Program, shaderPassLib } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
-import { Texture2D } from "../../textures/Texture2D";
+import { Texture } from "../../textures/Texture";
 import { Material } from "../Material";
 export class PCSSFilteringMaterial extends Material {
 
     @texture("uOrigin")
-    public origin: Texture2D;
+    public origin: Texture;
 
     @uniform(DataType.vec2, "uBlurDir")
     public blurDirection: vec2 = vec2.fromValues(1, 0);

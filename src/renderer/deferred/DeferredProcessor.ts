@@ -21,6 +21,7 @@ import { Attachment, AttachmentType, FrameBuffer } from "../FrameBuffer";
 import { Graphics } from "../GraphicsUtils";
 import { WebGLExtension } from "../IExtension";
 import { IProcessor } from "../IProcessor";
+import { Texture } from "../../textures/Texture";
 
 export class DeferredProcessor implements IProcessor {
 
@@ -88,7 +89,7 @@ export class DeferredProcessor implements IProcessor {
     private initGeometryProcess(scene: Scene) {
         this.gBuffer.attachments.color.disable();
         this.gBuffer.attachments.depth
-            .setType(this.gl, AttachmentType.Texture)
+            .asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D)
             .targetTexture
             .setType(this.gl.UNSIGNED_SHORT)
             .setFormat(this.gl.DEPTH_COMPONENT)
@@ -96,10 +97,10 @@ export class DeferredProcessor implements IProcessor {
         this.gBuffer.extras.push(
             // first for normal, depth and materialSpecExp
             new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT0_WEBGL)
-                .setType(this.gl, AttachmentType.Texture),
+                .asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
             // second for materialDiff and materialSpec
             new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT1_WEBGL)
-                .setType(this.gl, AttachmentType.Texture),
+                .asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
         );
         for (const colorAttach of this.gBuffer.extras) {
             colorAttach.targetTexture

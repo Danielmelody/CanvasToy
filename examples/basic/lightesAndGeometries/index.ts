@@ -32,11 +32,15 @@ const directLight = new CanvasToy.SpotLight(renderer)
     .lookAt(vec3.create());
 // .setConeAngle(Math.PI / 3);
 const spotLight = new CanvasToy.SpotLight(renderer)
-    .setIdensity(1)
+    .setIdensity(2)
     .translate(vec3.fromValues(0, 5, -5))
     .lookAt(vec3.create());
 
-scene.addLight(spotLight, directLight);
+const pointLight = new CanvasToy.PointLight(renderer)
+    .translate(vec3.fromValues(0, 5, 0))
+    .setIdensity(5);
+
+scene.addLight(spotLight);
 scene.addObject(ground, box, sphere, center, camera);
 let time = 0;
 // spotLight.translate(vec3.fromValues(0, 0, 0.01));

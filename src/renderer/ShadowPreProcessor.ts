@@ -13,6 +13,7 @@ import { shaderPassLib } from "../shader/Program";
 import { FrameBuffer } from "./FrameBuffer";
 import { WebGLExtension } from "./IExtension";
 import { IProcessor } from "./IProcessor";
+import { ProcessingFrameBuffer } from "./SwapFramebuffer";
 
 export class ShadowPreProcess implements IProcessor {
 
@@ -45,9 +46,9 @@ export class ShadowPreProcess implements IProcessor {
                 this.depthMaterial.shader.setViewPort(
                     { x: 0, y: 0, width: light.shadowSize, height: light.shadowSize });
                 if (light.shadowLevel < ShadowLevel.PCSS) {
-                    this.renderDepth(scene, light, light.shadowFrameBuffer);
+                    this.renderDepth(scene, light);
                 } else {
-                    this.renderDepth(scene, light, light.tempFrameBuffer);
+                    this.renderDepth(scene, light);
                     this.blurMaterial.shader.setViewPort(
                         { x: 0, y: 0, width: light.shadowSize, height: light.shadowSize });
                     this.prefilterDepth(scene, light);
@@ -57,41 +58,48 @@ export class ShadowPreProcess implements IProcessor {
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     }
 
-    private renderDepth(scene: Scene, light: Light, targetFrameBuffer: FrameBuffer) {
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, targetFrameBuffer.glFramebuffer);
+    private renderDepth(scene: Scene, light: Light) {
+        light.shadowFrameBuffers.forEach((shadowFrameBuffer) => {
+            this.clearAndBindOneFrameBufferOfLight(light, shadowFrameBuffer);
+            for (const object of scene.objects) {
+                if (object instanceof Mesh) {
+                    let castShadow = false;
+                    for (const material of object.materials) {
+                        if (material instanceof StandardMaterial) {
+                            if (material.castShadow) {
+                                castShadow = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (castShadow) {
+                        this.gl.useProgram(this.depthMaterial.shader.webGlProgram);
+                        light.drawWithLightCamera({ mesh: object, material: this.depthMaterial });
+                    }
+                }
+            }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        });
+    }
+
+    private clearAndBindOneFrameBufferOfLight(light: Light, shadowFrameBuffer: ProcessingFrameBuffer) {
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, shadowFrameBuffer.active.glFramebuffer);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clearColor(light.far, 0, 0, 0);
         this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-        // this.gl.cullFace(this.gl.FRONT);
-        for (const object of scene.objects) {
-            if (object instanceof Mesh) {
-                let castShadow = false;
-                for (const material of object.materials) {
-                    if (material instanceof StandardMaterial) {
-                        if (material.castShadow) {
-                            castShadow = true;
-                            break;
-                        }
-                    }
-                }
-                if (castShadow) {
-                    this.gl.useProgram(this.depthMaterial.shader.webGlProgram);
-                    light.drawWithLightCamera({ mesh: object, material: this.depthMaterial });
-                }
-            }
-        }
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     }
 
     private prefilterDepth(scene: Scene, light: Light) {
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, light.shadowFrameBuffer.glFramebuffer);
-        this.gl.clearColor(light.far, 0, 0, 0);
-        this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-        this.blurMaterial.blurStep = 1.0 / light.shadowSize;
-        this.blurMaterial.origin = light.tempFrameBuffer.attachments.color.targetTexture;
-        this.gl.useProgram(this.blurMaterial.shader.webGlProgram);
-        light.drawWithLightCamera({ mesh: this.rectMesh, material: this.blurMaterial });
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        light.shadowFrameBuffers.forEach((shadowFrameBuffer) => {
+            this.blurMaterial.origin = shadowFrameBuffer.active.attachments.color.targetTexture;
+            shadowFrameBuffer.swap();
+            this.clearAndBindOneFrameBufferOfLight(light, shadowFrameBuffer);
+            this.blurMaterial.blurStep = 1.0 / light.shadowSize;
+            this.gl.useProgram(this.blurMaterial.shader.webGlProgram);
+            light.drawWithLightCamera({ mesh: this.rectMesh, material: this.blurMaterial });
+            shadowFrameBuffer.swap();
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        });
     }
 }

@@ -7,10 +7,10 @@ const scene = new CanvasToy.Scene();
 const camera = new CanvasToy.PerspectiveCamera()
     .setPosition(vec3.fromValues(0, 100, 100))
     .lookAt(vec3.fromValues(0, 0, -40));
-const tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl),[
+const tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [
     new CanvasToy.StandardMaterial(renderer.gl)
         .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg")),
-    ])
+])
     .translate(vec3.fromValues(0, -10, -40)).rotateX(-Math.PI / 2).setScaling(vec3.fromValues(200, 200, 200));
 scene.addObject(camera, tile);
 const teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");

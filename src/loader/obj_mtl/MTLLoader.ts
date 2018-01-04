@@ -2,8 +2,8 @@ import { vec3 } from "gl-matrix";
 
 import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Texture2D } from "../../textures/Texture2D";
+import { fetchRes } from "../ResourceFetcher";
 import { patterns } from "./CommonPatterns";
-import { fetchRes } from "./ResourceFetcher";
 
 export class MTLLoader {
     public static load(gl: WebGLRenderingContext, baseurl: string) {

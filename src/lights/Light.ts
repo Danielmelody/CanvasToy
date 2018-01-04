@@ -2,15 +2,14 @@ import { mat4, vec3 } from "gl-matrix";
 
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
-import { define, ifdefine, texture, uniform, ifgreat } from "../Decorators";
+import { define, ifdefine, ifgreat, texture, uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
-
 import { Object3d } from "../Object3d";
 import { FrameBuffer } from "../renderer/FrameBuffer";
-
 import { WebGLExtension } from "../renderer/IExtension";
 import { Renderer } from "../renderer/Renderer";
+import { ProcessingFrameBuffer } from "../renderer/SwapFramebuffer";
 import { IBuildinRenderParamMaps } from "../shader/Program";
 import { Texture } from "../textures/Texture";
 import { ShadowLevel } from "./ShadowLevel";
@@ -23,13 +22,7 @@ export abstract class Light extends Object3d {
 
     protected _idensity = 1;
 
-    protected _shadowMap: Texture;
-
     protected _pcssArea: number = 5;
-
-    protected _shadowFrameBuffer: FrameBuffer;
-
-    protected _tempFrameBuffer: FrameBuffer;
 
     @uniform(DataType.int, "shadowLevel")
     protected _shadowLevel: ShadowLevel = ShadowLevel.PCSS;
@@ -49,8 +42,7 @@ export abstract class Light extends Object3d {
         super();
         this.gl = renderer.gl;
         this.ext = renderer.ext;
-        this.configShadowFrameBuffer();
-        this.setUpProjectionCamera();
+        this.init(renderer);
     }
 
     public abstract getProjecttionBoundingBox2D(camera: Camera): BoundingBox2D;
@@ -72,12 +64,6 @@ export abstract class Light extends Object3d {
 
     public setShadowSize(shadowSize: number) {
         this._shadowSize = shadowSize;
-        if (this._shadowFrameBuffer !== null) {
-            this._shadowFrameBuffer.setWidth(this._shadowSize).setHeight(this._shadowSize).attach(this.gl);
-        }
-        if (this._tempFrameBuffer !== null) {
-            this._tempFrameBuffer.setWidth(this._shadowSize).setHeight(this._shadowSize).attach(this.gl);
-        }
         return this;
     }
 
@@ -105,17 +91,7 @@ export abstract class Light extends Object3d {
         return this._shadowSize;
     }
 
-    public get shadowMap() {
-        return this._shadowMap;
-    }
-
-    public get shadowFrameBuffer() {
-        return this._shadowFrameBuffer;
-    }
-
-    public get tempFrameBuffer() {
-        return this._tempFrameBuffer;
-    }
+    public abstract get shadowMap(): Texture;
 
     @uniform(DataType.vec3)
     public get color() {
@@ -152,39 +128,17 @@ export abstract class Light extends Object3d {
         return this._projectCamera.near;
     }
 
+    /**
+     * Get all shadow framebuffers owned by this light,
+     * as some type of Light may have more than one shadow frameBuffer
+     */
+    public abstract get shadowFrameBuffers(): ProcessingFrameBuffer[];
+
     public drawWithLightCamera(renderParam: IBuildinRenderParamMaps) {
         renderParam.camera = this._projectCamera;
         renderParam.light = this;
         renderParam.material.shader.pass(renderParam);
     }
 
-    protected abstract setUpProjectionCamera();
-
-    protected configShadowFrameBuffer() {
-        if (!this._shadowFrameBuffer) {
-            this._shadowFrameBuffer = new FrameBuffer(this.gl).setWidth(this._shadowSize).setHeight(this._shadowSize);
-            this._shadowMap = this._shadowFrameBuffer.attachments.color.targetTexture
-                .setType(this.gl.FLOAT)
-                .setFormat(this.gl.RGBA)
-                .setMinFilter(this.gl.NEAREST)
-                .setMagFilter(this.gl.NEAREST)
-                .setWrapS(this.gl.REPEAT)
-                .setWrapT(this.gl.REPEAT)
-                .apply(this.gl);
-            this._shadowFrameBuffer.attach(this.gl);
-        }
-        if (!this._tempFrameBuffer) {
-            this._tempFrameBuffer = new FrameBuffer(this.gl).setWidth(this._shadowSize).setHeight(this._shadowSize);
-            this._tempFrameBuffer.attachments.color.targetTexture
-                .setType(this.gl.FLOAT)
-                .setFormat(this.gl.RGBA)
-                .setMagFilter(this.gl.NEAREST)
-                .setMinFilter(this.gl.NEAREST)
-                .setWrapS(this.gl.REPEAT)
-                .setWrapT(this.gl.REPEAT)
-                .apply(this.gl);
-            this._tempFrameBuffer.attach(this.gl);
-        }
-        return this;
-    }
+    protected abstract init(render: Renderer);
 }

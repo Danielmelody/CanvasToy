@@ -10,6 +10,7 @@ import { Graphics } from "./GraphicsUtils";
 import { WebGLExtension } from "./IExtension";
 import { IProcessor } from "./IProcessor";
 import { ShadowPreProcess } from "./ShadowPreProcessor";
+import { IAsyncResource } from "../IAsyncResource";
 
 export class Renderer {
 
@@ -65,6 +66,10 @@ export class Renderer {
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
         setTimeout(this.main, this.frameRate);
+    }
+
+    public async waitAsyncResouces(asyncRes: IAsyncResource) {
+        await asyncRes.asyncFinished;
     }
 
     public stop() {

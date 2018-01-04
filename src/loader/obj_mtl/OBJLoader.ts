@@ -5,9 +5,9 @@ import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 
 import { mixin } from "../../Util";
+import { fetchRes } from "../ResourceFetcher";
 import { patterns } from "./CommonPatterns";
 import { MTLLoader } from "./MTLLoader";
-import { fetchRes } from "./ResourceFetcher";
 
 export class OBJLoader {
 

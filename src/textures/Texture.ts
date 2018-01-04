@@ -2,7 +2,7 @@ import { IAsyncResource } from "../IAsyncResource";
 
 export class Texture implements IAsyncResource {
 
-    public readonly glTexture: WebGLTexture;
+    protected _glTexture: WebGLTexture;
 
     protected _asyncFinished: Promise<Texture>;
     protected _image: HTMLImageElement;
@@ -35,7 +35,11 @@ export class Texture implements IAsyncResource {
             .setMagFilter(gl.NEAREST)
             .setMinFilter(gl.NEAREST)
             .setType(gl.UNSIGNED_BYTE);
-        this.glTexture = gl.createTexture();
+        this._glTexture = gl.createTexture();
+    }
+
+    public get glTexture() {
+        return this._glTexture;
     }
 
     public get image() {
@@ -107,6 +111,7 @@ export class Texture implements IAsyncResource {
 
     public setAsyncFinished(promise: Promise<Texture>) {
         this._asyncFinished = promise;
+        return this;
     }
 
     public asyncFinished() {
@@ -122,4 +127,25 @@ export class Texture implements IAsyncResource {
         gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
         return this;
     }
+
+    public applyForRendering(gl: WebGLRenderingContext, width: number, height: number) {
+        gl.bindTexture(this.target, this.glTexture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+        gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
+        gl.texParameteri(this.target, gl.TEXTURE_WRAP_T, this.wrapT);
+        gl.texParameteri(this.target, gl.TEXTURE_MAG_FILTER, this.magFilter);
+        gl.texParameteri(this.target, gl.TEXTURE_MIN_FILTER, this.minFilter);
+        gl.texImage2D(
+            this.target,
+            0,
+            this.format,
+            width,
+            height,
+            0,
+            this.format,
+            this.type,
+            null,
+        );
+    }
+
 }

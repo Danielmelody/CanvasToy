@@ -7,7 +7,7 @@ import { Light } from "./lights/Light";
 import { PointLight } from "./lights/PointLight";
 import { SpotLight } from "./lights/SpotLight";
 import { Object3d } from "./Object3d";
-import { Texture2D } from "./textures/Texture2D";
+import { Texture } from "./textures/Texture";
 
 export class Scene implements IDirtyable {
 
@@ -36,8 +36,8 @@ export class Scene implements IDirtyable {
 
     private updateEvents: Array<(deltaTime?: number) => void> = [];
 
-    private _directLightShadowMap: Texture2D[] = [];
-    private _spotLightShadowMap: Texture2D[] = [];
+    private _directLightShadowMap: Texture[] = [];
+    private _spotLightShadowMap: Texture[] = [];
 
     private _directShadowDirty = true;
     private _pointShadowDirty = true;

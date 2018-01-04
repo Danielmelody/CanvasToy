@@ -8,30 +8,34 @@ export class CubeTexture extends Texture {
 
     constructor(
         gl: WebGLRenderingContext,
-        xposUrl: string,
-        xnegUrl: string,
-        yposUrl: string,
-        ynegUrl: string,
-        zposUrl: string,
-        znegUrl: string,
+        urls?: {
+            xpos: string,
+            xneg: string,
+            ypos: string,
+            yneg: string,
+            zpos: string,
+            zneg: string,
+        },
     ) {
         super(gl);
         const image = this._image;
         this.setTarget(gl.TEXTURE_CUBE_MAP);
-        this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
-        this.images[0].src = xposUrl;
-        this.images[1].src = xnegUrl;
-        this.images[2].src = yposUrl;
-        this.images[3].src = ynegUrl;
-        this.images[4].src = zposUrl;
-        this.images[5].src = znegUrl;
-        this.setAsyncFinished(
-            Promise.all(this.images.map((image) => {
-                return this.createLoadPromise(image);
-            })).then(() => {
-                return Promise.resolve(this);
-            }),
-        );
+        if (!!urls) {
+            this.images = [0, 0, 0, 0, 0, 0].map(() => new Image());
+            this.images[0].src = urls.xpos;
+            this.images[1].src = urls.xneg;
+            this.images[2].src = urls.ypos;
+            this.images[3].src = urls.yneg;
+            this.images[4].src = urls.zpos;
+            this.images[5].src = urls.zneg;
+            this.setAsyncFinished(
+                Promise.all(this.images.map((image) => {
+                    return this.createLoadPromise(image);
+                })).then(() => {
+                    return Promise.resolve(this);
+                }),
+            );
+        }
     }
 
     public get wrapR() {
@@ -57,6 +61,24 @@ export class CubeTexture extends Texture {
             );
         }
         return this;
+    }
+
+    public applyForRender(gl: WebGLRenderingContext, width, height) {
+        super.apply(gl);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+        for (let i = 0; i < this.images.length; ++i) {
+            gl.texImage2D(
+                gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                0,
+                this.format,
+                width,
+                height,
+                0,
+                this.format,
+                this.type,
+                null,
+            );
+        }
     }
 
     private createLoadPromise(image: HTMLImageElement) {
