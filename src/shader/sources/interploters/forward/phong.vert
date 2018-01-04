@@ -20,14 +20,6 @@ uniform DirectLight directLights[directLightsNum];
     #endif
 #endif
 
-#if (pointLightsNum > 0)
-uniform PointLight pointLights[pointLightsNum];
-    #ifdef RECEIVE_SHADOW
-    varying vec4 pointShadowCoord[pointLightsNum];
-    varying float pointLightDepth[pointLightsNum];
-    #endif
-#endif
-
 #if (spotLightsNum > 0)
 uniform SpotLight spotLights[spotLightsNum];
     #ifdef RECEIVE_SHADOW
@@ -49,21 +41,14 @@ void main (){
         #if (directLightsNum > 0)
         for (int i = 0; i < directLightsNum; ++i) {
             directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;
-            directLightDepth[i] = -(directLights[i].viewMatrix * worldPos).z;
-        }
-        #endif
-
-        #if (pointLightsNum > 0)
-        for (int i = 0; i < pointLightsNum; ++i) {
-            pointShadowCoord[i] = pointLights[i].projectionMatrix * pointLights[i].viewMatrix * worldPos;
-            pointLightDepth[i] = -(pointLights[i].viewMatrix * worldPos).z;
+            directLightDepth[i] = length((directLights[i].viewMatrix * worldPos).xyz);
         }
         #endif
 
         #if (spotLightsNum > 0)
         for (int i = 0; i < spotLightsNum; ++i) {
             spotShadowCoord[i] = spotLights[i].projectionMatrix * spotLights[i].viewMatrix * worldPos;
-            spotLightDepth[i] = -(spotLights[i].viewMatrix * worldPos).z;
+            spotLightDepth[i] = length((spotLights[i].viewMatrix * worldPos).xyz);
         }
         #endif
     #endif

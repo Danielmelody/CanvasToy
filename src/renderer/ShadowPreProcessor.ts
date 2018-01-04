@@ -60,7 +60,7 @@ export class ShadowPreProcess implements IProcessor {
 
     private renderDepth(scene: Scene, light: Light) {
         light.shadowFrameBuffers.forEach((shadowFrameBuffer) => {
-            this.clearAndBindOneFrameBufferOfLight(light, shadowFrameBuffer);
+            light.clearShadowFrameBuffer();
             for (const object of scene.objects) {
                 if (object instanceof Mesh) {
                     let castShadow = false;
@@ -82,19 +82,11 @@ export class ShadowPreProcess implements IProcessor {
         });
     }
 
-    private clearAndBindOneFrameBufferOfLight(light: Light, shadowFrameBuffer: ProcessingFrameBuffer) {
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, shadowFrameBuffer.active.glFramebuffer);
-        this.gl.enable(this.gl.DEPTH_TEST);
-        this.gl.depthFunc(this.gl.LEQUAL);
-        this.gl.clearColor(light.far, 0, 0, 0);
-        this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-    }
-
     private prefilterDepth(scene: Scene, light: Light) {
         light.shadowFrameBuffers.forEach((shadowFrameBuffer) => {
             this.blurMaterial.origin = shadowFrameBuffer.active.attachments.color.targetTexture;
             shadowFrameBuffer.swap();
-            this.clearAndBindOneFrameBufferOfLight(light, shadowFrameBuffer);
+            light.clearShadowFrameBuffer();
             this.blurMaterial.blurStep = 1.0 / light.shadowSize;
             this.gl.useProgram(this.blurMaterial.shader.webGlProgram);
             light.drawWithLightCamera({ mesh: this.rectMesh, material: this.blurMaterial });

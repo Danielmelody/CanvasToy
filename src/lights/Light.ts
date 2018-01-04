@@ -140,5 +140,7 @@ export abstract class Light extends Object3d {
         renderParam.material.shader.pass(renderParam);
     }
 
+    public abstract clearShadowFrameBuffer();
+
     protected abstract init(render: Renderer);
 }

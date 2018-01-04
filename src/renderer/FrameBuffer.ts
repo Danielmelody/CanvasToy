@@ -1,4 +1,5 @@
 import { Texture } from "../textures/Texture";
+import { Texture2D } from "../textures/Texture2D";
 import { Graphics } from "./GraphicsUtils";
 
 export enum AttachmentType {
@@ -152,7 +153,7 @@ export class FrameBuffer {
                 gl.framebufferTexture2D(
                     gl.FRAMEBUFFER,
                     attachment.attachmentCode(context),
-                    attachment.targetTexture.target,
+                    attachment.textureTargetCode,
                     attachment.targetTexture.glTexture,
                     0);
                 break;

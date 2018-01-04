@@ -57,6 +57,14 @@ export class DirectionalLight extends Light {
         return this;
     }
 
+    public clearShadowFrameBuffer() {
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._shadowFrameBuffer.active.glFramebuffer);
+        this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.depthFunc(this.gl.LEQUAL);
+        this.gl.clearColor(this.far, 0, 0, 0);
+        this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+    }
+
     protected init(renderer: Renderer) {
         if (!this._shadowFrameBuffer) {
             this._shadowFrameBuffer = new ProcessingFrameBuffer(this.gl)

@@ -29,6 +29,7 @@ export class ProcessingFrameBuffer {
             const fbo = new FrameBuffer(this._gl);
             fbo.setWidth(this._width).setHeight(this._height);
             this._onInits.forEach((inits) => { inits(fbo); });
+            fbo.attach(this._gl);
             this._candidates.push(fbo);
         }
         return this._candidates[this._activeIndex];
@@ -36,13 +37,6 @@ export class ProcessingFrameBuffer {
 
     public onInit(callback: (frameBuffer: FrameBuffer) => void) {
         this._onInits.push(callback);
-        return this;
-    }
-
-    public each(callback: (frameBuffer: FrameBuffer) => void) {
-        for(const framebuffer of this._candidates) {
-            callback(framebuffer);
-        }
         return this;
     }
 

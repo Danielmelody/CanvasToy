@@ -63,10 +63,10 @@ export class CubeTexture extends Texture {
         return this;
     }
 
-    public applyForRender(gl: WebGLRenderingContext, width, height) {
+    public applyForRendering(gl: WebGLRenderingContext, width, height) {
         super.apply(gl);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-        for (let i = 0; i < this.images.length; ++i) {
+        for (let i = 0; i < 6; ++i) {
             gl.texImage2D(
                 gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
                 0,
@@ -79,6 +79,7 @@ export class CubeTexture extends Texture {
                 null,
             );
         }
+        return this;
     }
 
     private createLoadPromise(image: HTMLImageElement) {

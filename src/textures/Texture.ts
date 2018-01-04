@@ -146,6 +146,7 @@ export class Texture implements IAsyncResource {
             this.type,
             null,
         );
+        return this;
     }
 
 }
