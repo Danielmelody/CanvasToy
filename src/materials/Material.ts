@@ -9,6 +9,7 @@ export let colors = {
 };
 
 export abstract class Material {
+    public name: string;
     public defines: string[] = [];
     public shader: Program;
 

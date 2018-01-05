@@ -906,12 +906,12 @@ define("shader/shaders", ["require", "exports"], function (require, exports) {
         ShaderSource.interploters__forward__esm__prefiltering_vert = "\nuniform mat4 normalMatrix;\nattribute vec3 position;\nattribute vec3 normal;\nvarying vec2 uv;\nvarying vec3 vNormal;\n\nvoid main () {\n    gl_Position = vec4(position, 1.0);\n    uv = gl_Position.xy * 0.5 + 0.5;\n    vNormal = normalize((normalMatrix * vec4(normal, 1.0)).xyz);\n}\n";
         ShaderSource.interploters__forward__gouraud_frag = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
         ShaderSource.interploters__forward__gouraud_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-        ShaderSource.interploters__forward__phong_frag = "\nuniform Material uMaterial;\nuniform vec3 cameraPos;\n\nvarying vec2 vMainUV;\nvarying vec4 clipPos;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\nuniform sampler2D directLightShadowMap[directLightsNum];\n#endif\n\n#if (pointLightsNum > 0)\nuniform PointLight pointLights[pointLightsNum];\nuniform samplerCube pointLightShadowMap[pointLightsNum];\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\nuniform sampler2D spotLightShadowMap[spotLightsNum];\n#endif\n\n#ifdef RECEIVE_SHADOW\n\n    #if (directLightsNum > 0)\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n\n    #if (spotLightsNum > 0)\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = uMaterial.ambient;\n    #ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(-vPosition);\n    vec3 skyUV = reflect(viewDir, vNormal);\n    totalLighting = mix(totalLighting, textureCube(uCubeTexture, skyUV).xyz, reflectivity);\n    #endif\n#if (directLightsNum > 0)\n    for (int index = 0; index < directLightsNum; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-directLights[index].direction, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            directShadowCoord[index].xy / directShadowCoord[index].w, \n            directLightShadowMap[index], \n            directLightDepth[index], \n            lambertian, \n            1.0 / directLights[index].shadowMapSize,\n            directLights[index].shadowLevel,\n            directLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (pointLightsNum > 0)\n    for (int index = 0; index < pointLightsNum; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n        #ifdef RECEIVE_SHADOW\n        vec3 offset = vPosition - pointLights[index].position;\n        vec3 cubePos = normalize(offset);\n        float linearDepth = length(offset);\n        float lambertian = max(dot(-cubePos, normal), 0.0);\n        float shadowFactor = getPointShadow(\n            cubePos,\n            pointLightShadowMap[index],\n            linearDepth,\n            lambertian,\n            1.0 / pointLights[index].shadowMapSize,\n            pointLights[index].shadowLevel,\n            pointLights[index].softness\n        );\n        lighting *= shadowFactor;\n        #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (spotLightsNum > 0)\n    for (int index = 0; index < spotLightsNum; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-spotLights[index].spotDir, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            spotShadowCoord[index].xy / spotShadowCoord[index].w, \n            spotLightShadowMap[index],\n            spotLightDepth[index], \n            lambertian, \n            1.0 / spotLights[index].shadowMapSize,\n            spotLights[index].shadowLevel,\n            spotLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n\n    }\n#endif\n    color += totalLighting;\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+        ShaderSource.interploters__forward__phong_frag = "\nuniform Material uMaterial;\nuniform vec3 cameraPos;\n\nvarying vec2 vMainUV;\nvarying vec4 clipPos;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\nuniform sampler2D directLightShadowMap[directLightsNum];\n#endif\n\n#if (pointLightsNum > 0)\nuniform PointLight pointLights[pointLightsNum];\nuniform samplerCube pointLightShadowMap[pointLightsNum];\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\nuniform sampler2D spotLightShadowMap[spotLightsNum];\n#endif\n\n#ifdef RECEIVE_SHADOW\n\n    #if (directLightsNum > 0)\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n\n    #if (spotLightsNum > 0)\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = uMaterial.ambient;\n    #ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(vPosition - cameraPos);\n    vec3 skyUV = normalize(reflect(viewDir, vNormal));\n    vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;\n    color += calculateLight(\n        uMaterial,\n        vPosition,\n        normal,\n        skyUV,\n        cameraPos,\n        imageLightColor,\n        1.0\n    );\n    #endif\n#if (directLightsNum > 0)\n    for (int index = 0; index < directLightsNum; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-directLights[index].direction, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            directShadowCoord[index].xy / directShadowCoord[index].w, \n            directLightShadowMap[index], \n            directLightDepth[index], \n            lambertian, \n            1.0 / directLights[index].shadowMapSize,\n            directLights[index].shadowLevel,\n            directLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (pointLightsNum > 0)\n    for (int index = 0; index < pointLightsNum; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n        #ifdef RECEIVE_SHADOW\n        vec3 offset = vPosition - pointLights[index].position;\n        vec3 cubePos = normalize(offset);\n        float linearDepth = length(offset);\n        float lambertian = max(dot(-cubePos, normal), 0.0);\n        float shadowFactor = getPointShadow(\n            cubePos,\n            pointLightShadowMap[index],\n            linearDepth,\n            lambertian,\n            1.0 / pointLights[index].shadowMapSize,\n            pointLights[index].shadowLevel,\n            pointLights[index].softness\n        );\n        lighting *= shadowFactor;\n        #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (spotLightsNum > 0)\n    for (int index = 0; index < spotLightsNum; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-spotLights[index].spotDir, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            spotShadowCoord[index].xy / spotShadowCoord[index].w, \n            spotLightShadowMap[index],\n            spotLightDepth[index], \n            lambertian, \n            1.0 / spotLights[index].shadowMapSize,\n            spotLights[index].shadowLevel,\n            spotLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n\n    }\n#endif\n    color += totalLighting;\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
         ShaderSource.interploters__forward__phong_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\nvarying vec4 clipPos;\n\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\n    #ifdef RECEIVE_SHADOW\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\n    #ifdef RECEIVE_SHADOW\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n#endif\n\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    clipPos = gl_Position;\n    vec4 worldPos = (modelMatrix * vec4(position, 1.0));\n    vPosition = worldPos.xyz;\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n\n    #ifdef RECEIVE_SHADOW\n        #if (directLightsNum > 0)\n        for (int i = 0; i < directLightsNum; ++i) {\n            directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;\n            directLightDepth[i] = length((directLights[i].viewMatrix * worldPos).xyz);\n        }\n        #endif\n\n        #if (spotLightsNum > 0)\n        for (int i = 0; i < spotLightsNum; ++i) {\n            spotShadowCoord[i] = spotLights[i].projectionMatrix * spotLights[i].viewMatrix * worldPos;\n            spotLightDepth[i] = length((spotLights[i].viewMatrix * worldPos).xyz);\n        }\n        #endif\n    #endif\n}\n";
         ShaderSource.interploters__forward__skybox_frag = "\nvarying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
         ShaderSource.interploters__forward__skybox_vert = "\nattribute vec3 position;\nuniform mat4 viewProjectionMatrix;\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = viewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
         ShaderSource.light_model__blinn_phong_glsl = "\nvec3 calculateLight(\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 lightColor,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = material.specular * pow(specularAngle, material.specularExponent);\n    vec3 diffuseColor = material.diffuse * lambortian;\n    vec3 color = (diffuseColor + specularColor) * idensity * lightColor;\n    return color;\n}\n";
-        ShaderSource.light_model__pbs_ggx_glsl = "\nfloat lambda_theta(float roughness, float cos_2) {\n    float factor = 1.0 + roughness * (1.0 - cos_2) / cos_2;\n    float factorSqr = factor * factor;\n    return (factor * factorSqr * factorSqr - 1.0) / 2.0;\n}\n\nfloat tangent_2(float cos_2) {\n    return (1. - cos_2) / cos_2;\n}\n\nfloat Smith_G1(float NdotV, float roughness) {\n    float tan_2 = tangent_2(NdotV * NdotV);\n    float root = roughness * roughness * tan_2;\n    return 2.0 / (1. + sqrt(1. + root));\n}\n\nfloat GGX_D(float HdotN, float roughness) {\n    float cos_2 = HdotN * HdotN;\n    float tan_2 = tangent_2(cos_2);\n\n    float root = roughness / (cos_2 * (roughness * roughness + tan_2));\n    return root * root / acos(-1.);\n}\n\nvec3 calculateLight(\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 lightColor,\n    float idensity\n    ) {\n    vec3 viewDir = normalize(eyePos - position);\n\n    vec3 halfVec = normalize(lightDir + viewDir);\n\n    float LdotN = dot(lightDir, normal);\n    float VdotN = dot(viewDir, normal);\n    float HdotN = dot(halfVec, normal);\n    float LdotH = dot(lightDir, halfVec);\n    float VdotH = dot(viewDir, halfVec);\n\n    if (VdotN < 0. || LdotN < 0.) {\n        return vec3(0.);\n    }\n\n    float OneMinusLdotH = 1. - LdotH;\n    float OneMinusLdotHSqr = OneMinusLdotH * OneMinusLdotH;\n\n    vec3 albedo = material.albedo * lightColor;\n\n    vec3 fresnel = albedo + (1. - albedo) * OneMinusLdotHSqr * OneMinusLdotHSqr * OneMinusLdotH;\n\n    float d = GGX_D(HdotN, material.roughness);\n    float g = Smith_G1(VdotN, material.roughness) * Smith_G1(LdotN, material.roughness);\n    vec3 specbrdf = fresnel * (g * d / (4. * VdotN * LdotN));\n\n    float OneMinusLdotN = 1. - LdotN;\n    float OneMinusLdotNSqr = OneMinusLdotN * OneMinusLdotN;\n\n    float OneMinusVdotN = 1. - VdotN;\n    float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;\n\n    float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);\n    vec3 diffbrdf = (albedo / acos(-1.)) * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *\n                (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);\n\n\n    vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;\n    return color * LdotN;\n}";
+        ShaderSource.light_model__pbs_ggx_glsl = "\nfloat tangent_2(float cos_2) {\n    return (1. - cos_2) / cos_2;\n}\n\nfloat Smith_G1(float NdotV, float roughness) {\n    float tan_2 = tangent_2(NdotV * NdotV);\n    float root = roughness * roughness * tan_2;\n    return 2.0 / (1. + sqrt(1. + root));\n}\n\nfloat GGX_D(float HdotN, float roughness) {\n    float cos_2 = HdotN * HdotN;\n    float tan_2 = tangent_2(cos_2);\n\n    float root = roughness / (cos_2 * (roughness * roughness + tan_2));\n    return root * root / acos(-1.);\n}\n\nvec3 calculateLight(\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 lightColor,\n    float idensity\n    ) {\n    vec3 viewDir = normalize(eyePos - position);\n\n    vec3 halfVec = normalize(lightDir + viewDir);\n\n    float LdotN = dot(lightDir, normal);\n    float VdotN = dot(viewDir, normal);\n    float HdotN = dot(halfVec, normal);\n    float LdotH = dot(lightDir, halfVec);\n    float VdotH = dot(viewDir, halfVec);\n\n    if (VdotN < 0. || LdotN < 0.) {\n        return vec3(0.);\n    }\n\n    float OneMinusLdotH = 1. - LdotH;\n    float OneMinusLdotHSqr = OneMinusLdotH * OneMinusLdotH;\n\n    vec3 albedo = material.albedo * lightColor;\n\n    vec3 fresnel = albedo + (1. - albedo) * OneMinusLdotHSqr * OneMinusLdotHSqr * OneMinusLdotH;\n\n    float d = GGX_D(HdotN, material.roughness);\n    float g = Smith_G1(VdotN, material.roughness) * Smith_G1(LdotN, material.roughness);\n    vec3 specbrdf = fresnel * (g * d / (4. * VdotN * LdotN));\n\n    float OneMinusLdotN = 1. - LdotN;\n    float OneMinusLdotNSqr = OneMinusLdotN * OneMinusLdotN;\n\n    float OneMinusVdotN = 1. - VdotN;\n    float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;\n\n    float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);\n    vec3 diffbrdf = (albedo / acos(-1.)) * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *\n                (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);\n\n\n    vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;\n    return color * LdotN * idensity;\n}\n";
     })(ShaderSource = exports.ShaderSource || (exports.ShaderSource = {}));
 });
 define("shader/ShaderBuilder", ["require", "exports", "shader/Program", "shader/shaders"], function (require, exports, Program_1, shaders_1) {
@@ -1315,6 +1315,9 @@ define("materials/BlinnPhongMaterial", ["require", "exports", "gl-matrix", "Data
         ], BlinnPhongMaterial.prototype, "_environmentMap", void 0);
         __decorate([
             Decorators_3.uniform(DataTypeEnum_4.DataType.vec3)
+        ], BlinnPhongMaterial.prototype, "ambient", null);
+        __decorate([
+            Decorators_3.uniform(DataTypeEnum_4.DataType.vec3)
         ], BlinnPhongMaterial.prototype, "diffuse", null);
         __decorate([
             Decorators_3.uniform(DataTypeEnum_4.DataType.vec3)
@@ -1341,7 +1344,7 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
             _this._ambient = gl_matrix_5.vec3.fromValues(0.1, 0.1, 0.1);
             _this._albedo = gl_matrix_5.vec3.fromValues(0.8, 0.8, 0.8);
             _this._metallic = 0.8;
-            _this._roughness = 64;
+            _this._roughness = 0.5;
             _this._transparency = 0;
             _this._reflectivity = 1;
             return _this;
@@ -1349,6 +1352,7 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
         StandardMaterial_1 = StandardMaterial;
         StandardMaterial.fromLaggard = function (gl, blinnPhong) {
             var standard = new StandardMaterial_1(gl);
+            standard.name = blinnPhong.name;
             standard.setAlbedo(blinnPhong.diffuse)
                 .setAmbient(blinnPhong.ambient)
                 .setAlphaMap(blinnPhong.alphaMap)
@@ -1357,7 +1361,8 @@ define("materials/StandardMaterial", ["require", "exports", "gl-matrix", "DataTy
                 .setMainTexture(blinnPhong.mainTexture)
                 .setCastShadow(blinnPhong.castShadow)
                 .setRecieveShadow(blinnPhong.receiveShadow)
-                .setDebugMode(blinnPhong.debugMode);
+                .setDebugMode(blinnPhong.debugMode)
+                .setEnvironmentMap(blinnPhong.environmentMap);
             return standard;
         };
         Object.defineProperty(StandardMaterial.prototype, "geometryShader", {
@@ -2748,7 +2753,7 @@ define("materials/ESM/LogBlurMaterial", ["require", "exports", "gl-matrix", "Dat
     }(Material_4.Material));
     exports.PCSSFilteringMaterial = PCSSFilteringMaterial;
 });
-define("renderer/ShadowPreProcessor", ["require", "exports", "geometries/RectGeometry", "lights/ShadowLevel", "materials/ESM/DepthPackMaterial", "materials/ESM/LogBlurMaterial", "materials/StandardMaterial", "Mesh"], function (require, exports, RectGeometry_2, ShadowLevel_3, DepthPackMaterial_1, LogBlurMaterial_1, StandardMaterial_3, Mesh_3) {
+define("renderer/ShadowPreProcessor", ["require", "exports", "geometries/RectGeometry", "lights/ShadowLevel", "materials/BlinnPhongMaterial", "materials/ESM/DepthPackMaterial", "materials/ESM/LogBlurMaterial", "materials/StandardMaterial", "Mesh"], function (require, exports, RectGeometry_2, ShadowLevel_3, BlinnPhongMaterial_1, DepthPackMaterial_1, LogBlurMaterial_1, StandardMaterial_3, Mesh_3) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var ShadowPreProcess = (function () {
         function ShadowPreProcess(gl, ext, scene) {
@@ -2787,7 +2792,7 @@ define("renderer/ShadowPreProcessor", ["require", "exports", "geometries/RectGeo
                         var castShadow = false;
                         for (var _b = 0, _c = object.materials; _b < _c.length; _b++) {
                             var material = _c[_b];
-                            if (material instanceof StandardMaterial_3.StandardMaterial) {
+                            if ((material instanceof StandardMaterial_3.StandardMaterial) || (material instanceof BlinnPhongMaterial_1.BlinnPhongMaterial)) {
                                 if (material.castShadow) {
                                     castShadow = true;
                                     break;
@@ -4409,7 +4414,7 @@ define("loader/obj_mtl/CommonPatterns", ["require", "exports"], function (requir
         patterns.commentPattern = /#.*/mg;
     })(patterns = exports.patterns || (exports.patterns = {}));
 });
-define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "materials/BlinnPhongMaterial", "materials/StandardMaterial", "textures/Texture2D", "loader/ResourceFetcher", "loader/obj_mtl/CommonPatterns"], function (require, exports, gl_matrix_20, BlinnPhongMaterial_1, StandardMaterial_4, Texture2D_1, ResourceFetcher_1, CommonPatterns_1) {
+define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "materials/BlinnPhongMaterial", "materials/StandardMaterial", "textures/Texture2D", "loader/ResourceFetcher", "loader/obj_mtl/CommonPatterns"], function (require, exports, gl_matrix_20, BlinnPhongMaterial_2, StandardMaterial_4, Texture2D_1, ResourceFetcher_1, CommonPatterns_1) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var MTLLoader = (function () {
         function MTLLoader() {
@@ -4435,13 +4440,14 @@ define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "material
             switch (firstVar) {
                 case "newmtl":
                     var mtlName = line.match(MTLLoader.newmtlPattern)[1];
-                    materials[mtlName] = new BlinnPhongMaterial_1.BlinnPhongMaterial(gl);
+                    materials[mtlName] = new BlinnPhongMaterial_2.BlinnPhongMaterial(gl);
+                    materials[mtlName].name = mtlName;
                     return materials[mtlName];
                 case "Ka":
                     currentMaterial.setAmbient(MTLLoader.getVector(MTLLoader.ambientPattern, line));
                     break;
                 case "Kd":
-                    if (currentMaterial instanceof BlinnPhongMaterial_1.BlinnPhongMaterial) {
+                    if (currentMaterial instanceof BlinnPhongMaterial_2.BlinnPhongMaterial) {
                         currentMaterial.setDiffuse(MTLLoader.getVector(MTLLoader.diffusePattern, line));
                     }
                     else if (currentMaterial instanceof StandardMaterial_4.StandardMaterial) {
@@ -4449,12 +4455,12 @@ define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "material
                     }
                     break;
                 case "Ks":
-                    if (currentMaterial instanceof BlinnPhongMaterial_1.BlinnPhongMaterial) {
+                    if (currentMaterial instanceof BlinnPhongMaterial_2.BlinnPhongMaterial) {
                         currentMaterial.setSpecular(MTLLoader.getVector(MTLLoader.specularePattern, line));
                     }
                     break;
                 case "Ns":
-                    if (currentMaterial instanceof BlinnPhongMaterial_1.BlinnPhongMaterial) {
+                    if (currentMaterial instanceof BlinnPhongMaterial_2.BlinnPhongMaterial) {
                         currentMaterial.setSpecularExponent(MTLLoader.getNumber(MTLLoader.specularExponentPattern, line));
                     }
                     break;
@@ -4480,14 +4486,16 @@ define("loader/obj_mtl/MTLLoader", ["require", "exports", "gl-matrix", "material
                     currentMaterial.setStencilMap(new Texture2D_1.Texture2D(gl, home + MTLLoader.getImageUrl(line)));
                     break;
                 case "Pr":
-                    if (currentMaterial instanceof BlinnPhongMaterial_1.BlinnPhongMaterial) {
+                    if (currentMaterial instanceof BlinnPhongMaterial_2.BlinnPhongMaterial) {
                         currentMaterial = StandardMaterial_4.StandardMaterial.fromLaggard(gl, currentMaterial);
+                        materials[currentMaterial.name] = currentMaterial;
                     }
                     currentMaterial.setRoughness(MTLLoader.getNumber(MTLLoader.roughnessPattern, line));
                     break;
                 case "Pm":
-                    if (currentMaterial instanceof BlinnPhongMaterial_1.BlinnPhongMaterial) {
+                    if (currentMaterial instanceof BlinnPhongMaterial_2.BlinnPhongMaterial) {
                         currentMaterial = StandardMaterial_4.StandardMaterial.fromLaggard(gl, currentMaterial);
+                        materials[currentMaterial.name] = currentMaterial;
                     }
                     currentMaterial.setMetallic(MTLLoader.getNumber(MTLLoader.metallicPattern, line));
                     break;
@@ -4654,7 +4662,7 @@ define("extensions/Water", ["require", "exports", "geometries/Geometry", "materi
     }(Mesh_6.Mesh));
     exports.Water = Water;
 });
-define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "renderer/FrameBuffer", "Object3d", "Scene", "DataTypeEnum", "Util", "cameras/Camera", "cameras/PerspectiveCamera", "cameras/OrthoCamera", "geometries/Geometry", "geometries/CubeGeometry", "geometries/RectGeometry", "geometries/SphereGeometry", "geometries/TileGeometry", "textures/Texture", "textures/Texture2D", "textures/CubeTexture", "textures/DataTexture", "materials/Material", "materials/StandardMaterial", "materials/BlinnPhongMaterial", "materials/SkyMaterial", "materials/ESM/DepthPackMaterial", "lights/Light", "lights/PointLight", "lights/SpotLight", "lights/DirectionalLight", "lights/ShadowLevel", "loader/obj_mtl/OBJLoader", "Mesh", "extensions/Water"], function (require, exports, Decorators_13, Renderer_1, FrameBuffer_4, Object3d_5, Scene_1, DataTypeEnum_16, Util_2, Camera_3, PerspectiveCamera_3, OrthoCamera_2, Geometry_7, CubeGeometry_1, RectGeometry_3, SphereGeometry_2, TileGeometry_1, Texture_6, Texture2D_2, CubeTexture_2, DataTexture_2, Material_6, StandardMaterial_7, BlinnPhongMaterial_2, SkyMaterial_1, DepthPackMaterial_2, Light_3, PointLight_2, SpotLight_3, DirectionalLight_2, ShadowLevel_4, OBJLoader_1, Mesh_7, Water_1) {
+define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "renderer/FrameBuffer", "Object3d", "Scene", "DataTypeEnum", "Util", "cameras/Camera", "cameras/PerspectiveCamera", "cameras/OrthoCamera", "geometries/Geometry", "geometries/CubeGeometry", "geometries/RectGeometry", "geometries/SphereGeometry", "geometries/TileGeometry", "textures/Texture", "textures/Texture2D", "textures/CubeTexture", "textures/DataTexture", "materials/Material", "materials/StandardMaterial", "materials/BlinnPhongMaterial", "materials/SkyMaterial", "materials/ESM/DepthPackMaterial", "lights/Light", "lights/PointLight", "lights/SpotLight", "lights/DirectionalLight", "lights/ShadowLevel", "loader/obj_mtl/OBJLoader", "Mesh", "extensions/Water"], function (require, exports, Decorators_13, Renderer_1, FrameBuffer_4, Object3d_5, Scene_1, DataTypeEnum_16, Util_2, Camera_3, PerspectiveCamera_3, OrthoCamera_2, Geometry_7, CubeGeometry_1, RectGeometry_3, SphereGeometry_2, TileGeometry_1, Texture_6, Texture2D_2, CubeTexture_2, DataTexture_2, Material_6, StandardMaterial_7, BlinnPhongMaterial_3, SkyMaterial_1, DepthPackMaterial_2, Light_3, PointLight_2, SpotLight_3, DirectionalLight_2, ShadowLevel_4, OBJLoader_1, Mesh_7, Water_1) {
     function __export(m) {
         for (var p in m)
             if (!exports.hasOwnProperty(p))
@@ -4688,7 +4696,7 @@ define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "r
     exports.DataTexture = DataTexture_2.DataTexture;
     exports.Material = Material_6.Material;
     exports.StandardMaterial = StandardMaterial_7.StandardMaterial;
-    exports.BlinnPhongMaterial = BlinnPhongMaterial_2.BlinnPhongMaterial;
+    exports.BlinnPhongMaterial = BlinnPhongMaterial_3.BlinnPhongMaterial;
     exports.SkyMaterial = SkyMaterial_1.SkyMaterial;
     exports.LinearDepthPackMaterial = DepthPackMaterial_2.LinearDepthPackMaterial;
     exports.Light = Light_3.Light;
@@ -4799,8 +4807,7 @@ define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-mat
     var light = new CanvasToy.DirectionalLight(renderer)
         .rotateY(Math.PI / 3)
         .setPosition(gl_matrix_2.vec3.fromValues(5, 0, -5))
-        .lookAt(meshes[0].position)
-        .setShadowLevel(CanvasToy.ShadowLevel.None);
+        .lookAt(meshes[0].position);
     var t = 0;
     scene.addOnUpdateListener(function (dt) {
         meshes[0].rotateY(-0.005);
@@ -4814,10 +4821,6 @@ define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-mat
     renderer.stop();
     global_1.onMouseOnStart(renderer);
     global_1.onMouseEvent(renderer, camera);
-});
-define("examples/index", ["require", "exports", "examples/basic/bones/index"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
 });
 define("examples/basic/lightesAndGeometries/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_3, global_2) {
     "use strict";
@@ -4877,7 +4880,7 @@ define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-
     var light = new CanvasToy.SpotLight(renderer)
         .translate(gl_matrix_4.vec3.fromValues(-5, 5, 0))
         .setConeAngle(Math.PI / 3)
-        .setIdensity(4)
+        .setIdensity(5)
         .rotateX(-Math.PI / 4)
         .rotateY(-Math.PI / 4);
     scene.addLight(light);
@@ -4907,6 +4910,10 @@ define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-
     renderer.render(scene, camera);
     renderer.stop();
     global_3.onMouseOnStart(renderer);
+});
+define("examples/index", ["require", "exports", "examples/basic/bones/index", "examples/basic/lightesAndGeometries/index", "examples/basic/Loader/obj_mtl"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
 });
 define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_5, global_4) {
     "use strict";

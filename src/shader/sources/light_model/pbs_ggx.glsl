@@ -1,9 +1,3 @@
-float lambda_theta(float roughness, float cos_2) {
-    float factor = 1.0 + roughness * (1.0 - cos_2) / cos_2;
-    float factorSqr = factor * factor;
-    return (factor * factorSqr * factorSqr - 1.0) / 2.0;
-}
-
 float tangent_2(float cos_2) {
     return (1. - cos_2) / cos_2;
 }
@@ -68,5 +62,5 @@ vec3 calculateLight(
 
 
     vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;
-    return color * LdotN;
+    return color * LdotN * idensity;
 }

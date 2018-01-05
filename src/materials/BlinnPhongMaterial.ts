@@ -94,6 +94,7 @@ export class BlinnPhongMaterial extends Material {
         return this._mainTexture;
     }
 
+    @uniform(DataType.vec3)
     public get ambient() {
         return this._ambient;
     }

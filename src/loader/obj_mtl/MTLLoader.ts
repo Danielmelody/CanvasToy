@@ -48,6 +48,7 @@ export class MTLLoader {
             case "newmtl":
                 const mtlName = line.match(MTLLoader.newmtlPattern)[1];
                 materials[mtlName] = new BlinnPhongMaterial(gl);
+                materials[mtlName].name = mtlName;
                 return materials[mtlName];
             case "Ka":
                 currentMaterial.setAmbient(MTLLoader.getVector(MTLLoader.ambientPattern, line));
@@ -93,12 +94,14 @@ export class MTLLoader {
             case "Pr":
                 if (currentMaterial instanceof BlinnPhongMaterial) {
                     currentMaterial = StandardMaterial.fromLaggard(gl, currentMaterial);
+                    materials[currentMaterial.name] = currentMaterial;
                 }
                 currentMaterial.setRoughness(MTLLoader.getNumber(MTLLoader.roughnessPattern, line));
                 break;
             case "Pm":
                 if (currentMaterial instanceof BlinnPhongMaterial) {
                     currentMaterial = StandardMaterial.fromLaggard(gl, currentMaterial);
+                    materials[currentMaterial.name] = currentMaterial;
                 }
                 currentMaterial.setMetallic(MTLLoader.getNumber(MTLLoader.metallicPattern, line));
                 break;

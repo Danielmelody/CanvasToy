@@ -10,7 +10,7 @@ const camera = new CanvasToy.PerspectiveCamera()
 const light = new CanvasToy.SpotLight(renderer)
     .translate(vec3.fromValues(-5, 5, 0))
     .setConeAngle(Math.PI / 3)
-    .setIdensity(4)
+    .setIdensity(5)
     .rotateX(-Math.PI / 4)
     .rotateY(-Math.PI / 4);
 scene.addLight(light);

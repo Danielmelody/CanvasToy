@@ -60,9 +60,18 @@ void main () {
     vec3 normal = normalize(vNormal);
     vec3 totalLighting = uMaterial.ambient;
     #ifdef _ENVIRONMENT_MAP
-    vec3 viewDir = normalize(-vPosition);
-    vec3 skyUV = reflect(viewDir, vNormal);
-    totalLighting = mix(totalLighting, textureCube(uCubeTexture, skyUV).xyz, reflectivity);
+    vec3 viewDir = normalize(vPosition - cameraPos);
+    vec3 skyUV = normalize(reflect(viewDir, vNormal));
+    vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;
+    color += calculateLight(
+        uMaterial,
+        vPosition,
+        normal,
+        skyUV,
+        cameraPos,
+        imageLightColor,
+        1.0
+    );
     #endif
 #if (directLightsNum > 0)
     for (int index = 0; index < directLightsNum; index++) {

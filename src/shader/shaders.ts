@@ -671,9 +671,18 @@ void main () {
     vec3 normal = normalize(vNormal);
     vec3 totalLighting = uMaterial.ambient;
     #ifdef _ENVIRONMENT_MAP
-    vec3 viewDir = normalize(-vPosition);
-    vec3 skyUV = reflect(viewDir, vNormal);
-    totalLighting = mix(totalLighting, textureCube(uCubeTexture, skyUV).xyz, reflectivity);
+    vec3 viewDir = normalize(vPosition - cameraPos);
+    vec3 skyUV = normalize(reflect(viewDir, vNormal));
+    vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;
+    color += calculateLight(
+        uMaterial,
+        vPosition,
+        normal,
+        skyUV,
+        cameraPos,
+        imageLightColor,
+        1.0
+    );
     #endif
 #if (directLightsNum > 0)
     for (int index = 0; index < directLightsNum; index++) {
@@ -858,12 +867,6 @@ vec3 calculateLight(
 }
 `;
         export const light_model__pbs_ggx_glsl = `
-float lambda_theta(float roughness, float cos_2) {
-    float factor = 1.0 + roughness * (1.0 - cos_2) / cos_2;
-    float factorSqr = factor * factor;
-    return (factor * factorSqr * factorSqr - 1.0) / 2.0;
-}
-
 float tangent_2(float cos_2) {
     return (1. - cos_2) / cos_2;
 }
@@ -928,8 +931,9 @@ vec3 calculateLight(
 
 
     vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;
-    return color * LdotN;
-}`;
+    return color * LdotN * idensity;
+}
+`;
 }
 export type ShaderLib = 
     typeof ShaderSource.calculators__blur__gaussian_glsl |

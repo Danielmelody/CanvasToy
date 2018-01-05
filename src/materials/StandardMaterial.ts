@@ -18,6 +18,7 @@ export class StandardMaterial extends Material {
 
     public static fromLaggard(gl: WebGLRenderingContext, blinnPhong: BlinnPhongMaterial) {
         const standard = new StandardMaterial(gl);
+        standard.name = blinnPhong.name;
         standard.setAlbedo(blinnPhong.diffuse)
             .setAmbient(blinnPhong.ambient)
             .setAlphaMap(blinnPhong.alphaMap)
@@ -26,7 +27,8 @@ export class StandardMaterial extends Material {
             .setMainTexture(blinnPhong.mainTexture)
             .setCastShadow(blinnPhong.castShadow)
             .setRecieveShadow(blinnPhong.receiveShadow)
-            .setDebugMode(blinnPhong.debugMode);
+            .setDebugMode(blinnPhong.debugMode)
+            .setEnvironmentMap(blinnPhong.environmentMap);
         return standard;
     }
 
@@ -54,7 +56,7 @@ export class StandardMaterial extends Material {
     @texture("uMetallicTexture")
     protected _metallicTexture: Texture2D;
 
-    protected _roughness: number = 64;
+    protected _roughness: number = 0.5;
 
     protected _transparency: number = 0;
 
