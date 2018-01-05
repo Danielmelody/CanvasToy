@@ -1,4 +1,4 @@
-import { mat4, vec3, vec2 } from "gl-matrix";
+import { mat4, vec2, vec3 } from "gl-matrix";
 import { DataType } from "../DataTypeEnum";
 import { uniform } from "../Decorators";
 import { Object3d } from "../Object3d";
@@ -7,7 +7,7 @@ export enum CameraDirection {
     forward,
     bakc,
     left,
-    right
+    right,
 }
 
 export abstract class Camera extends Object3d {
@@ -97,11 +97,11 @@ export abstract class Camera extends Object3d {
         if (this._cameraPitch < -89.0) {
             this._cameraPitch = -89.0;
         }
-        var newEyeVector= vec3.fromValues(
+        const newEyeVector= vec3.fromValues(
             Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.cos(this._cameraYaw * Math.PI / 180.0),
             Math.sin(this._cameraPitch * Math.PI / 180.0),
-            Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.sin(this._cameraYaw * Math.PI / 180.0)
-        )
+            Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.sin(this._cameraYaw * Math.PI / 180.0),
+        );
         this._centerVector = newEyeVector;
         super.lookAt(newEyeVector);
     }

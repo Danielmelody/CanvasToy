@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
-import { define, ifdefine, readyRequire, texture, uniform } from "../Decorators";
+import { define, ifdefine, readyRequire, structure, texture, uniform } from "../Decorators";
 import { Mesh } from "../Mesh";
 import { Graphics } from "../renderer/GraphicsUtils";
 import { Program, shaderPassLib } from "../shader/Program";
@@ -9,9 +9,26 @@ import { ShaderBuilder } from "../shader/ShaderBuilder";
 import { ShaderSource } from "../shader/shaders";
 import { CubeTexture } from "../textures/CubeTexture";
 import { Texture } from "../textures/Texture";
+import { Texture2D } from "../textures/Texture2D";
+import { BlinnPhongMaterial } from "./BlinnPhongMaterial";
 import { Material } from "./Material";
 
+@structure("uMaterial")
 export class StandardMaterial extends Material {
+
+    public static fromLaggard(gl: WebGLRenderingContext, blinnPhong: BlinnPhongMaterial) {
+        const standard = new StandardMaterial(gl);
+        standard.setAlbedo(blinnPhong.diffuse)
+            .setAmbient(blinnPhong.ambient)
+            .setAlphaMap(blinnPhong.alphaMap)
+            .setBumpMap(blinnPhong.bumpMap)
+            .setTransparency(blinnPhong.transparency)
+            .setMainTexture(blinnPhong.mainTexture)
+            .setCastShadow(blinnPhong.castShadow)
+            .setRecieveShadow(blinnPhong.receiveShadow)
+            .setDebugMode(blinnPhong.debugMode);
+        return standard;
+    }
 
     protected _geometryShader: Program;
 
@@ -23,24 +40,21 @@ export class StandardMaterial extends Material {
     @define("RECEIVE_SHADOW", true)
     protected _receiveShadow: boolean = true;
 
-    @define("_MAIN_TEXTURE")
-    @texture("uMainTexture")
-    protected _mainTexture: Texture;
-
-    @uniform(DataType.vec3, "uMaterialAmbient")
     protected _ambient: vec3 = vec3.fromValues(0.1, 0.1, 0.1);
 
-    @uniform(DataType.vec3, "uMaterialDiff")
-    protected _diffuse: vec3 = vec3.fromValues(0.8, 0.8, 0.8);
+    protected _albedo: vec3 = vec3.fromValues(0.8, 0.8, 0.8);
 
-    @uniform(DataType.vec3, "uMaterialSpec")
-    protected _specular: vec3 = vec3.fromValues(0.3, 0.3, 0.3);
+    @define("_MAIN_TEXTURE")
+    @texture("uMainTexture")
+    protected _mainTexture: Texture2D;
 
-    @uniform(DataType.float, "uMaterialSpecExp")
-    protected _specularExponent: number = 64;
+    protected _metallic: number = 0.8;
 
-    // @texture("specularTexture")
-    protected _specularMap: Texture;
+    @define("_METALLIC_TEXTURE")
+    @texture("uMetallicTexture")
+    protected _metallicTexture: Texture2D;
+
+    protected _roughness: number = 64;
 
     protected _transparency: number = 0;
 
@@ -97,20 +111,24 @@ export class StandardMaterial extends Material {
         return this._mainTexture;
     }
 
+    @uniform(DataType.vec3)
     public get ambient() {
         return this._ambient;
     }
 
-    public get diffuse() {
-        return this._diffuse;
+    @uniform(DataType.vec3)
+    public get albedo() {
+        return this._albedo;
     }
 
-    public get specular() {
-        return this._specular;
+    @uniform(DataType.float)
+    public get metallic(){
+        return this._metallic;
     }
 
-    public get specularExponent() {
-        return this._specularExponent;
+    @uniform(DataType.float)
+    public get roughness() {
+        return this._roughness;
     }
 
     public transparency() {
@@ -131,10 +149,6 @@ export class StandardMaterial extends Material {
     }
     public get stencilMap() {
         return this.stencilMap;
-    }
-
-    public get reflectivity() {
-        return this._reflectivity;
     }
 
     public get environmentMap() {
@@ -166,18 +180,18 @@ export class StandardMaterial extends Material {
         return this;
     }
 
-    public setDiffuse(_diffuse: vec3) {
-        this._diffuse = _diffuse;
+    public setAlbedo(_albedo: vec3) {
+        this._albedo = _albedo;
         return this;
     }
 
-    public setSpecular(_specular: vec3) {
-        this._specular = _specular;
+    public setMetallic(_metallic: number) {
+        this._metallic = _metallic;
         return this;
     }
 
-    public setSpecularExponent(_specularExponent: number) {
-        this._specularExponent = _specularExponent;
+    public setRoughness(_roughness: number) {
+        this._roughness = _roughness;
         return this;
     }
 
@@ -219,6 +233,8 @@ export class StandardMaterial extends Material {
 
     protected initShader(gl: WebGLRenderingContext) {
         return new ShaderBuilder()
+            .addDefinition(ShaderSource.definitions__material_pbs_glsl)
+            .setLightModel(ShaderSource.light_model__pbs_ggx_glsl)
             .setExtraRenderParamHolder("mvp", {
                 uniforms: {
                     modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,

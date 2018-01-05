@@ -1,8 +1,4 @@
-uniform vec3 ambient;
-uniform vec3 uMaterialSpec;
-uniform float uMaterialSpecExp;
-uniform vec3 uMaterialDiff;
-
+uniform Material uMaterial;
 uniform vec3 cameraPos;
 
 varying vec2 vMainUV;
@@ -62,7 +58,7 @@ void main () {
 #endif
     vec3 color = vec3(0.0);
     vec3 normal = normalize(vNormal);
-    vec3 totalLighting = ambient;
+    vec3 totalLighting = uMaterial.ambient;
     #ifdef _ENVIRONMENT_MAP
     vec3 viewDir = normalize(-vPosition);
     vec3 skyUV = reflect(viewDir, vNormal);
@@ -72,9 +68,7 @@ void main () {
     for (int index = 0; index < directLightsNum; index++) {
         vec3 lighting = calculateDirLight(
             directLights[index],
-            uMaterialDiff,
-            uMaterialSpec,
-            uMaterialSpecExp,
+            uMaterial,
             vPosition,
             normal,
             cameraPos
@@ -99,9 +93,7 @@ void main () {
     for (int index = 0; index < pointLightsNum; index++) {
         vec3 lighting = calculatePointLight(
             pointLights[index],
-            uMaterialDiff,
-            uMaterialSpec,
-            uMaterialSpecExp,
+            uMaterial,
             vPosition,
             normal,
             cameraPos
@@ -129,9 +121,7 @@ void main () {
     for (int index = 0; index < spotLightsNum; index++) {
         vec3 lighting = calculateSpotLight(
             spotLights[index],
-            uMaterialDiff,
-            uMaterialSpec,
-            uMaterialSpecExp,
+            uMaterial,
             vPosition,
             normal,
             cameraPos

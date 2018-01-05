@@ -42,12 +42,7 @@ export interface IRenderParamHolder {
     textureArrays?: {
         [index: string]: { name?: string, sources?: Texture[] },
     };
-    prefix?: {
-        [index: string]: {
-            type: DataType;
-            updator: (renderParam: IBuildinRenderParamMaps) => any;
-        };
-    };
+    customPrefix?: string;
     structArrays?: {
         [index: string]: { name?: string };
     };
@@ -233,6 +228,10 @@ export class Program implements IDirtyable {
         buildinContainder: IBuildinRenderParamMaps, holder: IRenderParamHolder, namePrefix: string = "") {
         if (holder === undefined) {
             return;
+        }
+
+        if (!!holder.customPrefix) {
+            namePrefix = holder.customPrefix;
         }
 
         for (const linkName in holder.paramFilters) {

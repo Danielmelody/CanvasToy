@@ -1,29 +1,24 @@
 vec3 calculateDirLight(
     DirectLight light,
-    vec3 materialDiff,
-    vec3 materialSpec,
-    float materialSpecExp,
+    Material material,
     vec3 position,
     vec3 normal,
     vec3 eyePos
     ) {
     return calculateLight(
+        material,
         position,
         normal,
         -light.direction,
         eyePos,
-        light.color * materialSpec,
-        light.color * materialDiff,
-        materialSpecExp,
+        light.color,
         light.idensity
     );
 }
 
 vec3 calculatePointLight(
     PointLight light,
-    vec3 materialDiff,
-    vec3 materialSpec,
-    float materialSpecExp,
+    Material material,
     vec3 position,
     vec3 normal,
     vec3 eyePos
@@ -36,22 +31,19 @@ vec3 calculatePointLight(
     float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);
     idensity *= step(lightDis, 1.0);
     return calculateLight(
+        material,
         position,
         normal,
         normalize(light.position - position),
         eyePos,
-        light.color * materialSpec,
-        light.color * materialDiff,
-        materialSpecExp,
+        light.color,
         idensity
     );
 }
 
 vec3 calculateSpotLight(
     SpotLight light,
-    vec3 materialDiff,
-    vec3 materialSpec,
-    float materialSpecExp,
+    Material material,
     vec3 position,
     vec3 normal,
     vec3 eyePos
@@ -71,13 +63,12 @@ vec3 calculateSpotLight(
     idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);
     // idensity *= step(light.radius, lightDis);
     return calculateLight(
+        material,
         position,
         normal,
         lightDir,
         eyePos,
-        light.color * materialSpec,
-        light.color * materialDiff,
-        materialSpecExp,
+        light.color,
         idensity
     );
 }
