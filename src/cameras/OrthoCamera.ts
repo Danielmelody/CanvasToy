@@ -9,6 +9,8 @@ export class OrthoCamera extends Camera {
     protected _top: number = 20;
     protected _baseSize: number = 20;
 
+    protected _ratio: number;
+
     constructor(parameters: {
         left?: number,
         right?: number,
@@ -75,11 +77,25 @@ export class OrthoCamera extends Camera {
     }
 
     public setAspectRadio(radio: number) {
+        this._ratio = radio;
         this._left = -radio * this._baseSize;
         this._right = radio * this._baseSize;
         this._top = this._baseSize;
         this._bottom = -this._baseSize;
         this.compuseProjectionMatrix();
+        return this;
+    }
+
+    public changeZoom(offset: number) {
+        var zoom = this._baseSize + offset;
+        if (zoom >= 30.0) {
+            zoom = 30.0;
+        }
+        if (zoom <= 5.0) {
+            zoom = 5.0;
+        }
+        this._baseSize = zoom;
+        this.setAspectRadio(this._ratio);
         return this;
     }
 }

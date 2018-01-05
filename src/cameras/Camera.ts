@@ -1,7 +1,14 @@
-import { mat4, vec3 } from "gl-matrix";
+import { mat4, vec3, vec2 } from "gl-matrix";
 import { DataType } from "../DataTypeEnum";
 import { uniform } from "../Decorators";
 import { Object3d } from "../Object3d";
+
+export enum CameraDirection {
+    forward,
+    bakc,
+    left,
+    right
+}
 
 export abstract class Camera extends Object3d {
 
@@ -13,6 +20,11 @@ export abstract class Camera extends Object3d {
     protected _near: number = 0.1;
 
     protected _far: number = 500;
+
+    private _controlEnable: boolean = false;
+    private _cameraPitch: number = 0.0;
+    private _cameraYaw: number = -90.0;
+    private _cameraSpeed: number = 2.5;
 
     constructor() {
         super();
@@ -53,13 +65,6 @@ export abstract class Camera extends Object3d {
         return this._projectionMatrix;
     }
 
-    public lookAt(center: vec3) {
-        super.lookAt(center);
-        this._centerVector = center;
-        vec3.cross(this._rightVector, [0, 1, 0], center);
-        return this;
-    }
-
     public setNear(near: number) {
         if (near !== this._near) {
             this._near = near;
@@ -75,6 +80,33 @@ export abstract class Camera extends Object3d {
         }
         return this;
     }
+
+    public set controlEnable(enable: boolean) {
+        this._controlEnable = enable;
+    }
+    public get controlEnable() {
+        return this._controlEnable;
+    }
+
+    public changeDirectionByAngle(deltaAngle: vec2) {
+        this._cameraYaw += deltaAngle[0];
+        this._cameraPitch += deltaAngle[1];
+        if (this._cameraPitch > 89.0) {
+            this._cameraPitch = 89.0;
+        }
+        if (this._cameraPitch < -89.0) {
+            this._cameraPitch = -89.0;
+        }
+        var newEyeVector= vec3.fromValues(
+            Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.cos(this._cameraYaw * Math.PI / 180.0),
+            Math.sin(this._cameraPitch * Math.PI / 180.0),
+            Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.sin(this._cameraYaw * Math.PI / 180.0)
+        )
+        this._centerVector = newEyeVector;
+        super.lookAt(newEyeVector);
+    }
+
+    public abstract changeZoom(offset: number);
 
     public genOtherMatrixs() {
         super.genOtherMatrixs();

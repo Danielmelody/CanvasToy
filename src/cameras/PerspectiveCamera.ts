@@ -59,4 +59,17 @@ export class PerspectiveCamera extends Camera {
         this.compuseProjectionMatrix();
         return this;
     }
+
+    public changeZoom(offset: number) {
+        var fov = this._fovy / Math.PI * 180.0;
+        fov -= offset;
+        if (fov <= 1.0) {
+            fov = 1.0;
+        }
+        if (fov >= 45.0) {
+            fov = 45.0;
+        }
+        this.setFovy(fov * Math.PI / 180.0);
+        return this;
+    }
 }

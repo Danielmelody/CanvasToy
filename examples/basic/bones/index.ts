@@ -1,6 +1,6 @@
 import * as CanvasToy from "CanvasToy";
 import { vec3 } from "gl-matrix";
-import { createCanvas, onMouseOnStart } from "global";
+import { createCanvas, onMouseOnStart, onMouseEvent } from "global";
 
 const renderer = new CanvasToy.Renderer(createCanvas());
 
@@ -9,7 +9,7 @@ const camera = new CanvasToy.PerspectiveCamera();
 
 const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
 
-const material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture);
+const material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture).setCastShadow(false);
 
 const meshes: CanvasToy.Object3d[] = [];
 
@@ -37,7 +37,8 @@ meshes[0].translate(vec3.fromValues(0, 0, -10));
 const light = new CanvasToy.DirectionalLight(renderer)
     .rotateY(Math.PI / 3)
     .setPosition(vec3.fromValues(5, 0, -5))
-    .lookAt(meshes[0].position);
+    .lookAt(meshes[0].position)
+    .setShadowLevel(CanvasToy.ShadowLevel.None);
 let t = 0;
 
 scene.addOnUpdateListener((dt) => {
@@ -52,3 +53,4 @@ scene.addLight(light);
 renderer.render(scene, camera);
 renderer.stop();
 onMouseOnStart(renderer);
+onMouseEvent(renderer, camera);
