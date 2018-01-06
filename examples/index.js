@@ -190,11 +190,24 @@ define("cameras/OrthoCamera", ["require", "exports", "gl-matrix", "cameras/Camer
         OrthoCamera.prototype.deCompuseProjectionMatrix = function () {
         };
         OrthoCamera.prototype.setAspectRadio = function (radio) {
+            this._ratio = radio;
             this._left = -radio * this._baseSize;
             this._right = radio * this._baseSize;
             this._top = this._baseSize;
             this._bottom = -this._baseSize;
             this.compuseProjectionMatrix();
+            return this;
+        };
+        OrthoCamera.prototype.changeZoom = function (offset) {
+            var zoom = this._baseSize + offset;
+            if (zoom >= 30.0) {
+                zoom = 30.0;
+            }
+            if (zoom <= 5.0) {
+                zoom = 5.0;
+            }
+            this._baseSize = zoom;
+            this.setAspectRadio(this._ratio);
             return this;
         };
         return OrthoCamera;
@@ -1466,6 +1479,18 @@ define("cameras/PerspectiveCamera", ["require", "exports", "gl-matrix", "cameras
         PerspectiveCamera.prototype.setAspectRadio = function (ratio) {
             this._aspect = ratio;
             this.compuseProjectionMatrix();
+            return this;
+        };
+        PerspectiveCamera.prototype.changeZoom = function (offset) {
+            var fov = this._fovy / Math.PI * 180.0;
+            fov -= offset;
+            if (fov <= 1.0) {
+                fov = 1.0;
+            }
+            if (fov >= 45.0) {
+                fov = 45.0;
+            }
+            this.setFovy(fov * Math.PI / 180.0);
             return this;
         };
         return PerspectiveCamera;
@@ -3204,6 +3229,13 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
 });
 define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_16, DataTypeEnum_12, Decorators_10, Object3d_3) {
     Object.defineProperty(exports, "__esModule", { value: true });
+    var CameraDirection;
+    (function (CameraDirection) {
+        CameraDirection[CameraDirection["forward"] = 0] = "forward";
+        CameraDirection[CameraDirection["bakc"] = 1] = "bakc";
+        CameraDirection[CameraDirection["left"] = 2] = "left";
+        CameraDirection[CameraDirection["right"] = 3] = "right";
+    })(CameraDirection = exports.CameraDirection || (exports.CameraDirection = {}));
     var Camera = (function (_super) {
         __extends(Camera, _super);
         function Camera() {
@@ -3214,6 +3246,10 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
             _this._projectionMatrix = gl_matrix_16.mat4.create();
             _this._near = 0.1;
             _this._far = 500;
+            _this._controlEnable = false;
+            _this._cameraPitch = 0.0;
+            _this._cameraYaw = -90.0;
+            _this._cameraSpeed = 2.5;
             return _this;
         }
         Object.defineProperty(Camera.prototype, "position", {
@@ -3272,12 +3308,6 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
             enumerable: true,
             configurable: true
         });
-        Camera.prototype.lookAt = function (center) {
-            _super.prototype.lookAt.call(this, center);
-            this._centerVector = center;
-            gl_matrix_16.vec3.cross(this._rightVector, [0, 1, 0], center);
-            return this;
-        };
         Camera.prototype.setNear = function (near) {
             if (near !== this._near) {
                 this._near = near;
@@ -3291,6 +3321,29 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
                 this.compuseProjectionMatrix();
             }
             return this;
+        };
+        Object.defineProperty(Camera.prototype, "controlEnable", {
+            get: function () {
+                return this._controlEnable;
+            },
+            set: function (enable) {
+                this._controlEnable = enable;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Camera.prototype.changeDirectionByAngle = function (deltaAngle) {
+            this._cameraYaw += deltaAngle[0];
+            this._cameraPitch += deltaAngle[1];
+            if (this._cameraPitch > 89.0) {
+                this._cameraPitch = 89.0;
+            }
+            if (this._cameraPitch < -89.0) {
+                this._cameraPitch = -89.0;
+            }
+            var newEyeVector = gl_matrix_16.vec3.fromValues(Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.cos(this._cameraYaw * Math.PI / 180.0), Math.sin(this._cameraPitch * Math.PI / 180.0), Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.sin(this._cameraYaw * Math.PI / 180.0));
+            this._centerVector = newEyeVector;
+            _super.prototype.lookAt.call(this, newEyeVector);
         };
         Camera.prototype.genOtherMatrixs = function () {
             _super.prototype.genOtherMatrixs.call(this);
@@ -4320,7 +4373,7 @@ define("CanvasToy", ["require", "exports", "Decorators", "renderer/Renderer", "r
     exports.Mesh = Mesh_7.Mesh;
     exports.Water = Water_1.Water;
 });
-define("examples/global", ["require", "exports", "CanvasToy"], function (require, exports, CanvasToy) {
+define("examples/global", ["require", "exports", "CanvasToy", "gl-matrix"], function (require, exports, CanvasToy, gl_matrix_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.examples = [];
@@ -4337,6 +4390,49 @@ define("examples/global", ["require", "exports", "CanvasToy"], function (require
         };
     }
     exports.onMouseOnStart = onMouseOnStart;
+    function onMouseEvent(renderer, camera) {
+        var canvas = renderer.canvas;
+        canvas.onmousedown = function (ev) {
+            if (ev.button === 2) {
+                camera.controlEnable = true;
+                canvas.oncontextmenu = function (ev) {
+                    ev.preventDefault();
+                };
+                canvas.style.cursor = "none";
+                canvas.requestPointerLock();
+            }
+        };
+        canvas.onmouseup = function (ev) {
+            if (ev.button === 2) {
+                camera.controlEnable = false;
+                canvas.style.cursor = "auto";
+                canvas.ownerDocument.exitPointerLock();
+            }
+        };
+        canvas.onmousemove = function (ev) {
+            var mouseSensitivity = 0.05;
+            if (camera.controlEnable === true) {
+                var deltaAngle = gl_matrix_1.vec2.fromValues(ev.movementX * mouseSensitivity, -ev.movementY * mouseSensitivity);
+                camera.changeDirectionByAngle(deltaAngle);
+            }
+        };
+        canvas.onwheel = function (ev) {
+            var zoomSensitivity = 0.01;
+            if (camera.controlEnable === true) {
+                ev.preventDefault();
+                camera.changeZoom(ev.deltaY * zoomSensitivity);
+            }
+        };
+    }
+    exports.onMouseEvent = onMouseEvent;
+    function onKeyboardEvent(renderer, camera) {
+        var canvas = renderer.canvas;
+        canvas.onkeydown = function (ev) {
+            if (camera.controlEnable === true) {
+            }
+        };
+    }
+    exports.onKeyboardEvent = onKeyboardEvent;
     function createCanvas() {
         var table = document.getElementById("table");
         var newCanvas = document.createElement("canvas");
@@ -4348,35 +4444,36 @@ define("examples/global", ["require", "exports", "CanvasToy"], function (require
     }
     exports.createCanvas = createCanvas;
 });
-define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_1, global_1) {
+define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_2, global_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var renderer = new CanvasToy.Renderer(global_1.createCanvas());
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
     var mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
-    var material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture);
+    var material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture).setCastShadow(false);
     var meshes = [];
     for (var i = 0; i < 4; ++i) {
         var mesh = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(50).setHeightSegments(50).build(), [material]);
         if (i > 0) {
             mesh.setParent(meshes[i - 1]);
             if (i === 3) {
-                mesh.setLocalPosition(gl_matrix_1.vec3.fromValues(0, 2.5 - i / 4.0, 0));
+                mesh.setLocalPosition(gl_matrix_2.vec3.fromValues(0, 2.5 - i / 4.0, 0));
             }
             else {
-                mesh.setLocalPosition(gl_matrix_1.vec3.fromValues(2.5 - i / 4.0, 0, 0));
+                mesh.setLocalPosition(gl_matrix_2.vec3.fromValues(2.5 - i / 4.0, 0, 0));
             }
         }
         var scaleFactor = Math.pow(2, (1 - i));
-        mesh.setScaling(gl_matrix_1.vec3.fromValues(scaleFactor, scaleFactor, scaleFactor));
+        mesh.setScaling(gl_matrix_2.vec3.fromValues(scaleFactor, scaleFactor, scaleFactor));
         meshes.push(mesh);
     }
-    meshes[0].translate(gl_matrix_1.vec3.fromValues(0, 0, -10));
+    meshes[0].translate(gl_matrix_2.vec3.fromValues(0, 0, -10));
     var light = new CanvasToy.DirectionalLight(renderer)
         .rotateY(Math.PI / 3)
-        .setPosition(gl_matrix_1.vec3.fromValues(5, 0, -5))
-        .lookAt(meshes[0].position);
+        .setPosition(gl_matrix_2.vec3.fromValues(5, 0, -5))
+        .lookAt(meshes[0].position)
+        .setShadowLevel(CanvasToy.ShadowLevel.None);
     var t = 0;
     scene.addOnUpdateListener(function (dt) {
         meshes[0].rotateY(-0.005);
@@ -4389,8 +4486,9 @@ define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-mat
     renderer.render(scene, camera);
     renderer.stop();
     global_1.onMouseOnStart(renderer);
+    global_1.onMouseEvent(renderer, camera);
 });
-define("examples/basic/lightesAndGeometries/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_2, global_2) {
+define("examples/basic/lightesAndGeometries/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_3, global_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var renderer = new CanvasToy.Renderer(global_2.createCanvas());
@@ -4398,55 +4496,55 @@ define("examples/basic/lightesAndGeometries/index", ["require", "exports", "Canv
     var center = new CanvasToy.Object3d();
     var camera = new CanvasToy.PerspectiveCamera()
         .setParent(center)
-        .translate(gl_matrix_2.vec3.fromValues(0, 5, 5))
+        .translate(gl_matrix_3.vec3.fromValues(0, 5, 5))
         .rotateX(-Math.PI / 4);
     var checkerBoard = new CanvasToy.StandardMaterial(renderer.gl).setDebugMode(true);
     var objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
         .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"));
     var ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
-        .setPosition(gl_matrix_2.vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(gl_matrix_2.vec3.fromValues(10, 10, 10));
+        .setPosition(gl_matrix_3.vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(gl_matrix_3.vec3.fromValues(10, 10, 10));
     var box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
-        .setPosition(gl_matrix_2.vec3.fromValues(-2, -1, 0)).setScaling(gl_matrix_2.vec3.fromValues(0.5, 0.5, 0.5));
+        .setPosition(gl_matrix_3.vec3.fromValues(-2, -1, 0)).setScaling(gl_matrix_3.vec3.fromValues(0.5, 0.5, 0.5));
     var sphere = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl)
         .setWidthSegments(50)
         .setHeightSegments(50)
         .build(), [objectMaterial])
-        .setPosition(gl_matrix_2.vec3.fromValues(2, 0, 0)).setScaling(gl_matrix_2.vec3.fromValues(0.5, 0.5, 0.5));
+        .setPosition(gl_matrix_3.vec3.fromValues(2, 0, 0)).setScaling(gl_matrix_3.vec3.fromValues(0.5, 0.5, 0.5));
     var directLight = new CanvasToy.DirectionalLight(renderer)
         .setIdensity(1)
-        .translate(gl_matrix_2.vec3.fromValues(0, 5, 5))
-        .lookAt(gl_matrix_2.vec3.create());
+        .translate(gl_matrix_3.vec3.fromValues(0, 5, 5))
+        .lookAt(gl_matrix_3.vec3.create());
     var spotLight = new CanvasToy.SpotLight(renderer)
         .setIdensity(2)
-        .translate(gl_matrix_2.vec3.fromValues(0, 5, -5))
-        .lookAt(gl_matrix_2.vec3.create());
+        .translate(gl_matrix_3.vec3.fromValues(0, 5, -5))
+        .lookAt(gl_matrix_3.vec3.create());
     var pointLight = new CanvasToy.PointLight(renderer)
-        .translate(gl_matrix_2.vec3.fromValues(0, 3, 0))
+        .translate(gl_matrix_3.vec3.fromValues(0, 3, 0))
         .setIdensity(3);
     scene.addLight(pointLight);
     scene.addObject(ground, box, sphere, center, camera);
     var time = 0;
     scene.addOnUpdateListener(function (delta) {
         time += delta;
-        box.translate(gl_matrix_2.vec3.fromValues(0, 0.04 * Math.sin(time / 400), 0));
-        sphere.translate(gl_matrix_2.vec3.fromValues(0, -0.04 * Math.sin(time / 400), 0));
+        box.translate(gl_matrix_3.vec3.fromValues(0, 0.04 * Math.sin(time / 400), 0));
+        sphere.translate(gl_matrix_3.vec3.fromValues(0, -0.04 * Math.sin(time / 400), 0));
         center.rotateY(0.01);
     });
-    scene.ambientLight = gl_matrix_2.vec3.fromValues(0.2, 0.2, 0.2);
+    scene.ambientLight = gl_matrix_3.vec3.fromValues(0.2, 0.2, 0.2);
     renderer.render(scene, camera);
     renderer.stop();
     global_2.onMouseOnStart(renderer);
 });
-define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_3, global_3) {
+define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_4, global_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var renderer = new CanvasToy.Renderer(global_3.createCanvas());
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera()
-        .translate(gl_matrix_3.vec3.fromValues(0, 2, 5))
-        .lookAt(gl_matrix_3.vec3.create());
+        .translate(gl_matrix_4.vec3.fromValues(0, 2, 5))
+        .lookAt(gl_matrix_4.vec3.create());
     var light = new CanvasToy.SpotLight(renderer)
-        .translate(gl_matrix_3.vec3.fromValues(-5, 5, 0))
+        .translate(gl_matrix_4.vec3.fromValues(-5, 5, 0))
         .setConeAngle(Math.PI / 3)
         .setIdensity(4)
         .rotateX(-Math.PI / 4)
@@ -4467,7 +4565,7 @@ define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-
         material.setEnvironmentMap(skyTexture).setCastShadow(true);
         return Promise.resolve(teapot);
     }));
-    teapot.setScaling(gl_matrix_3.vec3.fromValues(0.1, 0.1, 0.1));
+    teapot.setScaling(gl_matrix_4.vec3.fromValues(0.1, 0.1, 0.1));
     scene.addObject(teapot);
     camera.lookAt(teapot.position);
     var time = 0;
@@ -4479,33 +4577,33 @@ define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-
     renderer.stop();
     global_3.onMouseOnStart(renderer);
 });
-define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_4, global_4) {
+define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_5, global_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var renderer = new CanvasToy.Renderer(global_4.createCanvas());
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera()
-        .setPosition(gl_matrix_4.vec3.fromValues(0, 100, 100))
-        .lookAt(gl_matrix_4.vec3.fromValues(0, 0, -40));
+        .setPosition(gl_matrix_5.vec3.fromValues(0, 100, 100))
+        .lookAt(gl_matrix_5.vec3.fromValues(0, 0, -40));
     var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [
         new CanvasToy.StandardMaterial(renderer.gl)
             .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg")),
     ])
-        .translate(gl_matrix_4.vec3.fromValues(0, -10, -40)).rotateX(-Math.PI / 2).setScaling(gl_matrix_4.vec3.fromValues(200, 200, 200));
+        .translate(gl_matrix_5.vec3.fromValues(0, -10, -40)).rotateX(-Math.PI / 2).setScaling(gl_matrix_5.vec3.fromValues(200, 200, 200));
     scene.addObject(camera, tile);
     var teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(function () {
         var material = teapotProto.children[0].materials[0];
-        material.setDiffuse(gl_matrix_4.vec3.fromValues(1, 0.8, 0.2));
+        material.setDiffuse(gl_matrix_5.vec3.fromValues(1, 0.8, 0.2));
         material.setCastShadow(false);
         var _loop_1 = function (i) {
             var teapot = new CanvasToy.Mesh(teapotProto.children[0].geometry, teapotProto.children[0].materials);
             scene.addObject(teapot);
-            teapot.translate(gl_matrix_4.vec3.fromValues((i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40));
+            teapot.translate(gl_matrix_5.vec3.fromValues((i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40));
             var time = 0;
             var spin = 0.03 * (Math.random() - 0.5);
             var light = new CanvasToy.PointLight(renderer)
-                .setPosition(gl_matrix_4.vec3.fromValues(Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150))
+                .setPosition(gl_matrix_5.vec3.fromValues(Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150))
                 .setIdensity(0.5)
                 .setRadius(50);
             scene.addLight(light);
@@ -4514,7 +4612,7 @@ define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "
             scene.addOnUpdateListener(function () {
                 time += 1 / 60;
                 teapot.rotateY(spin);
-                light.translate(gl_matrix_4.vec3.fromValues(-Math.sin(time * vx), 0, -Math.cos(time * vy)));
+                light.translate(gl_matrix_5.vec3.fromValues(-Math.sin(time * vx), 0, -Math.cos(time * vy)));
             });
         };
         for (var i = 0; i < 40; ++i) {

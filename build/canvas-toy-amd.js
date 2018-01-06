@@ -130,11 +130,24 @@ define("cameras/OrthoCamera", ["require", "exports", "gl-matrix", "cameras/Camer
         OrthoCamera.prototype.deCompuseProjectionMatrix = function () {
         };
         OrthoCamera.prototype.setAspectRadio = function (radio) {
+            this._ratio = radio;
             this._left = -radio * this._baseSize;
             this._right = radio * this._baseSize;
             this._top = this._baseSize;
             this._bottom = -this._baseSize;
             this.compuseProjectionMatrix();
+            return this;
+        };
+        OrthoCamera.prototype.changeZoom = function (offset) {
+            var zoom = this._baseSize + offset;
+            if (zoom >= 30.0) {
+                zoom = 30.0;
+            }
+            if (zoom <= 5.0) {
+                zoom = 5.0;
+            }
+            this._baseSize = zoom;
+            this.setAspectRadio(this._ratio);
             return this;
         };
         return OrthoCamera;
@@ -1402,6 +1415,18 @@ define("cameras/PerspectiveCamera", ["require", "exports", "gl-matrix", "cameras
         PerspectiveCamera.prototype.setAspectRadio = function (ratio) {
             this._aspect = ratio;
             this.compuseProjectionMatrix();
+            return this;
+        };
+        PerspectiveCamera.prototype.changeZoom = function (offset) {
+            var fov = this._fovy / Math.PI * 180.0;
+            fov -= offset;
+            if (fov <= 1.0) {
+                fov = 1.0;
+            }
+            if (fov >= 45.0) {
+                fov = 45.0;
+            }
+            this.setFovy(fov * Math.PI / 180.0);
             return this;
         };
         return PerspectiveCamera;
@@ -3130,6 +3155,13 @@ define("Object3d", ["require", "exports", "gl-matrix"], function (require, expor
 });
 define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "Decorators", "Object3d"], function (require, exports, gl_matrix_16, DataTypeEnum_12, Decorators_10, Object3d_3) {
     Object.defineProperty(exports, "__esModule", { value: true });
+    var CameraDirection;
+    (function (CameraDirection) {
+        CameraDirection[CameraDirection["forward"] = 0] = "forward";
+        CameraDirection[CameraDirection["bakc"] = 1] = "bakc";
+        CameraDirection[CameraDirection["left"] = 2] = "left";
+        CameraDirection[CameraDirection["right"] = 3] = "right";
+    })(CameraDirection = exports.CameraDirection || (exports.CameraDirection = {}));
     var Camera = (function (_super) {
         __extends(Camera, _super);
         function Camera() {
@@ -3140,6 +3172,10 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
             _this._projectionMatrix = gl_matrix_16.mat4.create();
             _this._near = 0.1;
             _this._far = 500;
+            _this._controlEnable = false;
+            _this._cameraPitch = 0.0;
+            _this._cameraYaw = -90.0;
+            _this._cameraSpeed = 2.5;
             return _this;
         }
         Object.defineProperty(Camera.prototype, "position", {
@@ -3198,12 +3234,6 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
             enumerable: true,
             configurable: true
         });
-        Camera.prototype.lookAt = function (center) {
-            _super.prototype.lookAt.call(this, center);
-            this._centerVector = center;
-            gl_matrix_16.vec3.cross(this._rightVector, [0, 1, 0], center);
-            return this;
-        };
         Camera.prototype.setNear = function (near) {
             if (near !== this._near) {
                 this._near = near;
@@ -3217,6 +3247,29 @@ define("cameras/Camera", ["require", "exports", "gl-matrix", "DataTypeEnum", "De
                 this.compuseProjectionMatrix();
             }
             return this;
+        };
+        Object.defineProperty(Camera.prototype, "controlEnable", {
+            get: function () {
+                return this._controlEnable;
+            },
+            set: function (enable) {
+                this._controlEnable = enable;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Camera.prototype.changeDirectionByAngle = function (deltaAngle) {
+            this._cameraYaw += deltaAngle[0];
+            this._cameraPitch += deltaAngle[1];
+            if (this._cameraPitch > 89.0) {
+                this._cameraPitch = 89.0;
+            }
+            if (this._cameraPitch < -89.0) {
+                this._cameraPitch = -89.0;
+            }
+            var newEyeVector = gl_matrix_16.vec3.fromValues(Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.cos(this._cameraYaw * Math.PI / 180.0), Math.sin(this._cameraPitch * Math.PI / 180.0), Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.sin(this._cameraYaw * Math.PI / 180.0));
+            this._centerVector = newEyeVector;
+            _super.prototype.lookAt.call(this, newEyeVector);
         };
         Camera.prototype.genOtherMatrixs = function () {
             _super.prototype.genOtherMatrixs.call(this);

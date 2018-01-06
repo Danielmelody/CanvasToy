@@ -31,6 +31,7 @@ declare module "cameras/OrthoCamera" {
         protected _bottom: number;
         protected _top: number;
         protected _baseSize: number;
+        protected _ratio: number;
         constructor(parameters?: {
             left?: number;
             right?: number;
@@ -47,6 +48,7 @@ declare module "cameras/OrthoCamera" {
         compuseProjectionMatrix(): void;
         deCompuseProjectionMatrix(): void;
         setAspectRadio(radio: number): this;
+        changeZoom(offset: number): this;
     }
 }
 declare module "Intersections/BoundingBox" {
@@ -415,6 +417,7 @@ declare module "cameras/PerspectiveCamera" {
         setFovy(fovy: number): this;
         deCompuseProjectionMatrix(): void;
         setAspectRadio(ratio: number): this;
+        changeZoom(offset: number): this;
     }
 }
 declare module "cameras/CubeCamera" {
@@ -849,8 +852,14 @@ declare module "Object3d" {
     }
 }
 declare module "cameras/Camera" {
-    import { mat4, vec3 } from "gl-matrix";
+    import { mat4, vec3, vec2 } from "gl-matrix";
     import { Object3d } from "Object3d";
+    export enum CameraDirection {
+        forward = 0,
+        bakc = 1,
+        left = 2,
+        right = 3,
+    }
     export abstract class Camera extends Object3d {
         protected _upVector: vec3;
         protected _centerVector: vec3;
@@ -858,6 +867,10 @@ declare module "cameras/Camera" {
         protected _projectionMatrix: mat4;
         protected _near: number;
         protected _far: number;
+        private _controlEnable;
+        private _cameraPitch;
+        private _cameraYaw;
+        private _cameraSpeed;
         constructor();
         readonly position: vec3;
         readonly near: number;
@@ -867,9 +880,11 @@ declare module "cameras/Camera" {
         readonly centerVector: vec3;
         readonly rightVector: vec3;
         readonly projectionMatrix: mat4;
-        lookAt(center: vec3): this;
         setNear(near: number): this;
         setFar(far: number): this;
+        controlEnable: boolean;
+        changeDirectionByAngle(deltaAngle: vec2): void;
+        abstract changeZoom(offset: number): any;
         genOtherMatrixs(): void;
         abstract compuseProjectionMatrix(): any;
         abstract deCompuseProjectionMatrix(): any;
