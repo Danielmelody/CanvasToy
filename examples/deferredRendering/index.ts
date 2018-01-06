@@ -15,7 +15,7 @@ const tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [
 scene.addObject(camera, tile);
 const teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
 teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(() => {
-    const material = (teapotProto.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
+    const material = (teapotProto.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.BlinnPhongMaterial;
     material.setDiffuse(vec3.fromValues(1, 0.8, 0.2));
     material.setCastShadow(false);
     for (let i = 0; i < 40; ++i) {
