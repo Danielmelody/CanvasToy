@@ -10,7 +10,6 @@ const camera = new CanvasToy.PerspectiveCamera();
 const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
 
 const material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture).setCastShadow(false);
-
 const meshes: CanvasToy.Object3d[] = [];
 
 for (let i = 0; i < 4; ++i) {
@@ -37,8 +36,7 @@ meshes[0].translate(vec3.fromValues(0, 0, -10));
 const light = new CanvasToy.DirectionalLight(renderer)
     .rotateY(Math.PI / 3)
     .setPosition(vec3.fromValues(5, 0, -5))
-    .lookAt(meshes[0].position)
-    .setShadowLevel(CanvasToy.ShadowLevel.None);
+    .lookAt(meshes[0].position);
 let t = 0;
 
 scene.addOnUpdateListener((dt) => {

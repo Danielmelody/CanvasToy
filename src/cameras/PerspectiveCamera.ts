@@ -61,7 +61,7 @@ export class PerspectiveCamera extends Camera {
     }
 
     public changeZoom(offset: number) {
-        var fov = this._fovy / Math.PI * 180.0;
+        let fov = this._fovy / Math.PI * 180.0;
         fov -= offset;
         if (fov <= 1.0) {
             fov = 1.0;

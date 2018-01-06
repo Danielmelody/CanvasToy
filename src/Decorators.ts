@@ -20,6 +20,13 @@ function tryAddParamHolder(proto) {
     });
 }
 
+export function structure(name: string) {
+    return (constructor) => {
+        tryAddParamHolder(constructor.prototype);
+        constructor.prototype[RENDER_PARAM_HOLDER].customPrefix = name + ".";
+    };
+}
+
 /**
  * A property decorator. Treat property as an uniform parameter for rendering. If not provided,
  * the name of the property will be uniform name to find in shader by default,

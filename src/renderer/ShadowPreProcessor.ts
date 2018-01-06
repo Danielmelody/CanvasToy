@@ -3,6 +3,7 @@ import { Camera } from "../cameras/Camera";
 import { RectGeometry } from "../geometries/RectGeometry";
 import { Light } from "../lights/Light";
 import { ShadowLevel } from "../lights/ShadowLevel";
+import { BlinnPhongMaterial } from "../materials/BlinnPhongMaterial";
 import { LinearDepthPackMaterial } from "../materials/ESM/DepthPackMaterial";
 import { PCSSFilteringMaterial } from "../materials/ESM/LogBlurMaterial";
 import { Material } from "../materials/Material";
@@ -65,8 +66,8 @@ export class ShadowPreProcess implements IProcessor {
                 if (object instanceof Mesh) {
                     let castShadow = false;
                     for (const material of object.materials) {
-                        if (material instanceof StandardMaterial) {
-                            if (material.castShadow) {
+                        if ((material instanceof StandardMaterial) || (material instanceof BlinnPhongMaterial)) {
+                            if ((material as StandardMaterial | BlinnPhongMaterial).castShadow) {
                                 castShadow = true;
                                 break;
                             }

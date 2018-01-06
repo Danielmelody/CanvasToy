@@ -3,19 +3,21 @@ import { ShaderLib, ShaderSource, ShadingFrag, ShadingVert } from "./shaders";
 
 export class ShaderBuilder {
 
-    private vertLibs: ShaderLib[] = [
+    private definitions: ShaderLib[] = [
         ShaderSource.definitions__light_glsl,
     ];
 
+    private vertLibs: ShaderLib[] = [];
+
     private fragLibs: ShaderLib[] = [
-        ShaderSource.definitions__light_glsl,
         ShaderSource.calculators__linearlize_depth_glsl,
-        ShaderSource.calculators__blinn_phong_glsl,
         ShaderSource.calculators__types_glsl,
         ShaderSource.calculators__unpackFloat1x32_glsl,
         ShaderSource.calculators__shadow_factor_glsl,
         ShaderSource.debug__checkBox_glsl,
     ];
+
+    private lightModel: ShaderLib = ShaderSource.light_model__pbs_ggx_glsl;
 
     private shadingVert: ShadingVert = ShaderSource.interploters__forward__phong_vert;
 
@@ -24,6 +26,8 @@ export class ShaderBuilder {
     private extraRenderParamHolders: { [index: string]: IRenderParamHolder } = {};
 
     public resetShaderLib() {
+        this.lightModel = undefined;
+        this.definitions = [];
         this.vertLibs = [];
         this.fragLibs = [];
         return this;
@@ -35,6 +39,11 @@ export class ShaderBuilder {
         return this;
     }
 
+    public addDefinition(...lib: ShaderLib[]) {
+        this.definitions.push(...lib);
+        return this;
+    }
+
     public addShaderLibVert(...lib: ShaderLib[]) {
         this.vertLibs.push(...lib);
         return this;
@@ -42,6 +51,11 @@ export class ShaderBuilder {
 
     public addShaderLibFrag(...lib: ShaderLib[]) {
         this.fragLibs.push(...lib);
+        return this;
+    }
+
+    public setLightModel(model: ShaderLib) {
+        this.lightModel = model;
         return this;
     }
 
@@ -62,8 +76,9 @@ export class ShaderBuilder {
 
     public build(gl: WebGLRenderingContext): Program {
         return new Program(gl, {
-            vertexShader: this.vertLibs.join("\n") + this.shadingVert,
-            fragmentShader: this.fragLibs.join("\n") + this.shadingFrag,
+            vertexShader: this.definitions.join("\n") + "\n" + this.vertLibs.join("\n") + this.shadingVert,
+            fragmentShader: this.definitions.join("\n") + "\n" + (this.lightModel ? this.lightModel + "\n" : "")
+             + this.fragLibs.join("\n") + this.shadingFrag,
         },
             this.extraRenderParamHolders,
         );

@@ -87,7 +87,7 @@ export class OrthoCamera extends Camera {
     }
 
     public changeZoom(offset: number) {
-        var zoom = this._baseSize + offset;
+        let zoom = this._baseSize + offset;
         if (zoom >= 30.0) {
             zoom = 30.0;
         }

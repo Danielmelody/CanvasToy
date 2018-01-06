@@ -236,7 +236,9 @@ export class DeferredProcessor implements IProcessor {
 
         this.tileProgram = new ShaderBuilder()
             .resetShaderLib()
-            .addShaderLibFrag(ShaderSource.calculators__blinn_phong_glsl)
+            .addDefinition(ShaderSource.definitions__light_glsl)
+            .addDefinition(ShaderSource.definitions__material_blinnphong_glsl)
+            .setLightModel(ShaderSource.light_model__blinn_phong_glsl)
             .setShadingVert(ShaderSource.interploters__deferred__tiledLight_vert)
             .setShadingFrag(ShaderSource.interploters__deferred__tiledLight_frag)
             .setExtraRenderParamHolder("lightInfo", {

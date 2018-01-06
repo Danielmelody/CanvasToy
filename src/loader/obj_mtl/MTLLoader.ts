@@ -1,5 +1,6 @@
 import { vec3 } from "gl-matrix";
 
+import { BlinnPhongMaterial } from "../../materials/BlinnPhongMaterial";
 import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Texture2D } from "../../textures/Texture2D";
 import { fetchRes } from "../ResourceFetcher";
@@ -8,7 +9,7 @@ import { patterns } from "./CommonPatterns";
 export class MTLLoader {
     public static load(gl: WebGLRenderingContext, baseurl: string) {
         const materials = {};
-        let currentMaterial: StandardMaterial = null;
+        let currentMaterial: BlinnPhongMaterial | StandardMaterial = null;
         const home = baseurl.substr(0, baseurl.lastIndexOf("/") + 1);
         return fetchRes(baseurl).then((content: string) => {
             content = content.replace(patterns.commentPattern, "");
@@ -24,7 +25,9 @@ export class MTLLoader {
     protected static diffusePattern = /Kd\s(.+)/m;
     protected static specularePattern = /Ks\s(.+)/m;
     protected static specularExponentPattern = /Ns\s(.+)/m;
-    protected static trancparencyPattern = /(Tr|d)\s(.+)/m;
+
+    protected static metallicPattern = /Pm\s(.+)/m;
+    protected static roughnessPattern = /Pr\s(.+)/m;
 
     protected static mapPattern = /(map_[^\s]+|bump|disp|decal)\s.+/mg;
     protected static mapSinglePattern = /(map_[^\s]+|bump|disp|decal)\s([^\s]+)/m;
@@ -34,7 +37,7 @@ export class MTLLoader {
         home: string,
         line: string,
         materials: any,
-        currentMaterial: StandardMaterial,
+        currentMaterial: BlinnPhongMaterial | StandardMaterial,
     ) {
         const matches = line.match(/([^\s]+)/g);
         if (!matches || matches.length === 0) {
@@ -44,19 +47,28 @@ export class MTLLoader {
         switch (firstVar) {
             case "newmtl":
                 const mtlName = line.match(MTLLoader.newmtlPattern)[1];
-                materials[mtlName] = new StandardMaterial(gl);
+                materials[mtlName] = new BlinnPhongMaterial(gl);
+                materials[mtlName].name = mtlName;
                 return materials[mtlName];
             case "Ka":
                 currentMaterial.setAmbient(MTLLoader.getVector(MTLLoader.ambientPattern, line));
                 break;
             case "Kd":
-                currentMaterial.setDiffuse(MTLLoader.getVector(MTLLoader.diffusePattern, line));
+                if (currentMaterial instanceof BlinnPhongMaterial) {
+                    currentMaterial.setDiffuse(MTLLoader.getVector(MTLLoader.diffusePattern, line));
+                } else if (currentMaterial instanceof StandardMaterial) {
+                    currentMaterial.setAlbedo(MTLLoader.getVector(MTLLoader.diffusePattern, line));
+                }
                 break;
             case "Ks":
-                currentMaterial.setSpecular(MTLLoader.getVector(MTLLoader.specularePattern, line));
+                if (currentMaterial instanceof BlinnPhongMaterial) {
+                    currentMaterial.setSpecular(MTLLoader.getVector(MTLLoader.specularePattern, line));
+                }
                 break;
             case "Ns":
-                currentMaterial.setSpecularExponent(MTLLoader.getNumber(MTLLoader.specularExponentPattern, line));
+                if (currentMaterial instanceof BlinnPhongMaterial) {
+                    currentMaterial.setSpecularExponent(MTLLoader.getNumber(MTLLoader.specularExponentPattern, line));
+                }
                 break;
             case "map_Ka":
                 currentMaterial.setMainTexture(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
@@ -78,6 +90,20 @@ export class MTLLoader {
                 break;
             case "decal":
                 currentMaterial.setStencilMap(new Texture2D(gl, home + MTLLoader.getImageUrl(line)));
+                break;
+            case "Pr":
+                if (currentMaterial instanceof BlinnPhongMaterial) {
+                    currentMaterial = StandardMaterial.fromLaggard(gl, currentMaterial);
+                    materials[currentMaterial.name] = currentMaterial;
+                }
+                currentMaterial.setRoughness(MTLLoader.getNumber(MTLLoader.roughnessPattern, line));
+                break;
+            case "Pm":
+                if (currentMaterial instanceof BlinnPhongMaterial) {
+                    currentMaterial = StandardMaterial.fromLaggard(gl, currentMaterial);
+                    materials[currentMaterial.name] = currentMaterial;
+                }
+                currentMaterial.setMetallic(MTLLoader.getNumber(MTLLoader.metallicPattern, line));
                 break;
             default: break;
         }

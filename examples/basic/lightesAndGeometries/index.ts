@@ -11,7 +11,7 @@ const camera = new CanvasToy.PerspectiveCamera()
     .translate(vec3.fromValues(0, 5, 5))
     .rotateX(-Math.PI / 4);
 const checkerBoard = new CanvasToy.StandardMaterial(renderer.gl).setDebugMode(true);
-const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
+const objectMaterial = new CanvasToy.StandardMaterial(renderer.gl).setMetallic(0)
     .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"));
 // objectMaterial.castShadow = false;
 const ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
@@ -33,12 +33,13 @@ const directLight = new CanvasToy.DirectionalLight(renderer)
 // .setConeAngle(Math.PI / 3);
 const spotLight = new CanvasToy.SpotLight(renderer)
     .setIdensity(2)
-    .translate(vec3.fromValues(0, 5, -5))
+    .translate(vec3.fromValues(0, 10, -10))
     .lookAt(vec3.create());
 
 const pointLight = new CanvasToy.PointLight(renderer)
     .translate(vec3.fromValues(0, 3, 0))
-    .setIdensity(3);
+    .setRadius(30)
+    .setIdensity(1);
 
 scene.addLight(pointLight);
 scene.addObject(ground, box, sphere, center, camera);

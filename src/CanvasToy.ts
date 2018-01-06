@@ -29,6 +29,7 @@ export { DataTexture } from "./textures/DataTexture";
 
 export { Material } from "./materials/Material";
 export { StandardMaterial } from "./materials/StandardMaterial";
+export { BlinnPhongMaterial } from "./materials/BlinnPhongMaterial";
 export { SkyMaterial } from "./materials/SkyMaterial";
 export { LinearDepthPackMaterial } from "./materials/ESM/DepthPackMaterial";
 
