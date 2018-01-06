@@ -18,14 +18,12 @@ float GGX_D(float HdotN, float roughness) {
 
 vec3 calculateLight(
     Material material,
-    vec3 position,
+    vec3 viewDir,
     vec3 normal,
     vec3 lightDir,
-    vec3 eyePos,
     vec3 lightColor,
     float idensity
     ) {
-    vec3 viewDir = normalize(eyePos - position);
 
     vec3 halfVec = normalize(lightDir + viewDir);
 
@@ -57,10 +55,23 @@ vec3 calculateLight(
     float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;
 
     float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);
-    vec3 diffbrdf = (albedo / acos(-1.)) * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *
+    vec3 diffbrdf = albedo * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *
                 (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);
 
 
     vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;
     return color * LdotN * idensity;
+}
+
+vec3 calculateImageBasedLight(
+    Material material,
+    vec3 lightDir,
+    vec3 normal,
+    vec3 viewDir,
+    vec3 specularColor,
+    vec3 diffuseColor
+) {
+    // specularColor = mix(material.albedo, specularColor, material.metallic * 0.5 + 0.5);
+    vec3 color = mix(specularColor, diffuseColor, material.roughness);
+    return color * material.albedo;
 }

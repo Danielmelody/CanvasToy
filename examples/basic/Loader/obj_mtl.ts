@@ -10,7 +10,7 @@ const camera = new CanvasToy.PerspectiveCamera()
 const light = new CanvasToy.SpotLight(renderer)
     .translate(vec3.fromValues(-5, 5, 0))
     .setConeAngle(Math.PI / 3)
-    .setIdensity(5)
+    .setIdensity(10)
     .rotateX(-Math.PI / 4)
     .rotateY(-Math.PI / 4);
 scene.addLight(light);
@@ -32,7 +32,7 @@ scene.addObject(createSkyBox(renderer, skyTexture));
 const teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
 teapot.setAsyncFinished(teapot.asyncFinished().then(() => {
     const material = (teapot.children[0] as CanvasToy.Mesh).materials[0] as CanvasToy.StandardMaterial;
-    material.setEnvironmentMap(skyTexture).setCastShadow(true);
+    material.setEnvironmentMap(skyTexture).setCastShadow(true).setMetallic(0.9).setRoughness(0.1);
     // (teapot.children[0] as CanvasToy.Mesh).materials[0] = new CanvasToy.StandardMaterial(renderer.gl);
     return Promise.resolve(teapot);
 }));

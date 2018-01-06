@@ -158,10 +158,9 @@ vec3 calculateDirLight(
     ) {
     return calculateLight(
         material,
-        position,
+        normalize(eyePos - position),
         normal,
         -light.direction,
-        eyePos,
         light.color,
         light.idensity
     );
@@ -183,10 +182,9 @@ vec3 calculatePointLight(
     idensity *= step(lightDis, 1.0);
     return calculateLight(
         material,
-        position,
+        normalize(eyePos - position),
         normal,
         normalize(light.position - position),
-        eyePos,
         light.color,
         idensity
     );
@@ -215,10 +213,9 @@ vec3 calculateSpotLight(
     // idensity *= step(light.radius, lightDis);
     return calculateLight(
         material,
-        position,
+        normalize(eyePos - position),
         normal,
         lightDir,
-        eyePos,
         light.color,
         idensity
     );
@@ -306,6 +303,7 @@ struct Material {
     vec3 diffuse;
     vec3 specular;
     float specularExponent;
+    float reflectivity;
 };`;
         export const definitions__material_pbs_glsl = `
 struct Material {
@@ -674,15 +672,7 @@ void main () {
     vec3 viewDir = normalize(vPosition - cameraPos);
     vec3 skyUV = normalize(reflect(viewDir, vNormal));
     vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;
-    color += calculateLight(
-        uMaterial,
-        vPosition,
-        normal,
-        skyUV,
-        cameraPos,
-        imageLightColor,
-        1.0
-    );
+    color += calculateImageBasedLight(uMaterial, skyUV, normal, viewDir, imageLightColor, vec3(0.5));
     #endif
 #if (directLightsNum > 0)
     for (int index = 0; index < directLightsNum; index++) {
@@ -846,15 +836,13 @@ void main (){
         export const light_model__blinn_phong_glsl = `
 vec3 calculateLight(
     Material material,
-    vec3 position,
+    vec3 viewDir,
     vec3 normal,
     vec3 lightDir,
-    vec3 eyePos,
     vec3 lightColor,
     float idensity
     ) {
     float lambortian = max(dot(lightDir, normal), 0.0);
-    vec3 viewDir = normalize(eyePos - position);
 
     // replace R * V with N * H
     vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);
@@ -863,6 +851,19 @@ vec3 calculateLight(
     vec3 specularColor = material.specular * pow(specularAngle, material.specularExponent);
     vec3 diffuseColor = material.diffuse * lambortian;
     vec3 color = (diffuseColor + specularColor) * idensity * lightColor;
+    return color;
+}
+
+vec3 calculateImageBasedLight(
+    Material material,
+    vec3 lightDir,
+    vec3 normal,
+    vec3 viewDir,
+    vec3 specularColor,
+    vec3 diffuseColor
+) {
+    
+    vec3 color = mix(specularColor, diffuseColor, material.reflectivity);
     return color;
 }
 `;
@@ -887,14 +888,12 @@ float GGX_D(float HdotN, float roughness) {
 
 vec3 calculateLight(
     Material material,
-    vec3 position,
+    vec3 viewDir,
     vec3 normal,
     vec3 lightDir,
-    vec3 eyePos,
     vec3 lightColor,
     float idensity
     ) {
-    vec3 viewDir = normalize(eyePos - position);
 
     vec3 halfVec = normalize(lightDir + viewDir);
 
@@ -926,12 +925,25 @@ vec3 calculateLight(
     float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;
 
     float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);
-    vec3 diffbrdf = (albedo / acos(-1.)) * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *
+    vec3 diffbrdf = albedo * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *
                 (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);
 
 
     vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;
     return color * LdotN * idensity;
+}
+
+vec3 calculateImageBasedLight(
+    Material material,
+    vec3 lightDir,
+    vec3 normal,
+    vec3 viewDir,
+    vec3 specularColor,
+    vec3 diffuseColor
+) {
+    // specularColor = mix(material.albedo, specularColor, material.metallic * 0.5 + 0.5);
+    vec3 color = mix(specularColor, diffuseColor, material.roughness);
+    return color * material.albedo;
 }
 `;
 }

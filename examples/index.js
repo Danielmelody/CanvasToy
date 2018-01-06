@@ -890,11 +890,11 @@ define("shader/shaders", ["require", "exports"], function (require, exports) {
         ShaderSource.calculators__packFloat1x32_glsl = "\nvec4 packFloat1x32(float val)\n{\n    vec4 pack = vec4(1.0, 255.0, 65025.0, 16581375.0) * val;\n    pack = fract(pack);\n    pack -= vec4(pack.yzw / 255.0, 0.0);\n    return pack;\n}\n";
         ShaderSource.calculators__phong_glsl = "\nvec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specularLight,\n    vec3 diffuseLight,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
         ShaderSource.calculators__shadow_factor_glsl = "\n#ifdef RECEIVE_SHADOW\n\nvec4 texture2DbilinearEXP(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 f = fract(uv / texelSize - 0.5);\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n    vec4 a = lb + log(mix(vec4(1.0), exp(lt - lb), f.y));\n    vec4 b = rb + log(mix(vec4(1.0), exp(rt - rb), f.y));\n    vec4 z = a + log(mix(vec4(1.0), exp(b - a), f.x));\n    return z;\n}\n\nvec4 texture2Dbilinear(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 f = fract(uv / texelSize - 0.5);\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n    vec4 a = mix(lb, lt, f.y);\n    vec4 b = mix(rb, rt, f.y);\n    vec4 z = mix(a, b, f.x);\n    return z;\n}\n\nfloat texture2Dfilter(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n    float base = info.r;\n    float kernelSize = info.g;\n    float sum = 0.0;\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            vec2 subuv = uv + vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0) * texelSize * kernelSize;\n            float z = texture2Dbilinear(shadowMap, subuv, texelSize).r;\n            float expd = exp(z - base);\n            sum += expd;\n        }\n    }\n    sum /= float(FILTER_SIZE * FILTER_SIZE);\n    return base + log(sum);\n}\n\nfloat pcf(sampler2D shadowMap, vec2 uv, float depth, float bias, float texelSize) {\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n    float kernelSize = 1.0;\n    float sum = 0.0;\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            float z = texture2Dbilinear(shadowMap, uv + kernelSize * vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0).x * texelSize, texelSize).r;\n            sum += step(depth - bias, z) / float(FILTER_SIZE * FILTER_SIZE);\n        }\n    }\n    return sum;\n}\n\nfloat getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n{\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n        return 1.0;\n    } else {\n        vec2 uv = clipPos * 0.5 + 0.5;\n        float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n        if (shadowLevel == SHADOW_LEVEL_HARD) {\n            return step(linearDepth, texture2D(shadowMap, uv).r + bias);\n        } else {\n            float z = texture2DbilinearEXP(shadowMap, uv, texelSize).r;\n            float s = exp(z - linearDepth * softness);\n            return min(s, 1.0);\n        }\n    }\n}\n\nfloat getPointShadow(vec3 cubePos, samplerCube shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n{\n    float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n        return 1.0;\n    } else {\n        // if (shadowLevel == SHADOW_LEVEL_HARD) {\n            return step(linearDepth, textureCube(shadowMap, cubePos).r + bias);\n        //else {\n            // TODO: perform cubemap interpolation for soft-level shadow map for point light\n        //}\n    }\n}\n\n#endif\n";
-        ShaderSource.calculators__types_glsl = "\nvec3 calculateDirLight(\n    DirectLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        material,\n        position,\n        normal,\n        -light.direction,\n        eyePos,\n        light.color,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    idensity *= step(lightDis, 1.0);\n    return calculateLight(\n        material,\n        position,\n        normal,\n        normalize(light.position - position),\n        eyePos,\n        light.color,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    \n    idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        material,\n        position,\n        normal,\n        lightDir,\n        eyePos,\n        light.color,\n        idensity\n    );\n}\n\n// float directAndSpotShadow(sampler2D shadowMap, vec4 shadowCoord) {\n//\n// }\n";
+        ShaderSource.calculators__types_glsl = "\nvec3 calculateDirLight(\n    DirectLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        -light.direction,\n        light.color,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    idensity *= step(lightDis, 1.0);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        normalize(light.position - position),\n        light.color,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    \n    idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        lightDir,\n        light.color,\n        idensity\n    );\n}\n\n// float directAndSpotShadow(sampler2D shadowMap, vec4 shadowCoord) {\n//\n// }\n";
         ShaderSource.calculators__unpackFloat1x32_glsl = "\nfloat unpackFloat1x32( vec4 rgba ) {\n  return dot( rgba, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 160581375.0) );\n}\n";
         ShaderSource.debug__checkBox_glsl = "\nfloat checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
         ShaderSource.definitions__light_glsl = "\n#define SHADOW_LEVEL_NONE 0\n#define SHADOW_LEVEL_HARD 1\n#define SHADOW_LEVEL_SOFT 2\n#define SHADOW_LEVEL_PCSS 3\n\nstruct DirectLight\n{\n    vec3 color;\n    float idensity;\n    vec3 direction;\n#ifdef RECEIVE_SHADOW\n    lowp int shadowLevel;\n    float softness;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n#endif\n};\n\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n#ifdef RECEIVE_SHADOW\n    lowp int shadowLevel;\n    float softness;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n    float pcssArea;\n#endif\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n    float coneAngleCos;\n    vec3 spotDir;\n#ifdef RECEIVE_SHADOW\n    lowp int shadowLevel;\n    float softness;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n    float pcssArea;\n#endif\n};\n";
-        ShaderSource.definitions__material_blinnphong_glsl = "\nstruct Material {\n    vec3 ambient;\n    vec3 diffuse;\n    vec3 specular;\n    float specularExponent;\n};";
+        ShaderSource.definitions__material_blinnphong_glsl = "\nstruct Material {\n    vec3 ambient;\n    vec3 diffuse;\n    vec3 specular;\n    float specularExponent;\n    float reflectivity;\n};";
         ShaderSource.definitions__material_pbs_glsl = "\nstruct Material {\n    vec3 ambient;\n    vec3 albedo;\n    float metallic;\n    float roughness;\n};";
         ShaderSource.interploters__deferred__geometry_frag = "\nuniform vec3 ambient;\nuniform vec3 uMaterialDiff;\nuniform vec3 uMaterialSpec;\nuniform float uMaterialSpecExp;\n\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvec2 encodeNormal(vec3 n) {\n    return normalize(n.xy) * (sqrt(n.z*0.5+0.5));\n}\n\nvoid main () {\n    vec3 normal = normalize(vNormal);\n    float specular = (uMaterialSpec.x + uMaterialSpec.y + uMaterialSpec.z) / 3.0;\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, uMaterialSpecExp);\n#else\n    gl_FragData[0] = vec4(encodeNormal(normal), gl_FragCoord.z, uMaterialSpecExp);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(uMaterialDiff * texture2D(uMainTexture, vMainUV).xyz, specular);\n#else\n    gl_FragData[1] = vec4(uMaterialDiff, specular);\n#endif\n}\n";
         ShaderSource.interploters__deferred__geometry_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
@@ -906,12 +906,12 @@ define("shader/shaders", ["require", "exports"], function (require, exports) {
         ShaderSource.interploters__forward__esm__prefiltering_vert = "\nuniform mat4 normalMatrix;\nattribute vec3 position;\nattribute vec3 normal;\nvarying vec2 uv;\nvarying vec3 vNormal;\n\nvoid main () {\n    gl_Position = vec4(position, 1.0);\n    uv = gl_Position.xy * 0.5 + 0.5;\n    vNormal = normalize((normalMatrix * vec4(normal, 1.0)).xyz);\n}\n";
         ShaderSource.interploters__forward__gouraud_frag = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
         ShaderSource.interploters__forward__gouraud_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-        ShaderSource.interploters__forward__phong_frag = "\nuniform Material uMaterial;\nuniform vec3 cameraPos;\n\nvarying vec2 vMainUV;\nvarying vec4 clipPos;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\nuniform sampler2D directLightShadowMap[directLightsNum];\n#endif\n\n#if (pointLightsNum > 0)\nuniform PointLight pointLights[pointLightsNum];\nuniform samplerCube pointLightShadowMap[pointLightsNum];\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\nuniform sampler2D spotLightShadowMap[spotLightsNum];\n#endif\n\n#ifdef RECEIVE_SHADOW\n\n    #if (directLightsNum > 0)\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n\n    #if (spotLightsNum > 0)\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = uMaterial.ambient;\n    #ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(vPosition - cameraPos);\n    vec3 skyUV = normalize(reflect(viewDir, vNormal));\n    vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;\n    color += calculateLight(\n        uMaterial,\n        vPosition,\n        normal,\n        skyUV,\n        cameraPos,\n        imageLightColor,\n        1.0\n    );\n    #endif\n#if (directLightsNum > 0)\n    for (int index = 0; index < directLightsNum; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-directLights[index].direction, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            directShadowCoord[index].xy / directShadowCoord[index].w, \n            directLightShadowMap[index], \n            directLightDepth[index], \n            lambertian, \n            1.0 / directLights[index].shadowMapSize,\n            directLights[index].shadowLevel,\n            directLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (pointLightsNum > 0)\n    for (int index = 0; index < pointLightsNum; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n        #ifdef RECEIVE_SHADOW\n        vec3 offset = vPosition - pointLights[index].position;\n        vec3 cubePos = normalize(offset);\n        float linearDepth = length(offset);\n        float lambertian = max(dot(-cubePos, normal), 0.0);\n        float shadowFactor = getPointShadow(\n            cubePos,\n            pointLightShadowMap[index],\n            linearDepth,\n            lambertian,\n            1.0 / pointLights[index].shadowMapSize,\n            pointLights[index].shadowLevel,\n            pointLights[index].softness\n        );\n        lighting *= shadowFactor;\n        #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (spotLightsNum > 0)\n    for (int index = 0; index < spotLightsNum; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-spotLights[index].spotDir, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            spotShadowCoord[index].xy / spotShadowCoord[index].w, \n            spotLightShadowMap[index],\n            spotLightDepth[index], \n            lambertian, \n            1.0 / spotLights[index].shadowMapSize,\n            spotLights[index].shadowLevel,\n            spotLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n\n    }\n#endif\n    color += totalLighting;\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
+        ShaderSource.interploters__forward__phong_frag = "\nuniform Material uMaterial;\nuniform vec3 cameraPos;\n\nvarying vec2 vMainUV;\nvarying vec4 clipPos;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\nuniform sampler2D directLightShadowMap[directLightsNum];\n#endif\n\n#if (pointLightsNum > 0)\nuniform PointLight pointLights[pointLightsNum];\nuniform samplerCube pointLightShadowMap[pointLightsNum];\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\nuniform sampler2D spotLightShadowMap[spotLightsNum];\n#endif\n\n#ifdef RECEIVE_SHADOW\n\n    #if (directLightsNum > 0)\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n\n    #if (spotLightsNum > 0)\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = uMaterial.ambient;\n    #ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(vPosition - cameraPos);\n    vec3 skyUV = normalize(reflect(viewDir, vNormal));\n    vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;\n    color += calculateImageBasedLight(uMaterial, skyUV, normal, viewDir, imageLightColor, vec3(0.5));\n    #endif\n#if (directLightsNum > 0)\n    for (int index = 0; index < directLightsNum; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-directLights[index].direction, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            directShadowCoord[index].xy / directShadowCoord[index].w, \n            directLightShadowMap[index], \n            directLightDepth[index], \n            lambertian, \n            1.0 / directLights[index].shadowMapSize,\n            directLights[index].shadowLevel,\n            directLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (pointLightsNum > 0)\n    for (int index = 0; index < pointLightsNum; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n        #ifdef RECEIVE_SHADOW\n        vec3 offset = vPosition - pointLights[index].position;\n        vec3 cubePos = normalize(offset);\n        float linearDepth = length(offset);\n        float lambertian = max(dot(-cubePos, normal), 0.0);\n        float shadowFactor = getPointShadow(\n            cubePos,\n            pointLightShadowMap[index],\n            linearDepth,\n            lambertian,\n            1.0 / pointLights[index].shadowMapSize,\n            pointLights[index].shadowLevel,\n            pointLights[index].softness\n        );\n        lighting *= shadowFactor;\n        #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (spotLightsNum > 0)\n    for (int index = 0; index < spotLightsNum; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-spotLights[index].spotDir, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            spotShadowCoord[index].xy / spotShadowCoord[index].w, \n            spotLightShadowMap[index],\n            spotLightDepth[index], \n            lambertian, \n            1.0 / spotLights[index].shadowMapSize,\n            spotLights[index].shadowLevel,\n            spotLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n\n    }\n#endif\n    color += totalLighting;\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
         ShaderSource.interploters__forward__phong_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\nvarying vec4 clipPos;\n\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\n    #ifdef RECEIVE_SHADOW\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\n    #ifdef RECEIVE_SHADOW\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n#endif\n\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    clipPos = gl_Position;\n    vec4 worldPos = (modelMatrix * vec4(position, 1.0));\n    vPosition = worldPos.xyz;\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n\n    #ifdef RECEIVE_SHADOW\n        #if (directLightsNum > 0)\n        for (int i = 0; i < directLightsNum; ++i) {\n            directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;\n            directLightDepth[i] = length((directLights[i].viewMatrix * worldPos).xyz);\n        }\n        #endif\n\n        #if (spotLightsNum > 0)\n        for (int i = 0; i < spotLightsNum; ++i) {\n            spotShadowCoord[i] = spotLights[i].projectionMatrix * spotLights[i].viewMatrix * worldPos;\n            spotLightDepth[i] = length((spotLights[i].viewMatrix * worldPos).xyz);\n        }\n        #endif\n    #endif\n}\n";
         ShaderSource.interploters__forward__skybox_frag = "\nvarying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
         ShaderSource.interploters__forward__skybox_vert = "\nattribute vec3 position;\nuniform mat4 viewProjectionMatrix;\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = viewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
-        ShaderSource.light_model__blinn_phong_glsl = "\nvec3 calculateLight(\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 lightColor,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 viewDir = normalize(eyePos - position);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = material.specular * pow(specularAngle, material.specularExponent);\n    vec3 diffuseColor = material.diffuse * lambortian;\n    vec3 color = (diffuseColor + specularColor) * idensity * lightColor;\n    return color;\n}\n";
-        ShaderSource.light_model__pbs_ggx_glsl = "\nfloat tangent_2(float cos_2) {\n    return (1. - cos_2) / cos_2;\n}\n\nfloat Smith_G1(float NdotV, float roughness) {\n    float tan_2 = tangent_2(NdotV * NdotV);\n    float root = roughness * roughness * tan_2;\n    return 2.0 / (1. + sqrt(1. + root));\n}\n\nfloat GGX_D(float HdotN, float roughness) {\n    float cos_2 = HdotN * HdotN;\n    float tan_2 = tangent_2(cos_2);\n\n    float root = roughness / (cos_2 * (roughness * roughness + tan_2));\n    return root * root / acos(-1.);\n}\n\nvec3 calculateLight(\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 lightColor,\n    float idensity\n    ) {\n    vec3 viewDir = normalize(eyePos - position);\n\n    vec3 halfVec = normalize(lightDir + viewDir);\n\n    float LdotN = dot(lightDir, normal);\n    float VdotN = dot(viewDir, normal);\n    float HdotN = dot(halfVec, normal);\n    float LdotH = dot(lightDir, halfVec);\n    float VdotH = dot(viewDir, halfVec);\n\n    if (VdotN < 0. || LdotN < 0.) {\n        return vec3(0.);\n    }\n\n    float OneMinusLdotH = 1. - LdotH;\n    float OneMinusLdotHSqr = OneMinusLdotH * OneMinusLdotH;\n\n    vec3 albedo = material.albedo * lightColor;\n\n    vec3 fresnel = albedo + (1. - albedo) * OneMinusLdotHSqr * OneMinusLdotHSqr * OneMinusLdotH;\n\n    float d = GGX_D(HdotN, material.roughness);\n    float g = Smith_G1(VdotN, material.roughness) * Smith_G1(LdotN, material.roughness);\n    vec3 specbrdf = fresnel * (g * d / (4. * VdotN * LdotN));\n\n    float OneMinusLdotN = 1. - LdotN;\n    float OneMinusLdotNSqr = OneMinusLdotN * OneMinusLdotN;\n\n    float OneMinusVdotN = 1. - VdotN;\n    float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;\n\n    float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);\n    vec3 diffbrdf = (albedo / acos(-1.)) * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *\n                (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);\n\n\n    vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;\n    return color * LdotN * idensity;\n}\n";
+        ShaderSource.light_model__blinn_phong_glsl = "\nvec3 calculateLight(\n    Material material,\n    vec3 viewDir,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 lightColor,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = material.specular * pow(specularAngle, material.specularExponent);\n    vec3 diffuseColor = material.diffuse * lambortian;\n    vec3 color = (diffuseColor + specularColor) * idensity * lightColor;\n    return color;\n}\n\nvec3 calculateImageBasedLight(\n    Material material,\n    vec3 lightDir,\n    vec3 normal,\n    vec3 viewDir,\n    vec3 specularColor,\n    vec3 diffuseColor\n) {\n    \n    vec3 color = mix(specularColor, diffuseColor, material.reflectivity);\n    return color;\n}\n";
+        ShaderSource.light_model__pbs_ggx_glsl = "\nfloat tangent_2(float cos_2) {\n    return (1. - cos_2) / cos_2;\n}\n\nfloat Smith_G1(float NdotV, float roughness) {\n    float tan_2 = tangent_2(NdotV * NdotV);\n    float root = roughness * roughness * tan_2;\n    return 2.0 / (1. + sqrt(1. + root));\n}\n\nfloat GGX_D(float HdotN, float roughness) {\n    float cos_2 = HdotN * HdotN;\n    float tan_2 = tangent_2(cos_2);\n\n    float root = roughness / (cos_2 * (roughness * roughness + tan_2));\n    return root * root / acos(-1.);\n}\n\nvec3 calculateLight(\n    Material material,\n    vec3 viewDir,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 lightColor,\n    float idensity\n    ) {\n\n    vec3 halfVec = normalize(lightDir + viewDir);\n\n    float LdotN = dot(lightDir, normal);\n    float VdotN = dot(viewDir, normal);\n    float HdotN = dot(halfVec, normal);\n    float LdotH = dot(lightDir, halfVec);\n    float VdotH = dot(viewDir, halfVec);\n\n    if (VdotN < 0. || LdotN < 0.) {\n        return vec3(0.);\n    }\n\n    float OneMinusLdotH = 1. - LdotH;\n    float OneMinusLdotHSqr = OneMinusLdotH * OneMinusLdotH;\n\n    vec3 albedo = material.albedo * lightColor;\n\n    vec3 fresnel = albedo + (1. - albedo) * OneMinusLdotHSqr * OneMinusLdotHSqr * OneMinusLdotH;\n\n    float d = GGX_D(HdotN, material.roughness);\n    float g = Smith_G1(VdotN, material.roughness) * Smith_G1(LdotN, material.roughness);\n    vec3 specbrdf = fresnel * (g * d / (4. * VdotN * LdotN));\n\n    float OneMinusLdotN = 1. - LdotN;\n    float OneMinusLdotNSqr = OneMinusLdotN * OneMinusLdotN;\n\n    float OneMinusVdotN = 1. - VdotN;\n    float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;\n\n    float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);\n    vec3 diffbrdf = albedo * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *\n                (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);\n\n\n    vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;\n    return color * LdotN * idensity;\n}\n\nvec3 calculateImageBasedLight(\n    Material material,\n    vec3 lightDir,\n    vec3 normal,\n    vec3 viewDir,\n    vec3 specularColor,\n    vec3 diffuseColor\n) {\n    // specularColor = mix(material.albedo, specularColor, material.metallic * 0.5 + 0.5);\n    vec3 color = mix(specularColor, diffuseColor, material.roughness);\n    return color * material.albedo;\n}\n";
     })(ShaderSource = exports.ShaderSource || (exports.ShaderSource = {}));
 });
 define("shader/ShaderBuilder", ["require", "exports", "shader/Program", "shader/shaders"], function (require, exports, Program_1, shaders_1) {
@@ -4779,10 +4779,51 @@ define("examples/global", ["require", "exports", "CanvasToy", "gl-matrix"], func
     }
     exports.createCanvas = createCanvas;
 });
-define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_2, global_1) {
+define("examples/basic/pbs/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_2, global_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var renderer = new CanvasToy.Renderer(global_1.createCanvas());
+    var scene = new CanvasToy.Scene();
+    var camera = new CanvasToy.PerspectiveCamera().setPosition(gl_matrix_2.vec3.fromValues(0, 0, 20));
+    var skyTexture = new CanvasToy.CubeTexture(renderer.gl, {
+        xpos: "resources/images/skybox/arid2_rt.jpg",
+        xneg: "resources/images/skybox/arid2_lf.jpg",
+        ypos: "resources/images/skybox/arid2_up.jpg",
+        yneg: "resources/images/skybox/arid2_dn.jpg",
+        zpos: "resources/images/skybox/arid2_bk.jpg",
+        zneg: "resources/images/skybox/arid2_ft.jpg",
+    });
+    scene.addObject(global_1.createSkyBox(renderer, skyTexture));
+    for (var i = 0; i < 5; ++i) {
+        for (var j = 0; j < 5; ++j) {
+            var mesh = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl).setWidthSegments(50).setHeightSegments(50).build(), [new CanvasToy.StandardMaterial(renderer.gl)
+                    .setEnvironmentMap(skyTexture)
+                    .setRecieveShadow(false)
+                    .setCastShadow(false)
+                    .setMetallic((i + 0.5) / 5.0)
+                    .setRoughness((j + 0.5) / 5.0)
+            ]);
+            mesh.setPosition(gl_matrix_2.vec3.fromValues((i - 2) * 3, (j - 2) * 3, 0));
+            scene.addObject(mesh);
+        }
+    }
+    var light = new CanvasToy.DirectionalLight(renderer)
+        .rotateY(Math.PI / 3)
+        .setPosition(gl_matrix_2.vec3.fromValues(5, 0, -5))
+        .setShadowLevel(CanvasToy.ShadowLevel.None)
+        .lookAt(gl_matrix_2.vec3.create());
+    scene.addOnUpdateListener(function () {
+        light.rotateY(0.01);
+    });
+    scene.addLight(light);
+    renderer.render(scene, camera);
+    renderer.stop();
+    global_1.onMouseOnStart(renderer);
+});
+define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_3, global_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var renderer = new CanvasToy.Renderer(global_2.createCanvas());
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera();
     var mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
@@ -4793,20 +4834,20 @@ define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-mat
         if (i > 0) {
             mesh.setParent(meshes[i - 1]);
             if (i === 3) {
-                mesh.setLocalPosition(gl_matrix_2.vec3.fromValues(0, 2.5 - i / 4.0, 0));
+                mesh.setLocalPosition(gl_matrix_3.vec3.fromValues(0, 2.5 - i / 4.0, 0));
             }
             else {
-                mesh.setLocalPosition(gl_matrix_2.vec3.fromValues(2.5 - i / 4.0, 0, 0));
+                mesh.setLocalPosition(gl_matrix_3.vec3.fromValues(2.5 - i / 4.0, 0, 0));
             }
         }
         var scaleFactor = Math.pow(2, (1 - i));
-        mesh.setScaling(gl_matrix_2.vec3.fromValues(scaleFactor, scaleFactor, scaleFactor));
+        mesh.setScaling(gl_matrix_3.vec3.fromValues(scaleFactor, scaleFactor, scaleFactor));
         meshes.push(mesh);
     }
-    meshes[0].translate(gl_matrix_2.vec3.fromValues(0, 0, -10));
+    meshes[0].translate(gl_matrix_3.vec3.fromValues(0, 0, -10));
     var light = new CanvasToy.DirectionalLight(renderer)
         .rotateY(Math.PI / 3)
-        .setPosition(gl_matrix_2.vec3.fromValues(5, 0, -5))
+        .setPosition(gl_matrix_3.vec3.fromValues(5, 0, -5))
         .lookAt(meshes[0].position);
     var t = 0;
     scene.addOnUpdateListener(function (dt) {
@@ -4819,68 +4860,69 @@ define("examples/basic/bones/index", ["require", "exports", "CanvasToy", "gl-mat
     scene.addLight(light);
     renderer.render(scene, camera);
     renderer.stop();
-    global_1.onMouseOnStart(renderer);
-    global_1.onMouseEvent(renderer, camera);
+    global_2.onMouseOnStart(renderer);
+    global_2.onMouseEvent(renderer, camera);
 });
-define("examples/basic/lightesAndGeometries/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_3, global_2) {
+define("examples/basic/lightesAndGeometries/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_4, global_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var renderer = new CanvasToy.Renderer(global_2.createCanvas());
+    var renderer = new CanvasToy.Renderer(global_3.createCanvas());
     var scene = new CanvasToy.Scene();
     var center = new CanvasToy.Object3d();
     var camera = new CanvasToy.PerspectiveCamera()
         .setParent(center)
-        .translate(gl_matrix_3.vec3.fromValues(0, 5, 5))
+        .translate(gl_matrix_4.vec3.fromValues(0, 5, 5))
         .rotateX(-Math.PI / 4);
     var checkerBoard = new CanvasToy.StandardMaterial(renderer.gl).setDebugMode(true);
-    var objectMaterial = new CanvasToy.StandardMaterial(renderer.gl)
+    var objectMaterial = new CanvasToy.StandardMaterial(renderer.gl).setMetallic(0)
         .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg"));
     var ground = new CanvasToy.Mesh(new CanvasToy.TileGeometry(renderer.gl).build(), [checkerBoard])
-        .setPosition(gl_matrix_3.vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(gl_matrix_3.vec3.fromValues(10, 10, 10));
+        .setPosition(gl_matrix_4.vec3.fromValues(0, -2, 0)).rotateX(-Math.PI / 2).setScaling(gl_matrix_4.vec3.fromValues(10, 10, 10));
     var box = new CanvasToy.Mesh(new CanvasToy.CubeGeometry(renderer.gl).build(), [objectMaterial])
-        .setPosition(gl_matrix_3.vec3.fromValues(-2, -1, 0)).setScaling(gl_matrix_3.vec3.fromValues(0.5, 0.5, 0.5));
+        .setPosition(gl_matrix_4.vec3.fromValues(-2, -1, 0)).setScaling(gl_matrix_4.vec3.fromValues(0.5, 0.5, 0.5));
     var sphere = new CanvasToy.Mesh(new CanvasToy.SphereGeometry(renderer.gl)
         .setWidthSegments(50)
         .setHeightSegments(50)
         .build(), [objectMaterial])
-        .setPosition(gl_matrix_3.vec3.fromValues(2, 0, 0)).setScaling(gl_matrix_3.vec3.fromValues(0.5, 0.5, 0.5));
+        .setPosition(gl_matrix_4.vec3.fromValues(2, 0, 0)).setScaling(gl_matrix_4.vec3.fromValues(0.5, 0.5, 0.5));
     var directLight = new CanvasToy.DirectionalLight(renderer)
         .setIdensity(1)
-        .translate(gl_matrix_3.vec3.fromValues(0, 5, 5))
-        .lookAt(gl_matrix_3.vec3.create());
+        .translate(gl_matrix_4.vec3.fromValues(0, 5, 5))
+        .lookAt(gl_matrix_4.vec3.create());
     var spotLight = new CanvasToy.SpotLight(renderer)
         .setIdensity(2)
-        .translate(gl_matrix_3.vec3.fromValues(0, 5, -5))
-        .lookAt(gl_matrix_3.vec3.create());
+        .translate(gl_matrix_4.vec3.fromValues(0, 10, -10))
+        .lookAt(gl_matrix_4.vec3.create());
     var pointLight = new CanvasToy.PointLight(renderer)
-        .translate(gl_matrix_3.vec3.fromValues(0, 3, 0))
-        .setIdensity(3);
+        .translate(gl_matrix_4.vec3.fromValues(0, 3, 0))
+        .setRadius(30)
+        .setIdensity(1);
     scene.addLight(pointLight);
     scene.addObject(ground, box, sphere, center, camera);
     var time = 0;
     scene.addOnUpdateListener(function (delta) {
         time += delta;
-        box.translate(gl_matrix_3.vec3.fromValues(0, 0.04 * Math.sin(time / 400), 0));
-        sphere.translate(gl_matrix_3.vec3.fromValues(0, -0.04 * Math.sin(time / 400), 0));
+        box.translate(gl_matrix_4.vec3.fromValues(0, 0.04 * Math.sin(time / 400), 0));
+        sphere.translate(gl_matrix_4.vec3.fromValues(0, -0.04 * Math.sin(time / 400), 0));
         center.rotateY(0.01);
     });
-    scene.ambientLight = gl_matrix_3.vec3.fromValues(0.2, 0.2, 0.2);
+    scene.ambientLight = gl_matrix_4.vec3.fromValues(0.2, 0.2, 0.2);
     renderer.render(scene, camera);
     renderer.stop();
-    global_2.onMouseOnStart(renderer);
+    global_3.onMouseOnStart(renderer);
 });
-define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_4, global_3) {
+define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_5, global_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var renderer = new CanvasToy.Renderer(global_3.createCanvas());
+    var renderer = new CanvasToy.Renderer(global_4.createCanvas());
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera()
-        .translate(gl_matrix_4.vec3.fromValues(0, 2, 5))
-        .lookAt(gl_matrix_4.vec3.create());
+        .translate(gl_matrix_5.vec3.fromValues(0, 2, 5))
+        .lookAt(gl_matrix_5.vec3.create());
     var light = new CanvasToy.SpotLight(renderer)
-        .translate(gl_matrix_4.vec3.fromValues(-5, 5, 0))
+        .translate(gl_matrix_5.vec3.fromValues(-5, 5, 0))
         .setConeAngle(Math.PI / 3)
-        .setIdensity(5)
+        .setIdensity(10)
         .rotateX(-Math.PI / 4)
         .rotateY(-Math.PI / 4);
     scene.addLight(light);
@@ -4892,14 +4934,14 @@ define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-
         zpos: "resources/images/skybox/arid2_bk.jpg",
         zneg: "resources/images/skybox/arid2_ft.jpg",
     });
-    scene.addObject(global_3.createSkyBox(renderer, skyTexture));
+    scene.addObject(global_4.createSkyBox(renderer, skyTexture));
     var teapot = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapot.setAsyncFinished(teapot.asyncFinished().then(function () {
         var material = teapot.children[0].materials[0];
-        material.setEnvironmentMap(skyTexture).setCastShadow(true);
+        material.setEnvironmentMap(skyTexture).setCastShadow(true).setMetallic(0.9).setRoughness(0.1);
         return Promise.resolve(teapot);
     }));
-    teapot.setScaling(gl_matrix_4.vec3.fromValues(0.1, 0.1, 0.1));
+    teapot.setScaling(gl_matrix_5.vec3.fromValues(0.1, 0.1, 0.1));
     scene.addObject(teapot);
     camera.lookAt(teapot.position);
     var time = 0;
@@ -4909,39 +4951,39 @@ define("examples/basic/Loader/obj_mtl", ["require", "exports", "CanvasToy", "gl-
     });
     renderer.render(scene, camera);
     renderer.stop();
-    global_3.onMouseOnStart(renderer);
+    global_4.onMouseOnStart(renderer);
 });
-define("examples/index", ["require", "exports", "examples/basic/bones/index", "examples/basic/lightesAndGeometries/index", "examples/basic/Loader/obj_mtl"], function (require, exports) {
+define("examples/index", ["require", "exports", "examples/basic/pbs/index", "examples/basic/bones/index", "examples/basic/lightesAndGeometries/index", "examples/basic/Loader/obj_mtl"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_5, global_4) {
+define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "gl-matrix", "examples/global"], function (require, exports, CanvasToy, gl_matrix_6, global_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var renderer = new CanvasToy.Renderer(global_4.createCanvas());
+    var renderer = new CanvasToy.Renderer(global_5.createCanvas());
     var scene = new CanvasToy.Scene();
     var camera = new CanvasToy.PerspectiveCamera()
-        .setPosition(gl_matrix_5.vec3.fromValues(0, 100, 100))
-        .lookAt(gl_matrix_5.vec3.fromValues(0, 0, -40));
+        .setPosition(gl_matrix_6.vec3.fromValues(0, 100, 100))
+        .lookAt(gl_matrix_6.vec3.fromValues(0, 0, -40));
     var tile = new CanvasToy.Mesh(new CanvasToy.RectGeometry(renderer.gl), [
         new CanvasToy.StandardMaterial(renderer.gl)
             .setMainTexture(new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg")),
     ])
-        .translate(gl_matrix_5.vec3.fromValues(0, -10, -40)).rotateX(-Math.PI / 2).setScaling(gl_matrix_5.vec3.fromValues(200, 200, 200));
+        .translate(gl_matrix_6.vec3.fromValues(0, -10, -40)).rotateX(-Math.PI / 2).setScaling(gl_matrix_6.vec3.fromValues(200, 200, 200));
     scene.addObject(camera, tile);
     var teapotProto = CanvasToy.OBJLoader.load(renderer.gl, "resources/models/teapot/teapot.obj");
     teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(function () {
         var material = teapotProto.children[0].materials[0];
-        material.setDiffuse(gl_matrix_5.vec3.fromValues(1, 0.8, 0.2));
+        material.setDiffuse(gl_matrix_6.vec3.fromValues(1, 0.8, 0.2));
         material.setCastShadow(false);
         var _loop_1 = function (i) {
             var teapot = new CanvasToy.Mesh(teapotProto.children[0].geometry, teapotProto.children[0].materials);
             scene.addObject(teapot);
-            teapot.translate(gl_matrix_5.vec3.fromValues((i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40));
+            teapot.translate(gl_matrix_6.vec3.fromValues((i % 10) * 40 - 200, 0, -40 - Math.floor(i / 10) * 40));
             var time = 0;
             var spin = 0.03 * (Math.random() - 0.5);
             var light = new CanvasToy.PointLight(renderer)
-                .setPosition(gl_matrix_5.vec3.fromValues(Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150))
+                .setPosition(gl_matrix_6.vec3.fromValues(Math.random() * 200.0 - 50, 4, Math.random() * 200.0 - 150))
                 .setIdensity(0.5)
                 .setRadius(50);
             scene.addLight(light);
@@ -4950,7 +4992,7 @@ define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "
             scene.addOnUpdateListener(function () {
                 time += 1 / 60;
                 teapot.rotateY(spin);
-                light.translate(gl_matrix_5.vec3.fromValues(-Math.sin(time * vx), 0, -Math.cos(time * vy)));
+                light.translate(gl_matrix_6.vec3.fromValues(-Math.sin(time * vx), 0, -Math.cos(time * vy)));
             });
         };
         for (var i = 0; i < 40; ++i) {
@@ -4961,6 +5003,6 @@ define("examples/deferredRendering/index", ["require", "exports", "CanvasToy", "
         return Promise.resolve(teapotProto);
     }));
     renderer.stop();
-    global_4.onMouseOnStart(renderer);
+    global_5.onMouseOnStart(renderer);
 });
 //# sourceMappingURL=index.js.map

@@ -3,4 +3,5 @@ struct Material {
     vec3 diffuse;
     vec3 specular;
     float specularExponent;
+    float reflectivity;
 };

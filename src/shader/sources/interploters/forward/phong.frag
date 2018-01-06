@@ -63,15 +63,7 @@ void main () {
     vec3 viewDir = normalize(vPosition - cameraPos);
     vec3 skyUV = normalize(reflect(viewDir, vNormal));
     vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;
-    color += calculateLight(
-        uMaterial,
-        vPosition,
-        normal,
-        skyUV,
-        cameraPos,
-        imageLightColor,
-        1.0
-    );
+    color += calculateImageBasedLight(uMaterial, skyUV, normal, viewDir, imageLightColor, vec3(0.5));
     #endif
 #if (directLightsNum > 0)
     for (int index = 0; index < directLightsNum; index++) {

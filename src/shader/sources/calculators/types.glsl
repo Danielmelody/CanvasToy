@@ -7,10 +7,9 @@ vec3 calculateDirLight(
     ) {
     return calculateLight(
         material,
-        position,
+        normalize(eyePos - position),
         normal,
         -light.direction,
-        eyePos,
         light.color,
         light.idensity
     );
@@ -32,10 +31,9 @@ vec3 calculatePointLight(
     idensity *= step(lightDis, 1.0);
     return calculateLight(
         material,
-        position,
+        normalize(eyePos - position),
         normal,
         normalize(light.position - position),
-        eyePos,
         light.color,
         idensity
     );
@@ -64,10 +62,9 @@ vec3 calculateSpotLight(
     // idensity *= step(light.radius, lightDis);
     return calculateLight(
         material,
-        position,
+        normalize(eyePos - position),
         normal,
         lightDir,
-        eyePos,
         light.color,
         idensity
     );
