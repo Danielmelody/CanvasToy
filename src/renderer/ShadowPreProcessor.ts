@@ -1,4 +1,4 @@
-import { vec2 } from "gl-matrix";
+
 import { Camera } from "../cameras/Camera";
 import { RectGeometry } from "../geometries/RectGeometry";
 import { Light } from "../lights/Light";
@@ -10,11 +10,9 @@ import { Material } from "../materials/Material";
 import { StandardMaterial } from "../materials/StandardMaterial";
 import { Mesh } from "../Mesh";
 import { Scene } from "../Scene";
-import { shaderPassLib } from "../shader/Program";
-import { FrameBuffer } from "./FrameBuffer";
+
 import { WebGLExtension } from "./IExtension";
 import { IProcessor } from "./IProcessor";
-import { ProcessingFrameBuffer } from "./SwapFramebuffer";
 
 export class ShadowPreProcess implements IProcessor {
 

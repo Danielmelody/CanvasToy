@@ -1,5 +1,5 @@
 import { Texture } from "../textures/Texture";
-import { Texture2D } from "../textures/Texture2D";
+
 import { Graphics } from "./GraphicsUtils";
 
 export enum AttachmentType {
@@ -131,13 +131,14 @@ export class FrameBuffer {
             }
         }
         if (!!drawBuffer) {
+            let i = 0;
+            const drawBuffers = [];
             for (const attachment of this.extras) {
                 this.linkAttachment(attachment, gl, drawBuffer);
+                drawBuffers.push(drawBuffer.COLOR_ATTACHMENT0_WEBGL + i);
+                i++;
             }
-            drawBuffer.drawBuffersWEBGL([
-                drawBuffer.COLOR_ATTACHMENT0_WEBGL,
-                drawBuffer.COLOR_ATTACHMENT1_WEBGL,
-            ]);
+            drawBuffer.drawBuffersWEBGL(drawBuffers);
         }
         this._attached = Graphics.logIfFrameBufferInvalid(gl, this.glFramebuffer);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);

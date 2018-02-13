@@ -3,22 +3,18 @@ import { Camera } from "../../cameras/Camera";
 import { DataType } from "../../DataTypeEnum";
 import { RectGeometry } from "../../geometries/RectGeometry";
 import { BoundingBox2D } from "../../Intersections/BoundingBox";
-import { StandardMaterial } from "../../materials/StandardMaterial";
-
 import { PointLight } from "../../lights/PointLight";
-
 import { Material } from "../../materials/Material";
-
+import { StandardMaterial } from "../../materials/StandardMaterial";
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 import { Scene } from "../../Scene";
-import { Program, shaderPassLib } from "../../shader/Program";
+import { Program } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
 import { DataTexture } from "../../textures/DataTexture";
-
 import { Texture } from "../../textures/Texture";
-import { Attachment, AttachmentType, FrameBuffer } from "../FrameBuffer";
+import { Attachment, FrameBuffer } from "../FrameBuffer";
 import { Graphics } from "../GraphicsUtils";
 import { WebGLExtension } from "../IExtension";
 import { IProcessor } from "../IProcessor";
@@ -95,21 +91,16 @@ export class DeferredProcessor implements IProcessor {
             .setFormat(this.gl.DEPTH_COMPONENT)
             .apply(this.gl);
         this.gBuffer.extras.push(
-            // first for normal, depth and materialSpecExp
+            // first for normal, materialRoughness
             new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT0_WEBGL)
                 .asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
-            // second for materialDiff and materialSpec
+            // second for materialAlbedo and materialMetallic
             new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT1_WEBGL)
                 .asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
+            // third for 32-bit depth
+            new Attachment(this.gBuffer, (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT2_WEBGL)
+                .asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
         );
-        for (const colorAttach of this.gBuffer.extras) {
-            colorAttach.targetTexture
-                .setType(this.gl.FLOAT)
-                .setFormat(this.gl.RGBA)
-                .setMinFilter(this.gl.NEAREST)
-                .setMagFilter(this.gl.NEAREST)
-                .apply(this.gl);
-        }
 
         this.gBuffer.attach(this.gl, this.ext.draw_buffer);
     }
@@ -236,9 +227,10 @@ export class DeferredProcessor implements IProcessor {
 
         this.tileProgram = new ShaderBuilder()
             .resetShaderLib()
+            .addDefinition(ShaderSource.definitions__material_pbs_glsl)
             .addDefinition(ShaderSource.definitions__light_glsl)
-            .addDefinition(ShaderSource.definitions__material_blinnphong_glsl)
-            .setLightModel(ShaderSource.light_model__blinn_phong_glsl)
+            .setLightModel(ShaderSource.light_model__pbs_ggx_glsl)
+            .addShaderLib(ShaderSource.calculators__unpackFloat1x32_glsl)
             .setShadingVert(ShaderSource.interploters__deferred__tiledLight_vert)
             .setShadingFrag(ShaderSource.interploters__deferred__tiledLight_frag)
             .setExtraRenderParamHolder("lightInfo", {
@@ -265,8 +257,9 @@ export class DeferredProcessor implements IProcessor {
                     },
                 },
                 textures: {
-                    uNormalDepthSE: { source: this.gBuffer.extras[0].targetTexture },
-                    uDiffSpec: { source: this.gBuffer.extras[1].targetTexture },
+                    normalRoughnessTex: { source: this.gBuffer.extras[0].targetTexture },
+                    albedoMetallicTex: { source: this.gBuffer.extras[1].targetTexture },
+                    depthTex: { source: this.gBuffer.extras[2].targetTexture },
                     uLightOffsetCount: { source: this.tileLightOffsetCountMap },
                     uLightPositionRadius: { source: this.lightPositionRadiusMap },
                     uLightColorIdensity: { source: this.lightColorIdensityMap },

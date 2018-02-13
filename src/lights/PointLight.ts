@@ -1,19 +1,16 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
-import { DataType } from "../DataTypeEnum";
-import { uniform } from "../Decorators";
 
 import { SphereGeometry } from "../geometries/SphereGeometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 
 import { Renderer } from "../renderer/Renderer";
 
-import { CubeCamera } from "../cameras/CubeCamera";
 import { ProcessingFrameBuffer } from "../renderer/SwapFramebuffer";
 import { IBuildinRenderParamMaps } from "../shader/Program";
 import { CubeTexture } from "../textures/CubeTexture";
 import { DampingLight } from "./DampingLight";
-import { Light } from "./Light";
+
 import { ShadowLevel } from "./ShadowLevel";
 import { SpotLight } from "./SpotLight";
 

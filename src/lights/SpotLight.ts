@@ -9,8 +9,6 @@ import { Renderer } from "../renderer/Renderer";
 import { ProcessingFrameBuffer } from "../renderer/SwapFramebuffer";
 import { Texture } from "../textures/Texture";
 import { DampingLight } from "./DampingLight";
-import { PointLight } from "./PointLight";
-import { ShadowLevel } from "./ShadowLevel";
 
 export class SpotLight extends DampingLight {
 

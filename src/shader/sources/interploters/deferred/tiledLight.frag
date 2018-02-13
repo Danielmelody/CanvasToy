@@ -13,8 +13,9 @@ uniform sampler2D uLightOffsetCount;
 uniform sampler2D uLightPositionRadius;
 uniform sampler2D uLightColorIdensity;
 
-uniform sampler2D uNormalDepthSE;
-uniform sampler2D uDiffSpec;
+uniform sampler2D normalRoughnessTex;
+uniform sampler2D albedoMetallicTex;
+uniform sampler2D depthTex;
 
 uniform float cameraNear;
 uniform float cameraFar;
@@ -42,15 +43,15 @@ void main() {
     vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);
     float lightStartIndex = lightIndexInfo.r;
     float lightNum = lightIndexInfo.w;
-    vec4 tex1 = texture2D(uNormalDepthSE, uv);
-    vec4 tex2 = texture2D(uDiffSpec, uv);
+    vec4 tex1 = texture2D(normalRoughnessTex, uv);
+    vec4 tex2 = texture2D(albedoMetallicTex, uv);
 
-    vec3 materialDiff = tex2.xyz;
-    vec3 materialSpec = vec3(tex2.w);
-    float materialSpecExp = tex1.w;
-
-    vec3 normal = decodeNormal(tex1.xy);
-    vec3 viewPosition = decodePosition(tex1.z);
+    vec3 normal = tex1.xyz;
+    Material material;
+    material.roughness = tex1.w;
+    material.albedo = tex2.xyz;
+    float depth = unpackFloat1x32(texture2D(depthTex, uv));
+    vec3 viewPosition = decodePosition(depth);
     vec3 totalColor = vec3(0.0);
     int realCount = 0;
     for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {
@@ -69,19 +70,18 @@ void main() {
         vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));
         vec3 lightColor = lightColorIden.xyz;
         float lightIdensity = lightColorIden.w;
+        vec3 lightDir = normalize(lightPos - viewPosition);
 
         float dist = distance(lightPos, viewPosition);
         if (dist < lightR) {
             realCount++;
             vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));
             totalColor += calculateLight(
-                viewPosition,
+                material,
+                normalize(-viewPosition),
                 normal,
-                normalize(lightPos - viewPosition),
-                vec3(0.0),
-                materialSpec * lightColor,
-                materialDiff * lightColor,
-                materialSpecExp,
+                lightDir,
+                lightColor,
                 lightIdensity
             );
             // totalColor += vec3(listX, listY, 0.0);

@@ -1,6 +1,6 @@
 import { vec2 } from "gl-matrix";
 import { DataType } from "../../DataTypeEnum";
-import { define, texture, uniform } from "../../Decorators";
+import { texture, uniform } from "../../Decorators";
 import { Program, shaderPassLib } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";

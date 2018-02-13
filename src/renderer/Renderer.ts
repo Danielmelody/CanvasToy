@@ -44,6 +44,12 @@ export class Renderer {
 
     public frameRate: number = 1000 / 60;
 
+    public currentFPS = 60;
+
+    private startTime: number;
+
+    private duration: number = 0;
+
     private stopped: boolean = false;
 
     private materials: Material[] = [];
@@ -61,11 +67,11 @@ export class Renderer {
             texture_half_float: this.gl.getExtension("OES_texture_half_float"),
             texture_float_linear: this.gl.getExtension("OES_texture_float_linear"),
         };
-        this.initMatrix();
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
-        setTimeout(this.main, this.frameRate);
+        this.startTime = Date.now();
+        requestAnimationFrame(this.main);
     }
 
     public async waitAsyncResouces(asyncRes: IAsyncResource) {
@@ -78,94 +84,13 @@ export class Renderer {
 
     public start() {
         this.stopped = false;
-        setTimeout(this.main, this.frameRate);
+        requestAnimationFrame(this.main);
     }
 
     public createFrameBuffer(): FrameBuffer {
         const fbo = new FrameBuffer(this.gl);
         this.fbos.push(fbo);
         return fbo;
-    }
-
-    public renderFBO(
-        scene: Scene, camera: Camera) {
-        //
-        // this.buildSingleRender(scene, camera);
-        //
-        //
-        // for (let frameBuffer of this.fbos) {
-        //     frameBuffer = frameBuffer as FrameBuffer;
-        //     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
-        //     for (const atti in frameBuffer.attachments) {
-        //         const attachment: Attachment = frameBuffer.attachments[atti];
-        //         if (!attachment.isAble) {
-        //             continue;
-        //         }
-        //         switch (attachment.type) {
-        //             case AttachmentType.Texture:
-        //                 this.gl.bindTexture(this.gl.TEXTURE_2D, attachment.targetTexture.glTexture);
-        //                 this.gl.texImage2D(this.gl.TEXTURE_2D,
-        //                     0,
-        //                     attachment.targetTexture.format,
-        //                     this.canvas.width,
-        //                     this.canvas.height,
-        //                     0,
-        //                     attachment.targetTexture.format,
-        //                     attachment.targetTexture.type,
-        //                     null,
-        //                 );
-        //                 this.gl.framebufferTexture2D(
-        //                     this.gl.FRAMEBUFFER,
-        //                     attachment.attachmentCode(this.gl),
-        //                     this.gl.TEXTURE_2D,
-        //                     attachment.targetTexture.glTexture,
-        //                     0);
-        //                 this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-        //                 break;
-        //             case AttachmentType.RenderBuffer:
-        //                 this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, attachment.glRenderBuffer);
-        //                 this.gl.renderbufferStorage(
-        //                     this.gl.RENDERBUFFER,
-        //                     attachment.innerFormatForBuffer,
-        //                     this.canvas.width,
-        //                     this.canvas.height,
-        //                 );
-        //                 this.gl.framebufferRenderbuffer(
-        //                     this.gl.FRAMEBUFFER,
-        //                     attachment.attachmentCode(this.gl),
-        //                     this.gl.RENDERBUFFER,
-        //                     attachment.glRenderBuffer,
-        //                 );
-        //                 break;
-        //             default: console.assert(false);
-        //         }
-        //
-        //     }
-        //     if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) !== this.gl.FRAMEBUFFER_COMPLETE) {
-        //         console.error("" + this.gl.getError());
-        //     }
-        //
-        //     this.renderQueue.push((deltaTime: number) => {
-        //         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer.glFramebuffer);
-        //         scene.update(deltaTime);
-        //         this.gl.clearColor(
-        //             scene.clearColor[0],
-        //             scene.clearColor[1],
-        //             scene.clearColor[2],
-        //             scene.clearColor[3],
-        //         );
-        //         this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-        //         for (const object of scene.objects) {
-        //             this.renderObject(camera, object);
-        //         }
-        //         this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, null);
-        //         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-        //     });
-        //     if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) !== this.gl.FRAMEBUFFER_COMPLETE) {
-        //         console.log("frame buffer not completed"); // TODO: replace console.log with productive code
-        //     }
-        //     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-        // }
     }
 
     public handleResource(scene: Scene) {
@@ -263,16 +188,16 @@ export class Renderer {
     }
 
     private main = () => {
+        const now = Date.now();
         for (const renderCommand of this.renderQueue) {
             renderCommand(this.frameRate);
         }
         if (this.stopped) {
             return;
         }
-        setTimeout(this.main, this.frameRate);
-    }
-
-    private initMatrix() {
-        // this.glMatrix.setMatrixArrayType(Float32Array);
+        const delta = now - this.duration - this.startTime;
+        this.currentFPS = 1000 / delta;
+        this.duration = now - this.startTime;
+        requestAnimationFrame(this.main);
     }
 }

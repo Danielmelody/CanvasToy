@@ -1,16 +1,9 @@
-import { mat4, vec3 } from "gl-matrix";
-import { Camera } from "../cameras/Camera";
+import { vec3 } from "gl-matrix";
+
 import { DataType } from "../DataTypeEnum";
 import { uniform } from "../Decorators";
 
-import { SphereGeometry } from "../geometries/SphereGeometry";
-import { BoundingBox2D } from "../Intersections/BoundingBox";
-
-import { Renderer } from "../renderer/Renderer";
-
-import { CubeCamera } from "../cameras/CubeCamera";
 import { Light } from "./Light";
-import { ShadowLevel } from "./ShadowLevel";
 
 export abstract class DampingLight extends Light {
 

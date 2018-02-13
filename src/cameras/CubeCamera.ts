@@ -22,6 +22,10 @@ export class CubeCamera extends PerspectiveCamera {
         }
     }
 
+    // public changeZoom(offset: number): CubeCamera {
+    //     throw new Error("Method not implemented.");
+    // }
+
     public deCompuseProjectionMatrix() {
         // TODO: decompuse cube camera
     }
