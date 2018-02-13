@@ -1,6 +1,6 @@
 import * as CanvasToy from "CanvasToy";
 import { vec3 } from "gl-matrix";
-import { createCanvas, onMouseOnStart, onMouseEvent } from "global";
+import { createCanvas, onMouseEvent, onMouseOnStart } from "global";
 
 const renderer = new CanvasToy.Renderer(createCanvas());
 
@@ -9,7 +9,8 @@ const camera = new CanvasToy.PerspectiveCamera();
 
 const mainTexture = new CanvasToy.Texture2D(renderer.gl, "resources/images/wood.jpg");
 
-const material = new CanvasToy.StandardMaterial(renderer.gl).setMainTexture(mainTexture).setCastShadow(false);
+const material = new CanvasToy.StandardMaterial(renderer.gl)
+    .setMetallic(0.1).setRoughness(0.8).setMainTexture(mainTexture).setCastShadow(true);
 const meshes: CanvasToy.Object3d[] = [];
 
 for (let i = 0; i < 4; ++i) {

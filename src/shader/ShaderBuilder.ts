@@ -78,7 +78,7 @@ export class ShaderBuilder {
         return new Program(gl, {
             vertexShader: this.definitions.join("\n") + "\n" + this.vertLibs.join("\n") + this.shadingVert,
             fragmentShader: this.definitions.join("\n") + "\n" + (this.lightModel ? this.lightModel + "\n" : "")
-             + this.fragLibs.join("\n") + this.shadingFrag,
+                + this.fragLibs.join("\n") + this.shadingFrag,
         },
             this.extraRenderParamHolders,
         );

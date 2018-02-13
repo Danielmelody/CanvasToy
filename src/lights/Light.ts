@@ -2,11 +2,11 @@ import { mat4, vec3 } from "gl-matrix";
 
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
-import { define, ifdefine, ifgreat, texture, uniform } from "../Decorators";
+import { ifdefine, uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
-import { FrameBuffer } from "../renderer/FrameBuffer";
+
 import { WebGLExtension } from "../renderer/IExtension";
 import { Renderer } from "../renderer/Renderer";
 import { ProcessingFrameBuffer } from "../renderer/SwapFramebuffer";

@@ -97,7 +97,7 @@ export abstract class Camera extends Object3d {
         if (this._cameraPitch < -89.0) {
             this._cameraPitch = -89.0;
         }
-        const newEyeVector= vec3.fromValues(
+        const newEyeVector = vec3.fromValues(
             Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.cos(this._cameraYaw * Math.PI / 180.0),
             Math.sin(this._cameraPitch * Math.PI / 180.0),
             Math.cos(this._cameraPitch * Math.PI / 180.0) * Math.sin(this._cameraYaw * Math.PI / 180.0),

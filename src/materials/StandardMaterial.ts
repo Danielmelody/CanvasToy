@@ -1,9 +1,8 @@
-import { mat4, vec3 } from "gl-matrix";
-import { Camera } from "../cameras/Camera";
+import { vec3 } from "gl-matrix";
+
 import { DataType } from "../DataTypeEnum";
-import { define, ifdefine, readyRequire, structure, texture, uniform } from "../Decorators";
-import { Mesh } from "../Mesh";
-import { Graphics } from "../renderer/GraphicsUtils";
+import { define, readyRequire, structure, texture, uniform } from "../Decorators";
+
 import { Program, shaderPassLib } from "../shader/Program";
 import { ShaderBuilder } from "../shader/ShaderBuilder";
 import { ShaderSource } from "../shader/shaders";
@@ -83,6 +82,8 @@ export class StandardMaterial extends Material {
         if (!this._geometryShader) {
             this._geometryShader = new ShaderBuilder()
                 .resetShaderLib()
+                .addDefinition(ShaderSource.definitions__material_pbs_glsl)
+                .addShaderLib(ShaderSource.calculators__packFloat1x32_glsl)
                 .setShadingVert(ShaderSource.interploters__deferred__geometry_vert)
                 .setShadingFrag(ShaderSource.interploters__deferred__geometry_frag)
                 .setExtraRenderParamHolder("mvp", {
@@ -124,7 +125,7 @@ export class StandardMaterial extends Material {
     }
 
     @uniform(DataType.float)
-    public get metallic(){
+    public get metallic() {
         return this._metallic;
     }
 

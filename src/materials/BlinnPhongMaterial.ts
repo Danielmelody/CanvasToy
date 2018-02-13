@@ -1,9 +1,8 @@
-import { mat4, vec3 } from "gl-matrix";
-import { Camera } from "../cameras/Camera";
+import { vec3 } from "gl-matrix";
+
 import { DataType } from "../DataTypeEnum";
-import { define, ifdefine, readyRequire, structure, texture, uniform } from "../Decorators";
-import { Mesh } from "../Mesh";
-import { Graphics } from "../renderer/GraphicsUtils";
+import { define, readyRequire, structure, texture, uniform } from "../Decorators";
+
 import { Program, shaderPassLib } from "../shader/Program";
 import { ShaderBuilder } from "../shader/ShaderBuilder";
 import { ShaderSource } from "../shader/shaders";

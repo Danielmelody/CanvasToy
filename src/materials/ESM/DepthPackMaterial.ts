@@ -1,6 +1,4 @@
 
-import { DataType } from "../../DataTypeEnum";
-import { uniform } from "../../Decorators";
 import { Program, shaderPassLib } from "../../shader/Program";
 import { ShaderBuilder } from "../../shader/ShaderBuilder";
 import { ShaderSource } from "../../shader/shaders";
