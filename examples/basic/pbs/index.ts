@@ -1,6 +1,6 @@
 import * as CanvasToy from "CanvasToy";
 import { vec3 } from "gl-matrix";
-import { createCanvas, onMouseOnStart, createSkyBox } from "global";
+import { createCanvas, createSkyBox, onMouseOnStart } from "global";
 
 const renderer = new CanvasToy.Renderer(createCanvas());
 
@@ -31,7 +31,7 @@ for (let i = 0; i < 5; ++i) {
                 .setRecieveShadow(false)
                 .setCastShadow(false)
                 .setMetallic((i + 0.5) / 5.0)
-                .setRoughness((j + 0.5) / 5.0)
+                .setRoughness((j + 0.5) / 5.0),
                 // .setAlbedo(vec3.fromValues(1, 1, 0)),
             ],
         );
