@@ -1,12 +1,10 @@
 import { mat4, vec3 } from "gl-matrix";
-
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
 import { ifdefine, uniform } from "../Decorators";
 import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Object3d } from "../Object3d";
-
 import { WebGLExtension } from "../renderer/IExtension";
 import { Renderer } from "../renderer/Renderer";
 import { ProcessingFrameBuffer } from "../renderer/SwapFramebuffer";
@@ -15,7 +13,6 @@ import { Texture } from "../textures/Texture";
 import { ShadowLevel } from "./ShadowLevel";
 
 export abstract class Light extends Object3d {
-
     public volume: Geometry;
 
     protected _color = vec3.fromValues(1, 1, 1);
@@ -83,6 +80,15 @@ export abstract class Light extends Object3d {
 
     public get shadowSoftness() {
         return this._shadowSoftness;
+    }
+
+    public getDeferredInfo(layer: number, renderCamera: Camera) {
+        switch (layer) {
+            case 0:
+                return [this._color[0], this._color[1], this._color[2], this._idensity];
+            default:
+                throw Error("deferred Info " + layer + " undifined");
+        }
     }
 
     @ifdefine("RECEIVE_SHADOW")

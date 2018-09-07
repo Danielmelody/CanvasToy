@@ -13,7 +13,6 @@
     "max-classes-per-file": false,
     "whitespace": true,
     "no-unused-expression": true,
-    "no-unused-variable": true,
     "no-unbound-method": true
   }
 }

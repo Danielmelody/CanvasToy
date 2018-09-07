@@ -25,27 +25,27 @@ export class SkyMaterial extends Material {
             .setShadingVert(ShaderSource.interploters__forward__skybox_vert)
             .setShadingFrag(ShaderSource.interploters__forward__skybox_frag)
             .setExtraRenderParamHolder(
-            "skyTransform",
-            {
-                uniforms: {
-                    viewProjectionMatrix: {
-                        type: DataType.mat4,
-                        updator: ({ mesh, camera }) => {
-                            let rotateOnlyViewMatrix = mat4.fromQuat(
-                                mat4.create(),
-                                mat4.getRotation(quat.create(),
-                                    camera.matrix),
-                            );
-                            rotateOnlyViewMatrix = mat4.invert(mat4.create(), rotateOnlyViewMatrix);
-                            return mat4.multiply(
-                                mat4.create(),
-                                camera.projectionMatrix,
-                                rotateOnlyViewMatrix,
-                            );
+                "skyTransform",
+                {
+                    uniforms: {
+                        viewProjectionMatrix: {
+                            type: DataType.mat4,
+                            updator: ({ mesh, camera }) => {
+                                let rotateOnlyViewMatrix = mat4.fromQuat(
+                                    mat4.create(),
+                                    mat4.getRotation(quat.create(),
+                                        camera.matrix),
+                                );
+                                rotateOnlyViewMatrix = mat4.invert(mat4.create(), rotateOnlyViewMatrix);
+                                return mat4.multiply(
+                                    mat4.create(),
+                                    camera.projectionMatrix,
+                                    rotateOnlyViewMatrix,
+                                );
+                            },
                         },
                     },
-                },
-            })
+                })
             .build(gl);
     }
 }

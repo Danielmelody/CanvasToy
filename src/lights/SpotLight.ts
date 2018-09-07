@@ -8,10 +8,10 @@ import { FrameBuffer } from "../renderer/FrameBuffer";
 import { Renderer } from "../renderer/Renderer";
 import { ProcessingFrameBuffer } from "../renderer/SwapFramebuffer";
 import { Texture } from "../textures/Texture";
+import { encodeNormal } from "../Util";
 import { DampingLight } from "./DampingLight";
 
 export class SpotLight extends DampingLight {
-
     protected _coneAngle: number;
 
     protected _shadowFrameBuffer: ProcessingFrameBuffer;
@@ -36,13 +36,30 @@ export class SpotLight extends DampingLight {
 
     @uniform(DataType.vec3, "spotDir")
     public get spotDirection() {
-        return vec3.transformQuat(vec3.create(), vec3.fromValues(0, 0, -1),
+        const dir = vec3.transformQuat(
+            vec3.create(),
+            vec3.fromValues(0, 0, -1),
             mat4.getRotation(quat.create(), this._matrix),
         );
+        vec3.normalize(dir, dir);
+        return dir;
     }
 
     public get coneAngle() {
         return this._coneAngle;
+    }
+
+    public getDeferredInfo(layer: number, camera: Camera) {
+        switch (layer) {
+            case 0:
+                super.getDeferredInfo(layer, camera);
+            case 1:
+                const dir = this.spotDirection;
+                const codeDir = encodeNormal(dir);
+                return [codeDir[0], codeDir[1], codeDir[2], this._coneAngle];
+            default:
+                throw Error("deferred Info " + layer + " undifined");
+        }
     }
 
     @uniform(DataType.float)
@@ -56,7 +73,7 @@ export class SpotLight extends DampingLight {
     }
 
     public setConeAngle(coneAngle: number) {
-        console.assert(coneAngle > 0, "coneAngle should greater than 0!");
+        console.assert(coneAngle > 0, "coneAngle should be greater than 0!");
         this._coneAngle = coneAngle;
         (this._projectCamera as PerspectiveCamera).setFovy(coneAngle * 2);
         return this;
@@ -71,7 +88,10 @@ export class SpotLight extends DampingLight {
     public setShadowSize(_size: number) {
         super.setShadowSize(_size);
         if (this._shadowFrameBuffer !== null) {
-            this._shadowFrameBuffer.setWidth(_size).setHeight(_size).attach(this.gl);
+            this._shadowFrameBuffer
+                .setWidth(_size)
+                .setHeight(_size)
+                .attach(this.gl);
         }
         return this;
     }
@@ -89,11 +109,9 @@ export class SpotLight extends DampingLight {
 
     public init(render: Renderer) {
         if (!this._shadowFrameBuffer) {
-            this._shadowFrameBuffer = new ProcessingFrameBuffer(this.gl)
-                .onInit((frameBuffer: FrameBuffer) => {
-                    frameBuffer
-                        .setWidth(this._shadowSize)
-                        .setHeight(this._shadowSize);
+            this._shadowFrameBuffer = new ProcessingFrameBuffer(this.gl).onInit(
+                (frameBuffer: FrameBuffer) => {
+                    frameBuffer.setWidth(this._shadowSize).setHeight(this._shadowSize);
                     frameBuffer.attachments.color.targetTexture
                         .setType(this.gl.FLOAT)
                         .setFormat(this.gl.RGBA)
@@ -114,11 +132,13 @@ export class SpotLight extends DampingLight {
     }
 
     public clearShadowFrameBuffer() {
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._shadowFrameBuffer.active.glFramebuffer);
+        this.gl.bindFramebuffer(
+            this.gl.FRAMEBUFFER,
+            this._shadowFrameBuffer.active.glFramebuffer,
+        );
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clearColor(this.far, 0, 0, 0);
         this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
     }
-
 }

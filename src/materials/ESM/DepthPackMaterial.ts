@@ -14,13 +14,13 @@ export class LinearDepthPackMaterial extends Material {
             .setShadingFrag(ShaderSource.interploters__forward__esm__depth_frag)
             .setShadingVert(ShaderSource.interploters__forward__esm__depth_vert)
             .setExtraRenderParamHolder(
-            "transform",
-            {
-                uniforms: {
-                    modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
-                    modelViewMatrix: shaderPassLib.uniforms.modelViewMatrix,
-                },
-            })
+                "transform",
+                {
+                    uniforms: {
+                        modelViewProjectionMatrix: shaderPassLib.uniforms.modelViewProjectionMatrix,
+                        modelViewMatrix: shaderPassLib.uniforms.modelViewMatrix,
+                    },
+                })
             .setExtraRenderParamHolder("pcss", {
                 defines: shaderPassLib.defines,
             })

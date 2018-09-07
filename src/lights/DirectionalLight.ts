@@ -82,7 +82,7 @@ export class DirectionalLight extends Light {
                         .apply(this.gl);
                     frameBuffer.attach(this.gl);
                 },
-            );
+                );
         }
         this._projectCamera = new OrthoCamera()
             .setParent(this)

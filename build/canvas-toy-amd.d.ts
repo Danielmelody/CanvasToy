@@ -9,7 +9,7 @@ declare module "DataTypeEnum" {
         vec4 = 4,
         mat2 = 5,
         mat3 = 6,
-        mat4 = 7,
+        mat4 = 7
     }
 }
 declare module "IAsyncResource" {
@@ -156,7 +156,7 @@ declare module "renderer/FrameBuffer" {
     import { Texture } from "textures/Texture";
     export enum AttachmentType {
         Texture = 0,
-        RenderBuffer = 1,
+        RenderBuffer = 1
     }
     export class Attachment {
         readonly frameBuffer: FrameBuffer;
@@ -195,7 +195,7 @@ declare module "renderer/FrameBuffer" {
         readonly width: number;
         readonly height: number;
         attach(gl: WebGLRenderingContext, drawBuffer?: WebGLDrawBuffers): void;
-        private linkAttachment(attachment, gl, context);
+        private linkAttachment;
     }
 }
 declare module "materials/Material" {
@@ -236,32 +236,13 @@ declare module "geometries/RectGeometry" {
         constructor(gl: WebGLRenderingContext);
     }
 }
-declare module "geometries/SphereGeometry" {
-    import { Geometry } from "geometries/Geometry";
-    export class SphereGeometry extends Geometry {
-        private _radius;
-        private _widthSegments;
-        private _heightSegments;
-        private _phiStart;
-        private _phiLength;
-        private _thetaStart;
-        private _thetaLength;
-        constructor(gl: WebGLRenderingContext);
-        build(): this;
-        readonly radius: number;
-        readonly widthSegments: number;
-        readonly heightSegments: number;
-        readonly phiStart: number;
-        readonly phiLength: number;
-        readonly thetaStart: number;
-        readonly thetaLength: number;
-        setRadius(radius: number): this;
-        setWidthSegments(widthSegments: number): this;
-        setHeightSegments(heightSegments: number): this;
-        setPhiStart(phiStart: number): this;
-        setPhiLength(phiLength: number): this;
-        setThetaStart(thetaStart: number): this;
-        setThetaLength(thetaLength: number): this;
+declare module "renderer/IExtension" {
+    export interface WebGLExtension {
+        depth_texture: WebGLDepthTexture;
+        draw_buffer: WebGLDrawBuffers;
+        texture_float: OESTextureFloat;
+        texture_float_linear: OESTextureFloatLinear;
+        texture_half_float: OESTextureHalfFloat;
     }
 }
 declare module "renderer/SwapFramebuffer" {
@@ -284,41 +265,12 @@ declare module "renderer/SwapFramebuffer" {
         readonly height: any;
     }
 }
-declare module "textures/CubeTexture" {
-    import { Texture } from "textures/Texture";
-    export class CubeTexture extends Texture {
-        images: HTMLImageElement[];
-        private _wrapR;
-        constructor(gl: WebGLRenderingContext, urls?: {
-            xpos: string;
-            xneg: string;
-            ypos: string;
-            yneg: string;
-            zpos: string;
-            zneg: string;
-        });
-        readonly wrapR: number;
-        setWrapR(_wrapR: number): this;
-        apply(gl: WebGLRenderingContext): this;
-        applyForRendering(gl: WebGLRenderingContext, width: any, height: any): this;
-        private createLoadPromise(image);
-    }
-}
-declare module "renderer/IExtension" {
-    export interface WebGLExtension {
-        depth_texture: WebGLDepthTexture;
-        draw_buffer: WebGLDrawBuffers;
-        texture_float: OESTextureFloat;
-        texture_float_linear: OESTextureFloatLinear;
-        texture_half_float: OESTextureHalfFloat;
-    }
-}
 declare module "lights/ShadowLevel" {
     export enum ShadowLevel {
         None = 0,
         Hard = 1,
         Soft = 2,
-        PCSS = 3,
+        PCSS = 3
     }
 }
 declare module "lights/Light" {
@@ -354,8 +306,9 @@ declare module "lights/Light" {
         setPCSSArea(_pcssArea: number): this;
         readonly shadowLevel: ShadowLevel;
         readonly shadowSoftness: number;
+        getDeferredInfo(layer: number, renderCamera: Camera): number[];
         readonly shadowSize: number;
-        readonly abstract shadowMap: Texture;
+        abstract readonly shadowMap: Texture;
         readonly color: vec3;
         readonly idensity: number;
         readonly projectionMatrix: mat4;
@@ -363,10 +316,58 @@ declare module "lights/Light" {
         readonly pcssArea: number;
         readonly far: number;
         readonly near: number;
-        readonly abstract shadowFrameBuffers: ProcessingFrameBuffer[];
+        abstract readonly shadowFrameBuffers: ProcessingFrameBuffer[];
         drawWithLightCamera(renderParam: IBuildinRenderParamMaps): void;
         abstract clearShadowFrameBuffer(): any;
         protected abstract init(render: Renderer): any;
+    }
+}
+declare module "geometries/SphereGeometry" {
+    import { Geometry } from "geometries/Geometry";
+    export class SphereGeometry extends Geometry {
+        private _radius;
+        private _widthSegments;
+        private _heightSegments;
+        private _phiStart;
+        private _phiLength;
+        private _thetaStart;
+        private _thetaLength;
+        constructor(gl: WebGLRenderingContext);
+        build(): this;
+        readonly radius: number;
+        readonly widthSegments: number;
+        readonly heightSegments: number;
+        readonly phiStart: number;
+        readonly phiLength: number;
+        readonly thetaStart: number;
+        readonly thetaLength: number;
+        setRadius(radius: number): this;
+        setWidthSegments(widthSegments: number): this;
+        setHeightSegments(heightSegments: number): this;
+        setPhiStart(phiStart: number): this;
+        setPhiLength(phiLength: number): this;
+        setThetaStart(thetaStart: number): this;
+        setThetaLength(thetaLength: number): this;
+    }
+}
+declare module "textures/CubeTexture" {
+    import { Texture } from "textures/Texture";
+    export class CubeTexture extends Texture {
+        images: HTMLImageElement[];
+        private _wrapR;
+        constructor(gl: WebGLRenderingContext, urls?: {
+            xpos: string;
+            xneg: string;
+            ypos: string;
+            yneg: string;
+            zpos: string;
+            zneg: string;
+        });
+        readonly wrapR: number;
+        setWrapR(_wrapR: number): this;
+        apply(gl: WebGLRenderingContext): this;
+        applyForRendering(gl: WebGLRenderingContext, width: any, height: any): this;
+        private createLoadPromise;
     }
 }
 declare module "lights/DampingLight" {
@@ -409,6 +410,13 @@ declare module "cameras/PerspectiveCamera" {
         changeZoom(offset: number): this;
     }
 }
+declare module "Util" {
+    import { vec2, vec3 } from "gl-matrix";
+    export function mixin(toObject: {}, fromObject: {}): void;
+    export function getDomScriptText(script: HTMLScriptElement): string;
+    export function encodeNormal(inVec: vec3, outVec?: vec2): vec2;
+    export function decodeNormal(inVec: vec2, outVec?: vec3): vec3;
+}
 declare module "lights/SpotLight" {
     import { vec3 } from "gl-matrix";
     import { Camera } from "cameras/Camera";
@@ -426,6 +434,7 @@ declare module "lights/SpotLight" {
         readonly shadowFrameBuffers: ProcessingFrameBuffer[];
         readonly spotDirection: vec3;
         readonly coneAngle: number;
+        getDeferredInfo(layer: number, camera: Camera): number[];
         protected readonly coneAngleCos: number;
         setRadius(radius: number): this;
         setConeAngle(coneAngle: number): this;
@@ -455,6 +464,7 @@ declare module "lights/PointLight" {
         readonly projectionMatrix: mat4;
         readonly far: number;
         readonly near: number;
+        getDeferredInfo(layer: number, renderCamera: Camera): number[];
         setColor(color: vec3): this;
         setIdensity(idensity: number): this;
         setShadowLevel(shadowLevel: ShadowLevel): this;
@@ -476,16 +486,16 @@ declare module "shader/shaders" {
         const calculators__packFloat1x32_glsl = "\nvec4 packFloat1x32(float val)\n{\n    vec4 pack = vec4(1.0, 255.0, 65025.0, 16581375.0) * val;\n    pack = fract(pack);\n    pack -= vec4(pack.yzw / 255.0, 0.0);\n    return pack;\n}\n";
         const calculators__phong_glsl = "\nvec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specularLight,\n    vec3 diffuseLight,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
         const calculators__shadow_factor_glsl = "\n#ifdef RECEIVE_SHADOW\n\nvec4 texture2DbilinearEXP(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 f = fract(uv / texelSize - 0.5);\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n    vec4 a = lb + log(mix(vec4(1.0), exp(lt - lb), f.y));\n    vec4 b = rb + log(mix(vec4(1.0), exp(rt - rb), f.y));\n    vec4 z = a + log(mix(vec4(1.0), exp(b - a), f.x));\n    return z;\n}\n\nvec4 texture2Dbilinear(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 f = fract(uv / texelSize - 0.5);\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n    vec4 a = mix(lb, lt, f.y);\n    vec4 b = mix(rb, rt, f.y);\n    vec4 z = mix(a, b, f.x);\n    return z;\n}\n\nfloat texture2Dfilter(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n    float base = info.r;\n    float kernelSize = info.g;\n    float sum = 0.0;\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            vec2 subuv = uv + vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0) * texelSize * kernelSize;\n            float z = texture2Dbilinear(shadowMap, subuv, texelSize).r;\n            float expd = exp(z - base);\n            sum += expd;\n        }\n    }\n    sum /= float(FILTER_SIZE * FILTER_SIZE);\n    return base + log(sum);\n}\n\nfloat pcf(sampler2D shadowMap, vec2 uv, float depth, float bias, float texelSize) {\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n    float kernelSize = 1.0;\n    float sum = 0.0;\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            float z = texture2Dbilinear(shadowMap, uv + kernelSize * vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0).x * texelSize, texelSize).r;\n            sum += step(depth - bias, z) / float(FILTER_SIZE * FILTER_SIZE);\n        }\n    }\n    return sum;\n}\n\nfloat getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n{\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n        return 1.0;\n    } else {\n        vec2 uv = clipPos * 0.5 + 0.5;\n        float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n        if (shadowLevel == SHADOW_LEVEL_HARD) {\n            return step(linearDepth, texture2D(shadowMap, uv).r + bias);\n        } else {\n            float z = texture2DbilinearEXP(shadowMap, uv, texelSize).r;\n            float s = exp(z - linearDepth * softness);\n            return min(s, 1.0);\n        }\n    }\n}\n\nfloat getPointShadow(vec3 cubePos, samplerCube shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n{\n    float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n        return 1.0;\n    } else {\n        // if (shadowLevel == SHADOW_LEVEL_HARD) {\n            return step(linearDepth, textureCube(shadowMap, cubePos).r + bias);\n        //else {\n            // TODO: perform cubemap interpolation for soft-level shadow map for point light\n        //}\n    }\n}\n\n#endif\n";
-        const calculators__types_glsl = "\nvec3 calculateDirLight(\n    DirectLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        -light.direction,\n        light.color,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    idensity *= step(lightDis, 1.0);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        normalize(light.position - position),\n        light.color,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    \n    idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        lightDir,\n        light.color,\n        idensity\n    );\n}\n\n// float directAndSpotShadow(sampler2D shadowMap, vec4 shadowCoord) {\n//\n// }\n";
+        const calculators__types_glsl = "\nvec3 calculateDirLight(\n    DirectLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        -light.direction,\n        light.color,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    idensity *= step(lightDis, 1.0);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        normalize(light.position - position),\n        light.color,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    \n    idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        lightDir,\n        light.color,\n        idensity\n    );\n}\n";
         const calculators__unpackFloat1x32_glsl = "\nfloat unpackFloat1x32( vec4 rgba ) {\n  return dot( rgba, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 160581375.0) );\n}\n";
         const debug__checkBox_glsl = "\nfloat checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
-        const definitions__light_glsl = "\n#define SHADOW_LEVEL_NONE 0\n#define SHADOW_LEVEL_HARD 1\n#define SHADOW_LEVEL_SOFT 2\n#define SHADOW_LEVEL_PCSS 3\n\nstruct DirectLight\n{\n    vec3 color;\n    float idensity;\n    vec3 direction;\n#ifdef RECEIVE_SHADOW\n    lowp int shadowLevel;\n    float softness;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n#endif\n};\n\nstruct PointLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n#ifdef RECEIVE_SHADOW\n    lowp int shadowLevel;\n    float softness;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n    float pcssArea;\n#endif\n};\n\nstruct SpotLight {\n    vec3 color;\n    float idensity;\n    float radius;\n    vec3 position;\n    float squareAtten;\n    float linearAtten;\n    float constantAtten;\n    float coneAngleCos;\n    vec3 spotDir;\n#ifdef RECEIVE_SHADOW\n    lowp int shadowLevel;\n    float softness;\n    float shadowMapSize;\n    mat4 projectionMatrix;\n    mat4 viewMatrix;\n    float pcssArea;\n#endif\n};\n";
+        const definitions__light_glsl = "\n#define SHADOW_LEVEL_NONE 0\n#define SHADOW_LEVEL_HARD 1\n#define SHADOW_LEVEL_SOFT 2\n#define SHADOW_LEVEL_PCSS 3\n\nstruct Light {\n  vec3 color;\n  float idensity;\n  vec3 direction;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n#endif\n};\n\nstruct DirectLight {\n  vec3 color;\n  float idensity;\n  vec3 direction;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n#endif\n};\n\nstruct PointLight {\n  vec3 color;\n  float idensity;\n  float radius;\n  vec3 position;\n  float squareAtten;\n  float linearAtten;\n  float constantAtten;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n  float pcssArea;\n#endif\n};\n\nstruct SpotLight {\n  vec3 color;\n  float idensity;\n  float radius;\n  vec3 position;\n  float squareAtten;\n  float linearAtten;\n  float constantAtten;\n  float coneAngleCos;\n  vec3 spotDir;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n  float pcssArea;\n#endif\n};\n";
         const definitions__material_blinnphong_glsl = "\nstruct Material {\n    vec3 ambient;\n    vec3 diffuse;\n    vec3 specular;\n    float specularExponent;\n    float reflectivity;\n};";
         const definitions__material_pbs_glsl = "\nstruct Material {\n    vec3 ambient;\n    vec3 albedo;\n    float metallic;\n    float roughness;\n};";
         const interploters__deferred__geometry_frag = "\nuniform Material uMaterial;\n\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n    vec3 normal = normalize(vNormal);\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normal, uMaterial.roughness);\n#else\n    gl_FragData[0] = vec4(normal, uMaterial.roughness);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(uMaterial.albedo * texture2D(uMainTexture, vMainUV).xyz, uMaterial.metallic);\n#else\n    gl_FragData[1] = vec4(uMaterial.albedo, uMaterial.metallic);\n#endif\n    // save 32 bit depth to render target 3\n    gl_FragData[2] =  packFloat1x32(gl_FragCoord.z);\n}\n";
         const interploters__deferred__geometry_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
-        const interploters__deferred__tiledLight_frag = "\n#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D normalRoughnessTex;\nuniform sampler2D albedoMetallicTex;\nuniform sampler2D depthTex;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(normalRoughnessTex, uv);\n    vec4 tex2 = texture2D(albedoMetallicTex, uv);\n\n    vec3 normal = tex1.xyz;\n    Material material;\n    material.roughness = tex1.w;\n    material.albedo = tex2.xyz;\n    float depth = unpackFloat1x32(texture2D(depthTex, uv));\n    vec3 viewPosition = decodePosition(depth);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n        vec3 lightDir = normalize(lightPos - viewPosition);\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculateLight(\n                material,\n                normalize(-viewPosition),\n                normal,\n                lightDir,\n                lightColor,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n            // vec3 lightDir = normalize(lightPos - viewPosition);\n            // vec3 reflectDir = normalize(reflect(lightDir, normal));\n            // vec3 viewDir = normalize( - viewPosition);\n            // vec3 H = normalize(lightDir + viewDir);\n            // float specularAngle = max(dot(H, normal), 0.0);\n            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);\n        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);\n        //}\n        //}\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
         const interploters__deferred__tiledLight_vert = "\nattribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
+        const interploters__deferred__tiledLightPoint_frag = "\n#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D normalRoughnessTex;\nuniform sampler2D albedoMetallicTex;\nuniform sampler2D depthTex;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(normalRoughnessTex, uv);\n    vec4 tex2 = texture2D(albedoMetallicTex, uv);\n\n    vec3 normal = tex1.xyz;\n    Material material;\n    material.roughness = tex1.w;\n    material.albedo = tex2.xyz;\n    float depth = unpackFloat1x32(texture2D(depthTex, uv));\n    vec3 viewPosition = decodePosition(depth);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n        vec3 lightDir = normalize(lightPos - viewPosition);\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculateLight(\n                material,\n                normalize(-viewPosition),\n                normal,\n                lightDir,\n                lightColor,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
         const interploters__forward__esm__depth_frag = "\nuniform float softness;\nvarying vec3 viewPos;\n\nvoid main () {\n    float d = length(viewPos);\n    gl_FragColor.r = d * softness;\n    gl_FragColor.g = exp(d) * d;\n}\n";
         const interploters__forward__esm__depth_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\nvarying vec3 viewPos;\n\nvoid main () {\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    viewPos = (modelViewMatrix * vec4(position, 1.0)).xyz;\n}\n";
         const interploters__forward__esm__prefiltering_frag = "\nuniform sampler2D uOrigin;\nuniform vec2 uBlurDir;\nuniform float uBlurStep;\n\nuniform float lightArea;\n\nvarying vec2 uv;\n\nvoid main () {\n    float base = texture2D(uOrigin, uv).r;\n    float block = 0.0;\n\n    for (int i = 0; i < BLOCK_SIZE; ++i) {\n        for (int j = 0; j < BLOCK_SIZE; ++j) {\n            float d = texture2D(uOrigin, uv + vec2(float(i - BLOCK_SIZE / 2) + 0.5, float(j - BLOCK_SIZE / 2) + 0.5) * uBlurStep).r;\n            block += step(base, d) * d / float(BLOCK_SIZE * BLOCK_SIZE);\n        }\n    }\n    \n    float kenelSize = min(4.0, lightArea * (base - block) / base);\n    float stepSize = kenelSize / float(FILTER_SIZE);\n\n    float sum = 0.0;\n\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            float d = texture2D(uOrigin, \n            uv + stepSize * vec2(float(i - FILTER_SIZE / 2) + 0.5, float(j - FILTER_SIZE / 2) + 0.5) * uBlurStep).r;\n            sum += exp(d - base) / float(FILTER_SIZE * FILTER_SIZE);\n        }\n    }\n\n    float average = log(sum) + base;\n\n    gl_FragColor.r = average;\n    gl_FragColor.g = kenelSize;\n}\n";
@@ -501,7 +511,7 @@ declare module "shader/shaders" {
     }
     export type ShaderLib = typeof ShaderSource.calculators__blur__gaussian_glsl | typeof ShaderSource.calculators__blur__gaussian_log_glsl | typeof ShaderSource.calculators__linearlize_depth_glsl | typeof ShaderSource.calculators__packFloat1x32_glsl | typeof ShaderSource.calculators__phong_glsl | typeof ShaderSource.calculators__shadow_factor_glsl | typeof ShaderSource.calculators__types_glsl | typeof ShaderSource.calculators__unpackFloat1x32_glsl | typeof ShaderSource.debug__checkBox_glsl | typeof ShaderSource.definitions__light_glsl | typeof ShaderSource.definitions__material_blinnphong_glsl | typeof ShaderSource.definitions__material_pbs_glsl | typeof ShaderSource.light_model__blinn_phong_glsl | typeof ShaderSource.light_model__pbs_ggx_glsl;
     export type ShadingVert = typeof ShaderSource.interploters__deferred__geometry_vert | typeof ShaderSource.interploters__deferred__tiledLight_vert | typeof ShaderSource.interploters__forward__esm__depth_vert | typeof ShaderSource.interploters__forward__esm__prefiltering_vert | typeof ShaderSource.interploters__forward__gouraud_vert | typeof ShaderSource.interploters__forward__phong_vert | typeof ShaderSource.interploters__forward__skybox_vert;
-    export type ShadingFrag = typeof ShaderSource.interploters__deferred__geometry_frag | typeof ShaderSource.interploters__deferred__tiledLight_frag | typeof ShaderSource.interploters__forward__esm__depth_frag | typeof ShaderSource.interploters__forward__esm__prefiltering_frag | typeof ShaderSource.interploters__forward__gouraud_frag | typeof ShaderSource.interploters__forward__phong_frag | typeof ShaderSource.interploters__forward__skybox_frag;
+    export type ShadingFrag = typeof ShaderSource.interploters__deferred__geometry_frag | typeof ShaderSource.interploters__deferred__tiledLightPoint_frag | typeof ShaderSource.interploters__forward__esm__depth_frag | typeof ShaderSource.interploters__forward__esm__prefiltering_frag | typeof ShaderSource.interploters__forward__gouraud_frag | typeof ShaderSource.interploters__forward__phong_frag | typeof ShaderSource.interploters__forward__skybox_frag;
 }
 declare module "shader/ShaderBuilder" {
     import { IRenderParamHolder, Program } from "shader/Program";
@@ -688,7 +698,8 @@ declare module "renderer/deferred/DeferredProcessor" {
         readonly gBuffer: FrameBuffer;
         readonly gl: WebGLRenderingContext;
         readonly ext: WebGLExtension;
-        tileProgram: Program;
+        pointLightShader: Program;
+        spotLightShader: Program;
         private tileLightIndexMap;
         private tileLightOffsetCountMap;
         private tileLightCountMap;
@@ -698,10 +709,10 @@ declare module "renderer/deferred/DeferredProcessor" {
         private linearLightIndex;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
         process(scene: Scene, camera: Camera, materials: Material[]): void;
-        private initGeometryProcess(scene);
-        private tileLightPass(scene, camera);
-        private initTiledPass(scene);
-        private fillTileWithBoundingBox2D(camera, box, lightIndex);
+        private initGeometryProcess;
+        private tileLightPass;
+        private initTiledPass;
+        private fillTileWithBoundingBox2D;
     }
 }
 declare module "renderer/forward/ForwardProcessor" {
@@ -715,7 +726,7 @@ declare module "renderer/forward/ForwardProcessor" {
         readonly ext: WebGLExtension;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
         process(scene: Scene, camera: Camera, materials: Material[]): void;
-        private renderObject(scene, camera, object);
+        private renderObject;
     }
 }
 declare module "materials/ESM/DepthPackMaterial" {
@@ -751,8 +762,8 @@ declare module "renderer/ShadowPreProcessor" {
         private rectMesh;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene);
         process(scene: Scene, camera: Camera, matriels: Material[]): void;
-        private renderDepth(scene, light);
-        private prefilterDepth(scene, light);
+        private renderDepth;
+        private prefilterDepth;
     }
 }
 declare module "renderer/Renderer" {
@@ -792,7 +803,7 @@ declare module "renderer/Renderer" {
         handleResource(scene: Scene): Promise<any[]>;
         forceDeferred(): void;
         render(scene: Scene, camera: Camera, adaptCanvasAspectRatio?: boolean): void;
-        private renderLight(light, scene);
+        private renderLight;
         private main;
     }
 }
@@ -907,8 +918,8 @@ declare module "Object3d" {
         protected deComposeLocalMatrix(): void;
         protected composeFromLocalTransform(): void;
         protected deComposeGlobalMatrix(): void;
-        private composeFromGlobalTransform();
-        private applyToChildren();
+        private composeFromGlobalTransform;
+        private applyToChildren;
     }
 }
 declare module "cameras/Camera" {
@@ -918,7 +929,7 @@ declare module "cameras/Camera" {
         forward = 0,
         bakc = 1,
         left = 2,
-        right = 3,
+        right = 3
     }
     export abstract class Camera extends Object3d {
         protected _upVector: vec3;
@@ -1044,7 +1055,6 @@ declare module "shader/Program" {
         private viewport;
         private vertexPrecision;
         private fragmentPrecision;
-        private currentTextureUnit;
         private source;
         constructor(gl: WebGLRenderingContext, source: IProgramSource, holders: {
             [index: string]: IRenderParamHolder;
@@ -1062,13 +1072,13 @@ declare module "shader/Program" {
         clean(): void;
         make(): this;
         pass(buildinContainers: IBuildinRenderParamMaps): this;
-        private passOneParamsHolder(buildinContainder, holder, namePrefix?);
-        private filter(name);
-        private updateDefines(buildinContainers);
-        private updateOneDefines(holder, buildinContainers);
-        private updateUniform(name, type, value);
-        private updateUniformArray(name, type, value);
-        private getAttribLocation(name);
+        private passOneParamsHolder;
+        private filter;
+        private updateDefines;
+        private updateOneDefines;
+        private updateUniform;
+        private updateUniformArray;
+        private getAttribLocation;
     }
     export const shaderPassLib: {
         uniforms: {
@@ -1078,14 +1088,14 @@ declare module "shader/Program" {
             };
             modelViewMatrix: {
                 type: DataType;
-                updator: ({mesh, camera}: {
+                updator: ({ mesh, camera }: {
                     mesh: any;
                     camera: any;
                 }) => mat4;
             };
             normalViewMatrix: {
                 type: DataType;
-                updator: ({mesh, camera}: {
+                updator: ({ mesh, camera }: {
                     mesh: any;
                     camera: any;
                 }) => mat4;
@@ -1119,10 +1129,6 @@ declare module "Decorators" {
     export function ifequal(defineName: string, defineValue: string): (proto: any, key: any) => void;
     export function ifgreat(defineName: string, defineValue: string): (proto: any, key: any) => void;
     export function readyRequire<IAsyncResource>(proto: any, key: any): void;
-}
-declare module "Util" {
-    export function mixin(toObject: {}, fromObject: {}): void;
-    export function getDomScriptText(script: HTMLScriptElement): string;
 }
 declare module "geometries/CubeGeometry" {
     import { Geometry } from "geometries/Geometry";
@@ -1172,10 +1178,10 @@ declare module "loader/obj_mtl/MTLLoader" {
         protected static roughnessPattern: RegExp;
         protected static mapPattern: RegExp;
         protected static mapSinglePattern: RegExp;
-        private static handleSingleLine(gl, home, line, materials, currentMaterial);
-        private static getImageUrl(line);
-        private static getVector(pattern, line);
-        private static getNumber(pattern, line);
+        private static handleSingleLine;
+        private static getImageUrl;
+        private static getVector;
+        private static getNumber;
     }
 }
 declare module "loader/obj_mtl/OBJLoader" {

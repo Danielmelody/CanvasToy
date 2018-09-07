@@ -69,7 +69,3 @@ vec3 calculateSpotLight(
         idensity
     );
 }
-
-// float directAndSpotShadow(sampler2D shadowMap, vec4 shadowCoord) {
-//
-// }

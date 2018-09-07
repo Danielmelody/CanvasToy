@@ -22,10 +22,10 @@ export interface IProgramSource {
 export interface IRenderParamHolder {
     hostObject?: object;
     defines?: {
-        [index: string]: { defineName: string, useValue?: boolean, value: string };
+        [index: string]: { defineName: string; useValue?: boolean; value: string };
     };
     paramFilters?: {
-        [index: string]: { name: string, filter: (value: string) => boolean };
+        [index: string]: { name: string; filter: (value: string) => boolean };
     };
     uniforms?: {
         [index: string]: IUniform;
@@ -37,10 +37,10 @@ export interface IRenderParamHolder {
         [index: string]: Attribute;
     };
     textures?: {
-        [index: string]: { name?: string, source?: Texture },
+        [index: string]: { name?: string; source?: Texture };
     };
     textureArrays?: {
-        [index: string]: { name?: string, sources?: Texture[] },
+        [index: string]: { name?: string; sources?: Texture[] };
     };
     customPrefix?: string;
     structArrays?: {
@@ -81,39 +81,45 @@ export class Program implements IDirtyable {
     public extensionStatements: string[] = [];
 
     private defineCaches: { [index: string]: string } = {};
-    private uniformCaches: { [index: string]: { value: number, location: WebGLUniformLocation } } = {};
-    private uniformArrayCaches: { [index: string]: { value: ArrayBufferView, location: WebGLUniformLocation } } = {};
+    private uniformCaches: {
+        [index: string]: { value: number; location: WebGLUniformLocation };
+    } = {};
+    private uniformArrayCaches: {
+        [index: string]: { value: ArrayBufferView; location: WebGLUniformLocation };
+    } = {};
     private undesiredUniforms: { [index: string]: undefined } = {};
     private attributeLocations: { [index: string]: number } = {};
     private undesiredAttributes: { [index: string]: undefined } = {};
 
-    private paramFilters: { [index: string]: { name: string, filter: (value: string) => boolean }; } = {};
+    private paramFilters: {
+        [index: string]: { name: string; filter: (value: string) => boolean };
+    } = {};
 
     private extraRenderParamHolders: { [index: string]: IRenderParamHolder };
 
     private viewport: {
-        x: number,
-        y: number,
-        width: number,
-        height: number,
+        x: number;
+        y: number;
+        width: number;
+        height: number;
     };
 
     private vertexPrecision: string = "highp";
     private fragmentPrecision: string = "highp";
-
-    private currentTextureUnit: number = 0;
 
     private source: IProgramSource;
 
     constructor(
         gl: WebGLRenderingContext,
         source: IProgramSource,
-        holders: { [index: string]: IRenderParamHolder }) {
+        holders: { [index: string]: IRenderParamHolder },
+    ) {
         this.gl = gl;
         this.source = source;
         this.extraRenderParamHolders = holders;
         this.viewport = {
-            x: 0, y: 0,
+            x: 0,
+            y: 0,
             width: gl.canvas.width,
             height: gl.canvas.height,
         };
@@ -136,7 +142,12 @@ export class Program implements IDirtyable {
         return this;
     }
 
-    public setViewPort(viewport: { x: number, y: number, width: number, height: number }) {
+    public setViewPort(viewport: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    }) {
         this.viewport = viewport;
     }
 
@@ -157,12 +168,21 @@ export class Program implements IDirtyable {
         }
         this.webGlProgram = Graphics.createEntileShader(
             this.gl,
-            this.extensionStatements.join("\n")
-            + "\nprecision " + this.vertexPrecision + " float;\n" + defines.join("\n") + "\n"
-            + this.source.vertexShader,
-            this.extensionStatements.join("\n")
-            + "\nprecision " + this.fragmentPrecision + " float;\n" + defines.join("\n") + "\n"
-            + this.source.fragmentShader);
+            this.extensionStatements.join("\n") +
+            "\n precision " +
+            this.vertexPrecision +
+            " float;\n" +
+            defines.join("\n") +
+            "\n" +
+            this.source.vertexShader,
+            this.extensionStatements.join("\n") +
+            "\n precision " +
+            this.fragmentPrecision +
+            " float;\n" +
+            defines.join("\n") +
+            "\n" +
+            this.source.fragmentShader,
+        );
         this.undesiredUniforms = {};
         this.uniformCaches = {};
         this.undesiredAttributes = {};
@@ -173,18 +193,23 @@ export class Program implements IDirtyable {
     public pass(buildinContainers: IBuildinRenderParamMaps) {
         this.updateDefines(buildinContainers);
         this.clean();
-        this.currentTextureUnit = 0;
+        const currentTextureUnit = [0];
         this.gl.useProgram(this.webGlProgram);
-        this.gl.viewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
+        this.gl.viewport(
+            this.viewport.x,
+            this.viewport.y,
+            this.viewport.width,
+            this.viewport.height,
+        );
 
         for (const holderName in buildinContainers) {
             const holder = Graphics.getRenderParamHost(buildinContainers[holderName]);
-            this.passOneParamsHolder(buildinContainers, holder);
+            this.passOneParamsHolder(buildinContainers, holder, currentTextureUnit);
         }
 
         for (const holderName in this.extraRenderParamHolders) {
             const holder = this.extraRenderParamHolders[holderName];
-            this.passOneParamsHolder(buildinContainers, holder);
+            this.passOneParamsHolder(buildinContainers, holder, currentTextureUnit);
         }
 
         const geometry = buildinContainers.mesh.geometry;
@@ -216,7 +241,12 @@ export class Program implements IDirtyable {
             );
         }
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
-        this.gl.drawElements(this.gl.TRIANGLES, geometry.faces.data.length, this.gl.UNSIGNED_SHORT, 0);
+        this.gl.drawElements(
+            this.gl.TRIANGLES,
+            geometry.faces.data.length,
+            this.gl.UNSIGNED_SHORT,
+            0,
+        );
         for (const attributeKey in this.attributeLocations) {
             const attribute = geometry.attributes[attributeKey];
             this.gl.disableVertexAttribArray(this.attributeLocations[attributeKey]);
@@ -225,7 +255,11 @@ export class Program implements IDirtyable {
     }
 
     private passOneParamsHolder(
-        buildinContainder: IBuildinRenderParamMaps, holder: IRenderParamHolder, namePrefix: string = "") {
+        buildinContainder: IBuildinRenderParamMaps,
+        holder: IRenderParamHolder,
+        texIndex: number[],
+        namePrefix: string = "",
+    ) {
         if (holder === undefined) {
             return;
         }
@@ -244,18 +278,21 @@ export class Program implements IDirtyable {
             if (!this.filter(name)) {
                 continue;
             }
-            const val = !!uniformInfo.updator ?
-                uniformInfo.updator(buildinContainder) : holder.hostObject[uniformKey];
+            const val = !!uniformInfo.updator
+                ? uniformInfo.updator(buildinContainder)
+                : holder.hostObject[uniformKey];
             this.updateUniform(uniformName, uniformInfo.type, val);
         }
         for (const uniformArrayKey in holder.uniformArrays) {
             const uniformArrayInfo = holder.uniforms[uniformArrayKey];
-            const uniformArrayName = namePrefix + (uniformArrayInfo.name || uniformArrayKey);
+            const uniformArrayName =
+                namePrefix + (uniformArrayInfo.name || uniformArrayKey);
             if (!this.filter(name)) {
                 continue;
             }
-            const val = !!uniformArrayInfo.updator ?
-                uniformArrayInfo.updator(buildinContainder) : holder.hostObject[uniformArrayKey];
+            const val = !!uniformArrayInfo.updator
+                ? uniformArrayInfo.updator(buildinContainder)
+                : holder.hostObject[uniformArrayKey];
             this.updateUniformArray(uniformArrayName, uniformArrayInfo.type, val);
         }
         for (const textureKey in holder.textures) {
@@ -264,12 +301,14 @@ export class Program implements IDirtyable {
             if (!this.filter(name)) {
                 continue;
             }
-            const texture: Texture = !!textureInfo.source ? textureInfo.source : holder.hostObject[textureKey];
+            const texture: Texture = !!textureInfo.source
+                ? textureInfo.source
+                : holder.hostObject[textureKey];
             if (!!texture) {
-                this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
+                this.gl.activeTexture(this.gl.TEXTURE0 + texIndex[0]);
                 this.gl.bindTexture(texture.target, texture.glTexture);
-                this.updateUniform(name, DataType.int, this.currentTextureUnit);
-                this.currentTextureUnit++;
+                this.updateUniform(name, DataType.int, texIndex[0]);
+                texIndex[0]++;
             }
         }
         for (const textureArrayKey in holder.textureArrays) {
@@ -278,14 +317,15 @@ export class Program implements IDirtyable {
             if (!this.filter(name)) {
                 continue;
             }
-            const textureArray: Texture[] = !!textureArrayInfo.sources ?
-                textureArrayInfo.sources : holder.hostObject[textureArrayKey];
+            const textureArray: Texture[] = !!textureArrayInfo.sources
+                ? textureArrayInfo.sources
+                : holder.hostObject[textureArrayKey];
             const indices = [];
             for (const texture of textureArray) {
-                this.gl.activeTexture(this.gl.TEXTURE0 + this.currentTextureUnit);
+                this.gl.activeTexture(this.gl.TEXTURE0 + texIndex[0]);
                 this.gl.bindTexture(texture.target, texture.glTexture);
-                indices.push(this.currentTextureUnit);
-                this.currentTextureUnit++;
+                indices.push(texIndex[0]);
+                texIndex[0]++;
             }
             if (indices.length > 0) {
                 this.updateUniformArray(name, DataType.int, new Int32Array(indices));
@@ -307,29 +347,45 @@ export class Program implements IDirtyable {
                     must be an array of class annotated by @RenderParamContainer`);
                 }
                 this.passOneParamsHolder(
-                    buildinContainder, Graphics.getRenderParamHost(struct), `${arrayName}[${i}].`);
+                    buildinContainder,
+                    Graphics.getRenderParamHost(struct),
+                    texIndex,
+                    `${arrayName}[${i}].`,
+                );
             }
         }
     }
 
     private filter(name) {
-        if (name in this.paramFilters && !(this.paramFilters[name].name in this.defineCaches)) {
+        if (
+            name in this.paramFilters &&
+            !(this.paramFilters[name].name in this.defineCaches)
+        ) {
             const value = this.defineCaches[this.paramFilters[name].name];
-            return (this.paramFilters[name].filter(value));
+            return this.paramFilters[name].filter(value);
         }
         return true;
     }
 
     private updateDefines(buildinContainers: IBuildinRenderParamMaps) {
         for (const holderName in buildinContainers) {
-            this.updateOneDefines(Graphics.getRenderParamHost(buildinContainers[holderName]), buildinContainers);
+            this.updateOneDefines(
+                Graphics.getRenderParamHost(buildinContainers[holderName]),
+                buildinContainers,
+            );
         }
         for (const holderName in this.extraRenderParamHolders) {
-            this.updateOneDefines(this.extraRenderParamHolders[holderName], buildinContainers);
+            this.updateOneDefines(
+                this.extraRenderParamHolders[holderName],
+                buildinContainers,
+            );
         }
     }
 
-    private updateOneDefines(holder: IRenderParamHolder, buildinContainers: IBuildinRenderParamMaps) {
+    private updateOneDefines(
+        holder: IRenderParamHolder,
+        buildinContainers: IBuildinRenderParamMaps,
+    ) {
         if (!!holder) {
             for (const defineKey in holder.defines) {
                 const defineName = holder.defines[defineKey].defineName;
@@ -363,13 +419,18 @@ export class Program implements IDirtyable {
     }
 
     private updateUniform(name: string, type: DataType, value) {
-        if (value === undefined) { return; }
+        if (value === undefined) {
+            return;
+        }
         if (name in this.undesiredUniforms) {
             return;
         }
         let cache = this.uniformCaches[name];
         if (!cache) {
-            cache = { value, location: this.gl.getUniformLocation(this.webGlProgram, name) };
+            cache = {
+                value,
+                location: this.gl.getUniformLocation(this.webGlProgram, name),
+            };
             if (cache.location === null) {
                 this.undesiredUniforms[name] = undefined;
                 return;
@@ -378,7 +439,9 @@ export class Program implements IDirtyable {
             this.uniformCaches[name] = cache;
         }
         const location = cache.location;
-        if (!location) { console.error(location); }
+        if (!location) {
+            console.error(location);
+        }
         switch (type) {
             case DataType.float:
                 this.gl.uniform1f(location, value);
@@ -402,18 +465,28 @@ export class Program implements IDirtyable {
             case DataType.mat4:
                 this.gl.uniformMatrix4fv(location, false, value);
                 break;
-            default: break;
+            default:
+                break;
         }
     }
 
-    private updateUniformArray(name, type: DataType, value: Float32Array | Int32Array) {
-        if (value === undefined) { return; }
+    private updateUniformArray(
+        name,
+        type: DataType,
+        value: Float32Array | Int32Array,
+    ) {
+        if (value === undefined) {
+            return;
+        }
         if (name in this.undesiredUniforms) {
             return;
         }
         let cache = this.uniformArrayCaches[name];
         if (!cache) {
-            cache = { value, location: this.gl.getUniformLocation(this.webGlProgram, name) };
+            cache = {
+                value,
+                location: this.gl.getUniformLocation(this.webGlProgram, name),
+            };
             if (cache.location === null) {
                 this.undesiredUniforms[name] = undefined;
                 return;
@@ -445,7 +518,8 @@ export class Program implements IDirtyable {
             case DataType.mat4:
                 this.gl.uniformMatrix4fv(location, false, value);
                 break;
-            default: break;
+            default:
+                break;
         }
         return this;
     }
@@ -463,7 +537,6 @@ export class Program implements IDirtyable {
         console.log("initial pass attribute " + name + " " + result);
         return result;
     }
-
 }
 
 export const shaderPassLib = {
@@ -474,21 +547,29 @@ export const shaderPassLib = {
                 return mat4.multiply(
                     mat4.create(),
                     p.camera.projectionMatrix,
-                    mat4.multiply(mat4.create(),
+                    mat4.multiply(
+                        mat4.create(),
                         p.camera.worldToObjectMatrix,
-                        p.mesh.matrix),
+                        p.mesh.matrix,
+                    ),
                 );
             },
         },
         modelViewMatrix: {
             type: DataType.mat4,
-            updator: ({ mesh, camera }) => mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix),
+            updator: ({ mesh, camera }) =>
+                mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix),
         },
         normalViewMatrix: {
             type: DataType.mat4,
             updator: ({ mesh, camera }) =>
-                mat4.transpose(mat4.create(), mat4.invert(mat4.create(),
-                    mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix))),
+                mat4.transpose(
+                    mat4.create(),
+                    mat4.invert(
+                        mat4.create(),
+                        mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix),
+                    ),
+                ),
         },
     },
     defines: {

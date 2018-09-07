@@ -32,8 +32,8 @@ teapotProto.setAsyncFinished(teapotProto.asyncFinished().then(() => {
             .setIdensity(0.5)
             .setRadius(50);
         scene.addLight(light);
-        const vx = Math.random() * 3;
-        const vy = Math.random() * 3;
+        const vx = Math.random() * 3.0;
+        const vy = Math.random() * 3.0;
         scene.addOnUpdateListener(() => {
             time += 1 / 60;
             teapot.rotateY(spin);

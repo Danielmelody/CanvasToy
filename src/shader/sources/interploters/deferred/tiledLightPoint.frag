@@ -86,15 +86,6 @@ void main() {
             );
             // totalColor += vec3(listX, listY, 0.0);
         }
-            // vec3 lightDir = normalize(lightPos - viewPosition);
-            // vec3 reflectDir = normalize(reflect(lightDir, normal));
-            // vec3 viewDir = normalize( - viewPosition);
-            // vec3 H = normalize(lightDir + viewDir);
-            // float specularAngle = max(dot(H, normal), 0.0);
-            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);
-        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);
-        //}
-        //}
     }
     // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));
     // vec3 depth = vec3(tex1.z);
