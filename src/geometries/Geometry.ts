@@ -4,7 +4,7 @@ import { Graphics } from "../renderer/GraphicsUtils";
 import { Attribute } from "../shader/Attibute";
 
 export class Faces {
-    public buffer: WebGLBuffer;
+    public buffer: WebGLBuffer | null;
     public data: number[] = [];
     constructor(gl: WebGLRenderingContext, data: number[]) {
         this.data = data;
@@ -13,7 +13,6 @@ export class Faces {
 }
 
 export class Geometry implements IDirtyable {
-
     public attributes: {
         [index: string]: Attribute;
     };
@@ -27,10 +26,26 @@ export class Geometry implements IDirtyable {
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
         this.attributes = {
-            position: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
-            aMainUV: new Attribute(gl, { type: DataType.float, size: 2, data: [] }),
-            aNormal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
-            flatNormal: new Attribute(gl, { type: DataType.float, size: 3, data: [] }),
+            position: new Attribute(gl, {
+                type: DataType.float,
+                size: 3,
+                data: [],
+            }),
+            aMainUV: new Attribute(gl, {
+                type: DataType.float,
+                size: 2,
+                data: [],
+            }),
+            aNormal: new Attribute(gl, {
+                type: DataType.float,
+                size: 3,
+                data: [],
+            }),
+            flatNormal: new Attribute(gl, {
+                type: DataType.float,
+                size: 3,
+                data: [],
+            }),
         };
         this.faces = { data: [], buffer: gl.createBuffer() };
     }
@@ -46,13 +61,23 @@ export class Geometry implements IDirtyable {
             maxIndex = Math.max(maxIndex, index);
         }
         for (const attributeName in this.attributes) {
-            console.assert(this.attributes[attributeName].size <= 4
-                && this.attributes[attributeName].size >= 1,
-                attributeName + "size error, now: " + this.attributes[attributeName].size + " should be 1-4");
-            console.assert((maxIndex + 1) * this.attributes[attributeName].stride <=
-                this.attributes[attributeName].data.length,
-                attributeName + " length error, now:" + this.attributes[attributeName].data.length
-                + ", should bigger than:" + (maxIndex + 1) * this.attributes[attributeName].stride);
+            console.assert(
+                this.attributes[attributeName].size <= 4 &&
+                    this.attributes[attributeName].size >= 1,
+                attributeName +
+                    "size error, now: " +
+                    this.attributes[attributeName].size +
+                    " should be 1-4",
+            );
+            console.assert(
+                (maxIndex + 1) * this.attributes[attributeName].stride <=
+                    this.attributes[attributeName].data.length,
+                attributeName +
+                    " length error, now:" +
+                    this.attributes[attributeName].data.length +
+                    ", should bigger than:" +
+                    (maxIndex + 1) * this.attributes[attributeName].stride,
+            );
         }
         return this;
     }
@@ -68,7 +93,10 @@ export class Geometry implements IDirtyable {
                 if (vertex[attributeName] === undefined) {
                     continue;
                 }
-                if (vertex[attributeName].length !== this.attributes[attributeName].size) {
+                if (
+                    vertex[attributeName].length !==
+                    this.attributes[attributeName].size
+                ) {
                     console.error("length " + attributeName + "wrong");
                     continue;
                 }
@@ -91,7 +119,9 @@ export class Geometry implements IDirtyable {
             vertex[attributeName] = [];
             for (let i = 0; i < this.attributes[attributeName].stride; ++i) {
                 vertex[attributeName].push(
-                    this.attributes[attributeName].data[this.attributes[attributeName].stride * index + i],
+                    this.attributes[attributeName].data[
+                        this.attributes[attributeName].stride * index + i
+                    ],
                 );
             }
         }
@@ -109,21 +139,41 @@ export class Geometry implements IDirtyable {
     public generateFlatNormal() {
         for (let i = 0; i < this.faces.data.length; i += 3) {
             const triangle = this.getTriangleByIndex(i / 3);
-            const flatX = (triangle[0].normals[0] + triangle[0].normals[1] + triangle[0].normals[2]) / 3;
-            const flatY = (triangle[1].normals[0] + triangle[1].normals[1] + triangle[1].normals[2]) / 3;
-            const flatZ = (triangle[2].normals[0] + triangle[0].normals[1] + triangle[2].normals[2]) / 3;
+            const flatX =
+                (triangle[0].normals[0] +
+                    triangle[0].normals[1] +
+                    triangle[0].normals[2]) /
+                3;
+            const flatY =
+                (triangle[1].normals[0] +
+                    triangle[1].normals[1] +
+                    triangle[1].normals[2]) /
+                3;
+            const flatZ =
+                (triangle[2].normals[0] +
+                    triangle[0].normals[1] +
+                    triangle[2].normals[2]) /
+                3;
 
             const flat = [
-                flatX, flatY, flatZ,
-                flatX, flatY, flatZ,
-                flatX, flatY, flatZ,
+                flatX,
+                flatY,
+                flatZ,
+                flatX,
+                flatY,
+                flatZ,
+                flatX,
+                flatY,
+                flatZ,
             ];
-            this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(flat);
+            this.attributes.flatNormal.data = this.attributes.flatNormal.data.concat(
+                flat,
+            );
         }
         return this;
     }
 
-    public clean(gl: WebGLRenderingContext) {
+    public resetLightShadows(gl: WebGLRenderingContext) {
         if (this._dirty) {
             Graphics.copyDataToVertexBuffer(gl, this);
         }

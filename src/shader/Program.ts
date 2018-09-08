@@ -1,17 +1,16 @@
 import { mat4 } from "gl-matrix";
+
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
 import { IDirtyable } from "../Dirtyable";
-
 import { Geometry } from "../geometries/Geometry";
-
-import { Material } from "../materials/Material";
-import { Mesh } from "../Mesh";
-
 import { Light } from "../lights/Light";
+import { IMaterial } from "../materials/Material";
+import { Mesh } from "../Mesh";
 import { Graphics } from "../renderer/GraphicsUtils";
 import { Scene } from "../Scene";
 import { Texture } from "../textures/Texture";
+
 import { Attribute } from "./Attibute";
 
 export interface IProgramSource {
@@ -22,36 +21,28 @@ export interface IProgramSource {
 export interface IRenderParamHolder {
     hostObject?: object;
     defines?: {
-        [index: string]: { defineName: string; useValue?: boolean; value: string };
+        [index: string]: {
+            defineName: string;
+            useValue?: boolean;
+            value: string;
+        };
     };
     paramFilters?: {
         [index: string]: { name: string; filter: (value: string) => boolean };
     };
-    uniforms?: {
-        [index: string]: IUniform;
-    };
-    uniformArrays?: {
-        [index: string]: IUniformArray;
-    };
-    attributes?: {
-        [index: string]: Attribute;
-    };
-    textures?: {
-        [index: string]: { name?: string; source?: Texture };
-    };
-    textureArrays?: {
-        [index: string]: { name?: string; sources?: Texture[] };
-    };
+    uniforms?: { [index: string]: IUniform };
+    uniformArrays?: { [index: string]: IUniformArray };
+    attributes?: { [index: string]: Attribute };
+    textures?: { [index: string]: { name?: string; source?: Texture } };
+    textureArrays?: { [index: string]: { name?: string; sources?: Texture[] } };
     customPrefix?: string;
-    structArrays?: {
-        [index: string]: { name?: string };
-    };
+    structArrays?: { [index: string]: { name?: string } };
 }
 
 export interface IBuildinRenderParamMaps {
     mesh: Mesh;
     camera?: Camera;
-    material?: Material;
+    material?: IMaterial;
     scene?: Scene;
     light?: Light;
 }
@@ -85,24 +76,25 @@ export class Program implements IDirtyable {
         [index: string]: { value: number; location: WebGLUniformLocation };
     } = {};
     private uniformArrayCaches: {
-        [index: string]: { value: ArrayBufferView; location: WebGLUniformLocation };
+        [index: string]: {
+            value: ArrayBufferView;
+            location: WebGLUniformLocation;
+        };
     } = {};
     private undesiredUniforms: { [index: string]: undefined } = {};
     private attributeLocations: { [index: string]: number } = {};
     private undesiredAttributes: { [index: string]: undefined } = {};
 
     private paramFilters: {
-        [index: string]: { name: string; filter: (value: string) => boolean };
+        [index: string]: {
+            name: string;
+            filter: (value: string) => boolean;
+        };
     } = {};
 
     private extraRenderParamHolders: { [index: string]: IRenderParamHolder };
 
-    private viewport: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
+    private viewport: { x: number; y: number; width: number; height: number };
 
     private vertexPrecision: string = "highp";
     private fragmentPrecision: string = "highp";
@@ -151,7 +143,7 @@ export class Program implements IDirtyable {
         this.viewport = viewport;
     }
 
-    public clean() {
+    public resetLightShadows() {
         if (this.dirty) {
             this.make();
             this.dirty = false;
@@ -169,19 +161,19 @@ export class Program implements IDirtyable {
         this.webGlProgram = Graphics.createEntileShader(
             this.gl,
             this.extensionStatements.join("\n") +
-            "\n precision " +
-            this.vertexPrecision +
-            " float;\n" +
-            defines.join("\n") +
-            "\n" +
-            this.source.vertexShader,
+                "\n precision " +
+                this.vertexPrecision +
+                " float;\n" +
+                defines.join("\n") +
+                "\n" +
+                this.source.vertexShader,
             this.extensionStatements.join("\n") +
-            "\n precision " +
-            this.fragmentPrecision +
-            " float;\n" +
-            defines.join("\n") +
-            "\n" +
-            this.source.fragmentShader,
+                "\n precision " +
+                this.fragmentPrecision +
+                " float;\n" +
+                defines.join("\n") +
+                "\n" +
+                this.source.fragmentShader,
         );
         this.undesiredUniforms = {};
         this.uniformCaches = {};
@@ -192,7 +184,7 @@ export class Program implements IDirtyable {
 
     public pass(buildinContainers: IBuildinRenderParamMaps) {
         this.updateDefines(buildinContainers);
-        this.clean();
+        this.resetLightShadows();
         const currentTextureUnit = [0];
         this.gl.useProgram(this.webGlProgram);
         this.gl.viewport(
@@ -203,13 +195,23 @@ export class Program implements IDirtyable {
         );
 
         for (const holderName in buildinContainers) {
-            const holder = Graphics.getRenderParamHost(buildinContainers[holderName]);
-            this.passOneParamsHolder(buildinContainers, holder, currentTextureUnit);
+            const holder = Graphics.getRenderParamHost(
+                buildinContainers[holderName],
+            );
+            this.passOneParamsHolder(
+                buildinContainers,
+                holder,
+                currentTextureUnit,
+            );
         }
 
         for (const holderName in this.extraRenderParamHolders) {
             const holder = this.extraRenderParamHolders[holderName];
-            this.passOneParamsHolder(buildinContainers, holder, currentTextureUnit);
+            this.passOneParamsHolder(
+                buildinContainers,
+                holder,
+                currentTextureUnit,
+            );
         }
 
         const geometry = buildinContainers.mesh.geometry;
@@ -229,7 +231,9 @@ export class Program implements IDirtyable {
                 this.attributeLocations[attributeKey] = location;
             }
 
-            this.gl.enableVertexAttribArray(this.attributeLocations[attributeKey]);
+            this.gl.enableVertexAttribArray(
+                this.attributeLocations[attributeKey],
+            );
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
             this.gl.vertexAttribPointer(
                 this.attributeLocations[attributeKey],
@@ -249,7 +253,9 @@ export class Program implements IDirtyable {
         );
         for (const attributeKey in this.attributeLocations) {
             const attribute = geometry.attributes[attributeKey];
-            this.gl.disableVertexAttribArray(this.attributeLocations[attributeKey]);
+            this.gl.disableVertexAttribArray(
+                this.attributeLocations[attributeKey],
+            );
         }
         return this;
     }
@@ -269,7 +275,8 @@ export class Program implements IDirtyable {
         }
 
         for (const linkName in holder.paramFilters) {
-            this.paramFilters[namePrefix + linkName] = holder.paramFilters[linkName];
+            this.paramFilters[namePrefix + linkName] =
+                holder.paramFilters[linkName];
         }
 
         for (const uniformKey in holder.uniforms) {
@@ -293,7 +300,11 @@ export class Program implements IDirtyable {
             const val = !!uniformArrayInfo.updator
                 ? uniformArrayInfo.updator(buildinContainder)
                 : holder.hostObject[uniformArrayKey];
-            this.updateUniformArray(uniformArrayName, uniformArrayInfo.type, val);
+            this.updateUniformArray(
+                uniformArrayName,
+                uniformArrayInfo.type,
+                val,
+            );
         }
         for (const textureKey in holder.textures) {
             const textureInfo = holder.textures[textureKey];
@@ -313,7 +324,8 @@ export class Program implements IDirtyable {
         }
         for (const textureArrayKey in holder.textureArrays) {
             const textureArrayInfo = holder.textureArrays[textureArrayKey];
-            const name = namePrefix + (textureArrayInfo.name || textureArrayKey);
+            const name =
+                namePrefix + (textureArrayInfo.name || textureArrayKey);
             if (!this.filter(name)) {
                 continue;
             }
@@ -328,7 +340,11 @@ export class Program implements IDirtyable {
                 texIndex[0]++;
             }
             if (indices.length > 0) {
-                this.updateUniformArray(name, DataType.int, new Int32Array(indices));
+                this.updateUniformArray(
+                    name,
+                    DataType.int,
+                    new Int32Array(indices),
+                );
             }
         }
         if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
@@ -456,7 +472,13 @@ export class Program implements IDirtyable {
                 this.gl.uniform3f(location, value[0], value[1], value[2]);
                 break;
             case DataType.vec4:
-                this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                this.gl.uniform4f(
+                    location,
+                    value[0],
+                    value[1],
+                    value[2],
+                    value[3],
+                );
                 break;
             case DataType.mat2:
                 this.gl.uniformMatrix2fv(location, false, value);
@@ -567,7 +589,11 @@ export const shaderPassLib = {
                     mat4.create(),
                     mat4.invert(
                         mat4.create(),
-                        mat4.mul(mat4.create(), camera.worldToObjectMatrix, mesh.matrix),
+                        mat4.mul(
+                            mat4.create(),
+                            camera.worldToObjectMatrix,
+                            mesh.matrix,
+                        ),
                     ),
                 ),
         },

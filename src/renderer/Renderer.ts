@@ -1,6 +1,6 @@
 import { Camera } from "../cameras/Camera";
 import { IAsyncResource } from "../IAsyncResource";
-import { Material } from "../materials/Material";
+import { IMaterial } from "../materials/Material";
 import { Mesh } from "../Mesh";
 import { Scene } from "../Scene";
 import { Texture } from "../textures/Texture";
@@ -13,7 +13,6 @@ import { IProcessor } from "./IProcessor";
 import { ShadowPreProcess } from "./ShadowPreProcessor";
 
 export class Renderer {
-
     public readonly canvas: HTMLCanvasElement = null;
 
     public readonly gl: WebGLRenderingContext = null;
@@ -52,7 +51,7 @@ export class Renderer {
 
     private stopped: boolean = false;
 
-    private materials: Material[] = [];
+    private materials: IMaterial[] = [];
 
     private isDeferred = false;
 
@@ -65,7 +64,9 @@ export class Renderer {
             draw_buffer: this.gl.getExtension("WEBGL_draw_buffers"),
             texture_float: this.gl.getExtension("OES_texture_float"),
             texture_half_float: this.gl.getExtension("OES_texture_half_float"),
-            texture_float_linear: this.gl.getExtension("OES_texture_float_linear"),
+            texture_float_linear: this.gl.getExtension(
+                "OES_texture_float_linear",
+            ),
         };
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
@@ -98,11 +99,13 @@ export class Renderer {
         for (const object of scene.objects) {
             const promise = object.asyncFinished();
             if (!!promise) {
-                objectPromises.push(promise.then(() => {
-                    for (const child of object.children) {
-                        scene.addObject(child);
-                    }
-                }));
+                objectPromises.push(
+                    promise.then(() => {
+                        for (const child of object.children) {
+                            scene.addObject(child);
+                        }
+                    }),
+                );
             }
         }
         return Promise.all(objectPromises).then(() => {
@@ -112,12 +115,16 @@ export class Renderer {
                     for (const material of (object as Mesh).materials) {
                         const _material: any = material;
                         for (const textureGetter of _material.asyncResources) {
-                            const promise: Promise<any> = textureGetter(_material);
+                            const promise: Promise<any> = textureGetter(
+                                _material,
+                            );
                             if (!!promise) {
-                                texturePromises.push(promise.then((texture: Texture) => {
-                                    texture.apply(this.gl);
-                                    return Promise.resolve(texture);
-                                }));
+                                texturePromises.push(
+                                    promise.then((texture: Texture) => {
+                                        texture.apply(this.gl);
+                                        return Promise.resolve(texture);
+                                    }),
+                                );
                             }
                         }
                     }
@@ -156,19 +163,24 @@ export class Renderer {
 
                 for (const object of scene.objects) {
                     if (object instanceof Mesh) {
-                        Graphics.copyDataToVertexBuffer(this.gl, (object as Mesh).geometry);
+                        Graphics.copyDataToVertexBuffer(
+                            this.gl,
+                            (object as Mesh).geometry,
+                        );
                     }
                 }
 
-                const shadowPreProcess = new ShadowPreProcess(this.gl, this.ext, scene);
+                const shadowPreProcess = new ShadowPreProcess(
+                    this.gl,
+                    this.ext,
+                    scene,
+                );
 
-                let processor: IProcessor;
                 // TODO: Dynamic processor strategy
-                if (this.isDeferred) {
-                    processor = new DeferredProcessor(this.gl, this.ext, scene, camera);
-                } else {
-                    processor = new ForwardProcessor(this.gl, this.ext, scene, camera);
-                }
+                const processor: IProcessor = this.isDeferred
+                    ? new DeferredProcessor(this.gl, this.ext, scene, camera)
+                    : new ForwardProcessor(this.gl, this.ext, scene, camera);
+
                 scene.programSetUp = true;
                 this.renderQueue.push((deltaTime: number) => {
                     scene.update(deltaTime);

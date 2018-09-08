@@ -30,7 +30,7 @@ export class DirectionalLight extends Light {
     @uniform(DataType.vec3)
     public get direction(): vec3 {
         return vec3.transformQuat(vec3.create(), vec3.fromValues(0, 0, -1),
-            mat4.getRotation(quat.create(), this._matrix),
+                                  mat4.getRotation(quat.create(), this._matrix),
         );
     }
 

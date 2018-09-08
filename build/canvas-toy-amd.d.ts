@@ -14,13 +14,13 @@ declare module "DataTypeEnum" {
 }
 declare module "IAsyncResource" {
     export interface IAsyncResource {
-        asyncFinished(): Promise<IAsyncResource>;
+        asyncFinished: () => Promise<IAsyncResource>;
         setAsyncFinished(promise: Promise<IAsyncResource>): void;
     }
 }
 declare module "Dirtyable" {
     export interface IDirtyable {
-        clean(...args: any[]): any;
+        resetLightShadows(...args: any[]): any;
     }
 }
 declare module "cameras/OrthoCamera" {
@@ -117,7 +117,7 @@ declare module "geometries/Geometry" {
     import { IDirtyable } from "Dirtyable";
     import { Attribute } from "shader/Attibute";
     export class Faces {
-        buffer: WebGLBuffer;
+        buffer: WebGLBuffer | null;
         data: number[];
         constructor(gl: WebGLRenderingContext, data: number[]);
     }
@@ -137,7 +137,7 @@ declare module "geometries/Geometry" {
         getVertexByIndex(index: number): any;
         getTriangleByIndex(triangleIndex: number): any[];
         generateFlatNormal(): this;
-        clean(gl: WebGLRenderingContext): void;
+        resetLightShadows(gl: WebGLRenderingContext): void;
     }
 }
 declare module "renderer/GraphicsUtils" {
@@ -207,7 +207,7 @@ declare module "materials/Material" {
         red: vec4;
         white: vec4;
     };
-    export abstract class Material {
+    export abstract class IMaterial {
         name: string;
         defines: string[];
         shader: Program;
@@ -219,14 +219,14 @@ declare module "materials/Material" {
 declare module "Mesh" {
     import { mat4 } from "gl-matrix";
     import { Geometry } from "geometries/Geometry";
-    import { Material } from "materials/Material";
+    import { IMaterial } from "materials/Material";
     import { Object3d } from "Object3d";
     export class Mesh extends Object3d {
         readonly geometry: Geometry;
-        materials: Material[];
+        materials: IMaterial[];
         readonly matrix: mat4;
         readonly normalMatrix: mat4;
-        constructor(geometry: Geometry, materials: Material[]);
+        constructor(geometry: Geometry, materials: IMaterial[]);
         drawMode(gl: WebGLRenderingContext): number;
     }
 }
@@ -480,34 +480,34 @@ declare module "lights/PointLight" {
 }
 declare module "shader/shaders" {
     export namespace ShaderSource {
-        const calculators__blur__gaussian_glsl = "\nvec4 gaussian_blur(sampler2D origin, vec2 uv, float blurStep, vec2 blurDir) {\n    vec4 average = vec4(0.0, 0.0, 0.0, 0.0);\n    average += texture2D(origin, uv - 4.0 * blurStep * blurDir) * 0.0162162162;\n    average += texture2D(origin, uv - 3.0 * blurStep * blurDir) * 0.0540540541;\n    average += texture2D(origin, uv - 2.0 * blurStep * blurDir) * 0.1216216216;\n    average += texture2D(origin, uv - 1.0 * blurStep * blurDir) * 0.1945945946;\n    average += texture2D(origin, uv) * 0.2270270270;\n    average += texture2D(origin, uv + 1.0 * blurStep * blurDir) * 0.1945945946;\n    average += texture2D(origin, uv + 2.0 * blurStep * blurDir) * 0.1216216216;\n    average += texture2D(origin, uv + 3.0 * blurStep * blurDir) * 0.0540540541;\n    average += texture2D(origin, uv + 4.0 * blurStep * blurDir) * 0.0162162162;\n    return average;\n}\n";
-        const calculators__blur__gaussian_log_glsl = "\n\n";
-        const calculators__linearlize_depth_glsl = "\nfloat linearlizeDepth(float far, float near, float depth) {\n    float NDRDepth = depth * 2.0 - 1.0;;\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n}\n";
-        const calculators__packFloat1x32_glsl = "\nvec4 packFloat1x32(float val)\n{\n    vec4 pack = vec4(1.0, 255.0, 65025.0, 16581375.0) * val;\n    pack = fract(pack);\n    pack -= vec4(pack.yzw / 255.0, 0.0);\n    return pack;\n}\n";
-        const calculators__phong_glsl = "\nvec3 calculateLight(\n    vec3 position,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 eyePos,\n    vec3 specularLight,\n    vec3 diffuseLight,\n    float shiness,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n    vec3 viewDir = normalize(eyePos - position);\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n    vec3 diffuseColor = diffuse * lambortian;\n    return (diffuseColor + specularColor) * idensity;\n}\n";
-        const calculators__shadow_factor_glsl = "\n#ifdef RECEIVE_SHADOW\n\nvec4 texture2DbilinearEXP(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 f = fract(uv / texelSize - 0.5);\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n    vec4 a = lb + log(mix(vec4(1.0), exp(lt - lb), f.y));\n    vec4 b = rb + log(mix(vec4(1.0), exp(rt - rb), f.y));\n    vec4 z = a + log(mix(vec4(1.0), exp(b - a), f.x));\n    return z;\n}\n\nvec4 texture2Dbilinear(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 f = fract(uv / texelSize - 0.5);\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n    vec4 a = mix(lb, lt, f.y);\n    vec4 b = mix(rb, rt, f.y);\n    vec4 z = mix(a, b, f.x);\n    return z;\n}\n\nfloat texture2Dfilter(sampler2D shadowMap, vec2 uv, float texelSize) {\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n    float base = info.r;\n    float kernelSize = info.g;\n    float sum = 0.0;\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            vec2 subuv = uv + vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0) * texelSize * kernelSize;\n            float z = texture2Dbilinear(shadowMap, subuv, texelSize).r;\n            float expd = exp(z - base);\n            sum += expd;\n        }\n    }\n    sum /= float(FILTER_SIZE * FILTER_SIZE);\n    return base + log(sum);\n}\n\nfloat pcf(sampler2D shadowMap, vec2 uv, float depth, float bias, float texelSize) {\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n    float kernelSize = 1.0;\n    float sum = 0.0;\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            float z = texture2Dbilinear(shadowMap, uv + kernelSize * vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0).x * texelSize, texelSize).r;\n            sum += step(depth - bias, z) / float(FILTER_SIZE * FILTER_SIZE);\n        }\n    }\n    return sum;\n}\n\nfloat getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n{\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n        return 1.0;\n    } else {\n        vec2 uv = clipPos * 0.5 + 0.5;\n        float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n        if (shadowLevel == SHADOW_LEVEL_HARD) {\n            return step(linearDepth, texture2D(shadowMap, uv).r + bias);\n        } else {\n            float z = texture2DbilinearEXP(shadowMap, uv, texelSize).r;\n            float s = exp(z - linearDepth * softness);\n            return min(s, 1.0);\n        }\n    }\n}\n\nfloat getPointShadow(vec3 cubePos, samplerCube shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n{\n    float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n        return 1.0;\n    } else {\n        // if (shadowLevel == SHADOW_LEVEL_HARD) {\n            return step(linearDepth, textureCube(shadowMap, cubePos).r + bias);\n        //else {\n            // TODO: perform cubemap interpolation for soft-level shadow map for point light\n        //}\n    }\n}\n\n#endif\n";
-        const calculators__types_glsl = "\nvec3 calculateDirLight(\n    DirectLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        -light.direction,\n        light.color,\n        light.idensity\n    );\n}\n\nvec3 calculatePointLight(\n    PointLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    idensity *= step(lightDis, 1.0);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        normalize(light.position - position),\n        light.color,\n        idensity\n    );\n}\n\nvec3 calculateSpotLight(\n    SpotLight light,\n    Material material,\n    vec3 position,\n    vec3 normal,\n    vec3 eyePos\n    ) {\n    vec3 lightDir = normalize(light.position - position);\n    float spotFactor = dot(-lightDir, light.spotDir);\n    if (spotFactor < light.coneAngleCos) {\n        return vec3(0.0);\n    }\n    float lightDis = length(light.position - position);\n    lightDis /= light.radius;\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n    float atten_max = 1.0 / light.constantAtten;\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n    \n    idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n    // idensity *= step(light.radius, lightDis);\n    return calculateLight(\n        material,\n        normalize(eyePos - position),\n        normal,\n        lightDir,\n        light.color,\n        idensity\n    );\n}\n";
-        const calculators__unpackFloat1x32_glsl = "\nfloat unpackFloat1x32( vec4 rgba ) {\n  return dot( rgba, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 160581375.0) );\n}\n";
-        const debug__checkBox_glsl = "\nfloat checkerBoard(in vec2 uv, in float subSize) {\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n    return (\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n    );\n}\n";
-        const definitions__light_glsl = "\n#define SHADOW_LEVEL_NONE 0\n#define SHADOW_LEVEL_HARD 1\n#define SHADOW_LEVEL_SOFT 2\n#define SHADOW_LEVEL_PCSS 3\n\nstruct Light {\n  vec3 color;\n  float idensity;\n  vec3 direction;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n#endif\n};\n\nstruct DirectLight {\n  vec3 color;\n  float idensity;\n  vec3 direction;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n#endif\n};\n\nstruct PointLight {\n  vec3 color;\n  float idensity;\n  float radius;\n  vec3 position;\n  float squareAtten;\n  float linearAtten;\n  float constantAtten;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n  float pcssArea;\n#endif\n};\n\nstruct SpotLight {\n  vec3 color;\n  float idensity;\n  float radius;\n  vec3 position;\n  float squareAtten;\n  float linearAtten;\n  float constantAtten;\n  float coneAngleCos;\n  vec3 spotDir;\n#ifdef RECEIVE_SHADOW\n  lowp int shadowLevel;\n  float softness;\n  float shadowMapSize;\n  mat4 projectionMatrix;\n  mat4 viewMatrix;\n  float pcssArea;\n#endif\n};\n";
-        const definitions__material_blinnphong_glsl = "\nstruct Material {\n    vec3 ambient;\n    vec3 diffuse;\n    vec3 specular;\n    float specularExponent;\n    float reflectivity;\n};";
-        const definitions__material_pbs_glsl = "\nstruct Material {\n    vec3 ambient;\n    vec3 albedo;\n    float metallic;\n    float roughness;\n};";
-        const interploters__deferred__geometry_frag = "\nuniform Material uMaterial;\n\nuniform vec3 eyePos;\nvarying vec3 vNormal;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\nvarying vec2 vMainUV;\n#endif\n\n#ifdef _NORMAL_TEXTURE\nuniform sampler2D uNormalTexture;\nvarying vec2 vNormalUV;\n#endif\n\nvoid main () {\n    vec3 normal = normalize(vNormal);\n#ifdef _NORMAL_TEXTURE\n    gl_FragData[0] = vec4(normal, uMaterial.roughness);\n#else\n    gl_FragData[0] = vec4(normal, uMaterial.roughness);\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragData[1] = vec4(uMaterial.albedo * texture2D(uMainTexture, vMainUV).xyz, uMaterial.metallic);\n#else\n    gl_FragData[1] = vec4(uMaterial.albedo, uMaterial.metallic);\n#endif\n    // save 32 bit depth to render target 3\n    gl_FragData[2] =  packFloat1x32(gl_FragCoord.z);\n}\n";
-        const interploters__deferred__geometry_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\n#ifdef _MAIN_TEXTURE\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n#endif\n\nuniform mat4 normalViewMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n\n#ifdef _MAIN_TEXTURE\n    vMainUV = aMainUV;\n#endif\n}\n";
-        const interploters__deferred__tiledLight_vert = "\nattribute vec3 position;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    gl_Position = vec4(position, 1.0);\n    vPosition = position;\n}\n";
-        const interploters__deferred__tiledLightPoint_frag = "\n#define MAX_TILE_LIGHT_NUM 32\n\nprecision highp float;\n\nuniform float uHorizontalTileNum;\nuniform float uVerticalTileNum;\nuniform float uLightListLengthSqrt;\n\nuniform mat4 inverseProjection;\n\nuniform sampler2D uLightIndex;\nuniform sampler2D uLightOffsetCount;\nuniform sampler2D uLightPositionRadius;\nuniform sampler2D uLightColorIdensity;\n\nuniform sampler2D normalRoughnessTex;\nuniform sampler2D albedoMetallicTex;\nuniform sampler2D depthTex;\n\nuniform float cameraNear;\nuniform float cameraFar;\n\n\nvarying vec3 vPosition;\n\nvec3 decodeNormal(vec2 n)\n{\n   vec3 normal;\n   normal.z = dot(n, n) * 2.0 - 1.0;\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n   return normal;\n}\n\nvec3 decodePosition(float depth) {\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n    vec4 homogenous = inverseProjection * clipSpace;\n    return homogenous.xyz / homogenous.w;\n}\n\nvoid main() {\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n    float lightStartIndex = lightIndexInfo.r;\n    float lightNum = lightIndexInfo.w;\n    vec4 tex1 = texture2D(normalRoughnessTex, uv);\n    vec4 tex2 = texture2D(albedoMetallicTex, uv);\n\n    vec3 normal = tex1.xyz;\n    Material material;\n    material.roughness = tex1.w;\n    material.albedo = tex2.xyz;\n    float depth = unpackFloat1x32(texture2D(depthTex, uv));\n    vec3 viewPosition = decodePosition(depth);\n    vec3 totalColor = vec3(0.0);\n    int realCount = 0;\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n        if (float(i) > lightNum - 0.5) {\n            break;\n        }\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n        // listX = 1.0;\n        // listY = 0.0;\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n        vec3 lightPos = lightPosR.xyz;\n        float lightR = lightPosR.w;\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n        vec3 lightColor = lightColorIden.xyz;\n        float lightIdensity = lightColorIden.w;\n        vec3 lightDir = normalize(lightPos - viewPosition);\n\n        float dist = distance(lightPos, viewPosition);\n        if (dist < lightR) {\n            realCount++;\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n            totalColor += calculateLight(\n                material,\n                normalize(-viewPosition),\n                normal,\n                lightDir,\n                lightColor,\n                lightIdensity\n            );\n            // totalColor += vec3(listX, listY, 0.0);\n        }\n    }\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n    // vec3 depth = vec3(tex1.z);\n    vec3 test = vec3(float(realCount) / 32.0);\n    gl_FragColor = vec4(totalColor, 1.0);\n}\n";
-        const interploters__forward__esm__depth_frag = "\nuniform float softness;\nvarying vec3 viewPos;\n\nvoid main () {\n    float d = length(viewPos);\n    gl_FragColor.r = d * softness;\n    gl_FragColor.g = exp(d) * d;\n}\n";
-        const interploters__forward__esm__depth_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelViewMatrix;\nvarying vec3 viewPos;\n\nvoid main () {\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    viewPos = (modelViewMatrix * vec4(position, 1.0)).xyz;\n}\n";
-        const interploters__forward__esm__prefiltering_frag = "\nuniform sampler2D uOrigin;\nuniform vec2 uBlurDir;\nuniform float uBlurStep;\n\nuniform float lightArea;\n\nvarying vec2 uv;\n\nvoid main () {\n    float base = texture2D(uOrigin, uv).r;\n    float block = 0.0;\n\n    for (int i = 0; i < BLOCK_SIZE; ++i) {\n        for (int j = 0; j < BLOCK_SIZE; ++j) {\n            float d = texture2D(uOrigin, uv + vec2(float(i - BLOCK_SIZE / 2) + 0.5, float(j - BLOCK_SIZE / 2) + 0.5) * uBlurStep).r;\n            block += step(base, d) * d / float(BLOCK_SIZE * BLOCK_SIZE);\n        }\n    }\n    \n    float kenelSize = min(4.0, lightArea * (base - block) / base);\n    float stepSize = kenelSize / float(FILTER_SIZE);\n\n    float sum = 0.0;\n\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n            float d = texture2D(uOrigin, \n            uv + stepSize * vec2(float(i - FILTER_SIZE / 2) + 0.5, float(j - FILTER_SIZE / 2) + 0.5) * uBlurStep).r;\n            sum += exp(d - base) / float(FILTER_SIZE * FILTER_SIZE);\n        }\n    }\n\n    float average = log(sum) + base;\n\n    gl_FragColor.r = average;\n    gl_FragColor.g = kenelSize;\n}\n";
-        const interploters__forward__esm__prefiltering_vert = "\nuniform mat4 normalMatrix;\nattribute vec3 position;\nattribute vec3 normal;\nvarying vec2 uv;\nvarying vec3 vNormal;\n\nvoid main () {\n    gl_Position = vec4(position, 1.0);\n    uv = gl_Position.xy * 0.5 + 0.5;\n    vNormal = normalize((normalMatrix * vec4(normal, 1.0)).xyz);\n}\n";
-        const interploters__forward__gouraud_frag = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main() {\n    textureColor = colorOrMainTexture(vMainUV);\n#ifdef OPEN_LIGHT\n    totalLighting = ambient;\n    vec3 normal = normalize(vNormal);\n    gl_FragColor = vec4(totalLighting, 1.0);\n#else\n#ifdef USE_COLOR\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n#endif\n#endif\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = gl_FragColor * textureColor;\n#endif\n#ifdef USE_COLOR\n    gl_FragColor = gl_FragColor * color;\n#endif\n}\n";
-        const interploters__forward__gouraud_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n#ifdef OPEN_LIGHT\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n    totalLighting = ambient;\n    normal = normalize(normal);\n    for (int index = 0; index < LIGHT_NUM; index++) {\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n    }\n    vLightColor = totalLighting;\n#endif\n#ifdef _MAIN_TEXTURE\n    vTextureCoord = aTextureCoord;\n#endif\n}\n";
-        const interploters__forward__phong_frag = "\nuniform Material uMaterial;\nuniform vec3 cameraPos;\n\nvarying vec2 vMainUV;\nvarying vec4 clipPos;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#ifdef _MAIN_TEXTURE\nuniform sampler2D uMainTexture;\n#endif\n\n#ifdef _ENVIRONMENT_MAP\nuniform float reflectivity;\nuniform samplerCube uCubeTexture;\n#endif\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\nuniform sampler2D directLightShadowMap[directLightsNum];\n#endif\n\n#if (pointLightsNum > 0)\nuniform PointLight pointLights[pointLightsNum];\nuniform samplerCube pointLightShadowMap[pointLightsNum];\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\nuniform sampler2D spotLightShadowMap[spotLightsNum];\n#endif\n\n#ifdef RECEIVE_SHADOW\n\n    #if (directLightsNum > 0)\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n\n    #if (spotLightsNum > 0)\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n\n#endif\n\nvoid main () {\n\n#ifdef _MAIN_TEXTURE\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n#else\n    #ifdef _DEBUG\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n    #else\n    gl_FragColor = vec4(1.0);\n    #endif\n#endif\n    vec3 color = vec3(0.0);\n    vec3 normal = normalize(vNormal);\n    vec3 totalLighting = uMaterial.ambient;\n    #ifdef _ENVIRONMENT_MAP\n    vec3 viewDir = normalize(vPosition - cameraPos);\n    vec3 skyUV = normalize(reflect(viewDir, vNormal));\n    vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;\n    color += calculateImageBasedLight(uMaterial, skyUV, normal, viewDir, imageLightColor, vec3(0.5));\n    #endif\n#if (directLightsNum > 0)\n    for (int index = 0; index < directLightsNum; index++) {\n        vec3 lighting = calculateDirLight(\n            directLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-directLights[index].direction, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            directShadowCoord[index].xy / directShadowCoord[index].w, \n            directLightShadowMap[index], \n            directLightDepth[index], \n            lambertian, \n            1.0 / directLights[index].shadowMapSize,\n            directLights[index].shadowLevel,\n            directLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (pointLightsNum > 0)\n    for (int index = 0; index < pointLightsNum; index++) {\n        vec3 lighting = calculatePointLight(\n            pointLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n        #ifdef RECEIVE_SHADOW\n        vec3 offset = vPosition - pointLights[index].position;\n        vec3 cubePos = normalize(offset);\n        float linearDepth = length(offset);\n        float lambertian = max(dot(-cubePos, normal), 0.0);\n        float shadowFactor = getPointShadow(\n            cubePos,\n            pointLightShadowMap[index],\n            linearDepth,\n            lambertian,\n            1.0 / pointLights[index].shadowMapSize,\n            pointLights[index].shadowLevel,\n            pointLights[index].softness\n        );\n        lighting *= shadowFactor;\n        #endif\n        totalLighting += lighting;\n    }\n#endif\n#if (spotLightsNum > 0)\n    for (int index = 0; index < spotLightsNum; index++) {\n        vec3 lighting = calculateSpotLight(\n            spotLights[index],\n            uMaterial,\n            vPosition,\n            normal,\n            cameraPos\n        );\n    #ifdef RECEIVE_SHADOW\n        float lambertian = dot(-spotLights[index].spotDir, normal);\n        float shadowFactor = getSpotDirectionShadow(\n            spotShadowCoord[index].xy / spotShadowCoord[index].w, \n            spotLightShadowMap[index],\n            spotLightDepth[index], \n            lambertian, \n            1.0 / spotLights[index].shadowMapSize,\n            spotLights[index].shadowLevel,\n            spotLights[index].softness\n        );\n        lighting *= shadowFactor;\n    #endif\n        totalLighting += lighting;\n\n    }\n#endif\n    color += totalLighting;\n    gl_FragColor *= vec4(color, 1.0);\n}\n";
-        const interploters__forward__phong_vert = "\nattribute vec3 position;\nuniform mat4 modelViewProjectionMatrix;\nuniform mat4 modelMatrix;\n\nattribute vec2 aMainUV;\nvarying vec2 vMainUV;\n\nuniform mat4 normalMatrix;\nattribute vec3 aNormal;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\nvarying vec4 clipPos;\n\n\n#if (directLightsNum > 0)\nuniform DirectLight directLights[directLightsNum];\n    #ifdef RECEIVE_SHADOW\n    varying vec4 directShadowCoord[directLightsNum];\n    varying float directLightDepth[directLightsNum];\n    #endif\n#endif\n\n#if (spotLightsNum > 0)\nuniform SpotLight spotLights[spotLightsNum];\n    #ifdef RECEIVE_SHADOW\n    varying vec4 spotShadowCoord[spotLightsNum];\n    varying float spotLightDepth[spotLightsNum];\n    #endif\n#endif\n\n\nvoid main (){\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n    clipPos = gl_Position;\n    vec4 worldPos = (modelMatrix * vec4(position, 1.0));\n    vPosition = worldPos.xyz;\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n    vMainUV = aMainUV;\n\n    #ifdef RECEIVE_SHADOW\n        #if (directLightsNum > 0)\n        for (int i = 0; i < directLightsNum; ++i) {\n            directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;\n            directLightDepth[i] = length((directLights[i].viewMatrix * worldPos).xyz);\n        }\n        #endif\n\n        #if (spotLightsNum > 0)\n        for (int i = 0; i < spotLightsNum; ++i) {\n            spotShadowCoord[i] = spotLights[i].projectionMatrix * spotLights[i].viewMatrix * worldPos;\n            spotLightDepth[i] = length((spotLights[i].viewMatrix * worldPos).xyz);\n        }\n        #endif\n    #endif\n}\n";
-        const interploters__forward__skybox_frag = "\nvarying vec3 cubeUV;\nuniform samplerCube uCubeTexture;\nvoid main()\n{\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n}\n";
-        const interploters__forward__skybox_vert = "\nattribute vec3 position;\nuniform mat4 viewProjectionMatrix;\nvarying vec3 cubeUV;\n\nvoid main (){\n    vec4 mvp = viewProjectionMatrix * vec4(position, 1.0);\n    cubeUV = position;\n    gl_Position = mvp.xyww;\n}\n";
-        const light_model__blinn_phong_glsl = "\nvec3 calculateLight(\n    Material material,\n    vec3 viewDir,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 lightColor,\n    float idensity\n    ) {\n    float lambortian = max(dot(lightDir, normal), 0.0);\n\n    // replace R * V with N * H\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n    float specularAngle = max(dot(H, normal), 0.0);\n\n    vec3 specularColor = material.specular * pow(specularAngle, material.specularExponent);\n    vec3 diffuseColor = material.diffuse * lambortian;\n    vec3 color = (diffuseColor + specularColor) * idensity * lightColor;\n    return color;\n}\n\nvec3 calculateImageBasedLight(\n    Material material,\n    vec3 lightDir,\n    vec3 normal,\n    vec3 viewDir,\n    vec3 specularColor,\n    vec3 diffuseColor\n) {\n    \n    vec3 color = mix(specularColor, diffuseColor, material.reflectivity);\n    return color;\n}\n";
-        const light_model__pbs_ggx_glsl = "\nfloat tangent_2(float cos_2) {\n    return (1. - cos_2) / cos_2;\n}\n\nfloat Smith_G1(float NdotV, float roughness) {\n    float tan_2 = tangent_2(NdotV * NdotV);\n    float root = roughness * roughness * tan_2;\n    return 2.0 / (1. + sqrt(1. + root));\n}\n\nfloat GGX_D(float HdotN, float roughness) {\n    float cos_2 = HdotN * HdotN;\n    float tan_2 = tangent_2(cos_2);\n\n    float root = roughness / (cos_2 * (roughness * roughness + tan_2));\n    return root * root / acos(-1.);\n}\n\nvec3 calculateLight(\n    Material material,\n    vec3 viewDir,\n    vec3 normal,\n    vec3 lightDir,\n    vec3 lightColor,\n    float idensity\n    ) {\n\n    vec3 halfVec = normalize(lightDir + viewDir);\n\n    float LdotN = dot(lightDir, normal);\n    float VdotN = dot(viewDir, normal);\n    float HdotN = dot(halfVec, normal);\n    float LdotH = dot(lightDir, halfVec);\n    float VdotH = dot(viewDir, halfVec);\n\n    if (VdotN < 0. || LdotN < 0.) {\n        return vec3(0.);\n    }\n\n    float OneMinusLdotH = 1. - LdotH;\n    float OneMinusLdotHSqr = OneMinusLdotH * OneMinusLdotH;\n\n    vec3 albedo = material.albedo * lightColor;\n\n    vec3 fresnel = albedo + (1. - albedo) * OneMinusLdotHSqr * OneMinusLdotHSqr * OneMinusLdotH;\n\n    float d = GGX_D(HdotN, material.roughness);\n    float g = Smith_G1(VdotN, material.roughness) * Smith_G1(LdotN, material.roughness);\n    vec3 specbrdf = fresnel * (g * d / (4. * VdotN * LdotN));\n\n    float OneMinusLdotN = 1. - LdotN;\n    float OneMinusLdotNSqr = OneMinusLdotN * OneMinusLdotN;\n\n    float OneMinusVdotN = 1. - VdotN;\n    float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;\n\n    float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);\n    vec3 diffbrdf = albedo * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *\n                (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);\n\n\n    vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;\n    return color * LdotN * idensity;\n}\n\nvec3 calculateImageBasedLight(\n    Material material,\n    vec3 lightDir,\n    vec3 normal,\n    vec3 viewDir,\n    vec3 specularColor,\n    vec3 diffuseColor\n) {\n    // specularColor = mix(material.albedo, specularColor, material.metallic * 0.5 + 0.5);\n    vec3 color = mix(specularColor, diffuseColor, material.roughness);\n    return color * material.albedo;\n}\n";
+        const calculators__blur__gaussian_glsl = "\nvec4 gaussian_blur(sampler2D origin, vec2 uv, float blurStep, vec2 blurDir) {\n\n    vec4 average = vec4(0.0, 0.0, 0.0, 0.0);\n\n    average += texture2D(origin, uv - 4.0 * blurStep * blurDir) * 0.0162162162;\n\n    average += texture2D(origin, uv - 3.0 * blurStep * blurDir) * 0.0540540541;\n\n    average += texture2D(origin, uv - 2.0 * blurStep * blurDir) * 0.1216216216;\n\n    average += texture2D(origin, uv - 1.0 * blurStep * blurDir) * 0.1945945946;\n\n    average += texture2D(origin, uv) * 0.2270270270;\n\n    average += texture2D(origin, uv + 1.0 * blurStep * blurDir) * 0.1945945946;\n\n    average += texture2D(origin, uv + 2.0 * blurStep * blurDir) * 0.1216216216;\n\n    average += texture2D(origin, uv + 3.0 * blurStep * blurDir) * 0.0540540541;\n\n    average += texture2D(origin, uv + 4.0 * blurStep * blurDir) * 0.0162162162;\n\n    return average;\n\n}\n\n";
+        const calculators__blur__gaussian_log_glsl = "\n\n\n";
+        const calculators__linearlize_depth_glsl = "\nfloat linearlizeDepth(float far, float near, float depth) {\n\n    float NDRDepth = depth * 2.0 - 1.0;;\n\n    return 2.0 * near / (near + far - NDRDepth * (far - near));\n\n}\n\n";
+        const calculators__packFloat1x32_glsl = "\nvec4 packFloat1x32(float val)\n\n{\n\n    vec4 pack = vec4(1.0, 255.0, 65025.0, 16581375.0) * val;\n\n    pack = fract(pack);\n\n    pack -= vec4(pack.yzw / 255.0, 0.0);\n\n    return pack;\n\n}\n\n";
+        const calculators__phong_glsl = "\nvec3 calculateLight(\n\n    vec3 position,\n\n    vec3 normal,\n\n    vec3 lightDir,\n\n    vec3 eyePos,\n\n    vec3 specularLight,\n\n    vec3 diffuseLight,\n\n    float shiness,\n\n    float idensity\n\n    ) {\n\n    float lambortian = max(dot(lightDir, normal), 0.0);\n\n    vec3 reflectDir = normalize(reflect(lightDir, normal));\n\n    vec3 viewDir = normalize(eyePos - position);\n\n    float specularAngle = max(dot(reflectDir, viewDir), 0.0);\n\n    vec3 specularColor = specularLight * pow(specularAngle, shiness);\n\n    vec3 diffuseColor = diffuse * lambortian;\n\n    return (diffuseColor + specularColor) * idensity;\n\n}\n\n";
+        const calculators__shadow_factor_glsl = "\n#ifdef RECEIVE_SHADOW\n\n\n\nvec4 texture2DbilinearEXP(sampler2D shadowMap, vec2 uv, float texelSize) {\n\n    vec2 f = fract(uv / texelSize - 0.5);\n\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n\n    vec4 a = lb + log(mix(vec4(1.0), exp(lt - lb), f.y));\n\n    vec4 b = rb + log(mix(vec4(1.0), exp(rt - rb), f.y));\n\n    vec4 z = a + log(mix(vec4(1.0), exp(b - a), f.x));\n\n    return z;\n\n}\n\n\n\nvec4 texture2Dbilinear(sampler2D shadowMap, vec2 uv, float texelSize) {\n\n    vec2 f = fract(uv / texelSize - 0.5);\n\n    vec2 centroidUV = (floor(uv / texelSize - 0.5)) * texelSize;\n\n\n\n    vec4 lb = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 0.0));\n\n    vec4 lt = texture2D(shadowMap, centroidUV + texelSize * vec2(0.0, 1.0));\n\n    vec4 rb = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 0.0));\n\n    vec4 rt = texture2D(shadowMap, centroidUV + texelSize * vec2(1.0, 1.0));\n\n    vec4 a = mix(lb, lt, f.y);\n\n    vec4 b = mix(rb, rt, f.y);\n\n    vec4 z = mix(a, b, f.x);\n\n    return z;\n\n}\n\n\n\nfloat texture2Dfilter(sampler2D shadowMap, vec2 uv, float texelSize) {\n\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n\n    float base = info.r;\n\n    float kernelSize = info.g;\n\n    float sum = 0.0;\n\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n\n            vec2 subuv = uv + vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0) * texelSize * kernelSize;\n\n            float z = texture2Dbilinear(shadowMap, subuv, texelSize).r;\n\n            float expd = exp(z - base);\n\n            sum += expd;\n\n        }\n\n    }\n\n    sum /= float(FILTER_SIZE * FILTER_SIZE);\n\n    return base + log(sum);\n\n}\n\n\n\nfloat pcf(sampler2D shadowMap, vec2 uv, float depth, float bias, float texelSize) {\n\n    vec2 info = texture2Dbilinear(shadowMap, uv, texelSize).xy;\n\n    float kernelSize = 1.0;\n\n    float sum = 0.0;\n\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n\n            float z = texture2Dbilinear(shadowMap, uv + kernelSize * vec2(float(i) + 0.5 - float(FILTER_SIZE) / 2.0, float(j) + 0.5 - float(FILTER_SIZE) / 2.0).x * texelSize, texelSize).r;\n\n            sum += step(depth - bias, z) / float(FILTER_SIZE * FILTER_SIZE);\n\n        }\n\n    }\n\n    return sum;\n\n}\n\n\n\nfloat getSpotDirectionShadow(vec2 clipPos, sampler2D shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n\n{\n\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n\n        return 1.0;\n\n    } else {\n\n        vec2 uv = clipPos * 0.5 + 0.5;\n\n        float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n\n        if (shadowLevel == SHADOW_LEVEL_HARD) {\n\n            return step(linearDepth, texture2D(shadowMap, uv).r + bias);\n\n        } else {\n\n            float z = texture2DbilinearEXP(shadowMap, uv, texelSize).r;\n\n            float s = exp(z - linearDepth * softness);\n\n            return min(s, 1.0);\n\n        }\n\n    }\n\n}\n\n\n\nfloat getPointShadow(vec3 cubePos, samplerCube shadowMap, float linearDepth, float lambertian, float texelSize, int shadowLevel, float softness)\n\n{\n\n    float bias = clamp(0.2 * tan(acos(lambertian)), 0.0, 1.0);\n\n    if (shadowLevel == SHADOW_LEVEL_NONE) {\n\n        return 1.0;\n\n    } else {\n\n        // if (shadowLevel == SHADOW_LEVEL_HARD) {\n\n            return step(linearDepth, textureCube(shadowMap, cubePos).r + bias);\n\n        //else {\n\n            // TODO: perform cubemap interpolation for soft-level shadow map for point light\n\n        //}\n\n    }\n\n}\n\n\n\n#endif\n\n";
+        const calculators__types_glsl = "\nvec3 calculateDirLight(\n\n    DirectLight light,\n\n    Material material,\n\n    vec3 position,\n\n    vec3 normal,\n\n    vec3 eyePos\n\n    ) {\n\n    return calculateLight(\n\n        material,\n\n        normalize(eyePos - position),\n\n        normal,\n\n        -light.direction,\n\n        light.color,\n\n        light.idensity\n\n    );\n\n}\n\n\n\nvec3 calculatePointLight(\n\n    PointLight light,\n\n    Material material,\n\n    vec3 position,\n\n    vec3 normal,\n\n    vec3 eyePos\n\n    ) {\n\n    float lightDis = length(light.position - position);\n\n    lightDis /= light.radius;\n\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n\n    float atten_max = 1.0 / light.constantAtten;\n\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n\n    idensity *= step(lightDis, 1.0);\n\n    return calculateLight(\n\n        material,\n\n        normalize(eyePos - position),\n\n        normal,\n\n        normalize(light.position - position),\n\n        light.color,\n\n        idensity\n\n    );\n\n}\n\n\n\nvec3 calculateSpotLight(\n\n    SpotLight light,\n\n    Material material,\n\n    vec3 position,\n\n    vec3 normal,\n\n    vec3 eyePos\n\n    ) {\n\n    vec3 lightDir = normalize(light.position - position);\n\n    float spotFactor = dot(-lightDir, light.spotDir);\n\n    if (spotFactor < light.coneAngleCos) {\n\n        return vec3(0.0);\n\n    }\n\n    float lightDis = length(light.position - position);\n\n    lightDis /= light.radius;\n\n    float atten_min = 1.0 / (light.constantAtten + light.linearAtten + light.squareAtten);\n\n    float atten_max = 1.0 / light.constantAtten;\n\n    float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);\n\n    float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);\n\n    \n\n    idensity *= (spotFactor - light.coneAngleCos) / (1.0 - light.coneAngleCos);\n\n    // idensity *= step(light.radius, lightDis);\n\n    return calculateLight(\n\n        material,\n\n        normalize(eyePos - position),\n\n        normal,\n\n        lightDir,\n\n        light.color,\n\n        idensity\n\n    );\n\n}\n\n";
+        const calculators__unpackFloat1x32_glsl = "\nfloat unpackFloat1x32( vec4 rgba ) {\n\n  return dot( rgba, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 160581375.0) );\n\n}\n\n";
+        const debug__checkBox_glsl = "\nfloat checkerBoard(in vec2 uv, in float subSize) {\n\n    vec2 bigBox = mod(uv, vec2(subSize * 2.0));\n\n    return (\n\n        step(subSize, bigBox.x) * step(subSize, bigBox.y)\n\n        + step(subSize, subSize * 2.0 -bigBox.x) * step(subSize, subSize * 2.0 -bigBox.y)\n\n    );\n\n}\n\n";
+        const definitions__light_glsl = "\n#define SHADOW_LEVEL_NONE 0\n\n#define SHADOW_LEVEL_HARD 1\n\n#define SHADOW_LEVEL_SOFT 2\n\n#define SHADOW_LEVEL_PCSS 3\n\n\n\nstruct Light {\n\n  vec3 color;\n\n  float idensity;\n\n  vec3 direction;\n\n#ifdef RECEIVE_SHADOW\n\n  lowp int shadowLevel;\n\n  float softness;\n\n  float shadowMapSize;\n\n  mat4 projectionMatrix;\n\n  mat4 viewMatrix;\n\n#endif\n\n};\n\n\n\nstruct DirectLight {\n\n  vec3 color;\n\n  float idensity;\n\n  vec3 direction;\n\n#ifdef RECEIVE_SHADOW\n\n  lowp int shadowLevel;\n\n  float softness;\n\n  float shadowMapSize;\n\n  mat4 projectionMatrix;\n\n  mat4 viewMatrix;\n\n#endif\n\n};\n\n\n\nstruct PointLight {\n\n  vec3 color;\n\n  float idensity;\n\n  float radius;\n\n  vec3 position;\n\n  float squareAtten;\n\n  float linearAtten;\n\n  float constantAtten;\n\n#ifdef RECEIVE_SHADOW\n\n  lowp int shadowLevel;\n\n  float softness;\n\n  float shadowMapSize;\n\n  mat4 projectionMatrix;\n\n  mat4 viewMatrix;\n\n  float pcssArea;\n\n#endif\n\n};\n\n\n\nstruct SpotLight {\n\n  vec3 color;\n\n  float idensity;\n\n  float radius;\n\n  vec3 position;\n\n  float squareAtten;\n\n  float linearAtten;\n\n  float constantAtten;\n\n  float coneAngleCos;\n\n  vec3 spotDir;\n\n#ifdef RECEIVE_SHADOW\n\n  lowp int shadowLevel;\n\n  float softness;\n\n  float shadowMapSize;\n\n  mat4 projectionMatrix;\n\n  mat4 viewMatrix;\n\n  float pcssArea;\n\n#endif\n\n};\n\n";
+        const definitions__material_blinnphong_glsl = "\nstruct Material {\n\n    vec3 ambient;\n\n    vec3 diffuse;\n\n    vec3 specular;\n\n    float specularExponent;\n\n    float reflectivity;\n\n};";
+        const definitions__material_pbs_glsl = "\nstruct Material {\n\n    vec3 ambient;\n\n    vec3 albedo;\n\n    float metallic;\n\n    float roughness;\n\n};";
+        const interploters__deferred__geometry_frag = "\nuniform Material uMaterial;\n\n\n\nuniform vec3 eyePos;\n\nvarying vec3 vNormal;\n\n\n\n#ifdef _MAIN_TEXTURE\n\nuniform sampler2D uMainTexture;\n\nvarying vec2 vMainUV;\n\n#endif\n\n\n\n#ifdef _NORMAL_TEXTURE\n\nuniform sampler2D uNormalTexture;\n\nvarying vec2 vNormalUV;\n\n#endif\n\n\n\nvoid main () {\n\n    vec3 normal = normalize(vNormal);\n\n#ifdef _NORMAL_TEXTURE\n\n    gl_FragData[0] = vec4(normal, uMaterial.roughness);\n\n#else\n\n    gl_FragData[0] = vec4(normal, uMaterial.roughness);\n\n#endif\n\n#ifdef _MAIN_TEXTURE\n\n    gl_FragData[1] = vec4(uMaterial.albedo * texture2D(uMainTexture, vMainUV).xyz, uMaterial.metallic);\n\n#else\n\n    gl_FragData[1] = vec4(uMaterial.albedo, uMaterial.metallic);\n\n#endif\n\n    // save 32 bit depth to render target 3\n\n    gl_FragData[2] =  packFloat1x32(gl_FragCoord.z);\n\n}\n\n";
+        const interploters__deferred__geometry_vert = "\nattribute vec3 position;\n\nuniform mat4 modelViewProjectionMatrix;\n\n\n\n#ifdef _MAIN_TEXTURE\n\nattribute vec2 aMainUV;\n\nvarying vec2 vMainUV;\n\n#endif\n\n\n\nuniform mat4 normalViewMatrix;\n\nattribute vec3 aNormal;\n\nvarying vec3 vNormal;\n\n\n\nvoid main (){\n\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n\n    vNormal = (normalViewMatrix * vec4(aNormal, 1.0)).xyz;\n\n\n\n#ifdef _MAIN_TEXTURE\n\n    vMainUV = aMainUV;\n\n#endif\n\n}\n\n";
+        const interploters__deferred__tiledLight_vert = "\nattribute vec3 position;\n\nvarying vec3 vPosition;\n\n\n\nvoid main()\n\n{\n\n    gl_Position = vec4(position, 1.0);\n\n    vPosition = position;\n\n}\n\n";
+        const interploters__deferred__tiledLightPoint_frag = "\n#define MAX_TILE_LIGHT_NUM 32\n\n\n\nprecision highp float;\n\n\n\nuniform float uHorizontalTileNum;\n\nuniform float uVerticalTileNum;\n\nuniform float uLightListLengthSqrt;\n\n\n\nuniform mat4 inverseProjection;\n\n\n\nuniform sampler2D uLightIndex;\n\nuniform sampler2D uLightOffsetCount;\n\nuniform sampler2D uLightPositionRadius;\n\nuniform sampler2D uLightColorIdensity;\n\n\n\nuniform sampler2D normalRoughnessTex;\n\nuniform sampler2D albedoMetallicTex;\n\nuniform sampler2D depthTex;\n\n\n\nuniform float cameraNear;\n\nuniform float cameraFar;\n\n\n\n\n\nvarying vec3 vPosition;\n\n\n\nvec3 decodeNormal(vec2 n)\n\n{\n\n   vec3 normal;\n\n   normal.z = dot(n, n) * 2.0 - 1.0;\n\n   normal.xy = normalize(n) * sqrt(1.0 - normal.z * normal.z);\n\n   return normal;\n\n}\n\n\n\nvec3 decodePosition(float depth) {\n\n    vec4 clipSpace = vec4(vPosition.xy, depth * 2.0 - 1.0, 1.0);\n\n    vec4 homogenous = inverseProjection * clipSpace;\n\n    return homogenous.xyz / homogenous.w;\n\n}\n\n\n\nvoid main() {\n\n    vec2 uv = vPosition.xy * 0.5 + vec2(0.5);\n\n    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);\n\n    vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);\n\n    float lightStartIndex = lightIndexInfo.r;\n\n    float lightNum = lightIndexInfo.w;\n\n    vec4 tex1 = texture2D(normalRoughnessTex, uv);\n\n    vec4 tex2 = texture2D(albedoMetallicTex, uv);\n\n\n\n    vec3 normal = tex1.xyz;\n\n    Material material;\n\n    material.roughness = tex1.w;\n\n    material.albedo = tex2.xyz;\n\n    float depth = unpackFloat1x32(texture2D(depthTex, uv));\n\n    vec3 viewPosition = decodePosition(depth);\n\n    vec3 totalColor = vec3(0.0);\n\n    int realCount = 0;\n\n    for(int i = 0; i < MAX_TILE_LIGHT_NUM; i++) {\n\n        if (float(i) > lightNum - 0.5) {\n\n            break;\n\n        }\n\n        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;\n\n        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;\n\n        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;\n\n        // listX = 1.0;\n\n        // listY = 0.0;\n\n        float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;\n\n        vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));\n\n        vec3 lightPos = lightPosR.xyz;\n\n        float lightR = lightPosR.w;\n\n        vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));\n\n        vec3 lightColor = lightColorIden.xyz;\n\n        float lightIdensity = lightColorIden.w;\n\n        vec3 lightDir = normalize(lightPos - viewPosition);\n\n\n\n        float dist = distance(lightPos, viewPosition);\n\n        if (dist < lightR) {\n\n            realCount++;\n\n            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));\n\n            totalColor += calculateLight(\n\n                material,\n\n                normalize(-viewPosition),\n\n                normal,\n\n                lightDir,\n\n                lightColor,\n\n                lightIdensity\n\n            );\n\n            // totalColor += vec3(listX, listY, 0.0);\n\n        }\n\n    }\n\n    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));\n\n    // vec3 depth = vec3(tex1.z);\n\n    vec3 test = vec3(float(realCount) / 32.0);\n\n    gl_FragColor = vec4(totalColor, 1.0);\n\n}\n\n";
+        const interploters__forward__esm__depth_frag = "\nuniform float softness;\n\nvarying vec3 viewPos;\n\n\n\nvoid main () {\n\n    float d = length(viewPos);\n\n    gl_FragColor.r = d * softness;\n\n    gl_FragColor.g = exp(d) * d;\n\n}\n\n";
+        const interploters__forward__esm__depth_vert = "\nattribute vec3 position;\n\nuniform mat4 modelViewProjectionMatrix;\n\nuniform mat4 modelViewMatrix;\n\nvarying vec3 viewPos;\n\n\n\nvoid main () {\n\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n\n    viewPos = (modelViewMatrix * vec4(position, 1.0)).xyz;\n\n}\n\n";
+        const interploters__forward__esm__prefiltering_frag = "\nuniform sampler2D uOrigin;\n\nuniform vec2 uBlurDir;\n\nuniform float uBlurStep;\n\n\n\nuniform float lightArea;\n\n\n\nvarying vec2 uv;\n\n\n\nvoid main () {\n\n    float base = texture2D(uOrigin, uv).r;\n\n    float block = 0.0;\n\n\n\n    for (int i = 0; i < BLOCK_SIZE; ++i) {\n\n        for (int j = 0; j < BLOCK_SIZE; ++j) {\n\n            float d = texture2D(uOrigin, uv + vec2(float(i - BLOCK_SIZE / 2) + 0.5, float(j - BLOCK_SIZE / 2) + 0.5) * uBlurStep).r;\n\n            block += step(base, d) * d / float(BLOCK_SIZE * BLOCK_SIZE);\n\n        }\n\n    }\n\n    \n\n    float kenelSize = min(4.0, lightArea * (base - block) / base);\n\n    float stepSize = kenelSize / float(FILTER_SIZE);\n\n\n\n    float sum = 0.0;\n\n\n\n    for (int i = 0; i < FILTER_SIZE; ++i) {\n\n        for (int j = 0; j < FILTER_SIZE; ++j) {\n\n            float d = texture2D(uOrigin, \n\n            uv + stepSize * vec2(float(i - FILTER_SIZE / 2) + 0.5, float(j - FILTER_SIZE / 2) + 0.5) * uBlurStep).r;\n\n            sum += exp(d - base) / float(FILTER_SIZE * FILTER_SIZE);\n\n        }\n\n    }\n\n\n\n    float average = log(sum) + base;\n\n\n\n    gl_FragColor.r = average;\n\n    gl_FragColor.g = kenelSize;\n\n}\n\n";
+        const interploters__forward__esm__prefiltering_vert = "\nuniform mat4 normalMatrix;\n\nattribute vec3 position;\n\nattribute vec3 normal;\n\nvarying vec2 uv;\n\nvarying vec3 vNormal;\n\n\n\nvoid main () {\n\n    gl_Position = vec4(position, 1.0);\n\n    uv = gl_Position.xy * 0.5 + 0.5;\n\n    vNormal = normalize((normalMatrix * vec4(normal, 1.0)).xyz);\n\n}\n\n";
+        const interploters__forward__gouraud_frag = "\nattribute vec3 position;\n\nuniform mat4 modelViewProjectionMatrix;\n\n\n\nvoid main() {\n\n    textureColor = colorOrMainTexture(vMainUV);\n\n#ifdef OPEN_LIGHT\n\n    totalLighting = ambient;\n\n    vec3 normal = normalize(vNormal);\n\n    gl_FragColor = vec4(totalLighting, 1.0);\n\n#else\n\n#ifdef USE_COLOR\n\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n\n#endif\n\n#endif\n\n#ifdef _MAIN_TEXTURE\n\n    gl_FragColor = gl_FragColor * textureColor;\n\n#endif\n\n#ifdef USE_COLOR\n\n    gl_FragColor = gl_FragColor * color;\n\n#endif\n\n}\n\n";
+        const interploters__forward__gouraud_vert = "\nattribute vec3 position;\n\nuniform mat4 modelViewProjectionMatrix;\n\n\n\nattribute vec2 aMainUV;\n\nvarying vec2 vMainUV;\n\n\n\nvoid main (){\n\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n\n#ifdef OPEN_LIGHT\n\n    vec3 normal = (normalMatrix * vec4(aNormal, 0.0)).xyz;\n\n    totalLighting = ambient;\n\n    normal = normalize(normal);\n\n    for (int index = 0; index < LIGHT_NUM; index++) {\n\n        totalLighting += calculate_light(gl_Position, normal, lights[index].position, eyePos, lights[index].specular, lights[index].diffuse, 4, lights[index].idensity);\n\n    }\n\n    vLightColor = totalLighting;\n\n#endif\n\n#ifdef _MAIN_TEXTURE\n\n    vTextureCoord = aTextureCoord;\n\n#endif\n\n}\n\n";
+        const interploters__forward__phong_frag = "\nuniform Material uMaterial;\n\nuniform vec3 cameraPos;\n\n\n\nvarying vec2 vMainUV;\n\nvarying vec4 clipPos;\n\n\n\nvarying vec3 vNormal;\n\nvarying vec3 vPosition;\n\n\n\n#ifdef _MAIN_TEXTURE\n\nuniform sampler2D uMainTexture;\n\n#endif\n\n\n\n#ifdef _ENVIRONMENT_MAP\n\nuniform float reflectivity;\n\nuniform samplerCube uCubeTexture;\n\n#endif\n\n\n\n#if (directLightsNum > 0)\n\nuniform DirectLight directLights[directLightsNum];\n\nuniform sampler2D directLightShadowMap[directLightsNum];\n\n#endif\n\n\n\n#if (pointLightsNum > 0)\n\nuniform PointLight pointLights[pointLightsNum];\n\nuniform samplerCube pointLightShadowMap[pointLightsNum];\n\n#endif\n\n\n\n#if (spotLightsNum > 0)\n\nuniform SpotLight spotLights[spotLightsNum];\n\nuniform sampler2D spotLightShadowMap[spotLightsNum];\n\n#endif\n\n\n\n#ifdef RECEIVE_SHADOW\n\n\n\n    #if (directLightsNum > 0)\n\n    varying vec4 directShadowCoord[directLightsNum];\n\n    varying float directLightDepth[directLightsNum];\n\n    #endif\n\n\n\n    #if (spotLightsNum > 0)\n\n    varying vec4 spotShadowCoord[spotLightsNum];\n\n    varying float spotLightDepth[spotLightsNum];\n\n    #endif\n\n\n\n#endif\n\n\n\nvoid main () {\n\n\n\n#ifdef _MAIN_TEXTURE\n\n    gl_FragColor = texture2D(uMainTexture, vMainUV);\n\n#else\n\n    #ifdef _DEBUG\n\n    gl_FragColor = vec4(vec3(checkerBoard(vMainUV, 0.1)), 1.0);\n\n    #else\n\n    gl_FragColor = vec4(1.0);\n\n    #endif\n\n#endif\n\n    vec3 color = vec3(0.0);\n\n    vec3 normal = normalize(vNormal);\n\n    vec3 totalLighting = uMaterial.ambient;\n\n    #ifdef _ENVIRONMENT_MAP\n\n    vec3 viewDir = normalize(vPosition - cameraPos);\n\n    vec3 skyUV = normalize(reflect(viewDir, vNormal));\n\n    vec3 imageLightColor = textureCube(uCubeTexture, skyUV).xyz;\n\n    color += calculateImageBasedLight(uMaterial, skyUV, normal, viewDir, imageLightColor, vec3(0.5));\n\n    #endif\n\n#if (directLightsNum > 0)\n\n    for (int index = 0; index < directLightsNum; index++) {\n\n        vec3 lighting = calculateDirLight(\n\n            directLights[index],\n\n            uMaterial,\n\n            vPosition,\n\n            normal,\n\n            cameraPos\n\n        );\n\n    #ifdef RECEIVE_SHADOW\n\n        float lambertian = dot(-directLights[index].direction, normal);\n\n        float shadowFactor = getSpotDirectionShadow(\n\n            directShadowCoord[index].xy / directShadowCoord[index].w, \n\n            directLightShadowMap[index], \n\n            directLightDepth[index], \n\n            lambertian, \n\n            1.0 / directLights[index].shadowMapSize,\n\n            directLights[index].shadowLevel,\n\n            directLights[index].softness\n\n        );\n\n        lighting *= shadowFactor;\n\n    #endif\n\n        totalLighting += lighting;\n\n    }\n\n#endif\n\n#if (pointLightsNum > 0)\n\n    for (int index = 0; index < pointLightsNum; index++) {\n\n        vec3 lighting = calculatePointLight(\n\n            pointLights[index],\n\n            uMaterial,\n\n            vPosition,\n\n            normal,\n\n            cameraPos\n\n        );\n\n        #ifdef RECEIVE_SHADOW\n\n        vec3 offset = vPosition - pointLights[index].position;\n\n        vec3 cubePos = normalize(offset);\n\n        float linearDepth = length(offset);\n\n        float lambertian = max(dot(-cubePos, normal), 0.0);\n\n        float shadowFactor = getPointShadow(\n\n            cubePos,\n\n            pointLightShadowMap[index],\n\n            linearDepth,\n\n            lambertian,\n\n            1.0 / pointLights[index].shadowMapSize,\n\n            pointLights[index].shadowLevel,\n\n            pointLights[index].softness\n\n        );\n\n        lighting *= shadowFactor;\n\n        #endif\n\n        totalLighting += lighting;\n\n    }\n\n#endif\n\n#if (spotLightsNum > 0)\n\n    for (int index = 0; index < spotLightsNum; index++) {\n\n        vec3 lighting = calculateSpotLight(\n\n            spotLights[index],\n\n            uMaterial,\n\n            vPosition,\n\n            normal,\n\n            cameraPos\n\n        );\n\n    #ifdef RECEIVE_SHADOW\n\n        float lambertian = dot(-spotLights[index].spotDir, normal);\n\n        float shadowFactor = getSpotDirectionShadow(\n\n            spotShadowCoord[index].xy / spotShadowCoord[index].w, \n\n            spotLightShadowMap[index],\n\n            spotLightDepth[index], \n\n            lambertian, \n\n            1.0 / spotLights[index].shadowMapSize,\n\n            spotLights[index].shadowLevel,\n\n            spotLights[index].softness\n\n        );\n\n        lighting *= shadowFactor;\n\n    #endif\n\n        totalLighting += lighting;\n\n\n\n    }\n\n#endif\n\n    color += totalLighting;\n\n    gl_FragColor *= vec4(color, 1.0);\n\n}\n\n";
+        const interploters__forward__phong_vert = "\nattribute vec3 position;\n\nuniform mat4 modelViewProjectionMatrix;\n\nuniform mat4 modelMatrix;\n\n\n\nattribute vec2 aMainUV;\n\nvarying vec2 vMainUV;\n\n\n\nuniform mat4 normalMatrix;\n\nattribute vec3 aNormal;\n\nvarying vec3 vNormal;\n\nvarying vec3 vPosition;\n\nvarying vec4 clipPos;\n\n\n\n\n\n#if (directLightsNum > 0)\n\nuniform DirectLight directLights[directLightsNum];\n\n    #ifdef RECEIVE_SHADOW\n\n    varying vec4 directShadowCoord[directLightsNum];\n\n    varying float directLightDepth[directLightsNum];\n\n    #endif\n\n#endif\n\n\n\n#if (spotLightsNum > 0)\n\nuniform SpotLight spotLights[spotLightsNum];\n\n    #ifdef RECEIVE_SHADOW\n\n    varying vec4 spotShadowCoord[spotLightsNum];\n\n    varying float spotLightDepth[spotLightsNum];\n\n    #endif\n\n#endif\n\n\n\n\n\nvoid main (){\n\n    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n\n    clipPos = gl_Position;\n\n    vec4 worldPos = (modelMatrix * vec4(position, 1.0));\n\n    vPosition = worldPos.xyz;\n\n    vNormal = (normalMatrix * vec4(aNormal, 1.0)).xyz;\n\n    vMainUV = aMainUV;\n\n\n\n    #ifdef RECEIVE_SHADOW\n\n        #if (directLightsNum > 0)\n\n        for (int i = 0; i < directLightsNum; ++i) {\n\n            directShadowCoord[i] = directLights[i].projectionMatrix * directLights[i].viewMatrix * worldPos;\n\n            directLightDepth[i] = length((directLights[i].viewMatrix * worldPos).xyz);\n\n        }\n\n        #endif\n\n\n\n        #if (spotLightsNum > 0)\n\n        for (int i = 0; i < spotLightsNum; ++i) {\n\n            spotShadowCoord[i] = spotLights[i].projectionMatrix * spotLights[i].viewMatrix * worldPos;\n\n            spotLightDepth[i] = length((spotLights[i].viewMatrix * worldPos).xyz);\n\n        }\n\n        #endif\n\n    #endif\n\n}\n\n";
+        const interploters__forward__skybox_frag = "\nvarying vec3 cubeUV;\n\nuniform samplerCube uCubeTexture;\n\nvoid main()\n\n{\n\n    gl_FragColor = textureCube(uCubeTexture, cubeUV);\n\n}\n\n";
+        const interploters__forward__skybox_vert = "\nattribute vec3 position;\n\nuniform mat4 viewProjectionMatrix;\n\nvarying vec3 cubeUV;\n\n\n\nvoid main (){\n\n    vec4 mvp = viewProjectionMatrix * vec4(position, 1.0);\n\n    cubeUV = position;\n\n    gl_Position = mvp.xyww;\n\n}\n\n";
+        const light_model__blinn_phong_glsl = "\nvec3 calculateLight(\n\n    Material material,\n\n    vec3 viewDir,\n\n    vec3 normal,\n\n    vec3 lightDir,\n\n    vec3 lightColor,\n\n    float idensity\n\n    ) {\n\n    float lambortian = max(dot(lightDir, normal), 0.0);\n\n\n\n    // replace R * V with N * H\n\n    vec3 H = (lightDir + viewDir) / length(lightDir + viewDir);\n\n    float specularAngle = max(dot(H, normal), 0.0);\n\n\n\n    vec3 specularColor = material.specular * pow(specularAngle, material.specularExponent);\n\n    vec3 diffuseColor = material.diffuse * lambortian;\n\n    vec3 color = (diffuseColor + specularColor) * idensity * lightColor;\n\n    return color;\n\n}\n\n\n\nvec3 calculateImageBasedLight(\n\n    Material material,\n\n    vec3 lightDir,\n\n    vec3 normal,\n\n    vec3 viewDir,\n\n    vec3 specularColor,\n\n    vec3 diffuseColor\n\n) {\n\n    \n\n    vec3 color = mix(specularColor, diffuseColor, material.reflectivity);\n\n    return color;\n\n}\n\n";
+        const light_model__pbs_ggx_glsl = "\nfloat tangent_2(float cos_2) {\n\n    return (1. - cos_2) / cos_2;\n\n}\n\n\n\nfloat Smith_G1(float NdotV, float roughness) {\n\n    float tan_2 = tangent_2(NdotV * NdotV);\n\n    float root = roughness * roughness * tan_2;\n\n    return 2.0 / (1. + sqrt(1. + root));\n\n}\n\n\n\nfloat GGX_D(float HdotN, float roughness) {\n\n    float cos_2 = HdotN * HdotN;\n\n    float tan_2 = tangent_2(cos_2);\n\n\n\n    float root = roughness / (cos_2 * (roughness * roughness + tan_2));\n\n    return root * root / acos(-1.);\n\n}\n\n\n\nvec3 calculateLight(\n\n    Material material,\n\n    vec3 viewDir,\n\n    vec3 normal,\n\n    vec3 lightDir,\n\n    vec3 lightColor,\n\n    float idensity\n\n    ) {\n\n\n\n    vec3 halfVec = normalize(lightDir + viewDir);\n\n\n\n    float LdotN = dot(lightDir, normal);\n\n    float VdotN = dot(viewDir, normal);\n\n    float HdotN = dot(halfVec, normal);\n\n    float LdotH = dot(lightDir, halfVec);\n\n    float VdotH = dot(viewDir, halfVec);\n\n\n\n    if (VdotN < 0. || LdotN < 0.) {\n\n        return vec3(0.);\n\n    }\n\n\n\n    float OneMinusLdotH = 1. - LdotH;\n\n    float OneMinusLdotHSqr = OneMinusLdotH * OneMinusLdotH;\n\n\n\n    vec3 albedo = material.albedo * lightColor;\n\n\n\n    vec3 fresnel = albedo + (1. - albedo) * OneMinusLdotHSqr * OneMinusLdotHSqr * OneMinusLdotH;\n\n\n\n    float d = GGX_D(HdotN, material.roughness);\n\n    float g = Smith_G1(VdotN, material.roughness) * Smith_G1(LdotN, material.roughness);\n\n    vec3 specbrdf = fresnel * (g * d / (4. * VdotN * LdotN));\n\n\n\n    float OneMinusLdotN = 1. - LdotN;\n\n    float OneMinusLdotNSqr = OneMinusLdotN * OneMinusLdotN;\n\n\n\n    float OneMinusVdotN = 1. - VdotN;\n\n    float OneMinusVdotNSqr = OneMinusVdotN * OneMinusVdotN;\n\n\n\n    float fd90 = 0.5 + 2.0 * material.roughness * (LdotH * LdotH);\n\n    vec3 diffbrdf = albedo * (1.0 + (fd90 - 1.0) * OneMinusLdotN * OneMinusLdotNSqr * OneMinusLdotNSqr) *\n\n                (1.0 + (fd90 - 1.0) * OneMinusVdotN * OneMinusVdotNSqr * OneMinusVdotNSqr);\n\n\n\n\n\n    vec3 color = (material.metallic * 0.96 + 0.04) * specbrdf + ((1. - material.metallic) * 0.96) * diffbrdf;\n\n    return color * LdotN * idensity;\n\n}\n\n\n\nvec3 calculateImageBasedLight(\n\n    Material material,\n\n    vec3 lightDir,\n\n    vec3 normal,\n\n    vec3 viewDir,\n\n    vec3 specularColor,\n\n    vec3 diffuseColor\n\n) {\n\n    // specularColor = mix(material.albedo, specularColor, material.metallic * 0.5 + 0.5);\n\n    vec3 color = mix(specularColor, diffuseColor, material.roughness);\n\n    return color * material.albedo;\n\n}\n\n";
     }
     export type ShaderLib = typeof ShaderSource.calculators__blur__gaussian_glsl | typeof ShaderSource.calculators__blur__gaussian_log_glsl | typeof ShaderSource.calculators__linearlize_depth_glsl | typeof ShaderSource.calculators__packFloat1x32_glsl | typeof ShaderSource.calculators__phong_glsl | typeof ShaderSource.calculators__shadow_factor_glsl | typeof ShaderSource.calculators__types_glsl | typeof ShaderSource.calculators__unpackFloat1x32_glsl | typeof ShaderSource.debug__checkBox_glsl | typeof ShaderSource.definitions__light_glsl | typeof ShaderSource.definitions__material_blinnphong_glsl | typeof ShaderSource.definitions__material_pbs_glsl | typeof ShaderSource.light_model__blinn_phong_glsl | typeof ShaderSource.light_model__pbs_ggx_glsl;
     export type ShadingVert = typeof ShaderSource.interploters__deferred__geometry_vert | typeof ShaderSource.interploters__deferred__tiledLight_vert | typeof ShaderSource.interploters__forward__esm__depth_vert | typeof ShaderSource.interploters__forward__esm__prefiltering_vert | typeof ShaderSource.interploters__forward__gouraud_vert | typeof ShaderSource.interploters__forward__phong_vert | typeof ShaderSource.interploters__forward__skybox_vert;
@@ -543,23 +543,20 @@ declare module "textures/Texture2D" {
         apply(gl: WebGLRenderingContext): this;
     }
 }
-declare module "materials/BlinnPhongMaterial" {
+declare module "materials/surface/ISurfaceMaterial" {
     import { vec3 } from "gl-matrix";
     import { Program } from "shader/Program";
     import { CubeTexture } from "textures/CubeTexture";
     import { Texture } from "textures/Texture";
-    import { Material } from "materials/Material";
-    export class BlinnPhongMaterial extends Material {
+    import { Texture2D } from "textures/Texture2D";
+    import { IMaterial } from "materials/Material";
+    export class ISurfaceMaterial extends IMaterial {
         protected _geometryShader: Program;
         protected _debug: boolean;
-        protected _castShadow: boolean;
+        protected _blockShadow: boolean;
         protected _receiveShadow: boolean;
-        protected _mainTexture: Texture;
         protected _ambient: vec3;
-        protected _diffuse: vec3;
-        protected _specular: vec3;
-        protected _specularExponent: number;
-        protected _specularMap: Texture;
+        protected _mainTexture: Texture2D;
         protected _transparency: number;
         protected _alphaMap: Texture;
         protected _bumpMap: Texture;
@@ -569,28 +566,21 @@ declare module "materials/BlinnPhongMaterial" {
         protected _environmentMap: CubeTexture;
         readonly geometryShader: Program;
         readonly debugMode: boolean;
-        readonly castShadow: boolean;
+        readonly blockShadow: boolean;
         readonly receiveShadow: boolean;
-        readonly mainTexture: Texture;
+        readonly mainTexture: Texture2D;
         readonly ambient: vec3;
-        readonly diffuse: vec3;
-        readonly specular: vec3;
-        readonly specularExponent: number;
         readonly transparency: number;
-        alphaMap(): Texture;
+        readonly alphaMap: Texture;
         readonly bumpMap: Texture;
         readonly displamentMap: Texture;
         readonly stencilMap: any;
-        readonly reflectivity: number;
         readonly environmentMap: CubeTexture;
         setDebugMode(_debug: boolean): this;
         setCastShadow(_castShadow: boolean): this;
         setRecieveShadow(_receiveShadow: boolean): this;
         setMainTexture(_texture: Texture): this;
         setAmbient(_ambient: vec3): this;
-        setDiffuse(_diffuse: vec3): this;
-        setSpecular(_specular: vec3): this;
-        setSpecularExponent(_specularExponent: number): this;
         setTransparency(_transparency: number): this;
         setAlphaMap(_alphaMap: any): this;
         setBumpMap(_bumpMap: Texture): this;
@@ -601,63 +591,44 @@ declare module "materials/BlinnPhongMaterial" {
         protected initShader(gl: WebGLRenderingContext): Program;
     }
 }
-declare module "materials/StandardMaterial" {
+declare module "materials/surface/BlinnPhongMaterial" {
     import { vec3 } from "gl-matrix";
     import { Program } from "shader/Program";
-    import { CubeTexture } from "textures/CubeTexture";
     import { Texture } from "textures/Texture";
+    import { ISurfaceMaterial } from "materials/surface/ISurfaceMaterial";
+    export class BlinnPhongMaterial extends ISurfaceMaterial {
+        protected _diffuse: vec3;
+        protected _specular: vec3;
+        protected _specularExponent: number;
+        protected _specularMap: Texture;
+        readonly diffuse: vec3;
+        readonly specular: vec3;
+        readonly specularExponent: number;
+        setDiffuse(_diffuse: vec3): this;
+        setSpecular(_specular: vec3): this;
+        setSpecularExponent(_specularExponent: number): this;
+        protected initShader(gl: WebGLRenderingContext): Program;
+    }
+}
+declare module "materials/surface/StandardMaterial" {
+    import { vec3 } from "gl-matrix";
+    import { Program } from "shader/Program";
     import { Texture2D } from "textures/Texture2D";
-    import { BlinnPhongMaterial } from "materials/BlinnPhongMaterial";
-    import { Material } from "materials/Material";
-    export class StandardMaterial extends Material {
+    import { BlinnPhongMaterial } from "materials/surface/BlinnPhongMaterial";
+    import { ISurfaceMaterial } from "materials/surface/ISurfaceMaterial";
+    export class StandardMaterial extends ISurfaceMaterial {
         static fromLaggard(gl: WebGLRenderingContext, blinnPhong: BlinnPhongMaterial): StandardMaterial;
-        protected _geometryShader: Program;
-        protected _debug: boolean;
-        protected _castShadow: boolean;
-        protected _receiveShadow: boolean;
-        protected _ambient: vec3;
         protected _albedo: vec3;
-        protected _mainTexture: Texture2D;
         protected _metallic: number;
         protected _metallicTexture: Texture2D;
         protected _roughness: number;
-        protected _transparency: number;
-        protected _alphaMap: Texture;
-        protected _bumpMap: Texture;
-        protected _displamentMap: Texture;
-        protected _stencilMap: Texture;
-        protected _reflectivity: number;
-        protected _environmentMap: CubeTexture;
-        readonly geometryShader: Program;
-        readonly debugMode: boolean;
-        readonly castShadow: boolean;
-        readonly receiveShadow: boolean;
-        readonly mainTexture: Texture2D;
-        readonly ambient: vec3;
         readonly albedo: vec3;
         readonly metallic: number;
         readonly roughness: number;
-        transparency(): number;
-        alphaMap(): Texture;
-        readonly bumpMap: Texture;
-        readonly displamentMap: Texture;
         readonly stencilMap: any;
-        readonly environmentMap: CubeTexture;
-        setDebugMode(_debug: boolean): this;
-        setCastShadow(_castShadow: boolean): this;
-        setRecieveShadow(_receiveShadow: boolean): this;
-        setMainTexture(_texture: Texture): this;
-        setAmbient(_ambient: vec3): this;
         setAlbedo(_albedo: vec3): this;
         setMetallic(_metallic: number): this;
         setRoughness(_roughness: number): this;
-        setTransparency(_transparency: number): this;
-        setAlphaMap(_alphaMap: any): this;
-        setBumpMap(_bumpMap: Texture): this;
-        setDisplamentMap(_displamentMap: Texture): this;
-        setStencilMap(_stencilMap: Texture): this;
-        setReflectivity(_reflectivity: number): this;
-        setEnvironmentMap(_environmentMap: CubeTexture): this;
         protected initShader(gl: WebGLRenderingContext): Program;
     }
 }
@@ -674,15 +645,15 @@ declare module "textures/DataTexture" {
 }
 declare module "renderer/IProcessor" {
     import { Camera } from "cameras/Camera";
-    import { Material } from "materials/Material";
+    import { IMaterial } from "materials/Material";
     import { Scene } from "Scene";
     export interface IProcessor {
-        process(scene: Scene, camera: Camera, matriels: Material[]): any;
+        process(scene: Scene, camera: Camera, matriels: IMaterial[]): any;
     }
 }
 declare module "renderer/deferred/DeferredProcessor" {
     import { Camera } from "cameras/Camera";
-    import { Material } from "materials/Material";
+    import { IMaterial } from "materials/Material";
     import { Mesh } from "Mesh";
     import { Scene } from "Scene";
     import { Program } from "shader/Program";
@@ -708,7 +679,7 @@ declare module "renderer/deferred/DeferredProcessor" {
         private tileLightIndex;
         private linearLightIndex;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
-        process(scene: Scene, camera: Camera, materials: Material[]): void;
+        process(scene: Scene, camera: Camera, materials: IMaterial[]): void;
         private initGeometryProcess;
         private tileLightPass;
         private initTiledPass;
@@ -717,7 +688,7 @@ declare module "renderer/deferred/DeferredProcessor" {
 }
 declare module "renderer/forward/ForwardProcessor" {
     import { Camera } from "cameras/Camera";
-    import { Material } from "materials/Material";
+    import { IMaterial } from "materials/Material";
     import { Scene } from "Scene";
     import { WebGLExtension } from "renderer/IExtension";
     import { IProcessor } from "renderer/IProcessor";
@@ -725,14 +696,14 @@ declare module "renderer/forward/ForwardProcessor" {
         readonly gl: WebGLRenderingContext;
         readonly ext: WebGLExtension;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
-        process(scene: Scene, camera: Camera, materials: Material[]): void;
+        process(scene: Scene, camera: Camera, materials: IMaterial[]): void;
         private renderObject;
     }
 }
 declare module "materials/ESM/DepthPackMaterial" {
     import { Program } from "shader/Program";
-    import { Material } from "materials/Material";
-    export class LinearDepthPackMaterial extends Material {
+    import { IMaterial } from "materials/Material";
+    export class LinearDepthPackMaterial extends IMaterial {
         protected initShader(gl: WebGLRenderingContext): Program;
     }
 }
@@ -740,8 +711,8 @@ declare module "materials/ESM/LogBlurMaterial" {
     import { vec2 } from "gl-matrix";
     import { Program } from "shader/Program";
     import { Texture } from "textures/Texture";
-    import { Material } from "materials/Material";
-    export class PCSSFilteringMaterial extends Material {
+    import { IMaterial } from "materials/Material";
+    export class PCSSFilteringMaterial extends IMaterial {
         origin: Texture;
         blurDirection: vec2;
         blurStep: number;
@@ -750,7 +721,7 @@ declare module "materials/ESM/LogBlurMaterial" {
 }
 declare module "renderer/ShadowPreProcessor" {
     import { Camera } from "cameras/Camera";
-    import { Material } from "materials/Material";
+    import { IMaterial } from "materials/Material";
     import { Scene } from "Scene";
     import { WebGLExtension } from "renderer/IExtension";
     import { IProcessor } from "renderer/IProcessor";
@@ -761,7 +732,7 @@ declare module "renderer/ShadowPreProcessor" {
         private blurMaterial;
         private rectMesh;
         constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene);
-        process(scene: Scene, camera: Camera, matriels: Material[]): void;
+        process(scene: Scene, camera: Camera, matriels: IMaterial[]): void;
         private renderDepth;
         private prefilterDepth;
     }
@@ -857,7 +828,7 @@ declare module "Scene" {
         readonly directLightShadowMap: Texture[];
         readonly spotLightShadowMap: Texture[];
         readonly pointLightShadowMap: Texture[];
-        clean(): void;
+        resetLightShadows(): void;
         update(dt: number): void;
         addOnUpdateListener(listener: (deltaTime: number) => void): this;
         removeOnUpdateListener(listener: (deltaTime: number) => void): this;
@@ -967,9 +938,9 @@ declare module "shader/Program" {
     import { Camera } from "cameras/Camera";
     import { DataType } from "DataTypeEnum";
     import { IDirtyable } from "Dirtyable";
-    import { Material } from "materials/Material";
-    import { Mesh } from "Mesh";
     import { Light } from "lights/Light";
+    import { IMaterial } from "materials/Material";
+    import { Mesh } from "Mesh";
     import { Scene } from "Scene";
     import { Texture } from "textures/Texture";
     import { Attribute } from "shader/Attibute";
@@ -1023,7 +994,7 @@ declare module "shader/Program" {
     export interface IBuildinRenderParamMaps {
         mesh: Mesh;
         camera?: Camera;
-        material?: Material;
+        material?: IMaterial;
         scene?: Scene;
         light?: Light;
     }
@@ -1069,7 +1040,7 @@ declare module "shader/Program" {
             width: number;
             height: number;
         }): void;
-        clean(): void;
+        resetLightShadows(): void;
         make(): this;
         pass(buildinContainers: IBuildinRenderParamMaps): this;
         private passOneParamsHolder;
@@ -1150,8 +1121,8 @@ declare module "geometries/TileGeometry" {
 declare module "materials/SkyMaterial" {
     import { Program } from "shader/Program";
     import { CubeTexture } from "textures/CubeTexture";
-    import { Material } from "materials/Material";
-    export class SkyMaterial extends Material {
+    import { IMaterial } from "materials/Material";
+    export class SkyMaterial extends IMaterial {
         cubeTexture: CubeTexture;
         constructor(gl: WebGLRenderingContext, cubeTexture: CubeTexture);
         protected initShader(gl: WebGLRenderingContext): Program;
@@ -1211,10 +1182,10 @@ declare module "extensions/Water" {
     }
 }
 declare module "CanvasToy" {
-    export { ifdefine, texture, textureArray, uniform, uniformArray } from "Decorators";
+    export { ifdefine, texture, textureArray, uniform, uniformArray, } from "Decorators";
     export { IAsyncResource } from "IAsyncResource";
     export { Renderer } from "renderer/Renderer";
-    export { FrameBuffer, Attachment, AttachmentType } from "renderer/FrameBuffer";
+    export { FrameBuffer, Attachment, AttachmentType, } from "renderer/FrameBuffer";
     export { Object3d } from "Object3d";
     export { Scene } from "Scene";
     export { DataType } from "DataTypeEnum";
@@ -1231,9 +1202,9 @@ declare module "CanvasToy" {
     export { Texture2D } from "textures/Texture2D";
     export { CubeTexture } from "textures/CubeTexture";
     export { DataTexture } from "textures/DataTexture";
-    export { Material } from "materials/Material";
-    export { StandardMaterial } from "materials/StandardMaterial";
-    export { BlinnPhongMaterial } from "materials/BlinnPhongMaterial";
+    export { IMaterial } from "materials/Material";
+    export { StandardMaterial } from "materials/surface/StandardMaterial";
+    export { BlinnPhongMaterial } from "materials/surface/BlinnPhongMaterial";
     export { SkyMaterial } from "materials/SkyMaterial";
     export { LinearDepthPackMaterial } from "materials/ESM/DepthPackMaterial";
     export { Light } from "lights/Light";

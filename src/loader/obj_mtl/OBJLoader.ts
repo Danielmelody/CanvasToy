@@ -1,6 +1,6 @@
 
 import { Geometry } from "../../geometries/Geometry";
-import { StandardMaterial } from "../../materials/StandardMaterial";
+import { StandardMaterial } from "../../materials/surface/StandardMaterial";
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 
@@ -29,8 +29,8 @@ export class OBJLoader {
                     promises.push(MTLLoader.load(gl, mtlurl));
                 }
             }
-            return Promise.all(promises).then((materialLibs) => {
-                for (const materials of materialLibs) {
+            return Promise.all(promises).then((mtls) => {
+                for (const materials of mtls) {
                     mixin(materialsMixin, materials);
                 }
                 const positionlines: string[] = content.match(OBJLoader.vertexPattern);
@@ -110,7 +110,7 @@ export class OBJLoader {
                             geometry.addVertex({
                                 position: unIndexedPositions[positionIndex],
                                 aMainUV: [unIndexedUVs[parseInt(match[2], 0) - 1][0],
-                                unIndexedUVs[parseInt(match[2], 0) - 1][1]],
+                                          unIndexedUVs[parseInt(match[2], 0) - 1][1]],
                                 aNormal: unIndexedNormals[parseInt(match[3], 0) - 1],
                             });
                         });

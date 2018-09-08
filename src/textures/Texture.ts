@@ -1,7 +1,6 @@
 import { IAsyncResource } from "../IAsyncResource";
 
 export class Texture implements IAsyncResource {
-
     protected _glTexture: WebGLTexture;
 
     protected _asyncFinished: Promise<Texture>;
@@ -15,18 +14,17 @@ export class Texture implements IAsyncResource {
     private _minFilter: number;
     private _type: number;
 
-    constructor(
-        gl: WebGLRenderingContext,
-        url?: string,
-    ) {
+    constructor(gl: WebGLRenderingContext, url?: string) {
         if (!!url) {
             this._image = new Image();
             const image = this._image;
-            this.setAsyncFinished(new Promise((resolve, reject) => {
-                image.onload = () => resolve(this);
-                image.onerror = () => reject(this);
-                this._image.src = url;
-            }));
+            this.setAsyncFinished(
+                new Promise((resolve, reject) => {
+                    image.onload = () => resolve(this);
+                    image.onerror = () => reject(this);
+                    this._image.src = url;
+                }),
+            );
         }
         this.setTarget(gl.TEXTURE_2D)
             .setFormat(gl.RGB)
@@ -128,7 +126,11 @@ export class Texture implements IAsyncResource {
         return this;
     }
 
-    public applyForRendering(gl: WebGLRenderingContext, width: number, height: number) {
+    public applyForRendering(
+        gl: WebGLRenderingContext,
+        width: number,
+        height: number,
+    ) {
         gl.bindTexture(this.target, this.glTexture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.texParameteri(this.target, gl.TEXTURE_WRAP_S, this.wrapS);
@@ -148,5 +150,4 @@ export class Texture implements IAsyncResource {
         );
         return this;
     }
-
 }

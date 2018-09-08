@@ -5,8 +5,8 @@ import { RectGeometry } from "../../geometries/RectGeometry";
 import { BoundingBox2D } from "../../Intersections/BoundingBox";
 import { Light } from "../../lights/Light";
 import { PointLight } from "../../lights/PointLight";
-import { Material } from "../../materials/Material";
-import { StandardMaterial } from "../../materials/StandardMaterial";
+import { IMaterial } from "../../materials/Material";
+import { StandardMaterial } from "../../materials/surface/StandardMaterial";
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 import { Scene } from "../../Scene";
@@ -64,9 +64,12 @@ export class DeferredProcessor implements IProcessor {
         scene.programSetUp = true;
     }
 
-    public process(scene: Scene, camera: Camera, materials: Material[]) {
+    public process(scene: Scene, camera: Camera, materials: IMaterial[]) {
         Graphics.logIfFrameBufferInvalid(this.gl, this.gBuffer.glFramebuffer);
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.gBuffer.glFramebuffer);
+        this.gl.bindFramebuffer(
+            this.gl.FRAMEBUFFER,
+            this.gBuffer.glFramebuffer,
+        );
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.CULL_FACE);
         this.gl.cullFace(this.gl.BACK);
@@ -81,7 +84,12 @@ export class DeferredProcessor implements IProcessor {
                 );
                 if (standardMaterials.length > 0) {
                     const material = standardMaterials[0] as StandardMaterial;
-                    material.geometryShader.pass({ mesh, material, scene, camera });
+                    material.geometryShader.pass({
+                        mesh,
+                        material,
+                        scene,
+                        camera,
+                    });
                 }
             }
         }
@@ -91,7 +99,12 @@ export class DeferredProcessor implements IProcessor {
         this.gl.enable(this.gl.BLEND);
         this.gl.depthFunc(this.gl.EQUAL);
         this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
-        this.tileLightPass(scene, camera, scene.pointLights, this.pointLightShader);
+        this.tileLightPass(
+            scene,
+            camera,
+            scene.pointLights,
+            this.pointLightShader,
+        );
     }
 
     private initGeometryProcess(scene: Scene) {
@@ -102,17 +115,17 @@ export class DeferredProcessor implements IProcessor {
             .setFormat(this.gl.DEPTH_COMPONENT)
             .apply(this.gl);
         this.gBuffer.extras.push(
-            // first for normal, materialRoughness
+            // 	first	for	normal,	materialRoughness
             new Attachment(
                 this.gBuffer,
                 (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT0_WEBGL,
             ).asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
-            // second for materialAlbedo and materialMetallic
+            // 	second	for	materialAlbedo	and	materialMetallic
             new Attachment(
                 this.gBuffer,
                 (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT1_WEBGL,
             ).asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
-            // third for 32-bit depth
+            // 	third	for	32-bit	depth
             new Attachment(
                 this.gBuffer,
                 (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT2_WEBGL,
@@ -128,7 +141,7 @@ export class DeferredProcessor implements IProcessor {
         lights: Light[],
         lightShader: Program,
     ) {
-        // TODO: add spot light and dirctional light support
+        // 	TODO:	add	spot	light	and	dirctional	light	support
         const lightInfo = [[], []];
         for (const light of lights) {
             lightInfo[0].push(...light.getDeferredInfo(0, camera));
@@ -152,7 +165,7 @@ export class DeferredProcessor implements IProcessor {
             this.tileLightIndex[i] = [];
         }
 
-        // TODO: add spot light and dirctional light support
+        // 	TODO:	add	spot	light	and	dirctional	light	support
         this.linearLightIndex = [];
         for (let i = 0; i < scene.pointLights.length; ++i) {
             const light = scene.pointLights[i];
@@ -198,8 +211,8 @@ export class DeferredProcessor implements IProcessor {
         this.tileLightIndexMap = new DataTexture(this.gl, new Float32Array([]))
             .setFormat(this.gl.LUMINANCE)
             .setType(this.gl.FLOAT);
-        // .setMinFilter(this.gl.LINEAR)
-        // .setMagFilter(this.gl.LINEAR);
+        // 	.setMinFilter(this.gl.LINEAR)
+        // 	.setMagFilter(this.gl.LINEAR);
         this.tileLightOffsetCountMap = new DataTexture(
             this.gl,
             new Float32Array([]),
@@ -208,8 +221,8 @@ export class DeferredProcessor implements IProcessor {
         )
             .setFormat(this.gl.LUMINANCE_ALPHA)
             .setType(this.gl.FLOAT);
-        // .setMinFilter(this.gl.LINEAR)
-        // .setMagFilter(this.gl.LINEAR);
+        // 	.setMinFilter(this.gl.LINEAR)
+        // 	.setMagFilter(this.gl.LINEAR);
         this.tileLightCountMap = new DataTexture(
             this.gl,
             new Uint8Array([]),
@@ -218,17 +231,23 @@ export class DeferredProcessor implements IProcessor {
         )
             .setFormat(this.gl.LUMINANCE)
             .setType(this.gl.UNSIGNED_BYTE);
-        this.lightColorIdensityMap = new DataTexture(this.gl, new Float32Array([]))
+        this.lightColorIdensityMap = new DataTexture(
+            this.gl,
+            new Float32Array([]),
+        )
             .setType(this.gl.FLOAT)
             .setFormat(this.gl.RGBA);
-        // .setMinFilter(this.gl.LINEAR)
-        // .setMagFilter(this.gl.LINEAR);
+        // 	.setMinFilter(this.gl.LINEAR)
+        // 	.setMagFilter(this.gl.LINEAR);
 
-        this.lightPositionRadiusMap = new DataTexture(this.gl, new Float32Array([]))
+        this.lightPositionRadiusMap = new DataTexture(
+            this.gl,
+            new Float32Array([]),
+        )
             .setType(this.gl.FLOAT)
             .setFormat(this.gl.RGBA);
-        // .setMinFilter(this.gl.LINEAR)
-        // .setMagFilter(this.gl.LINEAR);
+        // 	.setMinFilter(this.gl.LINEAR)
+        // 	.setMagFilter(this.gl.LINEAR);
 
         this.pointLightShader = new ShaderBuilder()
             .resetShaderLib()
@@ -236,8 +255,12 @@ export class DeferredProcessor implements IProcessor {
             .addDefinition(ShaderSource.definitions__light_glsl)
             .setLightModel(ShaderSource.light_model__pbs_ggx_glsl)
             .addShaderLib(ShaderSource.calculators__unpackFloat1x32_glsl)
-            .setShadingVert(ShaderSource.interploters__deferred__tiledLight_vert)
-            .setShadingFrag(ShaderSource.interploters__deferred__tiledLightPoint_frag)
+            .setShadingVert(
+                ShaderSource.interploters__deferred__tiledLight_vert,
+            )
+            .setShadingFrag(
+                ShaderSource.interploters__deferred__tiledLightPoint_frag,
+            )
             .setExtraRenderParamHolder("lightInfo", {
                 uniforms: {
                     inverseProjection: {
@@ -263,11 +286,17 @@ export class DeferredProcessor implements IProcessor {
                     },
                 },
                 textures: {
-                    normalRoughnessTex: { source: this.gBuffer.extras[0].targetTexture },
-                    albedoMetallicTex: { source: this.gBuffer.extras[1].targetTexture },
+                    normalRoughnessTex: {
+                        source: this.gBuffer.extras[0].targetTexture,
+                    },
+                    albedoMetallicTex: {
+                        source: this.gBuffer.extras[1].targetTexture,
+                    },
                     depthTex: { source: this.gBuffer.extras[2].targetTexture },
                     uLightOffsetCount: { source: this.tileLightOffsetCountMap },
-                    uLightPositionRadius: { source: this.lightPositionRadiusMap },
+                    uLightPositionRadius: {
+                        source: this.lightPositionRadiusMap,
+                    },
                     uLightColorIdensity: { source: this.lightColorIdensityMap },
                     uLightIndex: { source: this.tileLightIndexMap },
                 },

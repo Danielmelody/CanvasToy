@@ -59,9 +59,9 @@ export function bindUniformGetter(name: string, type: DataType, getter: (p: IBui
 export function uniformArray<DecoratorClass>(type: DataType, name?: string) {
     return (proto, key) => {
         tryAddParamHolder(proto);
-        const uniformArray = proto[RENDER_PARAM_HOLDER].uniformArray || {};
-        uniformArray[key] = { name, type };
-        proto[RENDER_PARAM_HOLDER].uniformArray = uniformArray;
+        const uArray = proto[RENDER_PARAM_HOLDER].uArray || {};
+        uArray[key] = { name, type };
+        proto[RENDER_PARAM_HOLDER].uArray = uArray;
     };
 }
 
