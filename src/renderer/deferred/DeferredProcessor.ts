@@ -34,9 +34,8 @@ export class DeferredProcessor implements IProcessor {
     public pointLightShader: Program;
     public spotLightShader: Program;
 
-    private tileLightIndexMap: DataTexture<Uint8Array>;
+    private tileLightIndexMap: DataTexture<Float32Array>;
     private tileLightOffsetCountMap: DataTexture<Float32Array>;
-    private tileLightCountMap: DataTexture<Uint8Array>;
     private lightPositionRadiusMap: DataTexture<Float32Array>;
     private lightColorIdensityMap: DataTexture<Float32Array>;
 
@@ -115,17 +114,17 @@ export class DeferredProcessor implements IProcessor {
             .setFormat(this.gl.DEPTH_COMPONENT)
             .apply(this.gl);
         this.gBuffer.extras.push(
-            // 	first	for	normal,	materialRoughness
+            //  first for normal, materialRoughness
             new Attachment(
                 this.gBuffer,
                 (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT0_WEBGL,
             ).asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
-            // 	second	for	materialAlbedo	and	materialMetallic
+            //  second for materialAlbedo and materialMetallic
             new Attachment(
                 this.gBuffer,
                 (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT1_WEBGL,
             ).asTargetTexture(new Texture(this.gl), this.gl.TEXTURE_2D),
-            // 	third	for	32-bit	depth
+            //  third for 32-bit depth
             new Attachment(
                 this.gBuffer,
                 (ext: WebGLDrawBuffers) => ext.COLOR_ATTACHMENT2_WEBGL,
@@ -141,7 +140,7 @@ export class DeferredProcessor implements IProcessor {
         lights: Light[],
         lightShader: Program,
     ) {
-        // 	TODO:	add	spot	light	and	dirctional	light	support
+        //  TODO: add spot light and dirctional light support
         const lightInfo = [[], []];
         for (const light of lights) {
             lightInfo[0].push(...light.getDeferredInfo(0, camera));
@@ -165,7 +164,7 @@ export class DeferredProcessor implements IProcessor {
             this.tileLightIndex[i] = [];
         }
 
-        // 	TODO:	add	spot	light	and	dirctional	light	support
+        //  TODO: add spot light and dirctional light support
         this.linearLightIndex = [];
         for (let i = 0; i < scene.pointLights.length; ++i) {
             const light = scene.pointLights[i];
@@ -176,11 +175,13 @@ export class DeferredProcessor implements IProcessor {
         const lightOffsetCount = [];
         let offset = 0;
         for (const indices of this.tileLightIndex) {
-            lightOffsetCount.push(offset);
+            lightOffsetCount.push(offset + 0.5);
             lightOffsetCount.push(indices.length);
             offset += indices.length;
             for (const index of indices) {
-                this.linearLightIndex.push(index / scene.pointLights.length);
+                this.linearLightIndex.push(
+                    (index + 0.5) / scene.pointLights.length,
+                );
             }
         }
 
@@ -211,8 +212,8 @@ export class DeferredProcessor implements IProcessor {
         this.tileLightIndexMap = new DataTexture(this.gl, new Float32Array([]))
             .setFormat(this.gl.LUMINANCE)
             .setType(this.gl.FLOAT);
-        // 	.setMinFilter(this.gl.LINEAR)
-        // 	.setMagFilter(this.gl.LINEAR);
+        //  .setMinFilter(this.gl.LINEAR)
+        //  .setMagFilter(this.gl.LINEAR);
         this.tileLightOffsetCountMap = new DataTexture(
             this.gl,
             new Float32Array([]),
@@ -221,24 +222,17 @@ export class DeferredProcessor implements IProcessor {
         )
             .setFormat(this.gl.LUMINANCE_ALPHA)
             .setType(this.gl.FLOAT);
-        // 	.setMinFilter(this.gl.LINEAR)
-        // 	.setMagFilter(this.gl.LINEAR);
-        this.tileLightCountMap = new DataTexture(
-            this.gl,
-            new Uint8Array([]),
-            this.horizontalTileNum,
-            this.verticalTileNum,
-        )
-            .setFormat(this.gl.LUMINANCE)
-            .setType(this.gl.UNSIGNED_BYTE);
+        //  .setMinFilter(this.gl.LINEAR)
+        //  .setMagFilter(this.gl.LINEAR);
+
         this.lightColorIdensityMap = new DataTexture(
             this.gl,
             new Float32Array([]),
         )
             .setType(this.gl.FLOAT)
             .setFormat(this.gl.RGBA);
-        // 	.setMinFilter(this.gl.LINEAR)
-        // 	.setMagFilter(this.gl.LINEAR);
+        //  .setMinFilter(this.gl.LINEAR)
+        //  .setMagFilter(this.gl.LINEAR);
 
         this.lightPositionRadiusMap = new DataTexture(
             this.gl,
@@ -246,8 +240,8 @@ export class DeferredProcessor implements IProcessor {
         )
             .setType(this.gl.FLOAT)
             .setFormat(this.gl.RGBA);
-        // 	.setMinFilter(this.gl.LINEAR)
-        // 	.setMagFilter(this.gl.LINEAR);
+        //  .setMinFilter(this.gl.LINEAR)
+        //  .setMagFilter(this.gl.LINEAR);
 
         this.pointLightShader = new ShaderBuilder()
             .resetShaderLib()

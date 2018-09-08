@@ -39,7 +39,7 @@ vec3 decodePosition(float depth) {
 
 void main() {
     vec2 uv = vPosition.xy * 0.5 + vec2(0.5);
-    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);
+    vec2 gridIndex = uv;
     vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);
     float lightStartIndex = lightIndexInfo.r;
     float lightNum = lightIndexInfo.w;
@@ -91,4 +91,5 @@ void main() {
     // vec3 depth = vec3(tex1.z);
     vec3 test = vec3(float(realCount) / 32.0);
     gl_FragColor = vec4(totalColor, 1.0);
+    // gl_FragColor = vec4(vec3(lightStartIndex / 100.0), 1.0);
 }
