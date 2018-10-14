@@ -1,9 +1,19 @@
-export { ifdefine, texture, textureArray, uniform, uniformArray } from "./Decorators";
+export {
+    ifdefine,
+    texture,
+    textureArray,
+    uniform,
+    uniformArray,
+} from "./Decorators";
 
 export { IAsyncResource } from "./IAsyncResource";
 
 export { Renderer } from "./renderer/Renderer";
-export { FrameBuffer, Attachment, AttachmentType } from "./renderer/FrameBuffer";
+export {
+    FrameBuffer,
+    Attachment,
+    AttachmentType,
+} from "./renderer/FrameBuffer";
 
 export { Object3d } from "./Object3d";
 
@@ -27,9 +37,9 @@ export { Texture2D } from "./textures/Texture2D";
 export { CubeTexture } from "./textures/CubeTexture";
 export { DataTexture } from "./textures/DataTexture";
 
-export { Material } from "./materials/Material";
-export { StandardMaterial } from "./materials/StandardMaterial";
-export { BlinnPhongMaterial } from "./materials/BlinnPhongMaterial";
+export { IMaterial } from "./materials/Material";
+export { StandardMaterial } from "./materials/surface/StandardMaterial";
+export { BlinnPhongMaterial } from "./materials/surface/BlinnPhongMaterial";
 export { SkyMaterial } from "./materials/SkyMaterial";
 export { LinearDepthPackMaterial } from "./materials/ESM/DepthPackMaterial";
 

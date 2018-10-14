@@ -27,7 +27,7 @@ export namespace Graphics {
     export function copyDataToVertexBuffer(gl: WebGLRenderingContext, geometry: Geometry) {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry.faces.buffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-            new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
+                      new Uint16Array(geometry.faces.data), gl.STATIC_DRAW);
         for (const name in geometry.attributes) {
             const attribute: Attribute = geometry.attributes[name];
             if (attribute !== undefined) {

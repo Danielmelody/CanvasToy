@@ -1,7 +1,7 @@
 import { Camera } from "../cameras/Camera";
-import { Material } from "../materials/Material";
+import { IMaterial } from "../materials/Material";
 import { Scene } from "../Scene";
 
 export interface IProcessor {
-    process(scene: Scene, camera: Camera, matriels: Material[]);
+    process(scene: Scene, camera: Camera, matriels: IMaterial[]);
 }

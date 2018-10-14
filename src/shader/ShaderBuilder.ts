@@ -80,7 +80,7 @@ export class ShaderBuilder {
             fragmentShader: this.definitions.join("\n") + "\n" + (this.lightModel ? this.lightModel + "\n" : "")
                 + this.fragLibs.join("\n") + this.shadingFrag,
         },
-            this.extraRenderParamHolders,
+                           this.extraRenderParamHolders,
         );
     }
 }

@@ -1,5 +1,5 @@
 import { Geometry } from "../geometries/Geometry";
-import { StandardMaterial } from "../materials/StandardMaterial";
+import { StandardMaterial } from "../materials/surface/StandardMaterial";
 import { Mesh } from "../Mesh";
 
 export class Water extends Mesh {

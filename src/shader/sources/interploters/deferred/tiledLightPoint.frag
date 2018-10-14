@@ -39,7 +39,7 @@ vec3 decodePosition(float depth) {
 
 void main() {
     vec2 uv = vPosition.xy * 0.5 + vec2(0.5);
-    vec2 gridIndex = uv ;// floor(uv * vec2(uHorizontalTileNum, uVerticalTileNum)) / vec2(uHorizontalTileNum, uVerticalTileNum);
+    vec2 gridIndex = uv;
     vec4 lightIndexInfo = texture2D(uLightOffsetCount, gridIndex);
     float lightStartIndex = lightIndexInfo.r;
     float lightNum = lightIndexInfo.w;
@@ -58,46 +58,33 @@ void main() {
         if (float(i) > lightNum - 0.5) {
             break;
         }
-        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;
-        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;
-        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;
-        // listX = 1.0;
-        // listY = 0.0;
         float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;
         vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));
-        vec3 lightPos = lightPosR.xyz;
-        float lightR = lightPosR.w;
         vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));
-        vec3 lightColor = lightColorIden.xyz;
-        float lightIdensity = lightColorIden.w;
-        vec3 lightDir = normalize(lightPos - viewPosition);
+        
+        vec3 lightDir = normalize(lightPosR.xyz - viewPosition);
 
-        float dist = distance(lightPos, viewPosition);
-        if (dist < lightR) {
-            realCount++;
-            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));
-            totalColor += calculateLight(
+        float dist = distance(lightPosR.xyz, viewPosition);
+
+        PointLight light;
+        light.color = lightColorIden.xyz;
+        light.idensity = lightColorIden.w;
+        light.radius = lightPosR.w;
+        light.position = lightPosR.xyz;
+        light.squareAtten = 0.01;
+        light.linearAtten = 0.01;
+        light.constantAtten = 0.01;
+
+        if (dist < light.radius) {
+            totalColor += calculatePointLight(
+                light,
                 material,
-                normalize(-viewPosition),
+                viewPosition,
                 normal,
-                lightDir,
-                lightColor,
-                lightIdensity
+                vec3(0.0)
             );
-            // totalColor += vec3(listX, listY, 0.0);
         }
-            // vec3 lightDir = normalize(lightPos - viewPosition);
-            // vec3 reflectDir = normalize(reflect(lightDir, normal));
-            // vec3 viewDir = normalize( - viewPosition);
-            // vec3 H = normalize(lightDir + viewDir);
-            // float specularAngle = max(dot(H, normal), 0.0);
-            // // vec3 specularColor = materialSpec * pow(specularAngle, materialSpecExp);
-        // totalColor = vec3(float(lightStartIndex) / uLightListLengthSqrt / uLightListLengthSqrt);
-        //}
-        //}
     }
-    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));
-    // vec3 depth = vec3(tex1.z);
     vec3 test = vec3(float(realCount) / 32.0);
     gl_FragColor = vec4(totalColor, 1.0);
 }

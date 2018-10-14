@@ -1,6 +1,5 @@
-
 import { Camera } from "../../cameras/Camera";
-import { Material } from "../../materials/Material";
+import { IMaterial } from "../../materials/Material";
 import { Mesh } from "../../Mesh";
 import { Object3d } from "../../Object3d";
 import { Scene } from "../../Scene";
@@ -9,17 +8,21 @@ import { WebGLExtension } from "../IExtension";
 import { IProcessor } from "../IProcessor";
 
 export class ForwardProcessor implements IProcessor {
-
     public readonly gl: WebGLRenderingContext;
 
     public readonly ext: WebGLExtension;
 
-    constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera) {
+    constructor(
+        gl: WebGLRenderingContext,
+        ext: WebGLExtension,
+        scene: Scene,
+        camera: Camera,
+    ) {
         this.gl = gl;
         this.ext = ext;
     }
 
-    public process(scene: Scene, camera: Camera, materials: Material[]) {
+    public process(scene: Scene, camera: Camera, materials: IMaterial[]) {
         this.gl.clearColor(
             scene.clearColor[0],
             scene.clearColor[1],
@@ -35,7 +38,7 @@ export class ForwardProcessor implements IProcessor {
     private renderObject(scene: Scene, camera: Camera, object: Object3d) {
         if (object instanceof Mesh) {
             const mesh = object as Mesh;
-            mesh.geometry.clean(this.gl);
+            mesh.geometry.resetLightShadows(this.gl);
             for (const material of mesh.materials) {
                 const shader = material.shader;
                 if (shader.enableDepthTest) {

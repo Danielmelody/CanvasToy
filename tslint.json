@@ -1,19 +1,39 @@
 {
-  "extends": "tslint:latest",
-  "rules": {
-    "no-namespace": false,
-    "no-default-export": true,
-    "no-shadowed-variable": false,
-    "variable-name": [true, "allow-leading-underscore"],
-    "no-bitwise": false,
-    "object-literal-sort-keys": false,
-    "no-console": false,
-    "interface-name": false,
-    "forin": false,
-    "max-classes-per-file": false,
-    "whitespace": true,
-    "no-unused-expression": true,
-    "no-unused-variable": true,
-    "no-unbound-method": true
-  }
+    "extends": "tslint:latest",
+    "rules": {
+        "align": [
+            true,
+            "arguments",
+            "elements",
+            "members",
+            "parameters",
+            "statements"
+        ],
+        "no-namespace": false,
+        "no-default-export": true,
+        "no-shadowed-variable": [true],
+        "variable-name": [true, "allow-leading-underscore"],
+        "no-bitwise": false,
+        "object-literal-sort-keys": false,
+        "no-console": false,
+        "interface-name": false,
+        "forin": false,
+        "max-classes-per-file": false,
+        "whitespace": [
+            true,
+            "check-branch",
+            "check-decl",
+            "check-operator",
+            "check-module",
+            "check-separator",
+            "check-rest-spread",
+            "check-type",
+            "check-typecast",
+            "check-type-operator",
+            "check-preblock"
+        ],
+        "no-unused-expression": true,
+        "no-unbound-method": true,
+        "indent": [true, "spaces", 4]
+    }
 }
