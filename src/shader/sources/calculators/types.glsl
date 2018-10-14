@@ -28,7 +28,7 @@ vec3 calculatePointLight(
     float atten_max = 1.0 / light.constantAtten;
     float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);
     float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);
-    idensity *= step(lightDis, 1.0);
+    //idensity *= step(lightDis, 1.0);
     return calculateLight(
         material,
         normalize(eyePos - position),

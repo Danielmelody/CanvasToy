@@ -200,12 +200,12 @@ export class Renderer {
     }
 
     private main = () => {
+        if (this.stopped) {
+            return;
+        }
         const now = Date.now();
         for (const renderCommand of this.renderQueue) {
             renderCommand(this.frameRate);
-        }
-        if (this.stopped) {
-            return;
         }
         const delta = now - this.duration - this.startTime;
         this.currentFPS = 1000 / delta;

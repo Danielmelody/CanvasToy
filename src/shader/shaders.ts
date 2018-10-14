@@ -179,7 +179,7 @@ vec3 calculatePointLight(
     float atten_max = 1.0 / light.constantAtten;
     float atten = 1.0 / (light.constantAtten + light.linearAtten * lightDis + light.squareAtten * lightDis * lightDis);
     float idensity = light.idensity * (atten - atten_min) / (atten_max - atten_min);
-    idensity *= step(lightDis, 1.0);
+    //idensity *= step(lightDis, 1.0);
     return calculateLight(
         material,
         normalize(eyePos - position),
@@ -445,40 +445,35 @@ void main() {
         if (float(i) > lightNum - 0.5) {
             break;
         }
-        // float listX = (float(lightStartIndex + i) - listX_int * uLightListLengthSqrt) / uLightListLengthSqrt;
-        // float listY = ((lightStartIndex + i) / uLightListLengthSqrt) / uLightListLengthSqrt;
-        // float listX = (mod(lightStartIndex + i, uLightListLengthSqrt)) / uLightListLengthSqrt;
-        // listX = 1.0;
-        // listY = 0.0;
         float fixlightId = texture2D(uLightIndex, vec2((lightStartIndex + float(i)) / uLightListLengthSqrt, 0.5)).x;
         vec4 lightPosR = texture2D(uLightPositionRadius, vec2(fixlightId, 0.5));
-        vec3 lightPos = lightPosR.xyz;
-        float lightR = lightPosR.w;
         vec4 lightColorIden = texture2D(uLightColorIdensity, vec2(fixlightId, 0.5));
-        vec3 lightColor = lightColorIden.xyz;
-        float lightIdensity = lightColorIden.w;
-        vec3 lightDir = normalize(lightPos - viewPosition);
+        
+        vec3 lightDir = normalize(lightPosR.xyz - viewPosition);
 
-        float dist = distance(lightPos, viewPosition);
-        if (dist < lightR) {
-            realCount++;
-            vec3 fixLightColor = lightColor * min(1.0,  1.0 / (dist * dist ) / (lightR * lightR));
-            totalColor += calculateLight(
+        float dist = distance(lightPosR.xyz, viewPosition);
+
+        PointLight light;
+        light.color = lightColorIden.xyz;
+        light.idensity = lightColorIden.w;
+        light.radius = lightPosR.w;
+        light.position = lightPosR.xyz;
+        light.squareAtten = 0.01;
+        light.linearAtten = 0.01;
+        light.constantAtten = 0.01;
+
+        if (dist < light.radius) {
+            totalColor += calculatePointLight(
+                light,
                 material,
-                normalize(-viewPosition),
+                viewPosition,
                 normal,
-                lightDir,
-                lightColor,
-                lightIdensity
+                vec3(0.0)
             );
-            // totalColor += vec3(listX, listY, 0.0);
         }
     }
-    // vec3 depth = vec3(linearlizeDepth(cameraFar, cameraNear, tex1.z));
-    // vec3 depth = vec3(tex1.z);
     vec3 test = vec3(float(realCount) / 32.0);
     gl_FragColor = vec4(totalColor, 1.0);
-    // gl_FragColor = vec4(vec3(lightStartIndex / 100.0), 1.0);
 }
 `;
         export const interploters__forward__esm__depth_frag = `

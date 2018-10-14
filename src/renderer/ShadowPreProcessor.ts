@@ -61,7 +61,7 @@ export class ShadowPreProcess implements IProcessor {
                     width: light.shadowSize,
                     height: light.shadowSize,
                 });
-                this.prefilterDepth(scene, light);
+                this.prefiltDepth(scene, light);
             }
         }
 
@@ -100,7 +100,7 @@ export class ShadowPreProcess implements IProcessor {
         });
     }
 
-    private prefilterDepth(scene: Scene, light: Light) {
+    private prefiltDepth(scene: Scene, light: Light) {
         light.shadowFrameBuffers.forEach((shadowFrameBuffer) => {
             this.blurMaterial.origin =
                 shadowFrameBuffer.active.attachments.color.targetTexture;

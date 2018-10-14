@@ -248,6 +248,7 @@ export class DeferredProcessor implements IProcessor {
             .addDefinition(ShaderSource.definitions__material_pbs_glsl)
             .addDefinition(ShaderSource.definitions__light_glsl)
             .setLightModel(ShaderSource.light_model__pbs_ggx_glsl)
+            .addShaderLibFrag(ShaderSource.calculators__types_glsl)
             .addShaderLib(ShaderSource.calculators__unpackFloat1x32_glsl)
             .setShadingVert(
                 ShaderSource.interploters__deferred__tiledLight_vert,
