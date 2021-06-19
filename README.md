@@ -2,8 +2,11 @@
 
 ![](https://travis-ci.org/Danielhu229/CanvasToy.svg?branch=master) [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
+## *This is my undergraduate project, it is no longer suitable for modern typescript dev pipeline, please consider babylonjs for serious ts 3d engine*
+
 
 Lightweight WebGL/WenGL2 rendering engine, see some [examples](http://canvastoy.com/examples) here
+
 
 ### roadmap before 1.0:
 
