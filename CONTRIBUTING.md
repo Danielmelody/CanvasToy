@@ -3,7 +3,7 @@
 ### Install dependency:
 
 ```bash
-npm install -g typescript@2 typescript-formatter http-server
+yarn global add typescript typescript-formatter http-server
 npm install
 npm link typescript
 ```

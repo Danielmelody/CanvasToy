@@ -1,0 +1,34 @@
+import { IAsyncResource } from "../IAsyncResource";
+export declare class Texture implements IAsyncResource {
+    protected _glTexture: WebGLTexture;
+    protected _asyncFinished: Promise<Texture>;
+    protected _image: HTMLImageElement;
+    private _target;
+    private _format;
+    private _wrapS;
+    private _wrapT;
+    private _magFilter;
+    private _minFilter;
+    private _type;
+    constructor(gl: WebGLRenderingContext, url?: string);
+    get glTexture(): WebGLTexture;
+    get image(): HTMLImageElement;
+    get target(): number;
+    get format(): number;
+    get wrapS(): number;
+    get wrapT(): number;
+    get magFilter(): number;
+    get minFilter(): number;
+    get type(): number;
+    setTarget(_target: number): this;
+    setFormat(_format: number): this;
+    setWrapS(_wrapS: number): this;
+    setWrapT(_wrapT: number): this;
+    setMagFilter(_magFilter: number): this;
+    setMinFilter(_minFilter: number): this;
+    setType(_type: number): this;
+    setAsyncFinished(promise: Promise<Texture>): this;
+    asyncFinished(): Promise<Texture>;
+    apply(gl: WebGLRenderingContext): this;
+    applyForRendering(gl: WebGLRenderingContext, width: number, height: number): this;
+}

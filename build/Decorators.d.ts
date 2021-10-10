@@ -1,0 +1,15 @@
+import { DataType } from "./DataTypeEnum";
+import { IBuildinRenderParamMaps } from "./shader/Program";
+export declare const RENDER_PARAM_HOLDER = "renderParams";
+export declare function structure(name: string): (constructor: any) => void;
+export declare function uniform(type: DataType, name?: string): (proto: any, key: any) => void;
+export declare function bindUniformGetter(name: string, type: DataType, getter: (p: IBuildinRenderParamMaps) => any): (constructor: any) => void;
+export declare function uniformArray<DecoratorClass>(type: DataType, name?: string): (proto: any, key: any) => void;
+export declare function texture<DecoratorClass>(name?: string): (proto: any, key: any) => void;
+export declare function textureArray<DecoratorClass>(name?: string): (proto: any, key: any) => void;
+export declare function arrayOfStructures(name?: string): (proto: any, key: any) => void;
+export declare function define(defineName: string, useValue?: boolean): (proto: any, key: any) => void;
+export declare function ifdefine(defineName: string): (proto: any, key: any) => void;
+export declare function ifequal(defineName: string, defineValue: string): (proto: any, key: any) => void;
+export declare function ifgreat(defineName: string, defineValue: string): (proto: any, key: any) => void;
+export declare function readyRequire<IAsyncResource>(proto: any, key: any): void;

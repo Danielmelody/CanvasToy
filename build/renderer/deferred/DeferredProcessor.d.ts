@@ -1,0 +1,32 @@
+import { Camera } from "../../cameras/Camera";
+import { IMaterial } from "../../materials/Material";
+import { Mesh } from "../../Mesh";
+import { Scene } from "../../Scene";
+import { Program } from "../../shader/Program";
+import { FrameBuffer } from "../FrameBuffer";
+import { WebGLExtension } from "../IExtension";
+import { IProcessor } from "../IProcessor";
+export declare class DeferredProcessor implements IProcessor {
+    tile: Mesh;
+    readonly tilePixelSize: number;
+    readonly horizontalTileNum: any;
+    readonly verticalTileNum: any;
+    readonly tileCount: any;
+    readonly gBuffer: FrameBuffer;
+    readonly gl: WebGLRenderingContext;
+    readonly ext: WebGLExtension;
+    pointLightShader: Program;
+    spotLightShader: Program;
+    private tileLightIndexMap;
+    private tileLightOffsetCountMap;
+    private lightPositionRadiusMap;
+    private lightColorIdensityMap;
+    private tileLightIndex;
+    private linearLightIndex;
+    constructor(gl: WebGLRenderingContext, ext: WebGLExtension, scene: Scene, camera: Camera);
+    process(scene: Scene, camera: Camera, materials: IMaterial[]): void;
+    private initGeometryProcess;
+    private tileLightPass;
+    private initTiledPass;
+    private fillTileWithBoundingBox2D;
+}

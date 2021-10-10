@@ -21,10 +21,8 @@
     "url": "https://github.com/UniqueStudio/CanvasToy/issues"
   },
   "devDependencies": {
-    "@types/gl-matrix": "^2.2.34",
-    "@types/jasmine": "^2.5.47",
-    "@types/webgl-ext": "0.0.28",
-    "awesome-typescript-loader": "^3.1.2",
+    "@types/jasmine": "^3.9.1",
+    "@types/webgl-ext": "0.0.32",
     "cz-conventional-changelog": "latest",
     "gl": "latest",
     "jasmine-core": "latest",
@@ -33,8 +31,9 @@
     "karma-firefox-launcher": "latest",
     "karma-jasmine": "latest",
     "karma-requirejs": "^1.1.0",
-    "requirejs": "^2.3.3",
-    "webgl-debug": "^1.0.2"
+    "requirejs": "^2.3.6",
+    "typescript": "^4.4.3",
+    "webgl-debug": "^2.0.1"
   },
   "scripts": {
     "test": "cd tests && tsc && karma start karma.conf.js --browsers Chrome",
@@ -49,6 +48,6 @@
     }
   },
   "dependencies": {
-    "gl-matrix": "^2.3.2"
+    "gl-matrix": "latest"
   }
 }

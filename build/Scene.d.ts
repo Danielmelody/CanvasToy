@@ -1,0 +1,36 @@
+import { vec3 } from "gl-matrix";
+import { IDirtyable } from "./Dirtyable";
+import { DirectionalLight } from "./lights/DirectionalLight";
+import { Light } from "./lights/Light";
+import { PointLight } from "./lights/PointLight";
+import { SpotLight } from "./lights/SpotLight";
+import { Object3d } from "./Object3d";
+import { Texture } from "./textures/Texture";
+export declare class Scene implements IDirtyable {
+    objects: Object3d[];
+    lights: Light[];
+    ambientLight: vec3;
+    openLight: boolean;
+    clearColor: number[];
+    programSetUp: boolean;
+    directLights: DirectionalLight[];
+    pointLights: PointLight[];
+    spotLights: SpotLight[];
+    private updateEvents;
+    private _directLightShadowMap;
+    private _spotLightShadowMap;
+    private _pointLightShadowMap;
+    private _directShadowDirty;
+    private _pointShadowDirty;
+    private _spotShadowDirty;
+    get directLightShadowMap(): Texture[];
+    get spotLightShadowMap(): Texture[];
+    get pointLightShadowMap(): Texture[];
+    resetLightShadows(): void;
+    update(dt: number): void;
+    addOnUpdateListener(listener: (deltaTime: number) => void): this;
+    removeOnUpdateListener(listener: (deltaTime: number) => void): this;
+    addObject(...objects: Object3d[]): this;
+    removeObject(object: Object3d): this;
+    addLight(...lights: Light[]): void;
+}

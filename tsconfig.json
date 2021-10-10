@@ -1,9 +1,9 @@
 {
     "compilerOptions": {
-        "module": "amd",
+        "module": "esNext",
         "removeComments": true,
         "lib": ["es5", "es2015.promise", "dom"],
-        "outFile": "build/canvas-toy-amd.js",
+        "outDir": "build",
         "noLib": false,
         "target": "es5",
         "sourceMap": true,
@@ -13,13 +13,6 @@
     },
     "include": [
         "src/**/*.ts"
-    ],
-    "exclude": [
-        "node_modules/",
-        "examples/",
-        "tests/",
-        "utils/",
-        "build/"
     ],
     "compileOnSave": false
 }
