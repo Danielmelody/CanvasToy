@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "module": "esNext",
+        "moduleResolution": "node",
         "removeComments": true,
         "lib": ["es5", "es2015.promise", "dom"],
         "outDir": "build",

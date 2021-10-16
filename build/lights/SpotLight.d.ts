@@ -12,9 +12,9 @@ export declare class SpotLight extends DampingLight {
     get shadowMap(): Texture;
     get shadowFrameBuffer(): ProcessingFrameBuffer;
     get shadowFrameBuffers(): ProcessingFrameBuffer[];
-    get spotDirection(): any;
+    get spotDirection(): vec3;
     get coneAngle(): number;
-    getDeferredInfo(layer: number, camera: Camera): any[];
+    getDeferredInfo(layer: number, camera: Camera): number[];
     protected get coneAngleCos(): number;
     setRadius(radius: number): this;
     setConeAngle(coneAngle: number): this;

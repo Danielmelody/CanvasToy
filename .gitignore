@@ -36,3 +36,5 @@ npm-debug.log.*
 
 /typings/
 /tests/typings/
+yarn.lock
+package-lock.json

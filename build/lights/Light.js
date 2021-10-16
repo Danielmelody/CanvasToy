@@ -147,7 +147,7 @@ var Light = (function (_super) {
         renderParam.material.shader.pass(renderParam);
     };
     __decorate([
-        uniform(DataType.int, "shadowLevel")
+        uniform(BaseType.i32, "shadowLevel")
     ], Light.prototype, "_shadowLevel", void 0);
     __decorate([
         uniform(DataType.float, "softness")

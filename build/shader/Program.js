@@ -162,7 +162,7 @@ var Program = (function () {
             if (!!texture) {
                 this.gl.activeTexture(this.gl.TEXTURE0 + texIndex[0]);
                 this.gl.bindTexture(texture.target, texture.glTexture);
-                this.updateUniform(name_1, DataType.int, texIndex[0]);
+                this.updateUniform(name_1, BaseType.i32, texIndex[0]);
                 texIndex[0]++;
             }
         }
@@ -184,7 +184,7 @@ var Program = (function () {
                 texIndex[0]++;
             }
             if (indices.length > 0) {
-                this.updateUniformArray(name_2, DataType.int, new Int32Array(indices));
+                this.updateUniformArray(name_2, BaseType.i32, new Int32Array(indices));
             }
         }
         if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
@@ -281,7 +281,7 @@ var Program = (function () {
             case DataType.float:
                 this.gl.uniform1f(location, value);
                 break;
-            case DataType.int:
+            case BaseType.i32:
                 this.gl.uniform1i(location, value);
                 break;
             case DataType.vec2:
@@ -329,7 +329,7 @@ var Program = (function () {
             case DataType.float:
                 this.gl.uniform1fv(location, value);
                 break;
-            case DataType.int:
+            case BaseType.i32:
                 this.gl.uniform1iv(location, value);
                 break;
             case DataType.vec2:

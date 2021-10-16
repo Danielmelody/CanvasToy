@@ -1,4 +1,4 @@
-import { vec3 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
 import { Renderer } from "../renderer/Renderer";
@@ -13,10 +13,10 @@ export declare class PointLight extends DampingLight {
     constructor(renderer: Renderer);
     get shadowMap(): CubeTexture;
     get shadowFrameBuffers(): ProcessingFrameBuffer[];
-    get projectionMatrix(): any;
+    get projectionMatrix(): mat4;
     get far(): number;
     get near(): number;
-    getDeferredInfo(layer: number, renderCamera: Camera): any[];
+    getDeferredInfo(layer: number, renderCamera: Camera): number[];
     setColor(color: vec3): this;
     setIdensity(idensity: number): this;
     setShadowLevel(shadowLevel: ShadowLevel): this;

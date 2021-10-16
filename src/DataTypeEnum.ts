@@ -1,10 +1,20 @@
-export enum DataType {
-    float,
-    int,
-    vec2,
-    vec3,
-    vec4,
-    mat2,
-    mat3,
-    mat4,
+export enum BaseType {
+    f32, 
+    f64,
+    f16,
+    i32,
+    u32
 }
+
+export enum DataComposing {
+    Base,
+    Vector,
+    Matrix,
+    Array,
+}
+
+export type DataType = BaseType | {
+    base: DataType,
+    dimensions: [1],
+    composing: DataComposing
+};

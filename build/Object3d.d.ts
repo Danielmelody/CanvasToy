@@ -41,8 +41,8 @@ export declare class Object3d implements IAsyncResource {
     rotateX(angle: number): this;
     rotateY(angle: number): this;
     rotateZ(angle: number): this;
-    lookAt(center: vec3, up?: any): this;
-    lookAtLocal(center: vec3, up?: any): this;
+    lookAt(center: vec3, up?: vec3): this;
+    lookAtLocal(center: vec3, up?: vec3): this;
     asyncFinished(): Promise<Object3d>;
     setAsyncFinished(promise: Promise<Object3d>): void;
     protected genOtherMatrixs(): void;

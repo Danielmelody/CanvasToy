@@ -323,7 +323,7 @@ define("shader/Attibute", ["require", "exports", "DataTypeEnum"], function (requ
                 case DataTypeEnum_1.DataType.float:
                     this.type = gl.FLOAT;
                     break;
-                case DataTypeEnum_1.DataType.int:
+                case DataTypeEnum_1.BaseType.i32:
                     this.type = gl.INT;
                     break;
                 default: break;
@@ -1058,7 +1058,7 @@ define("lights/Light", ["require", "exports", "gl-matrix", "DataTypeEnum", "Deco
             renderParam.material.shader.pass(renderParam);
         };
         __decorate([
-            Decorators_3.uniform(DataTypeEnum_4.DataType.int, "shadowLevel")
+            Decorators_3.uniform(DataTypeEnum_4.BaseType.i32, "shadowLevel")
         ], Light.prototype, "_shadowLevel", void 0);
         __decorate([
             Decorators_3.uniform(DataTypeEnum_4.DataType.float, "softness")
@@ -3749,7 +3749,7 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                 if (!!texture) {
                     this.gl.activeTexture(this.gl.TEXTURE0 + texIndex[0]);
                     this.gl.bindTexture(texture.target, texture.glTexture);
-                    this.updateUniform(name_2, DataTypeEnum_15.DataType.int, texIndex[0]);
+                    this.updateUniform(name_2, DataTypeEnum_15.BaseType.i32, texIndex[0]);
                     texIndex[0]++;
                 }
             }
@@ -3771,7 +3771,7 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                     texIndex[0]++;
                 }
                 if (indices.length > 0) {
-                    this.updateUniformArray(name_3, DataTypeEnum_15.DataType.int, new Int32Array(indices));
+                    this.updateUniformArray(name_3, DataTypeEnum_15.BaseType.i32, new Int32Array(indices));
                 }
             }
             if (!!holder.structArrays && namePrefix !== "" && !!holder.hostObject) {
@@ -3868,7 +3868,7 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                 case DataTypeEnum_15.DataType.float:
                     this.gl.uniform1f(location, value);
                     break;
-                case DataTypeEnum_15.DataType.int:
+                case DataTypeEnum_15.BaseType.i32:
                     this.gl.uniform1i(location, value);
                     break;
                 case DataTypeEnum_15.DataType.vec2:
@@ -3916,7 +3916,7 @@ define("shader/Program", ["require", "exports", "gl-matrix", "DataTypeEnum", "re
                 case DataTypeEnum_15.DataType.float:
                     this.gl.uniform1fv(location, value);
                     break;
-                case DataTypeEnum_15.DataType.int:
+                case DataTypeEnum_15.BaseType.i32:
                     this.gl.uniform1iv(location, value);
                     break;
                 case DataTypeEnum_15.DataType.vec2:

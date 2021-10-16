@@ -23,7 +23,7 @@ export declare class ISurfaceMaterial extends IMaterial {
     get blockShadow(): boolean;
     get receiveShadow(): boolean;
     get mainTexture(): Texture2D;
-    get ambient(): any;
+    get ambient(): vec3;
     get transparency(): number;
     get alphaMap(): Texture;
     get bumpMap(): Texture;

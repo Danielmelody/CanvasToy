@@ -20,7 +20,7 @@ export class Attribute {
         }
         switch (paramter.type) {
             case DataType.float: this.type = gl.FLOAT; break;
-            case DataType.int: this.type = gl.INT; break;
+            case BaseType.i32: this.type = gl.INT; break;
             default: break;
         }
     }

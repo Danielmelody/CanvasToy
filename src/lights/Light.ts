@@ -21,7 +21,7 @@ export abstract class Light extends Object3d {
 
     protected _pcssArea: number = 5;
 
-    @uniform(DataType.int, "shadowLevel")
+    @uniform(BaseType.i32, "shadowLevel")
     protected _shadowLevel: ShadowLevel = ShadowLevel.PCSS;
 
     @uniform(DataType.float, "softness")

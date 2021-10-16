@@ -1,6 +1,7 @@
+import { vec3 } from "gl-matrix";
 import { Light } from "./Light";
 export declare abstract class DampingLight extends Light {
-    get position(): any;
+    get position(): vec3;
     protected _radius: number;
     protected _squareAttenuation: number;
     protected _linearAttenuation: number;

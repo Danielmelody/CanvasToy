@@ -1,4 +1,4 @@
-import { vec3 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { Geometry } from "../geometries/Geometry";
 import { BoundingBox2D } from "../Intersections/BoundingBox";
@@ -11,7 +11,7 @@ import { Texture } from "../textures/Texture";
 import { ShadowLevel } from "./ShadowLevel";
 export declare abstract class Light extends Object3d {
     volume: Geometry;
-    protected _color: any;
+    protected _color: vec3;
     protected _idensity: number;
     protected _pcssArea: number;
     protected _shadowLevel: ShadowLevel;
@@ -30,13 +30,13 @@ export declare abstract class Light extends Object3d {
     setPCSSArea(_pcssArea: number): this;
     get shadowLevel(): ShadowLevel;
     get shadowSoftness(): number;
-    getDeferredInfo(layer: number, renderCamera: Camera): any[];
+    getDeferredInfo(layer: number, renderCamera: Camera): number[];
     get shadowSize(): number;
     abstract get shadowMap(): Texture;
-    get color(): any;
+    get color(): vec3;
     get idensity(): number;
-    get projectionMatrix(): any;
-    get viewMatrix(): any;
+    get projectionMatrix(): mat4;
+    get viewMatrix(): mat4;
     get pcssArea(): number;
     get far(): number;
     get near(): number;

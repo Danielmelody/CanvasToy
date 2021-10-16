@@ -1,7 +1,7 @@
 import { mat4 } from "gl-matrix";
 
 import { Camera } from "../cameras/Camera";
-import { DataType } from "../DataTypeEnum";
+import { DataType, BaseType } from '../DataTypeEnum';
 import { IDirtyable } from "../Dirtyable";
 import { Geometry } from "../geometries/Geometry";
 import { Light } from "../lights/Light";
@@ -318,7 +318,7 @@ export class Program implements IDirtyable {
             if (!!texture) {
                 this.gl.activeTexture(this.gl.TEXTURE0 + texIndex[0]);
                 this.gl.bindTexture(texture.target, texture.glTexture);
-                this.updateUniform(name, DataType.int, texIndex[0]);
+                this.updateUniform(name, BaseType.i32, texIndex[0]);
                 texIndex[0]++;
             }
         }
@@ -342,7 +342,7 @@ export class Program implements IDirtyable {
             if (indices.length > 0) {
                 this.updateUniformArray(
                     name,
-                    DataType.int,
+                    BaseType.i32,
                     new Int32Array(indices),
                 );
             }
@@ -462,7 +462,7 @@ export class Program implements IDirtyable {
             case DataType.float:
                 this.gl.uniform1f(location, value);
                 break;
-            case DataType.int:
+            case BaseType.i32:
                 this.gl.uniform1i(location, value);
                 break;
             case DataType.vec2:
@@ -521,7 +521,7 @@ export class Program implements IDirtyable {
             case DataType.float:
                 this.gl.uniform1fv(location, value);
                 break;
-            case DataType.int:
+            case BaseType.i32:
                 this.gl.uniform1iv(location, value);
                 break;
             case DataType.vec2:

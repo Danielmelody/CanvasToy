@@ -1,3 +1,4 @@
+import { mat4 } from "gl-matrix";
 import { Camera } from "../cameras/Camera";
 import { DataType } from "../DataTypeEnum";
 import { IDirtyable } from "../Dirtyable";
@@ -118,21 +119,21 @@ export declare const shaderPassLib: {
     uniforms: {
         modelViewProjectionMatrix: {
             type: DataType;
-            updator: (p: IBuildinRenderParamMaps) => any;
+            updator: (p: IBuildinRenderParamMaps) => mat4;
         };
         modelViewMatrix: {
             type: DataType;
             updator: ({ mesh, camera }: {
                 mesh: any;
                 camera: any;
-            }) => any;
+            }) => mat4;
         };
         normalViewMatrix: {
             type: DataType;
             updator: ({ mesh, camera }: {
                 mesh: any;
                 camera: any;
-            }) => any;
+            }) => mat4;
         };
     };
     defines: {

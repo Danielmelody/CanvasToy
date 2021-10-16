@@ -39,13 +39,13 @@ var SphereGeometry = (function (_super) {
             var v = iy / this._heightSegments;
             for (ix = 0; ix <= this._widthSegments; ix++) {
                 var aMainUV = [ix / this._widthSegments, 1 - iy / this._heightSegments];
-                var position = [
+                var position = Float32Array.from([
                     -this._radius * Math.cos(this._phiStart + aMainUV[0] * this._phiLength)
                         * Math.sin(this._thetaStart + v * this._thetaLength),
                     this._radius * Math.cos(this._thetaStart + aMainUV[1] * this._thetaLength),
                     this._radius * Math.sin(this._phiStart + aMainUV[0] * this._phiLength)
                         * Math.sin(this._thetaStart + v * this._thetaLength),
-                ];
+                ]);
                 var aNormal = vec3.normalize(vec3.create(), position);
                 this.addVertex({ position: position, aNormal: aNormal, aMainUV: aMainUV });
                 verticesRow.push(index++);

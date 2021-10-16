@@ -9,7 +9,7 @@ export declare class StandardMaterial extends ISurfaceMaterial {
     protected _metallic: number;
     protected _metallicTexture: Texture2D;
     protected _roughness: number;
-    get albedo(): any;
+    get albedo(): vec3;
     get metallic(): number;
     get roughness(): number;
     get stencilMap(): any;
